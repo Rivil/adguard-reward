@@ -95,6 +95,25 @@
           "what": "periodic /control/status prober classifying ok|unauthorized|unreachable under an RWMutex; /healthz always 200 JSON {status adguard adguard_version version} from stored state; make test runs -race"
         }
       ]
+    },
+    "t-6": {
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "Makefile",
+        "deploy/config.example.yaml",
+        "deploy/Dockerfile"
+      ],
+      "commit": "3951cf9",
+      "completed_at": "2026-09-19T18:47:56.431051Z",
+      "landmarks": [
+        {
+          "feature": "app startup",
+          "symbol": "run",
+          "loc": "cmd/adguard-reward/main.go:38",
+          "what": "--config flag (default beside binary) → config.Load → slog at cfg level → adguard.New → health probe (bad credential fatal, unreachable logged) → GET /healthz → serve with graceful shutdown; version bound via -X main.version"
+        }
+      ]
     }
   }
 }
