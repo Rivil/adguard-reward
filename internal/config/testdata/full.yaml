@@ -1,0 +1,17 @@
+# Every key set, used by TestLoad_Full to pin the yaml → struct mapping.
+listen: "127.0.0.1:9090"
+base_url: "https://reward.example"
+tls:
+  cert: "/etc/ssl/reward.crt"
+  key: "/etc/ssl/reward.key"
+adguard:
+  url: "http://127.0.0.1:3000"
+  username: "svc"
+  password: "yamlpw"
+data_dir: "/var/lib/reward"
+ai:
+  provider: "anthropic"
+  api_key: "sk-yaml"
+  base_url: "https://api.example"
+  model: "claude-sonnet-5"
+log_level: "debug"
