@@ -1,0 +1,245 @@
+[[category]]
+  name = "gremlins-switch-case"
+  reason = "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+
+[[category]]
+  name = "string-concat-initializer"
+  reason = "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+
+[[category]]
+  name = "string-concat-panic"
+  reason = "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+
+[[accepted]]
+  key = "51a958b88e117c6a"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case resp.StatusCode >= 200 && resp.StatusCode < 300:"
+  line = 181
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "9430031ee34baa69"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case resp.StatusCode >= 200 && resp.StatusCode < 300:"
+  line = 181
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "68505a7be9631dc8"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case resp.StatusCode == http.StatusUnauthorized, resp.StatusCode == http.StatusForbidden:"
+  line = 183
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "cfecbf0de85b0129"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case resp.StatusCode == http.StatusTooManyRequests:"
+  line = 185
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "dcd6ec3e7b4754e0"
+  file = "internal/config/config.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 112
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "da5d583a0cdf6c1a"
+  file = "internal/health/health.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 83
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "a0b1cabbc6008ae1"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"listen\", EnvPrefix + \"LISTEN\", func(c *Config, v string) { c.Listen = v }},"
+  line = 73
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "c2ea33c5cb61af8d"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"base_url\", EnvPrefix + \"BASE_URL\", func(c *Config, v string) { c.BaseURL = v }},"
+  line = 74
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "1f35bf94f5ac4cfa"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"tls.cert\", EnvPrefix + \"TLS_CERT\", func(c *Config, v string) { c.TLS.Cert = v }},"
+  line = 75
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "c02935d03c0a4137"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"tls.key\", EnvPrefix + \"TLS_KEY\", func(c *Config, v string) { c.TLS.Key = v }},"
+  line = 76
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "39b876eadce3ba8c"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.url\", EnvPrefix + \"ADGUARD_URL\", func(c *Config, v string) { c.AdGuard.URL = v }},"
+  line = 77
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "02445917af5ed966"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.username\", EnvPrefix + \"ADGUARD_USERNAME\", func(c *Config, v string) { c.AdGuard.Username = v }},"
+  line = 78
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "ce334f1f01f15a32"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.password\", EnvPrefix + \"ADGUARD_PASSWORD\", func(c *Config, v string) { c.AdGuard.Password = Secret(v) }},"
+  line = 79
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "22106f6484d1faa3"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.password_file\", EnvPrefix + \"ADGUARD_PASSWORD_FILE\", func(c *Config, v string) { c.AdGuard.PasswordFile = v }},"
+  line = 80
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "e2d8072b3839910b"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"data_dir\", EnvPrefix + \"DATA_DIR\", func(c *Config, v string) { c.DataDir = v }},"
+  line = 81
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "f93194a49c469f23"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.provider\", EnvPrefix + \"AI_PROVIDER\", func(c *Config, v string) { c.AI.Provider = v }},"
+  line = 82
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "46823b3109dcb811"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.api_key\", EnvPrefix + \"AI_API_KEY\", func(c *Config, v string) { c.AI.APIKey = Secret(v) }},"
+  line = 83
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "1878626a7c54b487"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.api_key_file\", EnvPrefix + \"AI_API_KEY_FILE\", func(c *Config, v string) { c.AI.APIKeyFile = v }},"
+  line = 84
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "71410531871fef71"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.base_url\", EnvPrefix + \"AI_BASE_URL\", func(c *Config, v string) { c.AI.BaseURL = v }},"
+  line = 85
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "119e0307aa385bd7"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.model\", EnvPrefix + \"AI_MODEL\", func(c *Config, v string) { c.AI.Model = v }},"
+  line = 86
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "429eb582b44c8bfb"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"log_level\", EnvPrefix + \"LOG_LEVEL\", func(c *Config, v string) { c.LogLevel = v }},"
+  line = 87
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "4742d4bfe47ddb54"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: clients.json: \" + err.Error())"
+  line = 99
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "82d078c2c4de2ddd"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: clients.json clients: \" + err.Error())"
+  line = 103
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "37d3fbc9535346b0"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: MutateClient: no client \" + name)"
+  line = 164
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "4ddb8c8c56a75fe0"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: encode clients: \" + err.Error())"
+  line = 340
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "9824007bce1a8b3d"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: encode clients doc: \" + err.Error())"
+  line = 349
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
