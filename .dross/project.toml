@@ -1,0 +1,103 @@
+[project]
+  name = "adguard-reward"
+  version = "0.1.0.0"
+  created = "2026-09-19"
+  description = "Self-hosted companion for AdGuard Home that lets parents temporarily unblock services for a child's devices with one tap, with the block restored server-side when time runs out."
+
+[stack]
+  language  = "go"
+  frontend  = "svelte5-vite"
+  database  = "sqlite"
+  package_manager = "pnpm"
+
+[[stack.locked]]
+  choice = "Go backend, single static binary with embedded frontend"
+  why    = "Deploys exactly like AdGuard Home (one binary or a distroless container); scheduler + reconciler are natural in Go; no user DB so a JS full-stack framework adds nothing"
+  locked_at = "2026-09-19"
+
+[[stack.locked]]
+  choice = "modernc.org/sqlite (pure Go, no cgo)"
+  why    = "Keeps cross-compilation trivial (linux/arm64, darwin, windows via goreleaser) and the binary static"
+  locked_at = "2026-09-19"
+
+[[stack.locked]]
+  choice = "Svelte 5 + Vite SPA (not SvelteKit), built to static assets and embedded"
+  why    = "Logged-in PWA needs no SSR; Vite output embeds cleanly; avoids a Node runtime on the AdGuard host"
+  locked_at = "2026-09-19"
+
+[[stack.locked]]
+  choice = "Auth via AdGuard's own /control/login — no user table"
+  why    = "Every AdGuard user is an admin; a second credential store would only drift"
+  locked_at = "2026-09-19"
+
+[[stack.locked]]
+  choice = "AdGuard integration is API-only (no vendored code/assets); AGPL-3.0"
+  why    = "Keeps the GPL-3.0 boundary clean and AdGuard upgrades from dragging in internals"
+  locked_at = "2026-09-19"
+
+[runtime]
+  mode = "native"
+  dev_command = "make dev"
+  test_command = "make test"
+  typecheck_command = "make typecheck"
+  lint_command = "make lint"
+  format_command = "make fmt"
+  build_command = "make build"
+
+[runtime.services.app]
+  url    = "http://127.0.0.1:8080"
+  health = "/healthz"
+
+[runtime.services.web]
+  url    = "http://127.0.0.1:5173"
+  note   = "Vite dev server; proxies /api and /healthz to app"
+
+[repo]
+  layout = "single"
+  git_main_branch = "main"
+  squash_merge = false
+
+[remote]
+  url = "https://github.com/Rivil/adguard-reward"
+  provider = "github"
+  public = true
+  api_base = "https://api.github.com"
+  log_api = true
+  auth_env = "GITHUB_TOKEN"
+
+[paths]
+  backend  = "cmd/adguard-reward, internal/"
+  frontend = "web/"
+  deploy   = "deploy/"
+  docs     = "docs/"
+
+[env]
+
+[goals]
+  core_value = "A reward is one tap on a phone and the block comes back by itself — no AdGuard UI, no remembering to re-block, no drift."
+  audience = "Self-hosting parents who already run AdGuard Home as the household's parental-controls DNS and manage it from a phone."
+  non_goals = [
+    "Not a replacement for AdGuard's UI — the app touches only per-client blocked_services, a clearly-marked managed region of user_rules, and reads the query log",
+    "No per-parent roles or kid-facing UI — every AdGuard user is an admin and the app inherits that",
+    "No native mobile apps and no multi-instance support — PWA only, against a single AdGuard Home instance",
+  ]
+  differentiators = [
+    "Per-child, per-service timed grants with a server-side revert that survives restarts and parent edits in AdGuard",
+    "AI-assisted custom service discovery grounded in the child's real DNS query log (bring-your-own key)",
+    "Zero extra accounts — logs in with AdGuard credentials and runs as one static binary wherever AdGuard runs",
+  ]
+
+[[competition]]
+  name = "AdGuard Home (built-in blocked services)"
+  url  = "https://github.com/AdguardTeam/AdGuardHome"
+  note = "Per-client blocked services with a weekly schedule, but no one-tap timed unblock — issue #4620 requested a timer"
+
+[[competition]]
+  name = "Pi-hole"
+  url  = "https://pi-hole.net"
+  note = "Has a 'disable blocking for N minutes' timer, but it is instance-wide — not per device, child or service"
+
+[[competition]]
+  name = "Home Assistant AdGuard integration"
+  url  = "https://www.home-assistant.io/integrations/adguard/"
+  note = "Exposes AdGuard switches to HA automations; timed unblocks are possible but need HA plus hand-built automations per service/device"

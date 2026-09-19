@@ -1,0 +1,26 @@
+# Go
+bin/
+*.test
+*.out
+
+# Frontend
+web/node_modules/
+web/dist/
+web/.vite/
+
+# Runtime state — never commit real config or the database
+data/
+config.yaml
+*.db
+*.db-*
+
+# dross machine-local state
+.dross/state.json
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
+
+# Stray root build output (`go build ./...`)
+/adguard-reward

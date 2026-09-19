@@ -1,0 +1,15 @@
+# Example compose for running adguard-reward next to an existing AdGuard Home.
+# Copy deploy/config.example.yaml to ./data/config.yaml and fill in AdGuard credentials.
+services:
+  adguard-reward:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile
+    image: ghcr.io/rivil/adguard-reward:dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./data:/data
+    environment:
+      ADGUARD_REWARD_LISTEN: ":8080"

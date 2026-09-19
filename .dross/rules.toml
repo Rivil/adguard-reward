@@ -1,0 +1,23 @@
+[[rule]]
+  id = "r-01"
+  text = "Never vendor AdGuard Home code or assets; fetch the service catalogue and everything else via /control/* at runtime (API-only boundary, AGPL/GPL hygiene)."
+  severity = "hard"
+  created = "2026-09-19"
+
+[[rule]]
+  id = "r-02"
+  text = "Only ever rewrite AdGuard user_rules between the adguard-reward marker comments; read-modify-write under a mutex, never replace the whole list blindly."
+  severity = "hard"
+  created = "2026-09-19"
+
+[[rule]]
+  id = "r-03"
+  text = "AdGuard service credentials and AI keys come from config/env/*_file only; never log them and never commit a config.yaml with real values."
+  severity = "hard"
+  created = "2026-09-19"
+
+[[rule]]
+  id = "r-04"
+  text = "AI providers return domain lists as structured JSON; the app builds rule syntax. Regex rules are manual-entry only, never model-written."
+  severity = "hard"
+  created = "2026-09-19"

@@ -1,0 +1,18 @@
+# adguard-reward configuration. Copy to config.yaml; every key can be overridden
+# with an ADGUARD_REWARD_* environment variable (see docs/).
+listen: ":8080"
+base_url: ""
+tls:
+  cert: ""
+  key: ""
+adguard:
+  url: "http://127.0.0.1:80"
+  username: ""
+  password: ""          # or password_file: /run/secrets/adguard_password
+data_dir: "./data"
+ai:
+  provider: ""          # anthropic | openai (optional)
+  api_key: ""           # or api_key_file
+  base_url: ""
+  model: ""
+log_level: "info"
