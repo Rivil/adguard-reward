@@ -16,6 +16,7 @@ config.yaml
 
 # dross machine-local state
 .dross/state.json
+.dross/local.toml
 
 # OS / editor
 .DS_Store
