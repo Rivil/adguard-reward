@@ -25,7 +25,7 @@
 
 [[criteria]]
   id = "c-6"
-  text = "Client.SetBlockedServices(clientName, ids) writes via POST /control/clients/update as read-modify-write: the request body carries every other field of that client exactly as read and only blocked_services.ids changes, asserted against a fake AdGuard that echoes the body"
+  text = "Client.SetBlockedServices(clientName, ids) writes via POST /control/clients/update as read-modify-write: the request body carries every other field of that client exactly as read and only the blocked_services array changes, asserted against a fake AdGuard that echoes the body"
 
 [[criteria]]
   id = "c-7"
@@ -63,7 +63,7 @@
 
 [[decisions]]
   key = "adguard_api_target"
-  choice = "Types target the current AdGuard Home v0.107.x API shape only (blocked_services: {ids, schedule}); no legacy flat-array support"
+  choice = "Types target the current AdGuard Home v0.107.x API shape only (per-client blocked_services: [ids] + blocked_services_schedule; global /control/blocked_services/get: {ids, schedule}); no support for the pre-2023 legacy endpoints"
   why = "The legacy shape predates 2023 and supporting both doubles the fixture surface for no household benefit"
   locked = true
 
