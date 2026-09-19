@@ -1,0 +1,72 @@
+[phase]
+  id = "02-auth-sessions"
+  title = "Auth and sessions"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "POST /api/v1/login {username,password} calls AdGuard /control/login with the submitted credentials; 200 sets the session cookie and returns 204; wrong credentials return 401 with a generic body; AdGuard unreachable or 5xx returns 502 with a body that distinguishes it from bad credentials"
+
+[[criteria]]
+  id = "c-2"
+  text = "The session token is 256 random bits and only its SHA-256 is stored; the cookie is HttpOnly; SameSite=Strict; Path=/ and Secure when the app serves TLS; a test captures debug-level logs across login, an authenticated request and logout and asserts the raw token never appears"
+
+[[criteria]]
+  id = "c-3"
+  text = "Every /api/v1/* route except login returns 401 without a valid session cookie (/healthz stays open); POST /api/v1/logout deletes the session server-side and clears the cookie, so replaying the old cookie afterwards gets 401"
+
+[[criteria]]
+  id = "c-4"
+  text = "/api/v1/login is rate-limited per client IP and globally; once a limit is hit the app returns 429 with a Retry-After header and does not call AdGuard (the fake AdGuard records zero /control/login hits while limited)"
+
+[[criteria]]
+  id = "c-5"
+  text = "Any non-GET/HEAD/OPTIONS request under /api/v1/* (login included) without the header X-Requested-With: adguard-reward is rejected with 403 before any handler runs; the same request with the header succeeds"
+
+[[criteria]]
+  id = "c-6"
+  text = "GET /api/v1/me returns 200 {username, expires_at} for a valid session and 401 otherwise"
+
+[[criteria]]
+  id = "c-7"
+  text = "A minimal Svelte login page (username/password) shows distinct messages for wrong password and AdGuard unreachable; the SPA sends any 401 to /login and lands a logged-in parent on a placeholder home page"
+
+[[criteria]]
+  id = "c-8"
+  text = "Every /api/v1/login attempt emits one structured info log line {event: login, username, ip, outcome: ok|bad_credentials|adguard_unreachable|rate_limited}; a test asserts the line is present per outcome and that the password is absent"
+
+[[criteria]]
+  id = "c-9"
+  text = "GET /api/v1/sessions lists the caller's sessions {id, created_at, last_seen_at, current}; DELETE /api/v1/sessions/{id} revokes one and POST /api/v1/sessions/revoke-all revokes every session except the caller's; a revoked cookie gets 401 on its next request (API only; the settings UI lands in phase 05)"
+
+[[criteria]]
+  id = "c-10"
+  text = "Every /api/v1/* response carries Cache-Control: no-store, asserted on at least one authenticated and one 401 response"
+
+[[criteria]]
+  id = "c-11"
+  text = "When an IP trips its per-IP limit, the lockout window doubles on each further trip (1m, 2m, 4m ... capped at 1h) and resets after 1h without a trip; Retry-After reflects the current window; a fake-clock test asserts the doubling and the reset; the global limit stays flat"
+
+[[decisions]]
+  key = "session_storage"
+  choice = "Sessions live in SQLite; this phase founds internal/store (modernc.org/sqlite, migrations) with a sessions table"
+  why = "The app is restarted mid-grant by design (phase 04) and a restart must not log every phone out; PLAN.md puts device sessions in SQLite and phase 03 needs the store anyway"
+  locked = true
+
+[[decisions]]
+  key = "session_lifetime"
+  choice = "30 days sliding: expiry is pushed out on every authenticated request; a session unused for 30 days expires"
+  why = "PIN unlock is M2, so this is the phone's only persistence; a phone in daily use never re-logs in while a lost phone's session dies within a month"
+  locked = true
+
+[[decisions]]
+  key = "rate_limit_thresholds"
+  choice = "Per IP: 5 failed logins per minute (base window, escalated per c-11); global: 20 failed logins per minute, flat. Only bad-credential outcomes consume budget; successes and rate-limited rejections do not"
+  why = "Counting failures only means a family of phones cannot lock each other out with legitimate logins; the global cap stops the app being used to spray AdGuard"
+  locked = true
+
+[[decisions]]
+  key = "client_ip_source"
+  choice = "Client IP is the TCP peer address by default and X-Forwarded-For is ignored; a new config key trusted_proxies (list of CIDRs) enables using the last untrusted hop of X-Forwarded-For when the peer is in the list"
+  why = "PLAN.md makes no assumptions about reverse proxies; safe by default against spoofing, and a proxied deployment gets a real per-IP limit once it opts in"
+  locked = true
