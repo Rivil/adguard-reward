@@ -16,6 +16,7 @@ config.yaml
 
 # dross machine-local state
 .dross/state.json
+.dross/local.toml
 
 # OS / editor
 .DS_Store
@@ -24,3 +25,6 @@ config.yaml
 
 # Stray root build output (`go build ./...`)
 /adguard-reward
+
+# mutation-tool raw reports (dross verify regenerates these)
+reports/

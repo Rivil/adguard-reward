@@ -1,5 +1,15 @@
-# adguard-reward configuration. Copy to config.yaml; every key can be overridden
-# with an ADGUARD_REWARD_* environment variable (see docs/).
+# adguard-reward configuration. Copy to config.yaml next to the binary (or pass
+# --config <path>).
+#
+# Every key can be overridden by an environment variable: ADGUARD_REWARD_ plus
+# the key path joined with _, upper-cased. adguard.password_file becomes
+# ADGUARD_REWARD_ADGUARD_PASSWORD_FILE, log_level becomes
+# ADGUARD_REWARD_LOG_LEVEL. Env wins over this file; a variable that is set but
+# empty overrides to empty rather than falling back to the file.
+#
+# Secrets may come from a file instead of inline: adguard.password_file and
+# ai.api_key_file read the secret from that path (relative to this file). Set
+# either the inline key or the _file key, not both.
 listen: ":8080"
 base_url: ""
 tls:

@@ -1,0 +1,121 @@
+{
+  "phase": "01-config-adguard-client",
+  "pr": 1,
+  "base": "milestone/v0.1",
+  "base_commit": "381be5cedc7c313b5ae5c8f8da101fb2829e6732",
+  "status": "shipped",
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/config/config.go",
+        "internal/config/secret.go",
+        "internal/config/config_test.go",
+        "internal/config/testdata/full.yaml",
+        "go.mod",
+        "go.sum"
+      ],
+      "commit": "f7db57d",
+      "completed_at": "2026-09-19T18:27:40.582059Z",
+      "landmarks": [
+        {
+          "feature": "configuration loading",
+          "symbol": "config.Load",
+          "loc": "internal/config/config.go:105",
+          "what": "YAML + ADGUARD_REWARD_* env (defaults \u003c file \u003c env; blank env overrides) with *_file secret indirection and a Secret type that redacts under fmt/json/slog"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go",
+        "internal/adguard/adguardtest/testdata/clients.json",
+        "internal/adguard/adguardtest/testdata/blocked_services_get.json",
+        "internal/adguard/adguardtest/testdata/blocked_services_all.json",
+        "internal/adguard/adguardtest/testdata/status.json"
+      ],
+      "commit": "5e65f87",
+      "completed_at": "2026-09-19T18:30:52.90903Z",
+      "landmarks": [
+        {
+          "feature": "adguard test double",
+          "symbol": "adguardtest.New",
+          "loc": "internal/adguard/adguardtest/server.go:79",
+          "what": "in-process fake of /control/* (basic auth, login, clients read+update echo, status, catalogue) with v0.107.x fixtures and SetStatus/Hang/SetAuth/MutateClient failure knobs"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/adguard/client.go",
+        "internal/adguard/errors.go",
+        "internal/adguard/client_test.go"
+      ],
+      "commit": "84c1bc9",
+      "completed_at": "2026-09-19T18:33:07.539662Z",
+      "landmarks": [
+        {
+          "feature": "adguard api client",
+          "symbol": "adguard.New",
+          "loc": "internal/adguard/client.go:60",
+          "what": "basic-auth JSON client for /control/* with ErrBadCredentials (401/403; Login also 400) / ErrRateLimited (429) / *StatusError vocabulary, no-redirect, bounded error snippets, secret-free debug logging; Login and Status"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/adguard/clients.go",
+        "internal/adguard/services.go",
+        "internal/adguard/clients_test.go",
+        "internal/adguard/services_test.go",
+        "internal/adguard/client.go"
+      ],
+      "commit": "1513504",
+      "completed_at": "2026-09-19T18:39:33.459121Z",
+      "landmarks": [
+        {
+          "feature": "per-client blocked services",
+          "symbol": "Client.SetBlockedServices",
+          "loc": "internal/adguard/clients.go:113",
+          "what": "Clients() typed read of persistent clients + global list keeping raw objects; SetBlockedServices() mutex-serialised fresh-read RMW that rewrites only blocked_services (sorted, deduped, never null); Services() runtime catalogue fetch"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/health/health.go",
+        "internal/health/health_test.go",
+        "Makefile"
+      ],
+      "commit": "1c168a4",
+      "completed_at": "2026-09-19T18:34:59.478517Z",
+      "landmarks": [
+        {
+          "feature": "health endpoint",
+          "symbol": "health.New",
+          "loc": "internal/health/health.go:53",
+          "what": "periodic /control/status prober classifying ok|unauthorized|unreachable under an RWMutex; /healthz always 200 JSON {status adguard adguard_version version} from stored state; make test runs -race"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "Makefile",
+        "deploy/config.example.yaml",
+        "deploy/Dockerfile"
+      ],
+      "commit": "3951cf9",
+      "completed_at": "2026-09-19T18:47:56.431051Z",
+      "landmarks": [
+        {
+          "feature": "app startup",
+          "symbol": "run",
+          "loc": "cmd/adguard-reward/main.go:38",
+          "what": "--config flag (default beside binary) → config.Load → slog at cfg level → adguard.New → health probe (bad credential fatal, unreachable logged) → GET /healthz → serve with graceful shutdown; version bound via -X main.version"
+        }
+      ]
+    }
+  }
+}
