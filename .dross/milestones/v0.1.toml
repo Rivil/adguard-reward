@@ -1,0 +1,12 @@
+phases = ["01-config-adguard-client", "02-auth-sessions", "03-children-and-blocked-view", "04-grants-scheduler-reconciler", "05-phone-ui-buttons-pwa", "06-deploy-nora"]
+
+[milestone]
+  version = "v0.1"
+  title = "Reward loop"
+  status = "active"
+  started = "2026-09-19"
+  base = "main"
+
+[scope]
+  success_criteria = ["A parent logs in with their AdGuard Home username/password; a wrong password is rejected and /api/v1/login is rate-limited per IP.", "A parent can group AdGuard persistent clients into named children and see, per child, which built-in services are currently blocked — read live from AdGuard, not cached.", "Tapping a button unblocks a built-in service for every one of the child's clients within 5 s, and the block is restored automatically at expiry — including when the server is restarted mid-grant, and when a parent re-blocks it in AdGuard's UI during the grant (the reconciler re-applies the unblock).", "The phone UI shows every active grant with a live countdown and lets a parent extend or end it early; buttons (child, service, duration, label) are editable via a settings form and persist across restarts.", "A single static binary runs on nora under systemd (DynamicUser, StateDirectory) from a config.yaml, is installable as a PWA from a phone, and the household uses it for real rewards."]
+  non_goals = ["No custom services or managed user_rules region — built-in AdGuard catalogue services only (M2)", "No permanent block/unblock toggles, PIN unlock, grant history, or JSON import/export — grants only (M2)", "No AI service discovery — no provider adapters or query-log candidate gathering (M3)", "No Docker/GHCR release, goreleaser or CI — binary + systemd on nora only (M4)"]
