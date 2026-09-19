@@ -1,0 +1,101 @@
+{
+  "clients": [
+    {
+      "name": "Kid phone",
+      "ids": ["aa:bb:cc:dd:ee:01", "192.168.1.50"],
+      "use_global_settings": true,
+      "filtering_enabled": false,
+      "parental_enabled": false,
+      "safebrowsing_enabled": false,
+      "safe_search": {
+        "enabled": true,
+        "bing": true,
+        "duckduckgo": true,
+        "ecosia": true,
+        "google": true,
+        "pixabay": true,
+        "yandex": true,
+        "youtube": true
+      },
+      "use_global_blocked_services": false,
+      "blocked_services_schedule": {
+        "time_zone": "Local"
+      },
+      "blocked_services": ["youtube", "tiktok"],
+      "upstreams": [],
+      "upstreams_cache_size": null,
+      "upstreams_cache_enabled": false,
+      "tags": ["device_phone", "user_child"],
+      "ignore_querylog": false,
+      "ignore_statistics": false,
+      "future_field": 42
+    },
+    {
+      "name": "Kid tablet",
+      "ids": ["aa:bb:cc:dd:ee:02"],
+      "use_global_settings": true,
+      "filtering_enabled": false,
+      "parental_enabled": false,
+      "safebrowsing_enabled": false,
+      "safe_search": {
+        "enabled": false,
+        "bing": false,
+        "duckduckgo": false,
+        "ecosia": false,
+        "google": false,
+        "pixabay": false,
+        "yandex": false,
+        "youtube": false
+      },
+      "use_global_blocked_services": true,
+      "blocked_services_schedule": {
+        "time_zone": "Local"
+      },
+      "blocked_services": [],
+      "upstreams": [],
+      "upstreams_cache_size": 0,
+      "upstreams_cache_enabled": false,
+      "tags": ["device_tablet"],
+      "ignore_querylog": false,
+      "ignore_statistics": false
+    },
+    {
+      "name": "Old laptop",
+      "ids": ["192.168.1.77"],
+      "use_global_settings": true,
+      "filtering_enabled": false,
+      "parental_enabled": false,
+      "safebrowsing_enabled": false,
+      "safe_search": {
+        "enabled": false,
+        "bing": false,
+        "duckduckgo": false,
+        "ecosia": false,
+        "google": false,
+        "pixabay": false,
+        "yandex": false,
+        "youtube": false
+      },
+      "use_global_blocked_services": false,
+      "blocked_services_schedule": {
+        "time_zone": "Local"
+      },
+      "blocked_services": null,
+      "upstreams": [],
+      "upstreams_cache_size": 0,
+      "upstreams_cache_enabled": false,
+      "tags": [],
+      "ignore_querylog": false,
+      "ignore_statistics": false
+    }
+  ],
+  "auto_clients": [
+    {
+      "name": "printer",
+      "ip": "192.168.1.9",
+      "source": "ARP",
+      "whois_info": {}
+    }
+  ],
+  "supported_tags": ["device_phone", "device_tablet", "device_pc", "user_child", "user_admin"]
+}
