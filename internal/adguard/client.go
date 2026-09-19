@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 )
 
@@ -30,6 +31,10 @@ type Client struct {
 	password string
 	http     *http.Client
 	log      *slog.Logger
+
+	// rmw serialises SetBlockedServices' read-modify-write so two grants
+	// on the same client cannot clobber each other's write.
+	rmw sync.Mutex
 }
 
 // Option configures a Client.
