@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+// Stryker disable all: test sources are not mutation targets
 import { fireEvent, render, screen } from '@testing-library/svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Login from './Login.svelte'

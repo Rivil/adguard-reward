@@ -52,6 +52,12 @@
   url    = "http://127.0.0.1:5173"
   note   = "Vite dev server; proxies /api and /healthz to app"
 
+[mutation]
+  adapters = ["gremlins", "stryker"]
+
+[mutation.stryker]
+  workdir = "web"
+
 [repo]
   layout = "single"
   git_main_branch = "main"

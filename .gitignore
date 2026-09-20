@@ -31,3 +31,5 @@ reports/
 
 # dross handoff — local working memory, not tracked
 .dross/handoff.md
+# stryker sandbox (dross verify, web/)
+.stryker-tmp/

@@ -1,3 +1,4 @@
+// Stryker disable all: test sources are not mutation targets
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, CSRF_HEADER, CSRF_VALUE, login, me, messageFor, request, setOnUnauthorized } from './api'
 
