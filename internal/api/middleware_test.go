@@ -99,7 +99,10 @@ func TestNoStore(t *testing.T) {
 	}{
 		{"csrf 403", http.MethodPost, "/api/v1/x", nil, http.StatusForbidden},
 		{"unmounted path", http.MethodGet, "/api/v1/unmounted", nil, 0},
-		{"405 from the mux", http.MethodPost, "/api/v1/x", withHeader, http.StatusMethodNotAllowed},
+		// The mux would answer 405 here, but the /api/v1/ catch-all (t-9)
+		// claims every unmatched method+path and answers 401 anonymously, so
+		// only the header is asserted.
+		{"wrong method on a mounted path", http.MethodPost, "/api/v1/x", withHeader, 0},
 		{"200 stub", http.MethodGet, "/api/v1/x", nil, http.StatusOK},
 	}
 	for _, c := range cases {
