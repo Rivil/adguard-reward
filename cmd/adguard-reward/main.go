@@ -12,12 +12,17 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
+	"github.com/Rivil/adguard-reward/internal/api"
+	"github.com/Rivil/adguard-reward/internal/auth"
 	"github.com/Rivil/adguard-reward/internal/config"
 	"github.com/Rivil/adguard-reward/internal/health"
+	"github.com/Rivil/adguard-reward/internal/ratelimit"
+	"github.com/Rivil/adguard-reward/internal/store"
 )
 
 // version is bound at build time via -ldflags '-X main.version=...'.
@@ -25,6 +30,10 @@ var version = "dev"
 
 // probeInterval is how often the health prober re-checks AdGuard after startup.
 const probeInterval = 60 * time.Second
+
+// sweepInterval is how often expired sessions are deleted. A var, not a
+// const, so tests can lower it.
+var sweepInterval = time.Hour
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -75,8 +84,36 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 		return 1
 	}
 
+	st, err := store.Open(cfg.DataDir, log)
+	if err != nil {
+		log.Error("store", "err", err) // err names data_dir
+		return 1
+	}
+	defer func() { _ = st.Close() }()
+
+	// The session cookie is Secure whenever the browser reaches us over
+	// TLS: our own listener, or a proxy announced through base_url.
+	tlsOn := cfg.TLS.Cert != "" // config.validate guarantees both-or-neither
+	secure := tlsOn || strings.HasPrefix(cfg.BaseURL, "https://")
+	sessions := auth.New(st, auth.Options{
+		Secure:      secure,
+		Log:         log,
+		ErrorWriter: api.UnauthorizedWriter,
+	})
+	apiHandler := api.New(api.Deps{
+		AdGuard:  client,
+		ClientIP: api.ClientIP(cfg.TrustedProxyNets()),
+		Log:      log,
+		Auth:     sessions,
+		Limiter:  ratelimit.New(ratelimit.Defaults()),
+		Sessions: st,
+	}).Handler()
+
+	// /healthz stays on the plain mux, outside the API chain: it is
+	// liveness for systemd and Docker, so no cookie and no CSRF header.
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", prober.Handler())
+	mux.Handle("/api/v1/", apiHandler)
 
 	srv := &http.Server{
 		Handler:           mux,
@@ -90,6 +127,7 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 	}
 
 	go prober.Run(ctx, probeInterval)
+	go sessions.RunSweeper(ctx, sweepInterval)
 
 	go func() {
 		<-ctx.Done()
@@ -98,11 +136,16 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 		_ = srv.Shutdown(shutdownCtx)
 	}()
 
-	log.Info("listening", "addr", ln.Addr().String(), "version", version)
+	log.Info("listening", "addr", ln.Addr().String(), "version", version, "tls", tlsOn, "secure_cookie", secure)
 	if onListen != nil {
 		onListen(ln.Addr().String())
 	}
-	if err := srv.Serve(ln); err != nil && !errors.Is(err, http.ErrServerClosed) {
+	if tlsOn {
+		err = srv.ServeTLS(ln, cfg.TLS.Cert, cfg.TLS.Key)
+	} else {
+		err = srv.Serve(ln)
+	}
+	if err != nil && !errors.Is(err, http.ErrServerClosed) {
 		log.Error("server exited", "err", err)
 		return 1
 	}

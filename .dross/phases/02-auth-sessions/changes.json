@@ -1,0 +1,250 @@
+{
+  "phase": "02-auth-sessions",
+  "pr": 2,
+  "base": "milestone/v0.1",
+  "base_commit": "ecce6edc7831904bb79f23d8c0fd3df0c84627ab",
+  "status": "shipped",
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/store/store.go",
+        "internal/store/migrate.go",
+        "internal/store/migrations/0001_sessions.sql",
+        "internal/store/store_test.go",
+        "go.mod",
+        "go.sum"
+      ],
+      "commit": "0a98a31",
+      "completed_at": "2026-09-20T10:33:21.302227Z",
+      "landmarks": [
+        {
+          "feature": "sqlite store",
+          "symbol": "store.Open",
+          "loc": "internal/store/store.go:36",
+          "what": "one-connection WAL SQLite under data_dir (0700/0600) with embedded ordered per-tx migrations and the sessions table"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "internal/api/sessions.go",
+        "internal/api/sessions_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "99d5eac",
+      "completed_at": "2026-09-20T10:53:02.256272Z",
+      "landmarks": [
+        {
+          "feature": "session management API",
+          "symbol": "api.handleSessionDelete",
+          "loc": "internal/api/sessions.go:44",
+          "what": "list the caller's sessions with a current flag, revoke one (foreign ids indistinguishable from unknown), revoke all others"
+        }
+      ]
+    },
+    "t-11": {
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/api/errors.go",
+        "internal/api/login_test.go",
+        "internal/api/middleware_test.go"
+      ],
+      "commit": "e58f0e9",
+      "completed_at": "2026-09-20T11:02:58.239822Z",
+      "notes": "deviation approved: api.UnauthorizedWriter exported for main",
+      "landmarks": [
+        {
+          "feature": "app wiring",
+          "symbol": "run",
+          "loc": "cmd/adguard-reward/main.go:43",
+          "what": "main opens the store, builds limiter + session manager (Secure from TLS or https base_url), mounts /api/v1 behind the hardening chain, runs the sweeper and serves TLS when configured"
+        }
+      ]
+    },
+    "t-12": {
+      "files": [
+        "web/package.json",
+        "web/pnpm-lock.yaml",
+        "web/vite.config.ts",
+        "web/src/lib/Login.test.ts",
+        "web/src/App.test.ts"
+      ],
+      "commit": "16596f8",
+      "completed_at": "2026-09-20T11:51:37.719354Z",
+      "landmarks": [
+        {
+          "feature": "login page",
+          "symbol": "Login.test.ts 'shows distinct messages'",
+          "loc": "web/src/lib/Login.test.ts:43",
+          "what": "DOM-level tests (testing-library/svelte + jsdom) rendering Login/App: distinct error messages per code, 401 -\u003e /login via default handler, logged-in landing on Home, log out"
+        }
+      ]
+    },
+    "t-13": {
+      "files": [
+        "web/src/lib/api.test.ts",
+        "web/src/lib/Login.test.ts",
+        "web/src/App.test.ts"
+      ],
+      "commit": "6e4b3a1",
+      "completed_at": "2026-09-20T13:29:42.918337Z",
+      "landmarks": [
+        {
+          "feature": "SPA login and session routing",
+          "symbol": "App.test 'a 401 after login returns to the login page'",
+          "loc": "web/src/App.test.ts:73",
+          "what": "DOM+unit tests pin the per-code login messages, HTTP-status/envelope fallbacks, logout POST, the default 401 handler after login and back/forward routing"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/ratelimit/limiter.go",
+        "internal/ratelimit/limiter_test.go"
+      ],
+      "commit": "6835089",
+      "completed_at": "2026-09-20T10:36:05.428203Z",
+      "landmarks": [
+        {
+          "feature": "login rate limiting",
+          "symbol": "ratelimit.Limiter",
+          "loc": "internal/ratelimit/limiter.go:63",
+          "what": "per-IP failure budget with doubling lockout (1m..1h; reset 1h after lockout end) plus flat global cap; failures-only by construction"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/config/config.go",
+        "internal/config/config_test.go",
+        "internal/config/testdata/full.yaml",
+        "deploy/config.example.yaml",
+        "internal/api/clientip.go",
+        "internal/api/clientip_test.go"
+      ],
+      "commit": "a7b630a",
+      "completed_at": "2026-09-20T10:38:30.196285Z",
+      "landmarks": [
+        {
+          "feature": "client IP resolution",
+          "symbol": "api.ClientIP",
+          "loc": "internal/api/clientip.go:19",
+          "what": "peer-by-default client IP with opt-in X-Forwarded-For via trusted_proxies CIDRs; config also enforces tls.cert/tls.key both-or-neither"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/auth/token.go",
+        "internal/auth/auth.go",
+        "internal/auth/middleware.go",
+        "internal/auth/auth_test.go"
+      ],
+      "commit": "c4a55d6",
+      "completed_at": "2026-09-20T10:41:20.014946Z",
+      "landmarks": [
+        {
+          "feature": "session auth",
+          "symbol": "auth.Manager",
+          "loc": "internal/auth/auth.go:91",
+          "what": "hash-only 256-bit session tokens in an HttpOnly SameSite=Strict cookie with 30-day sliding expiry; RequireSession middleware refreshes or clears and never logs the token"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/api/api.go",
+        "internal/api/middleware.go",
+        "internal/api/errors.go",
+        "internal/api/middleware_test.go"
+      ],
+      "commit": "fbbf1fc",
+      "completed_at": "2026-09-20T10:42:34.300278Z",
+      "landmarks": [
+        {
+          "feature": "API request hardening",
+          "symbol": "api.Handler",
+          "loc": "internal/api/api.go:52",
+          "what": "/api/v1 chain noStore(csrf(mux)): every response no-store and every non-safe method needs X-Requested-With: adguard-reward before routing; shared JSON error envelope"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "internal/store/sessions.go",
+        "internal/store/sessions_test.go"
+      ],
+      "commit": "5bdcc5f",
+      "completed_at": "2026-09-20T10:43:46.603352Z",
+      "landmarks": [
+        {
+          "feature": "session persistence",
+          "symbol": "store.Store.ByTokenHash",
+          "loc": "internal/store/sessions.go:14",
+          "what": "SQLite implementation of auth.SessionStore (insert/lookup by hash/touch/delete/list/revoke-one/revoke-others/sweep) so sessions survive restarts"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/package.json",
+        "web/pnpm-lock.yaml",
+        "web/vite.config.ts",
+        "Makefile"
+      ],
+      "commit": "9746668",
+      "completed_at": "2026-09-20T10:45:52.419979Z",
+      "landmarks": [
+        {
+          "feature": "SPA API client",
+          "symbol": "request",
+          "loc": "web/src/lib/api.ts:92",
+          "what": "single fetch wrapper adding the CSRF header and same-origin cookie, ApiError envelope with retryAfter, 401-to-login routing, and messageFor(); vitest wired into make test"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "web/src/App.svelte",
+        "web/src/lib/Login.svelte",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Counter.svelte",
+        "web/src/main.ts",
+        "web/src/lib/api.ts"
+      ],
+      "commit": "9dedea1",
+      "completed_at": "2026-09-20T11:05:01.960263Z",
+      "notes": "manual gate run after t-11 against a stub AdGuard (status+login) via Vite dev server + Playwright: wrong password -\u003e 'Wrong username or password'; stub stopped -\u003e 'Can't reach AdGuard Home'; correct login -\u003e Home 'Signed in as mum'; logout -\u003e /login. Not run against a real AdGuard Home.",
+      "landmarks": [
+        {
+          "feature": "login page",
+          "symbol": "Login",
+          "loc": "web/src/lib/Login.svelte:1",
+          "what": "Svelte 5 login form with distinct wrong-password / AdGuard-unreachable / rate-limited messages, App shell routing 401 to /login and a placeholder Home with logout"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "internal/api/login.go",
+        "internal/api/login_test.go",
+        "internal/api/api.go",
+        "internal/api/middleware_test.go"
+      ],
+      "commit": "f758129",
+      "completed_at": "2026-09-20T10:51:41.159027Z",
+      "notes": "deviation approved: t-5 TestNoStore 405 case relaxed to header-only because the catch-all claims wrong-method requests",
+      "landmarks": [
+        {
+          "feature": "login endpoint",
+          "symbol": "api.handleLogin",
+          "loc": "internal/api/login.go:40",
+          "what": "POST /login proxies credentials to AdGuard /control/login behind a double-checked rate limiter and single in-flight slot; 401/502 split; one structured login event per attempt; /logout revokes server-side; /me; anonymous catch-all is 401"
+        }
+      ]
+    }
+  }
+}

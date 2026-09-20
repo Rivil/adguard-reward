@@ -1,6 +1,6 @@
 [project]
   name = "adguard-reward"
-  version = "0.1.1.0"
+  version = "0.1.2.0"
   created = "2026-09-19"
   description = "Self-hosted companion for AdGuard Home that lets parents temporarily unblock services for a child's devices with one tap, with the block restored server-side when time runs out."
 
@@ -51,6 +51,12 @@
 [runtime.services.web]
   url    = "http://127.0.0.1:5173"
   note   = "Vite dev server; proxies /api and /healthz to app"
+
+[mutation]
+  adapters = ["gremlins", "stryker"]
+
+[mutation.stryker]
+  workdir = "web"
 
 [repo]
   layout = "single"

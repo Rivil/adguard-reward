@@ -50,13 +50,14 @@ func TestLoad_Full(t *testing.T) {
 		t.Fatal(err)
 	}
 	want := &Config{
-		Listen:   "127.0.0.1:9090",
-		BaseURL:  "https://reward.example",
-		TLS:      TLS{Cert: "/etc/ssl/reward.crt", Key: "/etc/ssl/reward.key"},
-		AdGuard:  AdGuard{URL: "http://127.0.0.1:3000", Username: "svc", Password: "yamlpw"},
-		DataDir:  "/var/lib/reward",
-		AI:       AI{Provider: "anthropic", APIKey: "sk-yaml", BaseURL: "https://api.example", Model: "claude-sonnet-5"},
-		LogLevel: "debug",
+		Listen:         "127.0.0.1:9090",
+		BaseURL:        "https://reward.example",
+		TLS:            TLS{Cert: "/etc/ssl/reward.crt", Key: "/etc/ssl/reward.key"},
+		TrustedProxies: []string{"10.0.0.0/8", "::1"},
+		AdGuard:        AdGuard{URL: "http://127.0.0.1:3000", Username: "svc", Password: "yamlpw"},
+		DataDir:        "/var/lib/reward",
+		AI:             AI{Provider: "anthropic", APIKey: "sk-yaml", BaseURL: "https://api.example", Model: "claude-sonnet-5"},
+		LogLevel:       "debug",
 	}
 	if !reflect.DeepEqual(cfg, want) {
 		t.Fatalf("Load(full.yaml) mismatch\n got: %#v\nwant: %#v", cfg, want)
@@ -117,6 +118,7 @@ func TestEnvTable(t *testing.T) {
 		"base_url":              "ADGUARD_REWARD_BASE_URL",
 		"tls.cert":              "ADGUARD_REWARD_TLS_CERT",
 		"tls.key":               "ADGUARD_REWARD_TLS_KEY",
+		"trusted_proxies":       "ADGUARD_REWARD_TRUSTED_PROXIES",
 		"adguard.url":           "ADGUARD_REWARD_ADGUARD_URL",
 		"adguard.username":      "ADGUARD_REWARD_ADGUARD_USERNAME",
 		"adguard.password":      "ADGUARD_REWARD_ADGUARD_PASSWORD",
@@ -166,6 +168,7 @@ func TestEnvTable(t *testing.T) {
 		"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": "",
 		"ADGUARD_REWARD_AI_API_KEY_FILE":       "",
 		"ADGUARD_REWARD_LOG_LEVEL":             "warn",
+		"ADGUARD_REWARD_TRUSTED_PROXIES":       "", // "v:trusted_proxies" is not a CIDR
 	})))
 	if err != nil {
 		t.Fatal(err)
@@ -389,5 +392,76 @@ func TestSlogLevel(t *testing.T) {
 	_, err = Load(base, false, env(mergeMaps(requiredEnv, map[string]string{"ADGUARD_REWARD_LOG_LEVEL": "bogus"})))
 	if err == nil || !strings.Contains(err.Error(), "log_level") {
 		t.Fatalf("bogus level: err = %v, want error naming log_level", err)
+	}
+}
+
+func TestLoad_TrustedProxies(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := writeFile(t, dir, "c.yaml", minimalYAML+`trusted_proxies: ["10.0.0.0/8", "::1"]
+`)
+
+	cfg, err := Load(cfgPath, true, noEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fmt.Sprint(cfg.TrustedProxyNets()); got != "[10.0.0.0/8 ::1/128]" {
+		t.Fatalf("yaml list: TrustedProxyNets = %s", got)
+	}
+
+	cfg, err = Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_TRUSTED_PROXIES": "10.0.0.1, 192.168.0.0/16"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fmt.Sprint(cfg.TrustedProxyNets()); got != "[10.0.0.1/32 192.168.0.0/16]" {
+		t.Fatalf("env list: TrustedProxyNets = %s", got)
+	}
+
+	cfg, err = Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_TRUSTED_PROXIES": ""}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.TrustedProxies) != 0 || len(cfg.TrustedProxyNets()) != 0 {
+		t.Fatalf("empty env did not override yaml: %v", cfg.TrustedProxies)
+	}
+}
+
+func TestLoad_TrustedProxiesInvalid(t *testing.T) {
+	for _, bad := range []string{"10.0.0.0/33", "proxy"} {
+		_, err := Load(filepath.Join(t.TempDir(), "absent.yaml"), false,
+			env(mergeMaps(requiredEnv, map[string]string{"ADGUARD_REWARD_TRUSTED_PROXIES": "10.0.0.0/8," + bad})))
+		if err == nil || !strings.Contains(err.Error(), "trusted_proxies") || !strings.Contains(err.Error(), bad) {
+			t.Errorf("entry %q: err = %v, want error naming trusted_proxies and the entry", bad, err)
+		}
+	}
+}
+
+func TestLoad_TLSPair(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "absent.yaml")
+	for _, half := range []map[string]string{
+		{"ADGUARD_REWARD_TLS_CERT": "/c.pem"},
+		{"ADGUARD_REWARD_TLS_KEY": "/k.pem"},
+	} {
+		_, err := Load(base, false, env(mergeMaps(requiredEnv, half)))
+		if err == nil || !strings.Contains(err.Error(), "tls.cert") || !strings.Contains(err.Error(), "tls.key") {
+			t.Errorf("%v: err = %v, want error naming tls.cert and tls.key", half, err)
+		}
+	}
+	for _, both := range []map[string]string{
+		{"ADGUARD_REWARD_TLS_CERT": "/c.pem", "ADGUARD_REWARD_TLS_KEY": "/k.pem"},
+		{},
+	} {
+		if _, err := Load(base, false, env(mergeMaps(requiredEnv, both))); err != nil {
+			t.Errorf("%v: unexpected err %v", both, err)
+		}
+	}
+}
+
+func TestExampleConfigLoads(t *testing.T) {
+	cfg, err := Load("../../deploy/config.example.yaml", true, env(requiredEnv))
+	if err != nil {
+		t.Fatalf("example config does not load: %v", err)
+	}
+	if n := cfg.TrustedProxyNets(); len(n) != 0 {
+		t.Fatalf("example trusted_proxies = %v, want empty", n)
 	}
 }

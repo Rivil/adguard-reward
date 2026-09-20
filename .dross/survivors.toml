@@ -10,6 +10,22 @@
   name = "string-concat-panic"
   reason = "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
 
+[[category]]
+  name = "string-concat-panic-embed"
+  reason = "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+
+[[category]]
+  name = "stryker-node-env-guard"
+  reason = "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
+
+[[category]]
+  name = "optional-chain-inside-try"
+  reason = "body?.x -> body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+
+[[category]]
+  name = "stryker-self-config"
+  reason = "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -243,3 +259,273 @@
   line = 349
   category = "string-concat-panic"
   accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "1fa25d4f40ebe7f5"
+  file = "internal/api/login.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 79
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "793b75f25044151d"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil && ctx.Err() == nil:"
+  line = 240
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "0231579a43c2cb95"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case n > 0:"
+  line = 242
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2cf50219723c390a"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case n > 0:"
+  line = 242
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "98794572c2e565fb"
+  file = "internal/auth/middleware.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 35
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "0b343badf918d34d"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"trusted_proxies\", EnvPrefix + \"TRUSTED_PROXIES\", func(c *Config, v string) { c.TrustedProxies = splitList(v) }},"
+  line = 82
+  category = "string-concat-initializer"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "a8785d915cdc6357"
+  file = "internal/store/migrate.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"store: embedded migrations dir missing: \" + err.Error())"
+  line = 25
+  category = "string-concat-panic-embed"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "3d1decd06dce2e38"
+  file = "internal/store/migrate.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"store: list embedded migrations: \" + err.Error())"
+  line = 35
+  category = "string-concat-panic-embed"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "f1b531569dc325b5"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "this.name = 'ApiError'"
+  line = 19
+  reason = "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "43d59fe19b1fbacc"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return typeof location === 'undefined' ? '/' : location.pathname"
+  line = 35
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d27f549707e36026"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "return typeof location === 'undefined' ? '/' : location.pathname"
+  line = 35
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d335c2ed61ddcc43"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (typeof history !== 'undefined' && currentPath() !== path) {"
+  line = 44
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "94cf19252c2aef02"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "history.pushState(null, '', path)"
+  line = 45
+  reason = "history.pushState title argument is ignored by every browser per the HTML spec; no observable behaviour"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "4e298254432a9b95"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (body !== undefined) {"
+  line = 98
+  reason = "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2bd6098940f4db18"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.error === 'string') code = body.error"
+  line = 75
+  category = "optional-chain-inside-try"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "ab063f347019f075"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.message === 'string') message = body.message"
+  line = 76
+  category = "optional-chain-inside-try"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "5ce873c89415142e"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "mutate: ['src/**/*.{ts,svelte}', '!src/**/*.test.ts', '!src/vite-env.d.ts'],"
+  line = 8
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "6c0229c7a791edfa"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "export default {"
+  line = 4
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "462f570872709404"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "testRunner: 'vitest',"
+  line = 5
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2462f1b076b4e965"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "plugins: ['@stryker-mutator/vitest-runner'],"
+  line = 6
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "25b8291a7513cacc"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "plugins: ['@stryker-mutator/vitest-runner'],"
+  line = 6
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "b0a1b69fe8d0769a"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "vitest: { configFile: 'vite.config.ts' },"
+  line = 7
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "9dada2f0e50f7800"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "vitest: { configFile: 'vite.config.ts' },"
+  line = 7
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "b5d644fad38137bd"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "mutate: ['src/**/*.{ts,svelte}', '!src/**/*.test.ts', '!src/vite-env.d.ts'],"
+  line = 8
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "fd2e398a8266c702"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "reporters: ['json', 'progress'],"
+  line = 9
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "4bb4543da79a4d17"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "reporters: ['json', 'progress'],"
+  line = 9
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "16a8190aa46b7ac9"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "jsonReporter: { fileName: 'reports/mutation/mutation.json' },"
+  line = 10
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "831fcd513b94f817"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "jsonReporter: { fileName: 'reports/mutation/mutation.json' },"
+  line = 10
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "fa6e2382c0a398ac"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "tempDirName: '.stryker-tmp',"
+  line = 11
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "158d7de022076122"
+  file = "web/stryker.config.mjs"
+  op = "BooleanLiteral"
+  text = "ignoreStatic: true,"
+  line = 12
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"

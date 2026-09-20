@@ -15,6 +15,9 @@ base_url: ""
 tls:
   cert: ""
   key: ""
+# CIDRs (or bare IPs) of reverse proxies whose X-Forwarded-For is trusted for
+# the client IP; empty means the header is ignored and the TCP peer is used.
+trusted_proxies: []
 adguard:
   url: "http://127.0.0.1:80"
   username: ""
