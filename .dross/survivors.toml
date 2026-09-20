@@ -14,6 +14,10 @@
   name = "string-concat-panic-embed"
   reason = "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
 
+[[category]]
+  name = "stryker-node-env-guard"
+  reason = "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -318,4 +322,58 @@
   text = "panic(\"store: list embedded migrations: \" + err.Error())"
   line = 35
   category = "string-concat-panic-embed"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "f1b531569dc325b5"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "this.name = 'ApiError'"
+  line = 19
+  reason = "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "43d59fe19b1fbacc"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return typeof location === 'undefined' ? '/' : location.pathname"
+  line = 35
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d27f549707e36026"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "return typeof location === 'undefined' ? '/' : location.pathname"
+  line = 35
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d335c2ed61ddcc43"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (typeof history !== 'undefined' && currentPath() !== path) {"
+  line = 44
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "94cf19252c2aef02"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "history.pushState(null, '', path)"
+  line = 45
+  reason = "history.pushState title argument is ignored by every browser per the HTML spec; no observable behaviour"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "4e298254432a9b95"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (body !== undefined) {"
+  line = 98
+  reason = "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
   accepted_in = "02-auth-sessions"

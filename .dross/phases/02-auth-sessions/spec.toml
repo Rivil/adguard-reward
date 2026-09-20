@@ -76,3 +76,81 @@
   why = "surviving mutant routed out of a verify run"
   target = "03-children-and-blocked-view"
   survivor = "7682485717754728"
+
+[[deferred]]
+  text = "survivor web/src/lib/api.ts:31 (StringLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "321f5af2f779f04a"
+
+[[deferred]]
+  text = "survivor web/src/lib/api.ts:34 (BlockStatement)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "7c2c1aafe79b826c"
+
+[[deferred]]
+  text = "survivor web/src/lib/api.ts:43 (StringLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "04a39c82061785ad"
+
+[[deferred]]
+  text = "survivor web/src/lib/api.ts:44 (ConditionalExpression)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "d2e9f9c6f43dd01e"
+
+[[deferred]]
+  text = "survivor web/src/lib/api.ts:44 (LogicalOperator)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "47163e3c3caeeb87"
+
+[[deferred]]
+  text = "survivor web/src/lib/Home.svelte:6 (BooleanLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "c68261e34f7582f6"
+
+[[deferred]]
+  text = "survivor web/src/lib/Home.svelte:9 (BooleanLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "a094a307b802163c"
+
+[[deferred]]
+  text = "survivor web/src/lib/Home.svelte:15 (BooleanLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "beec743e7af835d4"
+
+[[deferred]]
+  text = "survivor web/src/lib/Login.svelte:6 (StringLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "56313b4a10e18013"
+
+[[deferred]]
+  text = "survivor web/src/lib/Login.svelte:7 (StringLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "95210673ee909531"
+
+[[deferred]]
+  text = "survivor web/src/lib/Login.svelte:13 (BooleanLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "f868399fa5f5c41d"
+
+[[deferred]]
+  text = "survivor web/src/lib/Login.svelte:44 (StringLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "77ea47183ba13665"
+
+[[deferred]]
+  text = "survivor web/src/App.svelte:15 (BlockStatement)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "d248d03cd68330af"

@@ -1,6 +1,6 @@
 {
   "phase": "02-auth-sessions",
-  "generated_at": "2026-09-20T11:27:19.109015Z",
+  "generated_at": "2026-09-20T13:03:58.667496Z",
   "languages": [
     {
       "name": "go",
@@ -108,12 +108,12 @@
           },
           {
             "File": "internal/config/config.go",
-            "Line": 78,
+            "Line": 80,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "inherited",
-            "Key": "a0b1cabbc6008ae1",
+            "Key": "1f35bf94f5ac4cfa",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
           },
@@ -125,17 +125,6 @@
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "ce334f1f01f15a32",
-            "Lifecycle": "accepted",
-            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
-          },
-          {
-            "File": "internal/config/config.go",
-            "Line": 81,
-            "Op": "ARITHMETIC_BASE",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "c02935d03c0a4137",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
           },
@@ -174,17 +163,6 @@
           },
           {
             "File": "internal/config/config.go",
-            "Line": 90,
-            "Op": "ARITHMETIC_BASE",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "1878626a7c54b487",
-            "Lifecycle": "accepted",
-            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
-          },
-          {
-            "File": "internal/config/config.go",
             "Line": 89,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
@@ -196,12 +174,12 @@
           },
           {
             "File": "internal/config/config.go",
-            "Line": 92,
+            "Line": 90,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "inherited",
-            "Key": "119e0307aa385bd7",
+            "Key": "1878626a7c54b487",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
           },
@@ -218,12 +196,12 @@
           },
           {
             "File": "internal/config/config.go",
-            "Line": 79,
+            "Line": 92,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "inherited",
-            "Key": "c2ea33c5cb61af8d",
+            "Key": "119e0307aa385bd7",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
           },
@@ -251,12 +229,12 @@
           },
           {
             "File": "internal/config/config.go",
-            "Line": 82,
+            "Line": 81,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "0b343badf918d34d",
+            "Origin": "inherited",
+            "Key": "c02935d03c0a4137",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
           },
@@ -273,23 +251,45 @@
           },
           {
             "File": "internal/config/config.go",
+            "Line": 82,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "0b343badf918d34d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 78,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "a0b1cabbc6008ae1",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 79,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "c2ea33c5cb61af8d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
             "Line": 84,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "02445917af5ed966",
-            "Lifecycle": "accepted",
-            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
-          },
-          {
-            "File": "internal/config/config.go",
-            "Line": 80,
-            "Op": "ARITHMETIC_BASE",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "1f35bf94f5ac4cfa",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
           },
@@ -363,23 +363,970 @@
       "tool": "stryker",
       "files": [
         "web/src/App.svelte",
+        "web/src/App.test.ts",
         "web/src/lib/Home.svelte",
         "web/src/lib/Login.svelte",
+        "web/src/lib/Login.test.ts",
         "web/src/lib/api.test.ts",
         "web/src/lib/api.ts",
         "web/src/main.ts",
         "web/vite.config.ts"
       ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 94,
+        "Survived": 42,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.6911764705882353,
+        "Surviving": [
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 31,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "321f5af2f779f04a",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 19,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "f1b531569dc325b5",
+            "Lifecycle": "accepted",
+            "Note": "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 43,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "04a39c82061785ad",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 44,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "d2e9f9c6f43dd01e",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 44,
+            "Op": "LogicalOperator",
+            "Snippet": "typeof history !== 'undefined' || currentPath() !== path",
+            "Origin": "in-hunk",
+            "Key": "47163e3c3caeeb87",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 44,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "d2e9f9c6f43dd01e",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 44,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "d335c2ed61ddcc43",
+            "Lifecycle": "accepted",
+            "Note": "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 44,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "d2e9f9c6f43dd01e",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 45,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "94cf19252c2aef02",
+            "Lifecycle": "accepted",
+            "Note": "history.pushState title argument is ignored by every browser per the HTML spec; no observable behaviour"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 54,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "70cca97f3aa2be50",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 72,
+            "Op": "StringLiteral",
+            "Snippet": "``",
+            "Origin": "in-hunk",
+            "Key": "6a5bfebeed84ba7e",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 75,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "5837032261d96e46",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 75,
+            "Op": "OptionalChaining",
+            "Snippet": "body.error",
+            "Origin": "in-hunk",
+            "Key": "2bd6098940f4db18",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 76,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "72173b50d763a5b5",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 76,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "72173b50d763a5b5",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 76,
+            "Op": "EqualityOperator",
+            "Snippet": "typeof body?.message !== 'string'",
+            "Origin": "in-hunk",
+            "Key": "5a43b27fe8ed72b8",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 76,
+            "Op": "OptionalChaining",
+            "Snippet": "body.message",
+            "Origin": "in-hunk",
+            "Key": "ab063f347019f075",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 76,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "1c598bf71412f9ee",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 86,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "244e252efe8dc6d1",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 98,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "4e298254432a9b95",
+            "Lifecycle": "accepted",
+            "Note": "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 109,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "b74dd9e22cc39d27",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 125,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "57ced2ba69b7d872",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 137,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "73f551ab5b22f936",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 138,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "df822537811ff08b",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 139,
+            "Op": "ConditionalExpression",
+            "Snippet": "case 'adguard_unavailable':",
+            "Origin": "in-hunk",
+            "Key": "6b18e8ed4e9aa610",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 139,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "8f08105a701c3683",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 140,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "b4a9c4fe26baa233",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 34,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "7c2c1aafe79b826c",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 35,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "43d59fe19b1fbacc",
+            "Lifecycle": "accepted",
+            "Note": "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 35,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "d27f549707e36026",
+            "Lifecycle": "accepted",
+            "Note": "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 15,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "d248d03cd68330af",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 35,
+            "Op": "LogicalOperator",
+            "Snippet": "$route === 'home' || username !== null",
+            "Origin": "in-hunk",
+            "Key": "f8eff75a009af88a",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 35,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "ee89aaa9821274ce",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 35,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "ee89aaa9821274ce",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 6,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "c68261e34f7582f6",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 9,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "a094a307b802163c",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 15,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "beec743e7af835d4",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Login.svelte",
+            "Line": 6,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "56313b4a10e18013",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Login.svelte",
+            "Line": 7,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "95210673ee909531",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Login.svelte",
+            "Line": 13,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "f868399fa5f5c41d",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Login.svelte",
+            "Line": 22,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "af6877a1143e8cbe",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Login.svelte",
+            "Line": 44,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "77ea47183ba13665",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          }
+        ],
+        "NotCovered": 1
+      },
       "measured_on": "local",
-      "error": "stryker did not write a report at /Users/rivil/Development/adguard-reward/reports/mutation/mutation.json: stryker failed with exit status 1; 5550 bytes of tool output observed; the full output of stryker went to this run's stderr, not to any file dross writes",
+      "ranges": {
+        "web/src/App.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 14,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 29,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "hunk"
+          },
+          {
+            "start": 35,
+            "end": 70,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Login.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 12,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "hunk"
+          },
+          {
+            "start": 14,
+            "end": 24,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 28,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 29,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 36,
+            "construct": "FunctionDeclaration signIn"
+          },
+          {
+            "start": 37,
+            "end": 37,
+            "construct": "hunk"
+          },
+          {
+            "start": 38,
+            "end": 41,
+            "construct": "FunctionDeclaration alertText"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "hunk"
+          },
+          {
+            "start": 43,
+            "end": 89,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 12,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "hunk"
+          },
+          {
+            "start": 14,
+            "end": 27,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 28,
+            "end": 28,
+            "construct": "hunk"
+          },
+          {
+            "start": 29,
+            "end": 31,
+            "construct": "FunctionDeclaration header"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "hunk"
+          },
+          {
+            "start": 33,
+            "end": 41,
+            "construct": "FunctionDeclaration fails"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "hunk"
+          },
+          {
+            "start": 43,
+            "end": 43,
+            "construct": "VariableDeclaration unauthorized"
+          },
+          {
+            "start": 44,
+            "end": 44,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 52,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 127,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 128,
+            "end": 128,
+            "construct": "hunk"
+          },
+          {
+            "start": 129,
+            "end": 141,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 1,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "VariableDeclaration CSRF_HEADER"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "VariableDeclaration CSRF_VALUE"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "VariableDeclaration LOGIN_PATH"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "hunk"
+          },
+          {
+            "start": 11,
+            "end": 24,
+            "construct": "ClassDeclaration ApiError"
+          },
+          {
+            "start": 25,
+            "end": 27,
+            "construct": "hunk"
+          },
+          {
+            "start": 28,
+            "end": 28,
+            "construct": "TSTypeAliasDeclaration Route"
+          },
+          {
+            "start": 29,
+            "end": 29,
+            "construct": "hunk"
+          },
+          {
+            "start": 30,
+            "end": 32,
+            "construct": "FunctionDeclaration routeFor"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "hunk"
+          },
+          {
+            "start": 34,
+            "end": 36,
+            "construct": "FunctionDeclaration currentPath"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "construct": "hunk"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "VariableDeclaration route"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "construct": "hunk"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "construct": "FunctionDeclaration navigate"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 52,
+            "construct": "IfStatement"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 54,
+            "construct": "VariableDeclaration onUnauthorized"
+          },
+          {
+            "start": 55,
+            "end": 56,
+            "construct": "hunk"
+          },
+          {
+            "start": 57,
+            "end": 59,
+            "construct": "FunctionDeclaration setOnUnauthorized"
+          },
+          {
+            "start": 60,
+            "end": 62,
+            "construct": "hunk"
+          },
+          {
+            "start": 63,
+            "end": 63,
+            "construct": "TSTypeAliasDeclaration Method"
+          },
+          {
+            "start": 64,
+            "end": 64,
+            "construct": "hunk"
+          },
+          {
+            "start": 65,
+            "end": 68,
+            "construct": "TSInterfaceDeclaration ErrorEnvelope"
+          },
+          {
+            "start": 69,
+            "end": 69,
+            "construct": "hunk"
+          },
+          {
+            "start": 70,
+            "end": 81,
+            "construct": "FunctionDeclaration readEnvelope"
+          },
+          {
+            "start": 82,
+            "end": 82,
+            "construct": "hunk"
+          },
+          {
+            "start": 83,
+            "end": 89,
+            "construct": "FunctionDeclaration retryAfterOf"
+          },
+          {
+            "start": 90,
+            "end": 94,
+            "construct": "hunk"
+          },
+          {
+            "start": 95,
+            "end": 111,
+            "construct": "FunctionDeclaration request"
+          },
+          {
+            "start": 112,
+            "end": 114,
+            "construct": "hunk"
+          },
+          {
+            "start": 115,
+            "end": 118,
+            "construct": "TSInterfaceDeclaration Me"
+          },
+          {
+            "start": 119,
+            "end": 119,
+            "construct": "hunk"
+          },
+          {
+            "start": 120,
+            "end": 122,
+            "construct": "FunctionDeclaration login"
+          },
+          {
+            "start": 123,
+            "end": 123,
+            "construct": "hunk"
+          },
+          {
+            "start": 124,
+            "end": 126,
+            "construct": "FunctionDeclaration logout"
+          },
+          {
+            "start": 127,
+            "end": 127,
+            "construct": "hunk"
+          },
+          {
+            "start": 128,
+            "end": 130,
+            "construct": "FunctionDeclaration me"
+          },
+          {
+            "start": 131,
+            "end": 134,
+            "construct": "hunk"
+          },
+          {
+            "start": 135,
+            "end": 146,
+            "construct": "FunctionDeclaration messageFor"
+          }
+        ],
+        "web/vite.config.ts": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 33,
+            "construct": "ExportDefaultDeclaration"
+          }
+        ]
+      },
       "whole_file": {
         "web/src/App.svelte": "ast-unavailable",
         "web/src/lib/Home.svelte": "ast-unavailable",
         "web/src/lib/Login.svelte": "ast-unavailable",
-        "web/src/lib/api.test.ts": "ast-unavailable",
-        "web/src/lib/api.ts": "ast-unavailable",
-        "web/src/main.ts": "file-absent-from-hunks",
-        "web/vite.config.ts": "ast-unavailable"
+        "web/src/main.ts": "file-absent-from-hunks"
       }
     }
   ],
@@ -435,7 +1382,10 @@
       ".dross/phases/02-auth-sessions/panel/verification.md",
       ".dross/phases/02-auth-sessions/plan.toml",
       ".dross/phases/02-auth-sessions/spec.toml",
+      ".dross/phases/02-auth-sessions/tests.json",
+      ".dross/phases/02-auth-sessions/verify.toml",
       ".dross/project.toml",
+      ".dross/survivors.toml",
       ".gitignore",
       "Makefile",
       "cmd/adguard-reward/main.go",
@@ -471,9 +1421,11 @@
       "web/package.json",
       "web/pnpm-lock.yaml",
       "web/src/App.svelte",
+      "web/src/App.test.ts",
       "web/src/lib/Counter.svelte",
       "web/src/lib/Home.svelte",
       "web/src/lib/Login.svelte",
+      "web/src/lib/Login.test.ts",
       "web/src/lib/api.test.ts",
       "web/src/lib/api.ts",
       "web/src/main.ts",
@@ -489,7 +1441,7 @@
       ".dross/phases/02-auth-sessions/changes.json": [
         {
           "start": 1,
-          "end": 212
+          "end": 231
         }
       ],
       ".dross/phases/02-auth-sessions/panel/mvp.md": [
@@ -519,19 +1471,41 @@
       ".dross/phases/02-auth-sessions/plan.toml": [
         {
           "start": 1,
-          "end": 120
+          "end": 131
         }
       ],
       ".dross/phases/02-auth-sessions/spec.toml": [
         {
           "start": 1,
-          "end": 72
+          "end": 78
+        }
+      ],
+      ".dross/phases/02-auth-sessions/tests.json": [
+        {
+          "start": 1,
+          "end": 1034
+        }
+      ],
+      ".dross/phases/02-auth-sessions/verify.toml": [
+        {
+          "start": 1,
+          "end": 166
         }
       ],
       ".dross/project.toml": [
         {
           "start": 3,
           "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 13,
+          "end": 16
+        },
+        {
+          "start": 250,
+          "end": 321
         }
       ],
       ".gitignore": [
@@ -840,126 +1814,230 @@
           "end": 10
         },
         {
-          "start": 20,
-          "end": 21
+          "start": 15,
+          "end": 15
+        },
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 22,
+          "end": 23
         }
       ],
       "web/pnpm-lock.yaml": [
         {
-          "start": 32,
-          "end": 34
+          "start": 14,
+          "end": 16
         },
         {
-          "start": 156,
-          "end": 158
+          "start": 23,
+          "end": 25
         },
         {
-          "start": 178,
-          "end": 183
+          "start": 38,
+          "end": 40
         },
         {
-          "start": 190,
-          "end": 218
+          "start": 44,
+          "end": 112
         },
         {
-          "start": 228,
-          "end": 231
+          "start": 231,
+          "end": 233
         },
         {
-          "start": 236,
-          "end": 239
-        },
-        {
-          "start": 248,
-          "end": 250
-        },
-        {
-          "start": 262,
-          "end": 264
+          "start": 250,
+          "end": 272
         },
         {
           "start": 276,
-          "end": 282
+          "end": 284
         },
         {
-          "start": 396,
-          "end": 398
+          "start": 291,
+          "end": 319
         },
         {
-          "start": 423,
-          "end": 425
+          "start": 325,
+          "end": 335
         },
         {
-          "start": 430,
-          "end": 435
+          "start": 340,
+          "end": 343
         },
         {
-          "start": 448,
-          "end": 454
+          "start": 348,
+          "end": 354
         },
         {
-          "start": 459,
-          "end": 462
+          "start": 363,
+          "end": 376
         },
         {
-          "start": 522,
-          "end": 567
+          "start": 381,
+          "end": 384
         },
         {
-          "start": 641,
-          "end": 642
+          "start": 392,
+          "end": 401
         },
         {
-          "start": 660,
-          "end": 666
+          "start": 413,
+          "end": 419
         },
         {
-          "start": 673,
-          "end": 713
+          "start": 434,
+          "end": 440
         },
         {
-          "start": 718,
-          "end": 719
+          "start": 444,
+          "end": 455
         },
         {
-          "start": 722,
-          "end": 723
+          "start": 533,
+          "end": 540
         },
         {
-          "start": 730,
-          "end": 731
+          "start": 547,
+          "end": 549
         },
         {
-          "start": 738,
-          "end": 739
+          "start": 563,
+          "end": 568
         },
         {
-          "start": 746,
-          "end": 751
+          "start": 580,
+          "end": 590
         },
         {
-          "start": 828,
-          "end": 829
+          "start": 595,
+          "end": 598
         },
         {
-          "start": 867,
-          "end": 868
+          "start": 608,
+          "end": 614
         },
         {
-          "start": 871,
-          "end": 874
+          "start": 619,
+          "end": 624
         },
         {
-          "start": 908,
-          "end": 911
+          "start": 637,
+          "end": 646
         },
         {
-          "start": 917,
-          "end": 918
+          "start": 651,
+          "end": 669
         },
         {
-          "start": 938,
-          "end": 969
+          "start": 678,
+          "end": 681
+        },
+        {
+          "start": 733,
+          "end": 805
+        },
+        {
+          "start": 811,
+          "end": 865
+        },
+        {
+          "start": 934,
+          "end": 935
+        },
+        {
+          "start": 951,
+          "end": 974
+        },
+        {
+          "start": 977,
+          "end": 985
+        },
+        {
+          "start": 992,
+          "end": 1032
+        },
+        {
+          "start": 1035,
+          "end": 1042
+        },
+        {
+          "start": 1045,
+          "end": 1046
+        },
+        {
+          "start": 1049,
+          "end": 1054
+        },
+        {
+          "start": 1061,
+          "end": 1076
+        },
+        {
+          "start": 1079,
+          "end": 1080
+        },
+        {
+          "start": 1085,
+          "end": 1090
+        },
+        {
+          "start": 1097,
+          "end": 1102
+        },
+        {
+          "start": 1110,
+          "end": 1117
+        },
+        {
+          "start": 1122,
+          "end": 1149
+        },
+        {
+          "start": 1201,
+          "end": 1204
+        },
+        {
+          "start": 1213,
+          "end": 1214
+        },
+        {
+          "start": 1221,
+          "end": 1226
+        },
+        {
+          "start": 1237,
+          "end": 1246
+        },
+        {
+          "start": 1249,
+          "end": 1250
+        },
+        {
+          "start": 1276,
+          "end": 1281
+        },
+        {
+          "start": 1284,
+          "end": 1287
+        },
+        {
+          "start": 1321,
+          "end": 1326
+        },
+        {
+          "start": 1332,
+          "end": 1347
+        },
+        {
+          "start": 1352,
+          "end": 1353
+        },
+        {
+          "start": 1369,
+          "end": 1429
         }
       ],
       "web/src/App.svelte": [
@@ -984,6 +2062,12 @@
           "end": 40
         }
       ],
+      "web/src/App.test.ts": [
+        {
+          "start": 1,
+          "end": 69
+        }
+      ],
       "web/src/lib/Home.svelte": [
         {
           "start": 1,
@@ -994,6 +2078,12 @@
         {
           "start": 1,
           "end": 73
+        }
+      ],
+      "web/src/lib/Login.test.ts": [
+        {
+          "start": 1,
+          "end": 88
         }
       ],
       "web/src/lib/api.test.ts": [
@@ -1014,8 +2104,12 @@
           "end": 1
         },
         {
+          "start": 4,
+          "end": 4
+        },
+        {
           "start": 8,
-          "end": 11
+          "end": 13
         }
       ]
     },
@@ -1024,10 +2118,7 @@
     "degraded": [
       "stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file",
       "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file",
-      "stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file",
-      "stryker: AST unavailable for web/src/lib/api.test.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file",
-      "stryker: AST unavailable for web/src/lib/api.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file",
-      "stryker: AST unavailable for web/vite.config.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file"
+      "stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file"
     ]
   },
   "measured_on": "local"
