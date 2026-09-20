@@ -1,4 +1,4 @@
-task_seq = 12
+task_seq = 13
 
 [phase]
   id = "02-auth-sessions"
@@ -128,4 +128,15 @@ task_seq = 12
   covers = ["c-7"]
   depends_on = ["t-8"]
   test_contract = ["if Login.svelte stops rendering a distinct message per code, Login.test.ts 'shows distinct messages' fails: mounting Login with fetch stubbed to 401 bad_credentials, 502 adguard_unavailable and 429 rate_limited yields three different role=alert texts", "if the default 401 handler stops routing to login, App.test.ts '401 on /me lands on login' fails: mounting App with /me stubbed to 401 renders the sign-in form and pushes /login", "if a logged-in parent no longer lands on Home, App.test.ts 'logged-in parent lands on home' fails: mounting App with /me stubbed to 200 {username} renders 'Signed in as <username>'"]
+  status = "done"
+
+[[task]]
+  id = "t-13"
+  wave = 6
+  title = "Pin c-7 message text, post-login 401 routing and logout method"
+  files = ["web/src/lib/api.test.ts", "web/src/lib/Login.test.ts", "web/src/App.test.ts"]
+  description = "Verify amendment (verify.toml, 3 BLOCKING findings on c-7). Test-only: kill the 18 seeded Stryker survivors in api.ts:54,72,75,76,86,109,125,137-140, App.svelte:35 and Login.svelte:22.\napi.test.ts: messageFor returns the exact literal per code; err.message equals the envelope's message and code its error field; non-string error/message fields are ignored (code stays unknown, message stays the status text); a non-JSON body with empty statusText gives 'HTTP <status>'; 429 without Retry-After gives retryAfter undefined; logout() is POST /api/v1/logout; a 502 on /api/v1/me does NOT call onUnauthorized.\nLogin.test.ts: the alert text equals the literal per code (bad_credentials, adguard_unavailable, rate_limited with the seconds) and the network-failure literal.\nApp.test.ts: after landing on Home a later 401 (no spy — the default handler) shows the Sign in button at /login; log out sends POST; browser-back to / while signed out keeps Login (route/username guard)."
+  covers = ["c-7"]
+  depends_on = ["t-7", "t-12"]
+  test_contract = ["if the default onUnauthorized stops routing to /login, App.test 'a 401 after login returns to the login page' fails", "if messageFor or Login's network text changes, the literal assertions in api.test 'messageFor' and Login.test fail", "if logout() stops using POST, api.test 'logout posts' and App.test 'log out' fail", "if a non-401 error triggers onUnauthorized, api.test '502 on /me does not redirect' fails"]
   status = "done"
