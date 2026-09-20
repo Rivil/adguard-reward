@@ -28,3 +28,6 @@ config.yaml
 
 # mutation-tool raw reports (dross verify regenerates these)
 reports/
+
+# dross handoff — local working memory, not tracked
+.dross/handoff.md
