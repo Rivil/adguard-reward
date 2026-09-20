@@ -70,3 +70,9 @@
   choice = "Client IP is the TCP peer address by default and X-Forwarded-For is ignored; a new config key trusted_proxies (list of CIDRs) enables using the last untrusted hop of X-Forwarded-For when the peer is in the list"
   why = "PLAN.md makes no assumptions about reverse proxies; safe by default against spoofing, and a proxied deployment gets a real per-IP limit once it opts in"
   locked = true
+
+[[deferred]]
+  text = "survivor internal/store/sessions.go:79 (CONDITIONALS_NEGATION)"
+  why = "surviving mutant routed out of a verify run"
+  target = "03-children-and-blocked-view"
+  survivor = "7682485717754728"

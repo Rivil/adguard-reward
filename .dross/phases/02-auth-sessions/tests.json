@@ -1,0 +1,1034 @@
+{
+  "phase": "02-auth-sessions",
+  "generated_at": "2026-09-20T11:27:19.109015Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/api/api.go",
+        "internal/api/clientip.go",
+        "internal/api/clientip_test.go",
+        "internal/api/errors.go",
+        "internal/api/login.go",
+        "internal/api/login_test.go",
+        "internal/api/middleware.go",
+        "internal/api/middleware_test.go",
+        "internal/api/sessions.go",
+        "internal/api/sessions_test.go",
+        "internal/auth/auth.go",
+        "internal/auth/auth_test.go",
+        "internal/auth/middleware.go",
+        "internal/auth/token.go",
+        "internal/config/config.go",
+        "internal/config/config_test.go",
+        "internal/ratelimit/limiter.go",
+        "internal/ratelimit/limiter_test.go",
+        "internal/store/migrate.go",
+        "internal/store/sessions.go",
+        "internal/store/sessions_test.go",
+        "internal/store/store.go",
+        "internal/store/store_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 170,
+        "Survived": 26,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.8673469387755102,
+        "Surviving": [
+          {
+            "File": "internal/api/login.go",
+            "Line": 79,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1fa25d4f40ebe7f5",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 240,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "793b75f25044151d",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 240,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "793b75f25044151d",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 242,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "0231579a43c2cb95",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 242,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "2cf50219723c390a",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/auth/middleware.go",
+            "Line": 35,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "98794572c2e565fb",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 78,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "a0b1cabbc6008ae1",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 85,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "ce334f1f01f15a32",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 81,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "c02935d03c0a4137",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 86,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "22106f6484d1faa3",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 87,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "e2d8072b3839910b",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 88,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "f93194a49c469f23",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 90,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "1878626a7c54b487",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 89,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "46823b3109dcb811",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 92,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "119e0307aa385bd7",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 91,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "71410531871fef71",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 79,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "c2ea33c5cb61af8d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 93,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "429eb582b44c8bfb",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 118,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "dcd6ec3e7b4754e0",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 82,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "0b343badf918d34d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 83,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "39b876eadce3ba8c",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 84,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "02445917af5ed966",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 80,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "1f35bf94f5ac4cfa",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/store/migrate.go",
+            "Line": 25,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a8785d915cdc6357",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+          },
+          {
+            "File": "internal/store/migrate.go",
+            "Line": 35,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "3d1decd06dce2e38",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+          },
+          {
+            "File": "internal/store/sessions.go",
+            "Line": 79,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "7682485717754728",
+            "Lifecycle": "routed",
+            "Note": "routed to 03-children-and-blocked-view"
+          }
+        ],
+        "NotCovered": 26
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main.go": "adapter-lacks-range-runner",
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/clientip.go": "adapter-lacks-range-runner",
+        "internal/api/clientip_test.go": "adapter-lacks-range-runner",
+        "internal/api/errors.go": "adapter-lacks-range-runner",
+        "internal/api/login.go": "adapter-lacks-range-runner",
+        "internal/api/login_test.go": "adapter-lacks-range-runner",
+        "internal/api/middleware.go": "adapter-lacks-range-runner",
+        "internal/api/middleware_test.go": "adapter-lacks-range-runner",
+        "internal/api/sessions.go": "adapter-lacks-range-runner",
+        "internal/api/sessions_test.go": "adapter-lacks-range-runner",
+        "internal/auth/auth.go": "adapter-lacks-range-runner",
+        "internal/auth/auth_test.go": "adapter-lacks-range-runner",
+        "internal/auth/middleware.go": "adapter-lacks-range-runner",
+        "internal/auth/token.go": "adapter-lacks-range-runner",
+        "internal/config/config.go": "adapter-lacks-range-runner",
+        "internal/config/config_test.go": "adapter-lacks-range-runner",
+        "internal/ratelimit/limiter.go": "adapter-lacks-range-runner",
+        "internal/ratelimit/limiter_test.go": "adapter-lacks-range-runner",
+        "internal/store/migrate.go": "adapter-lacks-range-runner",
+        "internal/store/sessions.go": "adapter-lacks-range-runner",
+        "internal/store/sessions_test.go": "adapter-lacks-range-runner",
+        "internal/store/store.go": "adapter-lacks-range-runner",
+        "internal/store/store_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/App.svelte",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Login.svelte",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts",
+        "web/src/main.ts",
+        "web/vite.config.ts"
+      ],
+      "measured_on": "local",
+      "error": "stryker did not write a report at /Users/rivil/Development/adguard-reward/reports/mutation/mutation.json: stryker failed with exit status 1; 5550 bytes of tool output observed; the full output of stryker went to this run's stderr, not to any file dross writes",
+      "whole_file": {
+        "web/src/App.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable",
+        "web/src/lib/Login.svelte": "ast-unavailable",
+        "web/src/lib/api.test.ts": "ast-unavailable",
+        "web/src/lib/api.ts": "ast-unavailable",
+        "web/src/main.ts": "file-absent-from-hunks",
+        "web/vite.config.ts": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": ".gitignore",
+      "reason": "no mutation adapter for .gitignore"
+    },
+    {
+      "file": "Makefile",
+      "reason": "no mutation adapter for "
+    },
+    {
+      "file": "deploy/config.example.yaml",
+      "reason": "no mutation adapter for .yaml"
+    },
+    {
+      "file": "go.mod",
+      "reason": "no mutation adapter for .mod"
+    },
+    {
+      "file": "go.sum",
+      "reason": "no mutation adapter for .sum"
+    },
+    {
+      "file": "internal/config/testdata/full.yaml",
+      "reason": "no mutation adapter for .yaml"
+    },
+    {
+      "file": "internal/store/migrations/0001_sessions.sql",
+      "reason": "no mutation adapter for .sql"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "web/pnpm-lock.yaml",
+      "reason": "no mutation adapter for .yaml"
+    },
+    {
+      "file": "web/src/lib/Counter.svelte",
+      "reason": "file no longer exists in the working tree"
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/02-auth-sessions/REVIEW.md",
+      ".dross/phases/02-auth-sessions/changes.json",
+      ".dross/phases/02-auth-sessions/panel/mvp.md",
+      ".dross/phases/02-auth-sessions/panel/risk.md",
+      ".dross/phases/02-auth-sessions/panel/synthesis.md",
+      ".dross/phases/02-auth-sessions/panel/verification.md",
+      ".dross/phases/02-auth-sessions/plan.toml",
+      ".dross/phases/02-auth-sessions/spec.toml",
+      ".dross/project.toml",
+      ".gitignore",
+      "Makefile",
+      "cmd/adguard-reward/main.go",
+      "cmd/adguard-reward/main_test.go",
+      "deploy/config.example.yaml",
+      "go.mod",
+      "go.sum",
+      "internal/api/api.go",
+      "internal/api/clientip.go",
+      "internal/api/clientip_test.go",
+      "internal/api/errors.go",
+      "internal/api/login.go",
+      "internal/api/login_test.go",
+      "internal/api/middleware.go",
+      "internal/api/middleware_test.go",
+      "internal/api/sessions.go",
+      "internal/api/sessions_test.go",
+      "internal/auth/auth.go",
+      "internal/auth/auth_test.go",
+      "internal/auth/middleware.go",
+      "internal/auth/token.go",
+      "internal/config/config.go",
+      "internal/config/config_test.go",
+      "internal/config/testdata/full.yaml",
+      "internal/ratelimit/limiter.go",
+      "internal/ratelimit/limiter_test.go",
+      "internal/store/migrate.go",
+      "internal/store/migrations/0001_sessions.sql",
+      "internal/store/sessions.go",
+      "internal/store/sessions_test.go",
+      "internal/store/store.go",
+      "internal/store/store_test.go",
+      "web/package.json",
+      "web/pnpm-lock.yaml",
+      "web/src/App.svelte",
+      "web/src/lib/Counter.svelte",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Login.svelte",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts",
+      "web/src/main.ts",
+      "web/vite.config.ts"
+    ],
+    "hunks": {
+      ".dross/phases/02-auth-sessions/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 50
+        }
+      ],
+      ".dross/phases/02-auth-sessions/changes.json": [
+        {
+          "start": 1,
+          "end": 212
+        }
+      ],
+      ".dross/phases/02-auth-sessions/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 353
+        }
+      ],
+      ".dross/phases/02-auth-sessions/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 455
+        }
+      ],
+      ".dross/phases/02-auth-sessions/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 694
+        }
+      ],
+      ".dross/phases/02-auth-sessions/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 530
+        }
+      ],
+      ".dross/phases/02-auth-sessions/plan.toml": [
+        {
+          "start": 1,
+          "end": 120
+        }
+      ],
+      ".dross/phases/02-auth-sessions/spec.toml": [
+        {
+          "start": 1,
+          "end": 72
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      ".gitignore": [
+        {
+          "start": 31,
+          "end": 33
+        }
+      ],
+      "Makefile": [
+        {
+          "start": 9,
+          "end": 9
+        },
+        {
+          "start": 26,
+          "end": 28
+        },
+        {
+          "start": 31,
+          "end": 33
+        }
+      ],
+      "cmd/adguard-reward/main.go": [
+        {
+          "start": 15,
+          "end": 15
+        },
+        {
+          "start": 20,
+          "end": 21
+        },
+        {
+          "start": 24,
+          "end": 25
+        },
+        {
+          "start": 34,
+          "end": 37
+        },
+        {
+          "start": 87,
+          "end": 113
+        },
+        {
+          "start": 116,
+          "end": 116
+        },
+        {
+          "start": 130,
+          "end": 130
+        },
+        {
+          "start": 139,
+          "end": 139
+        },
+        {
+          "start": 143,
+          "end": 148
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 6,
+          "end": 11
+        },
+        {
+          "start": 14,
+          "end": 14
+        },
+        {
+          "start": 17,
+          "end": 18
+        },
+        {
+          "start": 28,
+          "end": 29
+        },
+        {
+          "start": 67,
+          "end": 68
+        },
+        {
+          "start": 70,
+          "end": 76
+        },
+        {
+          "start": 79,
+          "end": 79
+        },
+        {
+          "start": 337,
+          "end": 690
+        }
+      ],
+      "deploy/config.example.yaml": [
+        {
+          "start": 18,
+          "end": 20
+        }
+      ],
+      "go.mod": [
+        {
+          "start": 5,
+          "end": 20
+        }
+      ],
+      "go.sum": [
+        {
+          "start": 1,
+          "end": 22
+        },
+        {
+          "start": 27,
+          "end": 54
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 1,
+          "end": 85
+        }
+      ],
+      "internal/api/clientip.go": [
+        {
+          "start": 1,
+          "end": 86
+        }
+      ],
+      "internal/api/clientip_test.go": [
+        {
+          "start": 1,
+          "end": 98
+        }
+      ],
+      "internal/api/errors.go": [
+        {
+          "start": 1,
+          "end": 44
+        }
+      ],
+      "internal/api/login.go": [
+        {
+          "start": 1,
+          "end": 134
+        }
+      ],
+      "internal/api/login_test.go": [
+        {
+          "start": 1,
+          "end": 601
+        }
+      ],
+      "internal/api/middleware.go": [
+        {
+          "start": 1,
+          "end": 37
+        }
+      ],
+      "internal/api/middleware_test.go": [
+        {
+          "start": 1,
+          "end": 144
+        }
+      ],
+      "internal/api/sessions.go": [
+        {
+          "start": 1,
+          "end": 82
+        }
+      ],
+      "internal/api/sessions_test.go": [
+        {
+          "start": 1,
+          "end": 248
+        }
+      ],
+      "internal/auth/auth.go": [
+        {
+          "start": 1,
+          "end": 247
+        }
+      ],
+      "internal/auth/auth_test.go": [
+        {
+          "start": 1,
+          "end": 512
+        }
+      ],
+      "internal/auth/middleware.go": [
+        {
+          "start": 1,
+          "end": 44
+        }
+      ],
+      "internal/auth/token.go": [
+        {
+          "start": 1,
+          "end": 40
+        }
+      ],
+      "internal/config/config.go": [
+        {
+          "start": 15,
+          "end": 15
+        },
+        {
+          "start": 30,
+          "end": 40
+        },
+        {
+          "start": 82,
+          "end": 82
+        },
+        {
+          "start": 152,
+          "end": 164
+        },
+        {
+          "start": 217,
+          "end": 224
+        },
+        {
+          "start": 248,
+          "end": 276
+        }
+      ],
+      "internal/config/config_test.go": [
+        {
+          "start": 53,
+          "end": 60
+        },
+        {
+          "start": 121,
+          "end": 121
+        },
+        {
+          "start": 171,
+          "end": 171
+        },
+        {
+          "start": 397,
+          "end": 467
+        }
+      ],
+      "internal/config/testdata/full.yaml": [
+        {
+          "start": 7,
+          "end": 7
+        }
+      ],
+      "internal/ratelimit/limiter.go": [
+        {
+          "start": 1,
+          "end": 223
+        }
+      ],
+      "internal/ratelimit/limiter_test.go": [
+        {
+          "start": 1,
+          "end": 321
+        }
+      ],
+      "internal/store/migrate.go": [
+        {
+          "start": 1,
+          "end": 136
+        }
+      ],
+      "internal/store/migrations/0001_sessions.sql": [
+        {
+          "start": 1,
+          "end": 13
+        }
+      ],
+      "internal/store/sessions.go": [
+        {
+          "start": 1,
+          "end": 146
+        }
+      ],
+      "internal/store/sessions_test.go": [
+        {
+          "start": 1,
+          "end": 202
+        }
+      ],
+      "internal/store/store.go": [
+        {
+          "start": 1,
+          "end": 111
+        }
+      ],
+      "internal/store/store_test.go": [
+        {
+          "start": 1,
+          "end": 315
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 10,
+          "end": 10
+        },
+        {
+          "start": 20,
+          "end": 21
+        }
+      ],
+      "web/pnpm-lock.yaml": [
+        {
+          "start": 32,
+          "end": 34
+        },
+        {
+          "start": 156,
+          "end": 158
+        },
+        {
+          "start": 178,
+          "end": 183
+        },
+        {
+          "start": 190,
+          "end": 218
+        },
+        {
+          "start": 228,
+          "end": 231
+        },
+        {
+          "start": 236,
+          "end": 239
+        },
+        {
+          "start": 248,
+          "end": 250
+        },
+        {
+          "start": 262,
+          "end": 264
+        },
+        {
+          "start": 276,
+          "end": 282
+        },
+        {
+          "start": 396,
+          "end": 398
+        },
+        {
+          "start": 423,
+          "end": 425
+        },
+        {
+          "start": 430,
+          "end": 435
+        },
+        {
+          "start": 448,
+          "end": 454
+        },
+        {
+          "start": 459,
+          "end": 462
+        },
+        {
+          "start": 522,
+          "end": 567
+        },
+        {
+          "start": 641,
+          "end": 642
+        },
+        {
+          "start": 660,
+          "end": 666
+        },
+        {
+          "start": 673,
+          "end": 713
+        },
+        {
+          "start": 718,
+          "end": 719
+        },
+        {
+          "start": 722,
+          "end": 723
+        },
+        {
+          "start": 730,
+          "end": 731
+        },
+        {
+          "start": 738,
+          "end": 739
+        },
+        {
+          "start": 746,
+          "end": 751
+        },
+        {
+          "start": 828,
+          "end": 829
+        },
+        {
+          "start": 867,
+          "end": 868
+        },
+        {
+          "start": 871,
+          "end": 874
+        },
+        {
+          "start": 908,
+          "end": 911
+        },
+        {
+          "start": 917,
+          "end": 918
+        },
+        {
+          "start": 938,
+          "end": 969
+        }
+      ],
+      "web/src/App.svelte": [
+        {
+          "start": 1,
+          "end": 8
+        },
+        {
+          "start": 10,
+          "end": 21
+        },
+        {
+          "start": 23,
+          "end": 26
+        },
+        {
+          "start": 28,
+          "end": 32
+        },
+        {
+          "start": 34,
+          "end": 40
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 1,
+          "end": 33
+        }
+      ],
+      "web/src/lib/Login.svelte": [
+        {
+          "start": 1,
+          "end": 73
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 1,
+          "end": 140
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 1,
+          "end": 146
+        }
+      ],
+      "web/vite.config.ts": [
+        {
+          "start": 1,
+          "end": 1
+        },
+        {
+          "start": 8,
+          "end": 11
+        }
+      ]
+    },
+    "base": "ecce6edc7831904bb79f23d8c0fd3df0c84627ab",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/api.test.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/api.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file",
+      "stryker: AST unavailable for web/vite.config.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file"
+    ]
+  },
+  "measured_on": "local"
+}

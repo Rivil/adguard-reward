@@ -1,0 +1,166 @@
+[verify]
+  phase = "02-auth-sessions"
+  generated_at = 2026-09-20T11:27:19.109015Z
+  verdict = "partial"
+  finalized = true
+  finalized_at = 2026-09-20T11:29:36.614996Z
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.8673469387755102
+  mutants_killed = 170
+  mutants_survived = 26
+  mutants_not_covered = 26
+  mutants_in_scope = 196
+  unclassified_in_scope = 0
+  criteria_total = 11
+  criteria_covered = 10
+  criteria_uncovered = 1
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 170
+    survived = 26
+    timeout = 0
+    in_scope = 196
+    score = 0.8673469387755102
+    file_count = 25
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main.go — adapter-lacks-range-runner", "cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/clientip.go — adapter-lacks-range-runner", "internal/api/clientip_test.go — adapter-lacks-range-runner", "internal/api/errors.go — adapter-lacks-range-runner", "internal/api/login.go — adapter-lacks-range-runner", "internal/api/login_test.go — adapter-lacks-range-runner", "internal/api/middleware.go — adapter-lacks-range-runner", "internal/api/middleware_test.go — adapter-lacks-range-runner", "internal/api/sessions.go — adapter-lacks-range-runner", "internal/api/sessions_test.go — adapter-lacks-range-runner", "internal/auth/auth.go — adapter-lacks-range-runner", "internal/auth/auth_test.go — adapter-lacks-range-runner", "internal/auth/middleware.go — adapter-lacks-range-runner", "internal/auth/token.go — adapter-lacks-range-runner", "internal/config/config.go — adapter-lacks-range-runner", "internal/config/config_test.go — adapter-lacks-range-runner", "internal/ratelimit/limiter.go — adapter-lacks-range-runner", "internal/ratelimit/limiter_test.go — adapter-lacks-range-runner", "internal/store/migrate.go — adapter-lacks-range-runner", "internal/store/sessions.go — adapter-lacks-range-runner", "internal/store/sessions_test.go — adapter-lacks-range-runner", "internal/store/store.go — adapter-lacks-range-runner", "internal/store/store_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    error = "stryker did not write a report at /Users/rivil/Development/adguard-reward/reports/mutation/mutation.json: stryker failed with exit status 1; 5550 bytes of tool output observed; the full output of stryker went to this run's stderr, not to any file dross writes"
+    killed = 0
+    survived = 0
+    timeout = 0
+    in_scope = 0
+    score = 0.0
+    file_count = 7
+    measured_on = "local"
+    whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable", "web/src/lib/Login.svelte — ast-unavailable", "web/src/lib/api.test.ts — ast-unavailable", "web/src/lib/api.ts — ast-unavailable", "web/src/main.ts — file-absent-from-hunks", "web/vite.config.ts — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/api/login_test.go:TestLogin_OK", "internal/api/login_test.go:TestLogin_Outcomes"]
+  notes = "TestLogin_OK asserts the fake saw exactly one /control/login with {name,password} == submitted and no Authorization header, 204 + session cookie. TestLogin_Outcomes: wrong password -> 401 with the fixed generic body and no cookie; fake 503, fake 429 and a closed fake each -> 502 adguard_unavailable (distinct code from bad_credentials)."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/auth/auth_test.go:TestIssue_Token", "internal/auth/auth_test.go:TestCookie_Attrs", "cmd/adguard-reward/main_test.go:TestRun_CookieSecure", "cmd/adguard-reward/main_test.go:TestRun_TLS", "internal/api/login_test.go:TestLogin_NoTokenInLogs", "internal/auth/auth_test.go:TestNoTokenInLogs"]
+  notes = "TestIssue_Token: 43-char strict base64url (32 bytes = 256 bits), two issues differ, stored TokenHash == sha256(raw), raw absent from the stored row. TestCookie_Attrs: HttpOnly, SameSite=Strict, Path=/, Secure only with the option. TestRun_TLS/TestRun_CookieSecure: Secure set on the TLS listener (and https base_url), not on plain. TestLogin_NoTokenInLogs: debug JSON log buffer across login -> GET /me -> POST /logout never contains the cookie value (with positive controls)."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/auth/auth_test.go:TestRequireSession", "internal/api/login_test.go:TestRouter_Fallthrough", "cmd/adguard-reward/main_test.go:TestRun_Healthz", "internal/api/login_test.go:TestLogout_Replay"]
+  notes = "TestRequireSession: no cookie / random / deleted / expired -> 401 and next never runs. TestRouter_Fallthrough: unknown /api/v1 path -> 401 without a cookie (catch-all), 404 with one. TestRun_Healthz: /healthz answers with no session on the wired binary. TestLogout_Replay: logout 204 with one Max-Age=0 Set-Cookie, replaying the old cookie -> 401."
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["internal/api/login_test.go:TestLogin_RateLimited", "internal/api/login_test.go:TestLogin_Global", "internal/api/login_test.go:TestLogin_Burst", "cmd/adguard-reward/main_test.go:TestRun_RateLimitWired"]
+  notes = "TestLogin_RateLimited: after 5 failures the next 3 posts are 429 with numeric Retry-After >= 1 and the fake's /control/login count is unchanged; another IP still reaches the fake. TestLogin_Global: 21st distinct IP -> 429 with no new fake hit. TestLogin_Burst bounds a parallel burst to the budget."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["internal/api/middleware_test.go:TestCSRF_Methods", "internal/api/middleware_test.go:TestCSRF_Value", "internal/api/middleware_test.go:TestCSRF_BeforeHandler", "internal/api/login_test.go:TestLogin_CSRF"]
+  notes = "TestCSRF_Methods: POST/PUT/PATCH/DELETE without the header -> 403 and zero handler calls; GET/HEAD/OPTIONS pass. TestCSRF_Value rejects case/whitespace variants. TestCSRF_BeforeHandler: 403 on an unmounted path (not 404) and on a panicking route. TestLogin_CSRF: real login route, 403 with zero fake hits, 204 with the header."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/api/login_test.go:TestMe"]
+  notes = "TestMe: with cookie -> 200 {username == fake user, expires_at parses RFC3339 and equals now+30d}; without -> 401 unauthorized."
+
+[[criterion]]
+  id = "c-7"
+  status = "weak"
+  tests = ["web/src/lib/api.test.ts:it('gives three distinct messages, the last containing retryAfter')", "web/src/lib/api.test.ts:it('distinguishes adguard_unavailable')", "web/src/lib/api.test.ts:it('401 on /login does not redirect')"]
+  notes = "The fetch layer is tested: messageFor yields distinct strings for bad_credentials / adguard_unavailable / rate_limited, and a 401 on any path but /login fires onUnauthorized exactly once. Nothing renders Login.svelte, App.svelte or Home.svelte: the page actually showing the message, the default onUnauthorized -> navigate('login'), and a logged-in parent landing on Home are a manual gate recorded in the t-8 commit (plan: no DOM test runner this phase). Stryker did not run, so the web files carry no mutation evidence either."
+
+[[criterion]]
+  id = "c-8"
+  status = "covered"
+  tests = ["internal/api/login_test.go:TestLogin_EventLog"]
+  notes = "TestLogin_EventLog: at least one event=login line per outcome ok / bad_credentials / adguard_unreachable / rate_limited, each carrying username and ip; the canary password and the real password are absent from the debug-level buffer."
+
+[[criterion]]
+  id = "c-9"
+  status = "covered"
+  tests = ["internal/api/sessions_test.go:TestSessions_List", "internal/api/sessions_test.go:TestSessions_DeleteOne", "internal/api/sessions_test.go:TestSessions_DeleteForeign", "internal/api/sessions_test.go:TestSessions_RevokeAll"]
+  notes = "TestSessions_List: {id, created_at, last_seen_at, current} with exactly one current and another user's row excluded. TestSessions_DeleteOne: revoked B -> /me 401, A stays 200. TestSessions_DeleteForeign: foreign/unknown ids -> 404 and the row survives. TestSessions_RevokeAll: revokes 2 of 3, caller still 200, second call revokes 0."
+
+[[criterion]]
+  id = "c-10"
+  status = "covered"
+  tests = ["internal/api/login_test.go:TestMe", "internal/api/middleware_test.go:TestNoStore"]
+  notes = "TestMe asserts Cache-Control: no-store on the authenticated 200 and on the 401; TestNoStore covers the CSRF 403, an unmounted path and a 200 stub."
+
+[[criterion]]
+  id = "c-11"
+  status = "covered"
+  tests = ["internal/ratelimit/limiter_test.go:TestPerIP_Doubling", "internal/ratelimit/limiter_test.go:TestPerIP_Reset", "internal/ratelimit/limiter_test.go:TestLimiter_Reset", "internal/ratelimit/limiter_test.go:TestPerIP_RetryAfter", "internal/ratelimit/limiter_test.go:TestGlobal_Flat", "internal/api/login_test.go:TestLogin_RetryAfterEscalates"]
+  notes = "Fake-clock tests: TestPerIP_Doubling 1m,2m,4m,...,1h then sticky at 1h through trip 40; TestLimiter_Reset 59m59s past the lockout does not reset, 1h does (back to 1m); TestPerIP_RetryAfter reflects the remaining window; TestGlobal_Flat asserts the global window never doubles. TestLogin_RetryAfterEscalates carries it through HTTP: 60 -> 120 -> 90 mid-window."
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins mutant survived: internal/store/sessions.go:79 (CONDITIONALS_NEGATION) — routed to 03-children-and-blocked-view"
+
+[[finding]]
+  severity = "FLAG"
+  text = "mutation adapter stryker failed: stryker did not write a report at /Users/rivil/Development/adguard-reward/reports/mutation/mutation.json: stryker failed with exit status 1; 5550 bytes of tool output observed; the full output of stryker went to this run's stderr, not to any file dross writes"
+
+[[finding]]
+  severity = "FLAG"
+  text = "criterion c-7 (Svelte login page / 401 redirect / landing on home) is weak: api.test.ts covers messageFor distinctness and the 401 -> onUnauthorized hook, but no test renders Login/App/Home.svelte — page behaviour rests on the manual gate in the t-8 commit; add a DOM-level test (or Playwright smoke) when a web test runner lands"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped .gitignore: no mutation adapter for .gitignore"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped Makefile: no mutation adapter for "
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped deploy/config.example.yaml: no mutation adapter for .yaml"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped go.mod: no mutation adapter for .mod"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped go.sum: no mutation adapter for .sum"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/config/testdata/full.yaml: no mutation adapter for .yaml"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0001_sessions.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/pnpm-lock.yaml: no mutation adapter for .yaml"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/src/lib/Counter.svelte: file no longer exists in the working tree"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/api.test.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file; stryker: AST unavailable for web/src/lib/api.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file; stryker: AST unavailable for web/vite.config.ts (cannot resolve @babel/parser from /Users/rivil/Development/adguard-reward); mutating the whole file"

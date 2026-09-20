@@ -10,6 +10,10 @@
   name = "string-concat-panic"
   reason = "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
 
+[[category]]
+  name = "string-concat-panic-embed"
+  reason = "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -243,3 +247,75 @@
   line = 349
   category = "string-concat-panic"
   accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "1fa25d4f40ebe7f5"
+  file = "internal/api/login.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 79
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "793b75f25044151d"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil && ctx.Err() == nil:"
+  line = 240
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "0231579a43c2cb95"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case n > 0:"
+  line = 242
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2cf50219723c390a"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case n > 0:"
+  line = 242
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "98794572c2e565fb"
+  file = "internal/auth/middleware.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 35
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "0b343badf918d34d"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"trusted_proxies\", EnvPrefix + \"TRUSTED_PROXIES\", func(c *Config, v string) { c.TrustedProxies = splitList(v) }},"
+  line = 82
+  category = "string-concat-initializer"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "a8785d915cdc6357"
+  file = "internal/store/migrate.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"store: embedded migrations dir missing: \" + err.Error())"
+  line = 25
+  category = "string-concat-panic-embed"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "3d1decd06dce2e38"
+  file = "internal/store/migrate.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"store: list embedded migrations: \" + err.Error())"
+  line = 35
+  category = "string-concat-panic-embed"
+  accepted_in = "02-auth-sessions"
