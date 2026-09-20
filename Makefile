@@ -6,7 +6,7 @@ GOFLAGS  ?= -trimpath
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
 LDFLAGS  ?= -s -w -X main.version=$(VERSION)
 
-.PHONY: help dev dev-web dev-api build build-web test smoke typecheck lint fmt clean
+.PHONY: help dev dev-web dev-api build build-web test test-go test-web smoke typecheck lint fmt clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
@@ -23,8 +23,13 @@ build-web: ## Build the frontend into web/dist
 build: build-web ## Build the single static binary
 	CGO_ENABLED=0 go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o bin/$(BIN) ./cmd/$(BIN)
 
-test: ## Run Go tests
+test: test-go test-web ## Run the Go and web test suites (needs web/node_modules)
+
+test-go: ## Run Go tests
 	go test -race ./...
+
+test-web: ## Run web unit tests (vitest)
+	cd $(WEB) && pnpm test
 
 smoke: build ## Build, then check the binary exits 1 on a missing --config path
 	@./bin/$(BIN) --config missing.yaml 2>/dev/null; rc=$$?; \
