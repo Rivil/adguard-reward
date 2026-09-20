@@ -1,22 +1,22 @@
 [verify]
   phase = "02-auth-sessions"
-  generated_at = 2026-09-20T13:03:58.667496Z
-  verdict = "fail"
+  generated_at = 2026-09-20T13:49:18.977936Z
+  verdict = "pass"
   finalized = true
-  finalized_at = 2026-09-20T13:15:04.246567Z
+  finalized_at = 2026-09-20T13:54:23.463405Z
 
 [summary]
   mutation_status = "measured"
   measured_on = "local"
-  mutation_score = 0.7951807228915663
-  mutants_killed = 264
-  mutants_survived = 68
-  mutants_not_covered = 27
-  mutants_in_scope = 332
-  unclassified_in_scope = 21
+  mutation_score = 0.819718309859155
+  mutants_killed = 291
+  mutants_survived = 64
+  mutants_not_covered = 43
+  mutants_in_scope = 355
+  unclassified_in_scope = 0
   criteria_total = 11
-  criteria_covered = 10
-  criteria_uncovered = 1
+  criteria_covered = 11
+  criteria_uncovered = 0
 
   [[summary.leg]]
     language = "go"
@@ -33,15 +33,15 @@
   [[summary.leg]]
     language = "typescript"
     tool = "stryker"
-    killed = 94
-    survived = 42
+    killed = 121
+    survived = 38
     timeout = 0
-    in_scope = 136
-    score = 0.6911764705882353
-    file_count = 9
+    in_scope = 159
+    score = 0.7610062893081762
+    file_count = 10
     measured_on = "local"
-    ranges = ["web/src/App.test.ts:1-2 (hunk)", "web/src/App.test.ts:15-15 (hunk)", "web/src/App.test.ts:16-29 (FunctionDeclaration mockFetch)", "web/src/App.test.ts:3-3 (ImportDeclaration)", "web/src/App.test.ts:30-30 (hunk)", "web/src/App.test.ts:31-33 (ExpressionStatement)", "web/src/App.test.ts:34-34 (hunk)", "web/src/App.test.ts:35-70 (ExpressionStatement)", "web/src/App.test.ts:4-4 (ImportDeclaration)", "web/src/App.test.ts:5-5 (ImportDeclaration)", "web/src/App.test.ts:6-6 (hunk)", "web/src/App.test.ts:7-7 (TSTypeAliasDeclaration Call)", "web/src/App.test.ts:8-8 (hunk)", "web/src/App.test.ts:9-14 (FunctionDeclaration json)", "web/src/lib/Login.test.ts:1-2 (hunk)", "web/src/lib/Login.test.ts:13-13 (hunk)", "web/src/lib/Login.test.ts:14-24 (FunctionDeclaration mockFetch)", "web/src/lib/Login.test.ts:25-25 (hunk)", "web/src/lib/Login.test.ts:26-28 (ExpressionStatement)", "web/src/lib/Login.test.ts:29-30 (hunk)", "web/src/lib/Login.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Login.test.ts:31-36 (FunctionDeclaration signIn)", "web/src/lib/Login.test.ts:37-37 (hunk)", "web/src/lib/Login.test.ts:38-41 (FunctionDeclaration alertText)", "web/src/lib/Login.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Login.test.ts:42-42 (hunk)", "web/src/lib/Login.test.ts:43-89 (ExpressionStatement)", "web/src/lib/Login.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Login.test.ts:6-6 (hunk)", "web/src/lib/Login.test.ts:7-12 (FunctionDeclaration json)", "web/src/lib/api.test.ts:1-1 (hunk)", "web/src/lib/api.test.ts:128-128 (hunk)", "web/src/lib/api.test.ts:129-141 (ExpressionStatement)", "web/src/lib/api.test.ts:13-13 (hunk)", "web/src/lib/api.test.ts:14-27 (FunctionDeclaration mockFetch)", "web/src/lib/api.test.ts:2-2 (ImportDeclaration)", "web/src/lib/api.test.ts:28-28 (hunk)", "web/src/lib/api.test.ts:29-31 (FunctionDeclaration header)", "web/src/lib/api.test.ts:3-3 (ImportDeclaration)", "web/src/lib/api.test.ts:32-32 (hunk)", "web/src/lib/api.test.ts:33-41 (FunctionDeclaration fails)", "web/src/lib/api.test.ts:4-4 (hunk)", "web/src/lib/api.test.ts:42-42 (hunk)", "web/src/lib/api.test.ts:43-43 (VariableDeclaration unauthorized)", "web/src/lib/api.test.ts:44-44 (hunk)", "web/src/lib/api.test.ts:45-48 (ExpressionStatement)", "web/src/lib/api.test.ts:49-49 (hunk)", "web/src/lib/api.test.ts:5-5 (TSTypeAliasDeclaration Call)", "web/src/lib/api.test.ts:50-52 (ExpressionStatement)", "web/src/lib/api.test.ts:53-53 (hunk)", "web/src/lib/api.test.ts:54-127 (ExpressionStatement)", "web/src/lib/api.test.ts:6-6 (hunk)", "web/src/lib/api.test.ts:7-12 (FunctionDeclaration json)", "web/src/lib/api.ts:1-4 (hunk)", "web/src/lib/api.ts:10-10 (hunk)", "web/src/lib/api.ts:11-24 (ClassDeclaration ApiError)", "web/src/lib/api.ts:112-114 (hunk)", "web/src/lib/api.ts:115-118 (TSInterfaceDeclaration Me)", "web/src/lib/api.ts:119-119 (hunk)", "web/src/lib/api.ts:120-122 (FunctionDeclaration login)", "web/src/lib/api.ts:123-123 (hunk)", "web/src/lib/api.ts:124-126 (FunctionDeclaration logout)", "web/src/lib/api.ts:127-127 (hunk)", "web/src/lib/api.ts:128-130 (FunctionDeclaration me)", "web/src/lib/api.ts:131-134 (hunk)", "web/src/lib/api.ts:135-146 (FunctionDeclaration messageFor)", "web/src/lib/api.ts:25-27 (hunk)", "web/src/lib/api.ts:28-28 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:29-29 (hunk)", "web/src/lib/api.ts:30-32 (FunctionDeclaration routeFor)", "web/src/lib/api.ts:33-33 (hunk)", "web/src/lib/api.ts:34-36 (FunctionDeclaration currentPath)", "web/src/lib/api.ts:37-38 (hunk)", "web/src/lib/api.ts:39-39 (VariableDeclaration route)", "web/src/lib/api.ts:40-41 (hunk)", "web/src/lib/api.ts:42-48 (FunctionDeclaration navigate)", "web/src/lib/api.ts:49-49 (hunk)", "web/src/lib/api.ts:5-5 (ImportDeclaration)", "web/src/lib/api.ts:50-52 (IfStatement)", "web/src/lib/api.ts:53-53 (hunk)", "web/src/lib/api.ts:54-54 (VariableDeclaration onUnauthorized)", "web/src/lib/api.ts:55-56 (hunk)", "web/src/lib/api.ts:57-59 (FunctionDeclaration setOnUnauthorized)", "web/src/lib/api.ts:6-6 (hunk)", "web/src/lib/api.ts:60-62 (hunk)", "web/src/lib/api.ts:63-63 (TSTypeAliasDeclaration Method)", "web/src/lib/api.ts:64-64 (hunk)", "web/src/lib/api.ts:65-68 (TSInterfaceDeclaration ErrorEnvelope)", "web/src/lib/api.ts:69-69 (hunk)", "web/src/lib/api.ts:7-7 (VariableDeclaration CSRF_HEADER)", "web/src/lib/api.ts:70-81 (FunctionDeclaration readEnvelope)", "web/src/lib/api.ts:8-8 (VariableDeclaration CSRF_VALUE)", "web/src/lib/api.ts:82-82 (hunk)", "web/src/lib/api.ts:83-89 (FunctionDeclaration retryAfterOf)", "web/src/lib/api.ts:9-9 (VariableDeclaration LOGIN_PATH)", "web/src/lib/api.ts:90-94 (hunk)", "web/src/lib/api.ts:95-111 (FunctionDeclaration request)", "web/vite.config.ts:1-1 (hunk)", "web/vite.config.ts:10-33 (ExportDefaultDeclaration)", "web/vite.config.ts:4-4 (ImportDeclaration)", "web/vite.config.ts:8-9 (hunk)"]
-    whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable", "web/src/lib/Login.svelte — ast-unavailable", "web/src/main.ts — file-absent-from-hunks"]
+    ranges = ["web/src/App.test.ts:1-2 (hunk)", "web/src/App.test.ts:10-10 (TSTypeAliasDeclaration Call)", "web/src/App.test.ts:11-11 (hunk)", "web/src/App.test.ts:12-17 (FunctionDeclaration json)", "web/src/App.test.ts:18-18 (hunk)", "web/src/App.test.ts:19-32 (FunctionDeclaration mockFetch)", "web/src/App.test.ts:3-3 (ImportDeclaration)", "web/src/App.test.ts:33-33 (hunk)", "web/src/App.test.ts:34-36 (ExpressionStatement)", "web/src/App.test.ts:37-37 (hunk)", "web/src/App.test.ts:38-126 (ExpressionStatement)", "web/src/App.test.ts:4-4 (ImportDeclaration)", "web/src/App.test.ts:5-5 (ImportDeclaration)", "web/src/App.test.ts:6-6 (ImportDeclaration)", "web/src/App.test.ts:7-7 (ImportDeclaration)", "web/src/App.test.ts:8-8 (ImportDeclaration)", "web/src/App.test.ts:9-9 (hunk)", "web/src/lib/Login.test.ts:1-2 (hunk)", "web/src/lib/Login.test.ts:13-13 (hunk)", "web/src/lib/Login.test.ts:14-24 (FunctionDeclaration mockFetch)", "web/src/lib/Login.test.ts:25-25 (hunk)", "web/src/lib/Login.test.ts:26-28 (ExpressionStatement)", "web/src/lib/Login.test.ts:29-30 (hunk)", "web/src/lib/Login.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Login.test.ts:31-36 (FunctionDeclaration signIn)", "web/src/lib/Login.test.ts:37-37 (hunk)", "web/src/lib/Login.test.ts:38-41 (FunctionDeclaration alertText)", "web/src/lib/Login.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Login.test.ts:42-42 (hunk)", "web/src/lib/Login.test.ts:43-86 (ExpressionStatement)", "web/src/lib/Login.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Login.test.ts:6-6 (hunk)", "web/src/lib/Login.test.ts:7-12 (FunctionDeclaration json)", "web/src/lib/api.test.ts:1-1 (hunk)", "web/src/lib/api.test.ts:13-13 (hunk)", "web/src/lib/api.test.ts:14-27 (FunctionDeclaration mockFetch)", "web/src/lib/api.test.ts:162-162 (hunk)", "web/src/lib/api.test.ts:163-176 (ExpressionStatement)", "web/src/lib/api.test.ts:2-2 (ImportDeclaration)", "web/src/lib/api.test.ts:28-28 (hunk)", "web/src/lib/api.test.ts:29-31 (FunctionDeclaration header)", "web/src/lib/api.test.ts:3-3 (ImportDeclaration)", "web/src/lib/api.test.ts:32-32 (hunk)", "web/src/lib/api.test.ts:33-41 (FunctionDeclaration fails)", "web/src/lib/api.test.ts:4-4 (hunk)", "web/src/lib/api.test.ts:42-42 (hunk)", "web/src/lib/api.test.ts:43-43 (VariableDeclaration unauthorized)", "web/src/lib/api.test.ts:44-44 (hunk)", "web/src/lib/api.test.ts:45-48 (ExpressionStatement)", "web/src/lib/api.test.ts:49-49 (hunk)", "web/src/lib/api.test.ts:5-5 (TSTypeAliasDeclaration Call)", "web/src/lib/api.test.ts:50-52 (ExpressionStatement)", "web/src/lib/api.test.ts:53-53 (hunk)", "web/src/lib/api.test.ts:54-161 (ExpressionStatement)", "web/src/lib/api.test.ts:6-6 (hunk)", "web/src/lib/api.test.ts:7-12 (FunctionDeclaration json)", "web/src/lib/api.ts:1-4 (hunk)", "web/src/lib/api.ts:10-10 (hunk)", "web/src/lib/api.ts:11-24 (ClassDeclaration ApiError)", "web/src/lib/api.ts:112-114 (hunk)", "web/src/lib/api.ts:115-118 (TSInterfaceDeclaration Me)", "web/src/lib/api.ts:119-119 (hunk)", "web/src/lib/api.ts:120-122 (FunctionDeclaration login)", "web/src/lib/api.ts:123-123 (hunk)", "web/src/lib/api.ts:124-126 (FunctionDeclaration logout)", "web/src/lib/api.ts:127-127 (hunk)", "web/src/lib/api.ts:128-130 (FunctionDeclaration me)", "web/src/lib/api.ts:131-134 (hunk)", "web/src/lib/api.ts:135-146 (FunctionDeclaration messageFor)", "web/src/lib/api.ts:25-27 (hunk)", "web/src/lib/api.ts:28-28 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:29-29 (hunk)", "web/src/lib/api.ts:30-32 (FunctionDeclaration routeFor)", "web/src/lib/api.ts:33-33 (hunk)", "web/src/lib/api.ts:34-36 (FunctionDeclaration currentPath)", "web/src/lib/api.ts:37-38 (hunk)", "web/src/lib/api.ts:39-39 (VariableDeclaration route)", "web/src/lib/api.ts:40-41 (hunk)", "web/src/lib/api.ts:42-48 (FunctionDeclaration navigate)", "web/src/lib/api.ts:49-49 (hunk)", "web/src/lib/api.ts:5-5 (ImportDeclaration)", "web/src/lib/api.ts:50-52 (IfStatement)", "web/src/lib/api.ts:53-53 (hunk)", "web/src/lib/api.ts:54-54 (VariableDeclaration onUnauthorized)", "web/src/lib/api.ts:55-56 (hunk)", "web/src/lib/api.ts:57-59 (FunctionDeclaration setOnUnauthorized)", "web/src/lib/api.ts:6-6 (hunk)", "web/src/lib/api.ts:60-62 (hunk)", "web/src/lib/api.ts:63-63 (TSTypeAliasDeclaration Method)", "web/src/lib/api.ts:64-64 (hunk)", "web/src/lib/api.ts:65-68 (TSInterfaceDeclaration ErrorEnvelope)", "web/src/lib/api.ts:69-69 (hunk)", "web/src/lib/api.ts:7-7 (VariableDeclaration CSRF_HEADER)", "web/src/lib/api.ts:70-81 (FunctionDeclaration readEnvelope)", "web/src/lib/api.ts:8-8 (VariableDeclaration CSRF_VALUE)", "web/src/lib/api.ts:82-82 (hunk)", "web/src/lib/api.ts:83-89 (FunctionDeclaration retryAfterOf)", "web/src/lib/api.ts:9-9 (VariableDeclaration LOGIN_PATH)", "web/src/lib/api.ts:90-94 (hunk)", "web/src/lib/api.ts:95-111 (FunctionDeclaration request)", "web/src/main.ts:1-1 (hunk)", "web/stryker.config.mjs:1-3 (hunk)", "web/stryker.config.mjs:4-16 (ExportDefaultDeclaration)", "web/vite.config.ts:1-2 (hunk)", "web/vite.config.ts:10-33 (ExportDefaultDeclaration)", "web/vite.config.ts:3-3 (ImportDeclaration)", "web/vite.config.ts:4-4 (ImportDeclaration)", "web/vite.config.ts:5-5 (ImportDeclaration)", "web/vite.config.ts:7-7 (ImportDeclaration)"]
+    whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable", "web/src/lib/Login.svelte — ast-unavailable"]
 
 [[criterion]]
   id = "c-1"
@@ -58,8 +58,8 @@
 [[criterion]]
   id = "c-3"
   status = "covered"
-  tests = ["internal/auth/auth_test.go:TestRequireSession", "internal/api/login_test.go:TestRouter_Fallthrough", "cmd/adguard-reward/main_test.go:TestRun_Healthz", "internal/api/login_test.go:TestLogout_Replay"]
-  notes = "TestRequireSession: no cookie / random / deleted / expired -> 401 and next never runs. TestRouter_Fallthrough: unknown /api/v1 path -> 401 without a cookie (catch-all), 404 with one. TestRun_Healthz: /healthz answers with no session on the wired binary. TestLogout_Replay: logout 204 with one Max-Age=0 Set-Cookie, replaying the old cookie -> 401. Server side is tight; see the FLAG on the SPA's logout() method (api.ts:125) — the client half is not pinned to POST."
+  tests = ["internal/auth/auth_test.go:TestRequireSession", "internal/api/login_test.go:TestRouter_Fallthrough", "cmd/adguard-reward/main_test.go:TestRun_Healthz", "internal/api/login_test.go:TestLogout_Replay", "web/src/lib/api.test.ts:it('logout posts')"]
+  notes = "TestRequireSession: no cookie / random / deleted / expired -> 401 and next never runs. TestRouter_Fallthrough: unknown /api/v1 path -> 401 without a cookie (catch-all), 404 with one. TestRun_Healthz: /healthz answers with no session on the wired binary. TestLogout_Replay: logout 204 with one Max-Age=0 Set-Cookie, replaying the old cookie -> 401. The client half is now pinned too: api.test 'logout posts' asserts POST /api/v1/logout (api.ts:125 StringLiteral killed)."
 
 [[criterion]]
   id = "c-4"
@@ -70,8 +70,8 @@
 [[criterion]]
   id = "c-5"
   status = "covered"
-  tests = ["internal/api/middleware_test.go:TestCSRF_Methods", "internal/api/middleware_test.go:TestCSRF_Value", "internal/api/middleware_test.go:TestCSRF_BeforeHandler", "internal/api/login_test.go:TestLogin_CSRF"]
-  notes = "TestCSRF_Methods: POST/PUT/PATCH/DELETE without the header -> 403 and zero handler calls; GET/HEAD/OPTIONS pass. TestCSRF_Value rejects case/whitespace variants. TestCSRF_BeforeHandler: 403 on an unmounted path (not 404) and on a panicking route. TestLogin_CSRF: real login route, 403 with zero fake hits, 204 with the header. Client side: api.test.ts 'sends X-Requested-With' pins the header on every request."
+  tests = ["internal/api/middleware_test.go:TestCSRF_Methods", "internal/api/middleware_test.go:TestCSRF_Value", "internal/api/middleware_test.go:TestCSRF_BeforeHandler", "internal/api/login_test.go:TestLogin_CSRF", "web/src/lib/api.test.ts:it('sends X-Requested-With')"]
+  notes = "TestCSRF_Methods: POST/PUT/PATCH/DELETE without the header -> 403 and zero handler calls; GET/HEAD/OPTIONS pass. TestCSRF_Value rejects case/whitespace variants. TestCSRF_BeforeHandler: 403 on an unmounted path (not 404) and on a panicking route. TestLogin_CSRF: real login route, 403 with zero fake hits, 204 with the header. Client side: api.test 'sends X-Requested-With' pins the header on every request."
 
 [[criterion]]
   id = "c-6"
@@ -81,9 +81,9 @@
 
 [[criterion]]
   id = "c-7"
-  status = "weak"
-  tests = ["web/src/lib/Login.test.ts:it('shows distinct messages for wrong password, AdGuard unreachable and rate limit')", "web/src/lib/Login.test.ts:it('shows a network message when fetch itself fails')", "web/src/App.test.ts:it('401 on /me lands on login')", "web/src/App.test.ts:it('logged-in parent lands on home')", "web/src/App.test.ts:it('log out returns to the login page')", "web/src/lib/api.test.ts:it('401 on /login does not redirect')", "web/src/lib/api.test.ts:it('gives three distinct messages, the last containing retryAfter')"]
-  notes = "DOM tests now render Login/App/Home: per-code alert with data-error, three distinct texts, 401 on /me -> Sign in button + location /login, 200 -> 'Signed in as mum' at /, log out -> login. Weak on two fronts the Stryker survivors expose. (1) Message text is never pinned: messageFor returning '' for bad_credentials / adguard_unavailable (api.ts:138,140), the case labels (137,139), envelope error/message parsing (75,76), the statusText fallback (72), missing Retry-After -> 0s (86) and the network text (Login.svelte:22) all survive — the tests prove the codes differ, not that a readable line is shown. (2) 401 routing after login is untested: res.status===401 -> true (api.ts:109) and App.svelte:35's route/username guard survive because no test issues a 401 once logged in; the default onUnauthorized (api.ts:54) is masked by refresh()'s catch, so App.test's '(not a test spy) must route here' comment is not actually proven."
+  status = "covered"
+  tests = ["web/src/lib/Login.test.ts:it('shows distinct messages for wrong password, AdGuard unreachable and rate limit')", "web/src/lib/Login.test.ts:it('shows a network message when fetch itself fails')", "web/src/lib/api.test.ts:it('gives the fixed line per code')", "web/src/App.test.ts:it('401 on /me lands on login')", "web/src/App.test.ts:it('a 401 after login returns to the login page')", "web/src/App.test.ts:it('logged-in parent lands on home')", "web/src/App.test.ts:it('log out returns to the login page')", "web/src/lib/api.test.ts:it('502 on /me does not redirect')", "web/src/lib/api.test.ts:it('401 on /login does not redirect')"]
+  notes = "Distinct messages: Login.test asserts the alert textContent equals the literal per code ('Wrong username or password', \"Can't reach AdGuard Home — try again in a moment\", 'Too many attempts — wait 120s') and the network-failure literal; api.test 'gives the fixed line per code' pins messageFor and the 60s Retry-After default. 401 -> /login: App.test 'a 401 after login returns to the login page' lands on Home, then a 401 from me() with no spy (the default onUnauthorized) shows the Sign in button at /login; '502 on /me does not redirect' proves only 401 triggers it. Logged-in parent -> placeholder home: 'logged-in parent lands on home' ('Signed in as mum' at /). t-13 killed 17 of the 19 survivors that made this weak last run (api.ts:54,72,75,76,86,109,125,137-140; App.svelte:35 x3; Login.svelte:22); the two OptionalChaining survivors at api.ts:75-76 are equivalent (accepted: a null JSON body throws into the catch and yields the same result). Remaining routed survivors in Login/Home/App.svelte are pending-state, initial-value and non-401 fallback polish outside c-7's claims."
 
 [[criterion]]
   id = "c-8"
@@ -115,115 +115,7 @@
 
 [[finding]]
   severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/api.ts:31 (StringLiteral) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/api.ts:43 (StringLiteral) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/api.ts:44 (ConditionalExpression) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/api.ts:44 (LogicalOperator) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/api.ts:44 (ConditionalExpression) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/api.ts:44 (ConditionalExpression) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:54 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:72 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:75 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:75 (OptionalChaining)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:76 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:76 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:76 (EqualityOperator)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:76 (OptionalChaining)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:76 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:86 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:109 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:125 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:137 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:138 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:139 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:139 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/api.ts:140 (StringLiteral)"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/api.ts:34 (BlockStatement) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
   text = "stryker mutant survived: web/src/App.svelte:15 (BlockStatement) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/App.svelte:35 (LogicalOperator)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/App.svelte:35 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/App.svelte:35 (ConditionalExpression)"
 
 [[finding]]
   severity = "NOTE"
@@ -250,12 +142,28 @@
   text = "stryker mutant survived: web/src/lib/Login.svelte:13 (BooleanLiteral) — routed to 05-phone-ui-buttons-pwa"
 
 [[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Login.svelte:22 (StringLiteral)"
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/Login.svelte:44 (StringLiteral) — routed to 05-phone-ui-buttons-pwa"
 
 [[finding]]
   severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/Login.svelte:44 (StringLiteral) — routed to 05-phone-ui-buttons-pwa"
+  text = "stryker mutant survived: web/src/lib/api.ts:43 (StringLiteral) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/api.ts:44 (ConditionalExpression) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/api.ts:44 (LogicalOperator) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/api.ts:44 (ConditionalExpression) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/api.ts:44 (ConditionalExpression) — routed to 05-phone-ui-buttons-pwa"
 
 [[finding]]
   severity = "NOTE"
@@ -302,33 +210,29 @@
   text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file"
 
 [[finding]]
-  severity = "BLOCKING"
-  text = "c-7 test gap behind 14 of the seeded survivors (api.ts:72,75,76,86,137-140; Login.svelte:22): pin the shown text — assert Login's alert textContent equals messageFor's literal per code, assert err.message equals the envelope's message and code equals its error field, assert 'HTTP <status>' when the body is not JSON, assert retryAfter is undefined when Retry-After is absent, and assert the network-failure alert text. Amend t-12 (Login.test.ts) / t-7 (api.test.ts)."
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "c-7 test gap behind 4 of the seeded survivors (api.ts:54,109; App.svelte:35 x2): no test issues a 401 after login. Add an App test that lands on Home, then has the next request 401 — expect the Sign in button and location /login without a spy; and an api.test that a 502 on /api/v1/me does NOT call onUnauthorized (only 401 may). Amend t-12."
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "logout() method unpinned (api.ts:125 'POST' -> ''): App.test 'log out' checks the URL list only; a GET /api/v1/logout is rejected server-side and the session stays alive while the page shows login. Assert init.method === 'POST' for logout (and me() is GET). Amend t-12 / t-7."
-
-[[finding]]
-  severity = "FLAG"
-  text = "criterion c-7 is weak: Login/App/Home are rendered and routed under test, but message text and the post-login 401 path are not pinned — see the three BLOCKING findings above; all 19 unclassified survivors are in this phase's own web code (origin in-hunk)."
-
-[[finding]]
-  severity = "FLAG"
-  text = "13 survivors routed to 05-phone-ui-buttons-pwa (pending/disabled button states in Home.svelte and Login.svelte, prefilled initial field values, duplicate pushState on same-path navigate, popstate mapping, App.refresh's non-401 catch fallback) — UI polish no c-N claims; visible until 05 kills or accepts them."
+  severity = "NOTE"
+  text = "c-7 was weak last run behind 19 unclassified survivors; t-13 (test-only, commit 6e4b3a1) killed 17 of them — message literals, envelope/statusText/Retry-After parsing, the post-login 401 path, logout's method and the App route/username guard. TypeScript leg moved 94/136 -> 121/159 killed."
 
 [[finding]]
   severity = "NOTE"
-  text = "stryker leg is measured for the first time this phase: [mutation.stryker] workdir = \"web\" in project.toml, @stryker-mutator/core + vitest-runner 9.6.1 as web devDependencies, web/stryker.config.mjs (explicit plugins list — pnpm's isolated store hides sibling plugins from the @stryker-mutator/* glob; concurrency 2 — more runners race on the sandbox's vite deps cache), and vite.config.ts server.fs.allow includes the real node_modules so @testing-library/svelte's noExternal setup file loads from the sandbox. Without the fs.allow fix the DOM suites failed to load in the sandbox while stryker still reported the dry run as succeeded (9 of 16 tests ran) — check 'Ran N tests' against pnpm test on every future run."
+  text = "2 survivors accepted as equivalent (category optional-chain-inside-try): api.ts:75-76 body?.x -> body.x sits inside readEnvelope's try; a null JSON body throws into the catch and yields the same {unknown, statusText} the optional chain does."
 
 [[finding]]
   severity = "NOTE"
-  text = "dross gap: the stryker adapter passes every changed .ts file to --mutate, including *.test.ts, vite.config.ts and main.ts (107 meaningless survivors on the first measured run). Worked around with '// Stryker disable all' headers on those five files (reported Ignored, not counted). gremlins never has this problem because go tooling excludes _test.go; the adapter should filter test sources the same way."
+  text = "17 survivors accepted under category stryker-self-config: web/stryker.config.mjs entered the stryker scope this run (git+changes source) and Stryker mutated its own runner config — the sandbox copy never configures the run that measures it and no test reads it. Same adapter gap as the *.test.ts / vite.config.ts note below; a '// Stryker disable all' header on the config, or an adapter-side filter for stryker.config.* and *.test.ts, would stop these being re-listed as accepted rows."
 
 [[finding]]
   severity = "NOTE"
-  text = "score 0.80 over 332 in-scope mutants: go 170/196 killed with all 26 not-covered accepted/routed (efficacy over reachable = 1.00); typescript 94/136 killed, 42 survived (38 unique) of which 6 accepted as equivalent, 13 routed, 19 unclassified."
+  text = "12 survivor keys (13 mutants) remain routed to 03-children-and-blocked-view (sessions.go:79) and 05-phone-ui-buttons-pwa (pending/disabled states and initial values in Login/Home.svelte, App.refresh's non-401 catch fallback, navigate's duplicate-pushState guard) — none sits on a c-N claim; visible until those phases kill or accept them."
+
+[[finding]]
+  severity = "NOTE"
+  text = "Stryker dry run 'Ran 22 tests' matches the 22 it() blocks across App.test.ts, Login.test.ts and api.test.ts — the sandbox ran the full DOM suite (the vite server.fs.allow fix from t-12 holds)."
+
+[[finding]]
+  severity = "NOTE"
+  text = "dross gap (carried): the stryker adapter passes every changed .ts/.mjs file to --mutate, including *.test.ts, vite.config.ts, main.ts and now stryker.config.mjs; '// Stryker disable all' headers cover the first four. gremlins never has this problem because go tooling excludes _test.go."
+
+[[finding]]
+  severity = "NOTE"
+  text = "score 0.82 over 355 in-scope mutants: go 170/196 killed with all 26 not-covered accepted/routed (efficacy over reachable = 1.00); typescript 121/159 killed, 38 survived of which 25 accepted (8 equivalent in app code, 17 stryker self-config), 13 routed, 0 unclassified. Scope degraded to whole-file for the three .svelte components (no .svelte parser in the adapter)."

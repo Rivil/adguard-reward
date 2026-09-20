@@ -18,6 +18,14 @@
   name = "stryker-node-env-guard"
   reason = "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
 
+[[category]]
+  name = "optional-chain-inside-try"
+  reason = "body?.x -> body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+
+[[category]]
+  name = "stryker-self-config"
+  reason = "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -376,4 +384,148 @@
   text = "if (body !== undefined) {"
   line = 98
   reason = "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2bd6098940f4db18"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.error === 'string') code = body.error"
+  line = 75
+  category = "optional-chain-inside-try"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "ab063f347019f075"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.message === 'string') message = body.message"
+  line = 76
+  category = "optional-chain-inside-try"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "5ce873c89415142e"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "mutate: ['src/**/*.{ts,svelte}', '!src/**/*.test.ts', '!src/vite-env.d.ts'],"
+  line = 8
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "6c0229c7a791edfa"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "export default {"
+  line = 4
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "462f570872709404"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "testRunner: 'vitest',"
+  line = 5
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2462f1b076b4e965"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "plugins: ['@stryker-mutator/vitest-runner'],"
+  line = 6
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "25b8291a7513cacc"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "plugins: ['@stryker-mutator/vitest-runner'],"
+  line = 6
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "b0a1b69fe8d0769a"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "vitest: { configFile: 'vite.config.ts' },"
+  line = 7
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "9dada2f0e50f7800"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "vitest: { configFile: 'vite.config.ts' },"
+  line = 7
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "b5d644fad38137bd"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "mutate: ['src/**/*.{ts,svelte}', '!src/**/*.test.ts', '!src/vite-env.d.ts'],"
+  line = 8
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "fd2e398a8266c702"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "reporters: ['json', 'progress'],"
+  line = 9
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "4bb4543da79a4d17"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "reporters: ['json', 'progress'],"
+  line = 9
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "16a8190aa46b7ac9"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "jsonReporter: { fileName: 'reports/mutation/mutation.json' },"
+  line = 10
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "831fcd513b94f817"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "jsonReporter: { fileName: 'reports/mutation/mutation.json' },"
+  line = 10
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "fa6e2382c0a398ac"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "tempDirName: '.stryker-tmp',"
+  line = 11
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "158d7de022076122"
+  file = "web/stryker.config.mjs"
+  op = "BooleanLiteral"
+  text = "ignoreStatic: true,"
+  line = 12
+  category = "stryker-self-config"
   accepted_in = "02-auth-sessions"
