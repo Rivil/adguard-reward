@@ -1,6 +1,6 @@
 // Stryker disable all: test sources are not mutation targets
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, CSRF_HEADER, CSRF_VALUE, login, me, messageFor, request, setOnUnauthorized } from './api'
+import { ApiError, CSRF_HEADER, CSRF_VALUE, login, logout, me, messageFor, request, setOnUnauthorized } from './api'
 
 type Call = { url: string; init: RequestInit }
 
@@ -74,17 +74,34 @@ describe('request', () => {
     expect(calls[0].init.body).toBe('{"username":"a","password":"b"}')
   })
 
+  it('logout posts', async () => {
+    const calls = mockFetch(new Response(null, { status: 204 }))
+    await logout()
+    expect(calls[0].url).toBe('/api/v1/logout')
+    expect(calls[0].init.method).toBe('POST')
+  })
+
   it('401 on /login does not redirect', async () => {
     mockFetch(json(401, { error: 'bad_credentials', message: 'invalid username or password' }))
     const err = await fails(login('a', 'wrong'))
     expect(err.status).toBe(401)
     expect(err.code).toBe('bad_credentials')
+    expect(err.message).toBe('invalid username or password')
     expect(unauthorized).not.toHaveBeenCalled()
 
     mockFetch(json(401, { error: 'unauthorized', message: 'authentication required' }))
     const err2 = await fails(me())
     expect(err2.code).toBe('unauthorized')
     expect(unauthorized).toHaveBeenCalledTimes(1)
+  })
+
+  it('502 on /me does not redirect', async () => {
+    mockFetch(json(502, { error: 'adguard_unavailable', message: 'upstream down' }))
+    const err = await fails(me())
+    expect(err.status).toBe(502)
+    expect(err.code).toBe('adguard_unavailable')
+    expect(err.message).toBe('upstream down')
+    expect(unauthorized).not.toHaveBeenCalled()
   })
 
   it('distinguishes adguard_unavailable', async () => {
@@ -108,6 +125,11 @@ describe('request', () => {
     mockFetch(json(502, { error: 'adguard_unavailable', message: 'm' }, { 'Retry-After': '5' }))
     const notLimited = await fails(login('a', 'b'))
     expect(notLimited.retryAfter).toBeUndefined()
+
+    mockFetch(json(429, { error: 'rate_limited', message: 'too many attempts' }))
+    const noHeader = await fails(login('a', 'b'))
+    expect(noHeader.code).toBe('rate_limited')
+    expect(noHeader.retryAfter).toBeUndefined()
   })
 
   it('returns the JSON body on 200 and undefined on 204', async () => {
@@ -123,16 +145,29 @@ describe('request', () => {
     expect(err.status).toBe(504)
     expect(err.code).toBe('unknown')
     expect(err.message).toBe('Gateway Timeout')
+
+    // HTTP/2 carries no reason phrase: fall back to the status number.
+    mockFetch(new Response('gateway timeout', { status: 504 }))
+    const bare = await fails(me())
+    expect(bare.message).toBe('HTTP 504')
+  })
+
+  it('ignores non-string envelope fields', async () => {
+    mockFetch(json(500, { error: 5, message: { nested: true } }, {}))
+    const err = await fails(me())
+    expect(err.code).toBe('unknown')
+    expect(err.message).toBe('HTTP 500')
   })
 })
 
 describe('messageFor', () => {
-  it('gives three distinct messages, the last containing retryAfter', () => {
-    const bad = messageFor(new ApiError(401, 'bad_credentials', 'x'))
-    const down = messageFor(new ApiError(502, 'adguard_unavailable', 'x'))
-    const limited = messageFor(new ApiError(429, 'rate_limited', 'x', 90))
-    expect(new Set([bad, down, limited]).size).toBe(3)
-    expect(limited).toContain('90')
+  it('gives the fixed line per code', () => {
+    expect(messageFor(new ApiError(401, 'bad_credentials', 'x'))).toBe('Wrong username or password')
+    expect(messageFor(new ApiError(502, 'adguard_unavailable', 'x'))).toBe(
+      "Can't reach AdGuard Home — try again in a moment",
+    )
+    expect(messageFor(new ApiError(429, 'rate_limited', 'x', 90))).toBe('Too many attempts — wait 90s')
+    expect(messageFor(new ApiError(429, 'rate_limited', 'x'))).toBe('Too many attempts — wait 60s')
   })
 
   it('falls back to the server message for other codes', () => {

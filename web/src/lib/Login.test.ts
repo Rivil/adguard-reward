@@ -42,25 +42,21 @@ async function alertText(): Promise<string> {
 
 describe('Login', () => {
   it('shows distinct messages for wrong password, AdGuard unreachable and rate limit', async () => {
-    const seen: Record<string, string> = {}
-
+    // The server's message is deliberately unhelpful; the page shows its own line per code.
     mockFetch(json(401, { error: 'bad_credentials', message: 'nope' }))
     await signIn()
-    seen.bad_credentials = await alertText()
+    expect(await alertText()).toBe('Wrong username or password')
     expect(screen.getByRole('alert').getAttribute('data-error')).toBe('bad_credentials')
 
     mockFetch(json(502, { error: 'adguard_unavailable', message: 'down' }))
     await fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    seen.adguard_unavailable = await alertText()
+    expect(await alertText()).toBe("Can't reach AdGuard Home — try again in a moment")
     expect(screen.getByRole('alert').getAttribute('data-error')).toBe('adguard_unavailable')
 
     mockFetch(json(429, { error: 'rate_limited', message: 'slow down' }, { 'Retry-After': '120' }))
     await fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
-    seen.rate_limited = await alertText()
+    expect(await alertText()).toBe('Too many attempts — wait 120s')
     expect(screen.getByRole('alert').getAttribute('data-error')).toBe('rate_limited')
-
-    expect(seen.rate_limited).toContain('120')
-    expect(new Set(Object.values(seen)).size).toBe(3)
   })
 
   it('shows no message before a failed attempt', () => {
@@ -85,5 +81,6 @@ describe('Login', () => {
     )
     await signIn()
     expect(screen.getByRole('alert').getAttribute('data-error')).toBe('network')
+    expect(await alertText()).toBe("Can't reach the server — check your connection")
   })
 })
