@@ -4,6 +4,7 @@ base_url: "https://reward.example"
 tls:
   cert: "/etc/ssl/reward.crt"
   key: "/etc/ssl/reward.key"
+trusted_proxies: ["10.0.0.0/8", "::1"]
 adguard:
   url: "http://127.0.0.1:3000"
   username: "svc"

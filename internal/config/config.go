@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"net"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -26,13 +27,17 @@ const EnvPrefix = "ADGUARD_REWARD_"
 // Config is the fully merged configuration. Field names are exported so fmt
 // and encoding/json reach the nested Secret values and redact them.
 type Config struct {
-	Listen   string  `yaml:"listen"`
-	BaseURL  string  `yaml:"base_url"`
-	TLS      TLS     `yaml:"tls"`
-	AdGuard  AdGuard `yaml:"adguard"`
-	DataDir  string  `yaml:"data_dir"`
-	AI       AI      `yaml:"ai"`
-	LogLevel string  `yaml:"log_level"`
+	Listen  string `yaml:"listen"`
+	BaseURL string `yaml:"base_url"`
+	TLS     TLS    `yaml:"tls"`
+	// TrustedProxies lists CIDRs (a bare IP means /32 or /128) whose
+	// X-Forwarded-For is believed. Empty means the TCP peer is the client and
+	// the header is ignored, so nothing can spoof the per-IP login limit.
+	TrustedProxies []string `yaml:"trusted_proxies"`
+	AdGuard        AdGuard  `yaml:"adguard"`
+	DataDir        string   `yaml:"data_dir"`
+	AI             AI       `yaml:"ai"`
+	LogLevel       string   `yaml:"log_level"`
 }
 
 // TLS holds the listener certificate pair. Parsed now; the listener is wired
@@ -74,6 +79,7 @@ var envTable = []envEntry{
 	{"base_url", EnvPrefix + "BASE_URL", func(c *Config, v string) { c.BaseURL = v }},
 	{"tls.cert", EnvPrefix + "TLS_CERT", func(c *Config, v string) { c.TLS.Cert = v }},
 	{"tls.key", EnvPrefix + "TLS_KEY", func(c *Config, v string) { c.TLS.Key = v }},
+	{"trusted_proxies", EnvPrefix + "TRUSTED_PROXIES", func(c *Config, v string) { c.TrustedProxies = splitList(v) }},
 	{"adguard.url", EnvPrefix + "ADGUARD_URL", func(c *Config, v string) { c.AdGuard.URL = v }},
 	{"adguard.username", EnvPrefix + "ADGUARD_USERNAME", func(c *Config, v string) { c.AdGuard.Username = v }},
 	{"adguard.password", EnvPrefix + "ADGUARD_PASSWORD", func(c *Config, v string) { c.AdGuard.Password = Secret(v) }},
@@ -143,6 +149,19 @@ func Load(path string, explicit bool, lookupEnv func(string) (string, bool)) (*C
 	return cfg, nil
 }
 
+// splitList parses a comma-separated env value: entries are trimmed and
+// empties dropped, so a set-but-empty variable yields an empty list that
+// overrides the file.
+func splitList(v string) []string {
+	var out []string
+	for _, s := range strings.Split(v, ",") {
+		if s = strings.TrimSpace(s); s != "" {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 func decodeYAML(r io.Reader, cfg *Config) error {
 	dec := yaml.NewDecoder(r)
 	dec.KnownFields(true)
@@ -195,6 +214,14 @@ func (c *Config) validate() error {
 	if err := validateURL(c.AdGuard.URL); err != nil {
 		return fmt.Errorf("config: adguard.url: %w", err)
 	}
+	if (c.TLS.Cert == "") != (c.TLS.Key == "") {
+		return errors.New("config: tls.cert and tls.key must both be set or both empty")
+	}
+	for _, e := range c.TrustedProxies {
+		if _, err := parseCIDR(e); err != nil {
+			return fmt.Errorf("config: trusted_proxies: %q: %w", e, err)
+		}
+	}
 	if _, err := parseLevel(c.LogLevel); err != nil {
 		return fmt.Errorf("config: log_level: %w", err)
 	}
@@ -216,6 +243,35 @@ func validateURL(raw string) error {
 		return errors.New("must not embed credentials; use adguard.username / adguard.password")
 	}
 	return nil
+}
+
+// parseCIDR accepts a CIDR or a bare IP (taken as a /32 or /128).
+func parseCIDR(s string) (*net.IPNet, error) {
+	if _, n, err := net.ParseCIDR(s); err == nil {
+		return n, nil
+	}
+	ip := net.ParseIP(s)
+	if ip == nil {
+		return nil, errors.New("not an IP or CIDR")
+	}
+	bits := 128
+	if v4 := ip.To4(); v4 != nil {
+		ip, bits = v4, 32
+	}
+	return &net.IPNet{IP: ip, Mask: net.CIDRMask(bits, bits)}, nil
+}
+
+// TrustedProxyNets returns trusted_proxies parsed. Load validated every
+// entry, so on a loaded Config nothing is skipped; a hand-built Config drops
+// entries that do not parse.
+func (c *Config) TrustedProxyNets() []*net.IPNet {
+	var nets []*net.IPNet
+	for _, e := range c.TrustedProxies {
+		if n, err := parseCIDR(e); err == nil {
+			nets = append(nets, n)
+		}
+	}
+	return nets
 }
 
 func parseLevel(s string) (slog.Level, error) {
