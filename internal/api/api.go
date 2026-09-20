@@ -59,6 +59,9 @@ func (a *API) routes() {
 	a.mux.HandleFunc("POST /api/v1/login", a.handleLogin)
 	a.mux.Handle("POST /api/v1/logout", a.requireSession(http.HandlerFunc(a.handleLogout)))
 	a.mux.Handle("GET /api/v1/me", a.requireSession(http.HandlerFunc(a.handleMe)))
+	a.mux.Handle("GET /api/v1/sessions", a.requireSession(http.HandlerFunc(a.handleSessionsList)))
+	a.mux.Handle("DELETE /api/v1/sessions/{id}", a.requireSession(http.HandlerFunc(a.handleSessionDelete)))
+	a.mux.Handle("POST /api/v1/sessions/revoke-all", a.requireSession(http.HandlerFunc(a.handleSessionsRevokeAll)))
 	// Unknown paths are 401 without a session and 404 with one, so the
 	// route table cannot be probed anonymously.
 	a.mux.Handle("/api/v1/", a.requireSession(http.NotFoundHandler()))
