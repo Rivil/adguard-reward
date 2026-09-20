@@ -1,4 +1,4 @@
-task_seq = 0
+task_seq = 12
 
 [phase]
   id = "02-auth-sessions"
@@ -117,4 +117,15 @@ task_seq = 0
   covers = ["c-1", "c-2", "c-3", "c-10"]
   depends_on = ["t-1", "t-2", "t-3", "t-9"]
   test_contract = ["if sessions do not survive a restart, TestRun_SessionSurvivesRestart fails: start run() with data_dir in t.TempDir(), login, GET /me 200, cancel ctx (run returns 0), start run() again on the same dir and port, GET /me with the same cookie -> 200", "if the Secure flag is not derived from base_url, TestRun_CookieSecure fails: plain config -> Set-Cookie lacks Secure; config with base_url https://... and no TLS -> Secure present", "if Secure does not follow TLS or the TLS listener is not wired, TestRun_TLS fails: a self-signed cert/key pair generated in the test, tls.cert/tls.key set -> run listens and an https client with InsecureSkipVerify gets a 204 login whose Set-Cookie has Secure; the plain-http config's cookie lacks Secure; tls.cert set without tls.key -> run returns 1 with stderr containing tls.key (the config-load error surfacing through main)", "if the API chain is mounted wrong, TestRun_ApiChain fails: POST /api/v1/login without the header -> 403; GET /api/v1/me without cookie -> 401 with Cache-Control: no-store; GET /healthz without cookie -> 200 (still open)", "if a failed store open is not fatal, TestRun_StoreOpenFails fails: data_dir pointing at a regular file makes run return 1 with stderr containing data_dir", "if the limiter or client IP are not plumbed, TestRun_RateLimitWired fails: 6 wrong-password logins over the real listener -> the 6th is 429 with Retry-After and the fake recorded 5 /control/login hits", "if trusted_proxies is not plumbed through, TestRun_TrustedProxies fails: with trusted_proxies [127.0.0.0/8] and X-Forwarded-For: 203.0.113.7, five wrong logins -> the 6th is 429 and the login log lines carry ip=203.0.113.7; without trusted_proxies the same header leaves ip=127.0.0.1 in the log lines", "if any startup or request log leaks a secret, TestRun_NoSecretsInLogs (extended) fails: the existing canaries plus a login with password 'pw-LOGIN-CANARY-1d7f' and the resulting cookie value are absent from stderr at LOG_LEVEL=debug, while 'listening', '/control/login' and event=login are present", "if the sweeper is not started, TestRun_Sweeper fails: a session row inserted directly with expires_at in the past is gone from the DB within 2s when run() is started with the package var sweepInterval lowered by the test"]
+  status = "done"
+
+[[task]]
+  id = "t-12"
+  wave = 5
+  title = "DOM tests for login page, 401 routing and home landing"
+  files = ["web/package.json", "web/pnpm-lock.yaml", "web/vite.config.ts", "web/src/lib/Login.test.ts", "web/src/App.test.ts"]
+  description = "Remediates the c-7 weak finding from verify. Adds @testing-library/svelte + jsdom to web devDependencies; vite.config.ts gains the svelteTesting() vitest plugin and keeps environment node globally, with the two DOM test files opting into jsdom via the per-file // @vitest-environment jsdom pragma so api.test.ts is unchanged. Login.test.ts renders Login.svelte with fetch stubbed (same mockFetch/json helpers as api.test.ts), fills the form, submits, and asserts the role=alert text for bad_credentials / adguard_unavailable / rate_limited are three distinct strings and that onSuccess fires with the username on 204. App.test.ts renders App.svelte with /me stubbed to 401 (expects the login form and location.pathname === '/login') and to 200 (expects 'Signed in as mum'); a Log out click stubbed to 204 returns to the login form. No source component changes."
+  covers = ["c-7"]
+  depends_on = ["t-8"]
+  test_contract = ["if Login.svelte stops rendering a distinct message per code, Login.test.ts 'shows distinct messages' fails: mounting Login with fetch stubbed to 401 bad_credentials, 502 adguard_unavailable and 429 rate_limited yields three different role=alert texts", "if the default 401 handler stops routing to login, App.test.ts '401 on /me lands on login' fails: mounting App with /me stubbed to 401 renders the sign-in form and pushes /login", "if a logged-in parent no longer lands on Home, App.test.ts 'logged-in parent lands on home' fails: mounting App with /me stubbed to 200 {username} renders 'Signed in as <username>'"]
   status = "done"

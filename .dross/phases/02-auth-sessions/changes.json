@@ -60,6 +60,25 @@
         }
       ]
     },
+    "t-12": {
+      "files": [
+        "web/package.json",
+        "web/pnpm-lock.yaml",
+        "web/vite.config.ts",
+        "web/src/lib/Login.test.ts",
+        "web/src/App.test.ts"
+      ],
+      "commit": "16596f8",
+      "completed_at": "2026-09-20T11:51:37.719354Z",
+      "landmarks": [
+        {
+          "feature": "login page",
+          "symbol": "Login.test.ts 'shows distinct messages'",
+          "loc": "web/src/lib/Login.test.ts:43",
+          "what": "DOM-level tests (testing-library/svelte + jsdom) rendering Login/App: distinct error messages per code, 401 -\u003e /login via default handler, logged-in landing on Home, log out"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/ratelimit/limiter.go",
