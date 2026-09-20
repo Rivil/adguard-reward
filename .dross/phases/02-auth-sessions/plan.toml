@@ -47,9 +47,10 @@ ratelimit.New(Config{PerIPFailures: 5, Window: 1m, BaseLockout: 1m, MaxLockout: 
 EscalationReset: 1h, GlobalFailures: 20, Now func() time.Time}) *Limiter. Check(ip) (allowed
 bool, retryAfter time.Duration) and Fail(ip) under one sync.Mutex. Per IP: failures counted in
 a fixed 1-minute window that starts at the first failure after the previous window or lockout
-ended (not calendar-aligned, not sliding); recording the 5th failure trips the IP: lockedUntil
-= now + BaseLockout << (trips-1) capped at MaxLockout, trips++; the failure counter clears
-when the lockout ends. Escalation reset is anchored at lockout expiry: on Check/Fail, an IP
+ended (not calendar-aligned, not sliding); recording the 5th failure trips the IP: trips++
+first, then shift := min(trips-1, 6) (clamped so the shift can never overflow int64 however
+many trips accumulate), lockedUntil = now + min(BaseLockout<<shift, MaxLockout); the failure
+counter clears when the lockout ends. Escalation reset is anchored at lockout expiry: on Check/Fail, an IP
 whose lockedUntil is >= EscalationReset in the past (and has not tripped since) has trips
 reset to 0 — an IP cannot "go 1h without a trip" while it is locked out, so the 1h cap is
 sticky for an attacker who retries as soon as each lockout ends. Global: one fixed 1-minute
@@ -63,7 +64,7 @@ construction. No logging, no net/http — pure policy with an injected clock.
   covers = ["c-4", "c-11"]
   test_contract = [
     "if the trip threshold is off by one, TestPerIP_Threshold fails: 5 Fail() calls within 1m leave Check false (retryAfter 60s); 4 Fail() calls leave Check true",
-    "if doubling or the cap breaks, TestPerIP_Doubling fails: with a fake clock, tripping the same IP repeatedly immediately after each unlock yields lockouts of exactly 1m, 2m, 4m, 8m, 16m, 32m, 1h, 1h (capped)",
+    "if doubling or the cap breaks, TestPerIP_Doubling fails: with a fake clock, tripping the same IP repeatedly immediately after each unlock yields lockouts of exactly 1m, 2m, 4m, 8m, 16m, 32m, 1h, 1h (capped); continuing to trip #40 still yields exactly 1h each time (no shift overflow, lockedUntil never in the past)",
     "if escalation never resets, TestPerIP_Reset fails: after a 4m trip, advancing 1h past the lockout's end with no failures and tripping again yields a 1m lockout, not 8m",
     "if Retry-After does not track the current window, TestPerIP_RetryAfter fails: during a 4m lockout Check at +90s returns retryAfter == 150s; at +239.2s returns 1s (ceil), never 0",
     "if the global limit escalates or is miscounted, TestGlobal_Flat fails: 20 failures spread over 20 distinct IPs deny a 21st fresh IP with retryAfter == remaining window; after the window, 20 more failures deny again with a 1m-bounded retryAfter (no doubling)",
@@ -130,7 +131,10 @@ LastSeenAt, ExpiresAt}. Tests use an in-package fake SessionStore; the SQLite im
 lands in t-6. auth.New(store, Options{Secure bool, Lifetime: 30*24h, Now func() time.Time,
 Log}) *Manager. Issue(ctx, username) (rawToken string, Session, error): 32 bytes crypto/rand
 -> base64.RawURLEncoding (43 chars); ID is assigned by the store (rowid); only sha256(raw) is
-stored. Authenticate(ctx, raw) (Session, error): decode -> hash -> ByTokenHash; ExpiresAt <=
+stored. Authenticate(ctx, raw) (Session, error): decode with base64.RawURLEncoding.Strict()
+and reject anything that is not exactly 32 decoded bytes (non-strict decoding ignores the
+final character's two padding bits, which would let two distinct strings name one session)
+-> hash -> ByTokenHash; ExpiresAt <=
 now -> Delete + ErrNoSession; otherwise Touch(now, now+Lifetime) and return the refreshed
 session (sliding, on every request per the locked decision, no coalescing). Cookie(raw)
 *http.Cookie: Name "adguard_reward_session", HttpOnly, SameSite=Strict, Path=/,
@@ -153,7 +157,7 @@ slog; Session has no field holding it and Session.LogValue() emits only id and u
     "if sliding expiry breaks, TestAuthenticate_Sliding fails: Issue at t0, Authenticate at t0+29d -> ok and the fake store's Touch recorded expires == t0+59d; Authenticate at t0+58d+23h -> ok and Touch recorded expires == t0+88d+23h; then a 31-day gap -> ErrNoSession and the fake store recorded Delete(id)",
     "if expiry is not enforced, TestAuthenticate_Expired fails: Issue at t0, Authenticate at t0+30d+1s -> ErrNoSession",
     "if a revoked session is still accepted, TestAuthenticate_Revoked fails: Issue, store.Delete(id), Authenticate -> ErrNoSession",
-    "if a tampered token is accepted, TestAuthenticate_Garbage fails: '', 'notbase64!', a valid-looking token from another Manager, and raw with one flipped character each yield ErrNoSession with no Touch call",
+    "if a tampered token is accepted, TestAuthenticate_Garbage fails: '', 'notbase64!', a 44-char token, a valid-looking token from another Manager, raw with character 10 flipped, and raw with its final character's low padding bits changed (e.g. trailing 'A' -> 'B') each yield ErrNoSession with no Touch call",
     "if the middleware leaks through, TestRequireSession fails: a spy next handler sees zero calls for (no cookie), (cookie with random value), (cookie from a session deleted via store.Delete), and all three get 401 application/json; the deleted-session response carries a Set-Cookie clearing the cookie; expired -> 401; a valid cookie reaches next once with auth.FromContext(r.Context()).Username == the issued username and the response carries a refreshed Set-Cookie with Max-Age=2592000",
     "if the token reaches the logs, TestNoTokenInLogs fails: a Debug-level JSON slog handler into a buffer across Issue, Authenticate, RequireSession and a slog.Info('s', 'session', sess) contains the session id (positive control) and never the raw token or its base64url/hex hash",
     "if the sweeper stops running, TestRunSweeper fails: RunSweeper(ctx, 5ms) records >= 2 DeleteExpired calls on the fake store within 100ms and returns on cancel",
@@ -188,7 +192,7 @@ RequireSession(NotFound) lands in t-9.
     "if the CSRF check misses a method, TestCSRF_Methods fails: POST, PUT, PATCH, DELETE to a stub /api/v1/x without the header -> 403 and the stub never runs; GET, HEAD, OPTIONS without the header reach the stub; POST with the header reaches it",
     "if the header value is loosely matched, TestCSRF_Value fails: 'AdGuard-Reward', 'adguard-reward ' and 'XMLHttpRequest' are all 403",
     "if the check runs after the route, TestCSRF_BeforeHandler fails: POST to an unmounted /api/v1/nope without the header is 403 (not 404); a stub that panics is never reached",
-    "if no-store is set inside handlers instead of the outer layer, TestNoStore fails: the 403 from csrf, a 404 for an unknown route, a 405 from the mux and a 200 stub all carry Cache-Control: no-store",
+    "if no-store is set inside handlers instead of the outer layer, TestNoStore fails: the 403 from csrf, an unmounted /api/v1/ path (asserting only the header, not the status — t-9's catch-all later turns this 404 into a 401), a 405 from the mux and a 200 stub all carry Cache-Control: no-store",
     "if the envelope drifts, TestWriteError fails: writeError(w, 401, 'unauthorized', 'm') yields status 401, Content-Type application/json and body decoding to exactly {error: unauthorized, message: m}",
   ]
   status = "pending"
@@ -293,7 +297,10 @@ rate_limited, Retry-After: <seconds>, outcome rate_limited, no AdGuard call (fas
 Otherwise acquire a single global in-flight slot (buffered chan of 1, select on r.Context())
 and run Limiter.Check(ip) AGAIN while holding it — a request that became limited while queued
 returns 429 without calling AdGuard; this second check is what bounds a parallel burst to the
-budget. Then call AdGuard.Login: nil -> auth.Issue, SetCookie, 204, outcome ok;
+budget. The slot is held for the whole critical section and released (deferred) only after
+Fail or Issue has run — releasing it as soon as AdGuard answers would let the next queued
+request pass its second Check before the failure is counted. Then call AdGuard.Login: nil ->
+auth.Issue, SetCookie, 204, outcome ok;
 ErrBadCredentials -> Limiter.Fail(ip), 401 {bad_credentials, "invalid username or password"}
 (identical body for every rejection); anything else (StatusError 5xx, *url.Error,
 ErrRateLimited) -> 502 {adguard_unavailable, "AdGuard Home did not accept the login attempt —
