@@ -1,12 +1,14 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import { svelte } from '@sveltejs/vite-plugin-svelte'
+import { svelteTesting } from '@testing-library/svelte/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [svelte()],
+  plugins: [svelte(), svelteTesting()],
   test: {
-    // The fetch layer is plain TS; no DOM runner in this phase.
+    // The fetch layer is plain TS and runs under node; component tests opt
+    // into jsdom per file with `// @vitest-environment jsdom`.
     environment: 'node',
   },
   server: {
