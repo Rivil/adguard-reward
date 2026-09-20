@@ -135,10 +135,10 @@ func TestWriteError(t *testing.T) {
 		t.Fatalf("body = %v, want exactly {error: unauthorized, message: m}", got)
 	}
 
-	// unauthorizedWriter is the same envelope, for auth.RequireSession.
+	// UnauthorizedWriter is the same envelope, for auth.RequireSession.
 	w2 := httptest.NewRecorder()
-	unauthorizedWriter(w2, http.StatusUnauthorized, CodeUnauthorized, "m")
+	UnauthorizedWriter(w2, http.StatusUnauthorized, CodeUnauthorized, "m")
 	if w2.Body.String() != w.Body.String() || w2.Code != w.Code {
-		t.Fatalf("unauthorizedWriter differs from writeError: %s", w2.Body.String())
+		t.Fatalf("UnauthorizedWriter differs from writeError: %s", w2.Body.String())
 	}
 }

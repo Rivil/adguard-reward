@@ -30,9 +30,9 @@ func writeError(w http.ResponseWriter, status int, code, message string) {
 	_ = json.NewEncoder(w).Encode(errorBody{Error: code, Message: message})
 }
 
-// unauthorizedWriter is the func value handed to auth.RequireSession so its
-// 401 uses the same envelope as every other error here.
-func unauthorizedWriter(w http.ResponseWriter, status int, code, message string) {
+// UnauthorizedWriter is the auth.ErrorWriter main hands to auth.New so
+// RequireSession's 401 uses the same envelope as every other error here.
+func UnauthorizedWriter(w http.ResponseWriter, status int, code, message string) {
 	writeError(w, status, code, message)
 }
 

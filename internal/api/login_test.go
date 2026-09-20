@@ -93,7 +93,7 @@ func newHarness(t *testing.T, trusted []*net.IPNet, clientIP func(*http.Request)
 	c := &clock{t: t0}
 	cfg := ratelimit.Defaults()
 	cfg.Now = c.Now
-	mgr := auth.New(st, auth.Options{Now: c.Now, Log: log, ErrorWriter: unauthorizedWriter})
+	mgr := auth.New(st, auth.Options{Now: c.Now, Log: log, ErrorWriter: UnauthorizedWriter})
 	if clientIP == nil {
 		clientIP = ClientIP(trusted)
 	}
