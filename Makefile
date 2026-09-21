@@ -17,15 +17,17 @@ dev: ## Run the Go API against ./config.yaml (frontend served separately via `ma
 dev-web: ## Run the Vite dev server (proxies /api to the Go API)
 	cd $(WEB) && pnpm dev
 
+# vite empties outDir, so restore the placeholder that keeps `//go:embed all:dist`
+# compiling on an unbuilt tree.
 build-web: ## Build the frontend into web/dist
-	cd $(WEB) && pnpm build
+	cd $(WEB) && pnpm build && touch dist/.gitkeep
 
 build: build-web ## Build the single static binary
 	CGO_ENABLED=0 go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o bin/$(BIN) ./cmd/$(BIN)
 
 test: test-go test-web ## Run the Go and web test suites (needs web/node_modules)
 
-test-go: ## Run Go tests
+test-go: build-web ## Run Go tests (builds the frontend first: the binary tests serve web/dist)
 	go test -race ./...
 
 test-web: ## Run web unit tests (vitest)
@@ -40,11 +42,15 @@ typecheck: ## Type-check Go (vet) and Svelte/TS (svelte-check)
 	go vet ./...
 	cd $(WEB) && pnpm check
 
+# Go sources everywhere except the frontend's dependency and mutation sandboxes,
+# so web/embed.go is covered like any other file.
+GO_SOURCES = $$(find . -name '*.go' -not -path './$(WEB)/node_modules/*' -not -path './$(WEB)/.stryker-tmp/*')
+
 lint: ## gofmt check (extend with golangci-lint later)
-	@test -z "$$(gofmt -l . | grep -v '^$(WEB)/')" || { gofmt -l . | grep -v '^$(WEB)/'; echo 'gofmt: files need formatting'; exit 1; }
+	@test -z "$$(gofmt -l $(GO_SOURCES))" || { gofmt -l $(GO_SOURCES); echo 'gofmt: files need formatting'; exit 1; }
 
 fmt: ## Format Go sources
-	gofmt -w $$(find . -name '*.go' -not -path './$(WEB)/*')
+	gofmt -w $(GO_SOURCES)
 
-clean: ## Remove build output
-	rm -rf bin $(WEB)/dist
+clean: ## Remove build output (keeps web/dist/.gitkeep so the embed still compiles)
+	rm -rf bin $(WEB)/dist && mkdir -p $(WEB)/dist && touch $(WEB)/dist/.gitkeep

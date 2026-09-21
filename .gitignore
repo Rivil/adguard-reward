@@ -5,7 +5,8 @@ bin/
 
 # Frontend
 web/node_modules/
-web/dist/
+web/dist/*
+!web/dist/.gitkeep
 web/.vite/
 
 # Runtime state — never commit real config or the database
