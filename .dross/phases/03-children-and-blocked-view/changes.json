@@ -2,5 +2,184 @@
   "phase": "03-children-and-blocked-view",
   "base": "milestone/v0.1",
   "base_commit": "7e491b757eda69a779825145ab936f381fa88575",
-  "tasks": {}
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/store/migrations/0002_children.sql",
+        "internal/store/children.go",
+        "internal/store/children_test.go",
+        "internal/store/sessions_test.go"
+      ],
+      "commit": "422a0f9",
+      "completed_at": "2026-09-21T06:01:29.818687Z",
+      "landmarks": [
+        {
+          "feature": "children store",
+          "symbol": "Store.CreateChild",
+          "loc": "internal/store/children.go:131",
+          "what": "children + child_clients tables with single-query list and tx-atomic create/update naming the conflicting owner"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "internal/api/migration.go",
+        "internal/api/migration_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "bffe283",
+      "completed_at": "2026-09-21T06:34:38.945848Z",
+      "landmarks": [
+        {
+          "feature": "global-list migration",
+          "symbol": "API.handleMigrationApply",
+          "loc": "internal/api/migration.go:67",
+          "what": "GET offer (read-only) and POST apply routes writing per-client lists in order; first failure 502 naming the client, earlier writes kept"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/adguard/clients.go",
+        "internal/adguard/clients_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go"
+      ],
+      "commit": "4fe1606",
+      "completed_at": "2026-09-21T06:03:19.475591Z",
+      "landmarks": [
+        {
+          "feature": "global-list migration",
+          "symbol": "Client.MigrateFromGlobal",
+          "loc": "internal/adguard/clients.go:131",
+          "what": "one locked RMW per client writes its blocked list and clears use_global_blocked_services; shared updateClient helper; fake SetUpdateStatus per-name fault"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go"
+      ],
+      "commit": "3a50df3",
+      "completed_at": "2026-09-21T06:04:44.122434Z",
+      "landmarks": [
+        {
+          "feature": "per-child blocked view",
+          "symbol": "blocked.Compute",
+          "loc": "internal/blocked/blocked.go:59",
+          "what": "pure three-way fold (blocked/partial/unblocked with Differs) over mapped clients + Offer for global-list migration steps"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts"
+      ],
+      "commit": "295189b",
+      "completed_at": "2026-09-21T06:06:13.940368Z",
+      "landmarks": [
+        {
+          "feature": "SPA api client",
+          "symbol": "migrationDismissed",
+          "loc": "web/src/lib/api.ts:131",
+          "what": "children/clients/services/blocked/migration endpoint functions + wire types, children route, per-login migration dismissal store"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/api.go",
+        "internal/api/errors.go",
+        "internal/api/login_test.go",
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "0333f40",
+      "completed_at": "2026-09-21T06:09:09.177561Z",
+      "landmarks": [
+        {
+          "feature": "children API",
+          "symbol": "API.handleChildCreate",
+          "loc": "internal/api/children.go:136",
+          "what": "children CRUD routes with 409 conflict envelope naming owner; ChildStore + widened AdGuard interfaces in Deps; restart proof"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/App.test.ts"
+      ],
+      "commit": "88699ad",
+      "completed_at": "2026-09-21T06:11:02.237791Z",
+      "landmarks": [
+        {
+          "feature": "home blocked view",
+          "symbol": "Home.load",
+          "loc": "web/src/lib/Home.svelte:13",
+          "what": "per-child blocked/partial service list with icons and client badges re-fetched on mount; error state replaces the list; URL-keyed fetch stub for DOM tests"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "internal/api/clients.go",
+        "internal/api/clients_test.go",
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "1ec458d",
+      "completed_at": "2026-09-21T06:29:33.328031Z",
+      "landmarks": [
+        {
+          "feature": "per-child blocked view",
+          "symbol": "API.handleBlocked",
+          "loc": "internal/api/blocked.go:24",
+          "what": "live /clients (with owning child) /services and /children/{id}/blocked routes; AdGuard failure incl. bad service credential -\u003e 502"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "web/src/lib/Children.svelte",
+        "web/src/lib/Children.test.ts",
+        "web/src/App.svelte",
+        "web/src/App.test.ts"
+      ],
+      "commit": "ed235b1",
+      "completed_at": "2026-09-21T06:31:39.371433Z",
+      "landmarks": [
+        {
+          "feature": "children settings page",
+          "symbol": "Children.load",
+          "loc": "web/src/lib/Children.svelte:26",
+          "what": "create/rename/delete children and assign clients by checkbox with owner-disabled and missing-struck states; server-rendered after every mutation; /children route survives reload"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "web/src/lib/MigrationBanner.svelte",
+        "web/src/lib/MigrationBanner.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "5fb4414",
+      "completed_at": "2026-09-21T06:33:00.771442Z",
+      "landmarks": [
+        {
+          "feature": "global-list migration",
+          "symbol": "MigrationBanner.visible",
+          "loc": "web/src/lib/MigrationBanner.svelte:24",
+          "what": "home banner offering per-client migration off the global list with Migrate/Not now; dismissal per login via store, nothing persisted"
+        }
+      ]
+    }
+  }
 }
