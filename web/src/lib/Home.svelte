@@ -230,6 +230,7 @@
     {/if}
     {#each children as child (child.id)}
       {@const own = buttonsFor(child.id)}
+      {@const entry = blocked[child.id]}
       <section data-child={child.id}>
         <h2>{child.name}</h2>
         {#if own.length === 0}
@@ -256,10 +257,10 @@
         {/if}
         <details data-blocked={child.id} ontoggle={(e) => toggled(child.id, e.currentTarget.open)}>
           <summary>Blocked services</summary>
-          {#if blocked[child.id]?.error}
-            <p class="error" role="alert" data-error={blocked[child.id]?.error}>Can't reach AdGuard Home — try again in a moment</p>
-          {:else if blocked[child.id]?.view}
-            {@const v = blocked[child.id]!.view!}
+          {#if entry?.error}
+            <p class="error" role="alert" data-error={entry.error}>Can't reach AdGuard Home — try again in a moment</p>
+          {:else if entry?.view}
+            {@const v = entry.view}
             <p class="clients">
               {#each v.clients as c (c.name)}
                 <span class="client" class:missing={c.missing}>
