@@ -1,6 +1,31 @@
+// @vitest-environment jsdom
 // Stryker disable all: test sources are not mutation targets
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, CSRF_HEADER, CSRF_VALUE, login, logout, me, messageFor, request, setOnUnauthorized } from './api'
+import { get } from 'svelte/store'
+import {
+  ApiError,
+  CSRF_HEADER,
+  CSRF_VALUE,
+  applyMigration,
+  childBlocked,
+  createChild,
+  deleteChild,
+  iconUrl,
+  listChildren,
+  listClients,
+  listServices,
+  login,
+  logout,
+  me,
+  messageFor,
+  migrationDismissed,
+  migrationOffer,
+  navigate,
+  request,
+  route,
+  setOnUnauthorized,
+  updateChild,
+} from './api'
 
 type Call = { url: string; init: RequestInit }
 
@@ -172,5 +197,122 @@ describe('messageFor', () => {
 
   it('falls back to the server message for other codes', () => {
     expect(messageFor(new ApiError(400, 'bad_request', 'malformed body'))).toBe('malformed body')
+  })
+})
+
+describe('children endpoints', () => {
+  it('hit the exact URL and method with the CSRF header', async () => {
+    const child = { id: 3, name: 'Ada', clients: ['Kid phone'] }
+    const calls = mockFetch(
+      json(200, { children: [child] }),
+      json(201, child),
+      json(200, { ...child, name: 'A', clients: ['x'] }),
+      new Response(null, { status: 204 }),
+      json(200, { clients: [] }),
+      json(200, { services: [] }),
+      json(200, { child: { id: 3, name: 'Ada' }, clients: [], services: [] }),
+      json(200, { global: [], clients: [] }),
+      json(200, { migrated: ['Kid tablet'] }),
+    )
+
+    expect(await listChildren()).toEqual([child])
+    expect(await createChild('Ada', ['Kid phone'])).toEqual(child)
+    expect(await updateChild(3, 'A', ['x'])).toEqual({ ...child, name: 'A', clients: ['x'] })
+    expect(await deleteChild(3)).toBeUndefined()
+    expect(await listClients()).toEqual([])
+    expect(await listServices()).toEqual([])
+    expect(await childBlocked(3)).toEqual({ child: { id: 3, name: 'Ada' }, clients: [], services: [] })
+    expect(await migrationOffer()).toEqual({ global: [], clients: [] })
+    expect(await applyMigration()).toEqual(['Kid tablet'])
+
+    const seen = calls.map((c) => [c.init.method, c.url, c.init.body ?? null])
+    expect(seen).toEqual([
+      ['GET', '/api/v1/children', null],
+      ['POST', '/api/v1/children', '{"name":"Ada","clients":["Kid phone"]}'],
+      ['PUT', '/api/v1/children/3', '{"name":"A","clients":["x"]}'],
+      ['DELETE', '/api/v1/children/3', null],
+      ['GET', '/api/v1/clients', null],
+      ['GET', '/api/v1/services', null],
+      ['GET', '/api/v1/children/3/blocked', null],
+      ['GET', '/api/v1/migration', null],
+      ['POST', '/api/v1/migration', null],
+    ])
+    for (const c of calls) {
+      expect(header(c.init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    }
+  })
+
+  it('401 calls onUnauthorized', async () => {
+    mockFetch(json(401, { error: 'unauthorized', message: 'authentication required' }))
+    const err = await fails(childBlocked(1))
+    expect(err.code).toBe('unauthorized')
+    expect(unauthorized).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('routing', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/')
+    route.set('home')
+  })
+
+  it('maps the children route both ways', () => {
+    navigate('children')
+    expect(location.pathname).toBe('/children')
+    expect(get(route)).toBe('children')
+
+    navigate('home')
+    expect(location.pathname).toBe('/')
+    expect(get(route)).toBe('home')
+
+    history.replaceState(null, '', '/children')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('children')
+
+    history.replaceState(null, '', '/x')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('home')
+  })
+})
+
+describe('iconUrl', () => {
+  it('prefixes the base64 SVG', () => {
+    expect(iconUrl('PHN2Zy8+')).toBe('data:image/svg+xml;base64,PHN2Zy8+')
+  })
+})
+
+describe('messageFor conflict', () => {
+  it('echoes the server message, which names the child or client', () => {
+    expect(messageFor(new ApiError(409, 'conflict', 'a child named Ada already exists'))).toBe(
+      'a child named Ada already exists',
+    )
+    expect(messageFor(new ApiError(409, 'conflict', 'client Kid phone is already assigned to Ben'))).toBe(
+      'client Kid phone is already assigned to Ben',
+    )
+  })
+})
+
+describe('migrationDismissed', () => {
+  afterEach(() => migrationDismissed.set(false))
+
+  it('login resets migrationDismissed', async () => {
+    migrationDismissed.set(true)
+    mockFetch(new Response(null, { status: 204 }))
+    await login('mum', 'pw')
+    expect(get(migrationDismissed)).toBe(false)
+  })
+
+  it('a failed login leaves it alone', async () => {
+    migrationDismissed.set(true)
+    mockFetch(json(401, { error: 'bad_credentials', message: 'nope' }))
+    await fails(login('mum', 'pw'))
+    expect(get(migrationDismissed)).toBe(true)
+  })
+
+  it('logout resets migrationDismissed', async () => {
+    migrationDismissed.set(true)
+    mockFetch(new Response(null, { status: 204 }))
+    await logout()
+    expect(get(migrationDismissed)).toBe(false)
   })
 })
