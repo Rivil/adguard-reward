@@ -1,0 +1,99 @@
+[verify]
+  phase = "04-grants-scheduler-reconciler"
+  generated_at = 2026-09-21T09:38:55.884112Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-09-21T09:44:16.399427Z
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.9074074074074074
+  mutants_killed = 245
+  mutants_survived = 25
+  mutants_not_covered = 25
+  mutants_in_scope = 270
+  unclassified_in_scope = 0
+  criteria_total = 6
+  criteria_covered = 6
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 245
+    survived = 25
+    timeout = 0
+    in_scope = 270
+    score = 0.9074074074074074
+    file_count = 17
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main.go — adapter-lacks-range-runner", "cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/adguard/adguardtest/server.go — adapter-lacks-range-runner", "internal/adguard/adguardtest/server_test.go — adapter-lacks-range-runner", "internal/adguard/clients.go — adapter-lacks-range-runner", "internal/adguard/clients_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/errors.go — adapter-lacks-range-runner", "internal/api/grants.go — adapter-lacks-range-runner", "internal/api/grants_test.go — adapter-lacks-range-runner", "internal/api/login_test.go — adapter-lacks-range-runner", "internal/grants/grants.go — adapter-lacks-range-runner", "internal/grants/grants_test.go — adapter-lacks-range-runner", "internal/grants/reconcile.go — adapter-lacks-range-runner", "internal/grants/reconcile_test.go — adapter-lacks-range-runner", "internal/store/grants.go — adapter-lacks-range-runner", "internal/store/grants_test.go — adapter-lacks-range-runner"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/api/grants_test.go:TestGrants_CreateAndList", "internal/api/grants_test.go:TestGrants_Validation", "internal/api/grants_test.go:TestGrants_ApplyDeadline", "internal/grants/grants_test.go:TestEngine_CreateUnblocks", "cmd/adguard-reward/main_test.go:TestRun_GrantSurvivesRestart", "internal/store/grants_test.go:TestGrants_CreatePersist"]
+  notes = "201 {id, ends_at} and the unblock asserted on the fake; 404 unknown child (before any AdGuard call), 422 at 59/0/86401 and unknown service, 60/86400 accepted; POST bounded under 1 s with a hung AdGuard; every mapped client unblocked; grant row identical after a process restart."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/api/grants_test.go:TestGrants_CreateAndList", "internal/api/grants_test.go:TestGrants_ViewShape", "internal/store/grants_test.go:TestGrants_ListActiveOnly"]
+  notes = "Field-by-field shape asserted (id, child_id, services, clients, started_at, ends_at); expired grant vanishes from GET; store test excludes both expired and ended rows."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/grants/grants_test.go:TestEngine_TimerReverts", "internal/grants/grants_test.go:TestEngine_RevertFailureStaysActive", "internal/grants/grants_test.go:TestEngine_MissingClientExpires", "cmd/adguard-reward/main_test.go:TestRun_LiveGrantRearmed"]
+  notes = "Set-union revert keeps the parent's edits, second expire issues zero POSTs, status expired; a 500 on one client leaves the grant active and a later expire converges; wall-clock re-block observed within 5 s in the real binary."
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["internal/grants/reconcile_test.go:TestReconcile_StartArmsTimers", "cmd/adguard-reward/main_test.go:TestRun_GrantRestoredAfterRestart", "cmd/adguard-reward/main_test.go:TestRun_LiveGrantRearmed", "cmd/adguard-reward/main_test.go:TestRun_StartupAdGuardDown"]
+  notes = "Start reverts the overdue grant, repairs the drifted live one and arms exactly one timer; the restart test stops mid-grant, rewinds ends_at, and asserts the block is restored at the instant the listener opens; an unreadable AdGuard at boot is logged, non-fatal, and converged by the loop."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["cmd/adguard-reward/main_test.go:TestRun_ReconcilerDrift", "internal/grants/reconcile_test.go:TestReconcile_DriftRepaired", "internal/grants/reconcile_test.go:TestReconcile_NoopNoWrites", "internal/grants/reconcile_test.go:TestReconcile_RevertsOverdue", "internal/grants/reconcile_test.go:TestReconcile_RunLoop"]
+  notes = "Interval injected at 50 ms repairs a parent re-block within 2 s and at 60 s leaves it untouched; a quiet pass issues 0 POSTs and exactly 1 GET; a grant whose timer was suppressed is reverted by the pass. The three routed survivors at reconcile.go:133/135 only select which log line Run emits (verified by hand: suite green under each) and cannot falsify any claim in this criterion."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/api/grants_test.go:TestGrants_ExtendEnd", "internal/grants/grants_test.go:TestEngine_ExtendReschedules", "internal/grants/grants_test.go:TestEngine_EndVsTimerRace", "internal/api/grants_test.go:TestGrants_EndRevertFails"]
+  notes = "Extend pushes ends_at from the previous ends_at, 422 outside bounds leaves it unchanged, the stale timer is a no-op and the new one fires; end re-blocks before the 204; 404 for ended, unknown and non-numeric ids on both routes; failed end revert answers 502 and keeps the grant active."
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins mutant survived: internal/grants/reconcile.go:133 (CONDITIONALS_NEGATION) — routed to 06-deploy-nora"
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins mutant survived: internal/grants/reconcile.go:133 (CONDITIONALS_NEGATION) — routed to 06-deploy-nora"
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins mutant survived: internal/grants/reconcile.go:135 (CONDITIONALS_BOUNDARY) — routed to 06-deploy-nora"
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins mutant survived: internal/grants/reconcile.go:135 (CONDITIONALS_NEGATION) — routed to 06-deploy-nora"
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins mutant survived: internal/grants/reconcile.go:135 (CONDITIONALS_BOUNDARY) — routed to 06-deploy-nora"
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins mutant survived: internal/grants/reconcile.go:135 (CONDITIONALS_NEGATION) — routed to 06-deploy-nora"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0003_grants.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"

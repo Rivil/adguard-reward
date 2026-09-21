@@ -1,0 +1,760 @@
+{
+  "phase": "04-grants-scheduler-reconciler",
+  "generated_at": "2026-09-21T09:38:55.884112Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go",
+        "internal/adguard/clients.go",
+        "internal/adguard/clients_test.go",
+        "internal/api/api.go",
+        "internal/api/errors.go",
+        "internal/api/grants.go",
+        "internal/api/grants_test.go",
+        "internal/api/login_test.go",
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go",
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go",
+        "internal/store/grants.go",
+        "internal/store/grants_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 245,
+        "Survived": 25,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9074074074074074,
+        "Surviving": [
+          {
+            "File": "cmd/adguard-reward/main.go",
+            "Line": 41,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f46f6aab3d37fc49",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 105,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 101,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4742d4bfe47ddb54",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 180,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 199,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "71be988b0a00e5a4",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 216,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4ecfa87bc8060128",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 410,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 419,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 105,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 101,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4742d4bfe47ddb54",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 180,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 199,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "71be988b0a00e5a4",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 216,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4ecfa87bc8060128",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 410,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 419,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/api/grants.go",
+            "Line": 119,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "971ea8d8d9b5ff52",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+          },
+          {
+            "File": "internal/api/grants.go",
+            "Line": 120,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "3d175e3325616cdf",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 47,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "07257c7ebd994d79",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on the string concatenation in ErrRevertFailed.Error(): string - string does not compile (not viable). The type itself is exercised via errors.As in TestGrants_EndRevertFails / TestEngine_EndRevertFailure; only the Error() text is never read."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 198,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "149b5b8d30816792",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (case err == nil -\u003e err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 133,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f0e20ee93ae67cec",
+            "Lifecycle": "routed",
+            "Note": "routed to 06-deploy-nora"
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 133,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f0e20ee93ae67cec",
+            "Lifecycle": "routed",
+            "Note": "routed to 06-deploy-nora"
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 135,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "5ad1a07d8eee3daf",
+            "Lifecycle": "routed",
+            "Note": "routed to 06-deploy-nora"
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 135,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a61fe48989cb6c24",
+            "Lifecycle": "routed",
+            "Note": "routed to 06-deploy-nora"
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 135,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "5ad1a07d8eee3daf",
+            "Lifecycle": "routed",
+            "Note": "routed to 06-deploy-nora"
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 135,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a61fe48989cb6c24",
+            "Lifecycle": "routed",
+            "Note": "routed to 06-deploy-nora"
+          }
+        ],
+        "NotCovered": 25
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main.go": "adapter-lacks-range-runner",
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/errors.go": "adapter-lacks-range-runner",
+        "internal/api/grants.go": "adapter-lacks-range-runner",
+        "internal/api/grants_test.go": "adapter-lacks-range-runner",
+        "internal/api/login_test.go": "adapter-lacks-range-runner",
+        "internal/grants/grants.go": "adapter-lacks-range-runner",
+        "internal/grants/grants_test.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile_test.go": "adapter-lacks-range-runner",
+        "internal/store/grants.go": "adapter-lacks-range-runner",
+        "internal/store/grants_test.go": "adapter-lacks-range-runner"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/store/migrations/0003_grants.sql",
+      "reason": "no mutation adapter for .sql"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_BOUNDARY",
+      "language": "go",
+      "key": "51a958b88e117c6a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9430031ee34baa69",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_BOUNDARY",
+      "language": "go",
+      "key": "51a958b88e117c6a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9430031ee34baa69",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 183,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "68505a7be9631dc8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 183,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "68505a7be9631dc8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 185,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "cfecbf0de85b0129",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/children.go",
+      "line": 114,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d69e57f7ae237fb9",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+    },
+    {
+      "file": "internal/api/children.go",
+      "line": 115,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "6cc7c18da6e15549",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/04-grants-scheduler-reconciler/REVIEW.md",
+      ".dross/phases/04-grants-scheduler-reconciler/changes.json",
+      ".dross/phases/04-grants-scheduler-reconciler/panel/mvp.md",
+      ".dross/phases/04-grants-scheduler-reconciler/panel/risk.md",
+      ".dross/phases/04-grants-scheduler-reconciler/panel/synthesis.md",
+      ".dross/phases/04-grants-scheduler-reconciler/panel/verification.md",
+      ".dross/phases/04-grants-scheduler-reconciler/plan.toml",
+      ".dross/phases/04-grants-scheduler-reconciler/spec.toml",
+      ".dross/project.toml",
+      "cmd/adguard-reward/main.go",
+      "cmd/adguard-reward/main_test.go",
+      "internal/adguard/adguardtest/server.go",
+      "internal/adguard/adguardtest/server_test.go",
+      "internal/adguard/clients.go",
+      "internal/adguard/clients_test.go",
+      "internal/api/api.go",
+      "internal/api/errors.go",
+      "internal/api/grants.go",
+      "internal/api/grants_test.go",
+      "internal/api/login_test.go",
+      "internal/grants/grants.go",
+      "internal/grants/grants_test.go",
+      "internal/grants/reconcile.go",
+      "internal/grants/reconcile_test.go",
+      "internal/store/grants.go",
+      "internal/store/grants_test.go",
+      "internal/store/migrations/0003_grants.sql",
+      "web/package.json"
+    ],
+    "hunks": {
+      ".dross/phases/04-grants-scheduler-reconciler/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 46
+        }
+      ],
+      ".dross/phases/04-grants-scheduler-reconciler/changes.json": [
+        {
+          "start": 1,
+          "end": 109
+        }
+      ],
+      ".dross/phases/04-grants-scheduler-reconciler/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 170
+        }
+      ],
+      ".dross/phases/04-grants-scheduler-reconciler/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 478
+        }
+      ],
+      ".dross/phases/04-grants-scheduler-reconciler/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 200
+        }
+      ],
+      ".dross/phases/04-grants-scheduler-reconciler/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 400
+        }
+      ],
+      ".dross/phases/04-grants-scheduler-reconciler/plan.toml": [
+        {
+          "start": 1,
+          "end": 68
+        }
+      ],
+      ".dross/phases/04-grants-scheduler-reconciler/spec.toml": [
+        {
+          "start": 1,
+          "end": 70
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      "cmd/adguard-reward/main.go": [
+        {
+          "start": 23,
+          "end": 23
+        },
+        {
+          "start": 39,
+          "end": 46
+        },
+        {
+          "start": 103,
+          "end": 114
+        },
+        {
+          "start": 132,
+          "end": 132
+        },
+        {
+          "start": 154,
+          "end": 154
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 99,
+          "end": 107
+        },
+        {
+          "start": 113,
+          "end": 118
+        },
+        {
+          "start": 309,
+          "end": 313
+        },
+        {
+          "start": 321,
+          "end": 321
+        },
+        {
+          "start": 759,
+          "end": 1052
+        }
+      ],
+      "internal/adguard/adguardtest/server.go": [
+        {
+          "start": 186,
+          "end": 235
+        }
+      ],
+      "internal/adguard/adguardtest/server_test.go": [
+        {
+          "start": 313,
+          "end": 368
+        }
+      ],
+      "internal/adguard/clients.go": [
+        {
+          "start": 117,
+          "end": 117
+        },
+        {
+          "start": 140,
+          "end": 202
+        },
+        {
+          "start": 205,
+          "end": 205
+        },
+        {
+          "start": 215,
+          "end": 216
+        },
+        {
+          "start": 241,
+          "end": 243
+        }
+      ],
+      "internal/adguard/clients_test.go": [
+        {
+          "start": 222,
+          "end": 225
+        },
+        {
+          "start": 233,
+          "end": 234
+        },
+        {
+          "start": 236,
+          "end": 236
+        },
+        {
+          "start": 238,
+          "end": 241
+        },
+        {
+          "start": 259,
+          "end": 260
+        },
+        {
+          "start": 262,
+          "end": 263
+        },
+        {
+          "start": 410,
+          "end": 511
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 13,
+          "end": 13
+        },
+        {
+          "start": 17,
+          "end": 17
+        },
+        {
+          "start": 41,
+          "end": 50
+        },
+        {
+          "start": 61,
+          "end": 61
+        },
+        {
+          "start": 105,
+          "end": 108
+        }
+      ],
+      "internal/api/errors.go": [
+        {
+          "start": 19,
+          "end": 19
+        }
+      ],
+      "internal/api/grants.go": [
+        {
+          "start": 1,
+          "end": 260
+        }
+      ],
+      "internal/api/grants_test.go": [
+        {
+          "start": 1,
+          "end": 404
+        }
+      ],
+      "internal/api/login_test.go": [
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 26,
+          "end": 30
+        },
+        {
+          "start": 106,
+          "end": 107
+        },
+        {
+          "start": 116,
+          "end": 116
+        }
+      ],
+      "internal/grants/grants.go": [
+        {
+          "start": 1,
+          "end": 349
+        }
+      ],
+      "internal/grants/grants_test.go": [
+        {
+          "start": 1,
+          "end": 597
+        }
+      ],
+      "internal/grants/reconcile.go": [
+        {
+          "start": 1,
+          "end": 146
+        }
+      ],
+      "internal/grants/reconcile_test.go": [
+        {
+          "start": 1,
+          "end": 318
+        }
+      ],
+      "internal/store/grants.go": [
+        {
+          "start": 1,
+          "end": 282
+        }
+      ],
+      "internal/store/grants_test.go": [
+        {
+          "start": 1,
+          "end": 385
+        }
+      ],
+      "internal/store/migrations/0003_grants.sql": [
+        {
+          "start": 1,
+          "end": 32
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        }
+      ]
+    },
+    "base": "8ee2cc7a7c11c9fc234bc51d7d734ccee4282fc9",
+    "source": "git+changes"
+  },
+  "measured_on": "local"
+}

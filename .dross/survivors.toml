@@ -671,3 +671,66 @@
   line = 14
   reason = "The catch body sets offer = null, which is already its value before the await; removing it changes nothing."
   accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "f46f6aab3d37fc49"
+  file = "cmd/adguard-reward/main.go"
+  op = "ARITHMETIC_BASE"
+  text = "var reconcileInterval = 60 * time.Second"
+  line = 41
+  reason = "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "71be988b0a00e5a4"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: BlockedServices: \" + err.Error())"
+  line = 199
+  category = "string-concat-panic"
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "4ecfa87bc8060128"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: RemoveClient: no client \" + name)"
+  line = 216
+  reason = "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "971ea8d8d9b5ff52"
+  file = "internal/api/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "a.log.Error(op+\" failed\", \"err\", err)"
+  line = 119
+  reason = "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -> 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "3d175e3325616cdf"
+  file = "internal/api/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "writeError(w, http.StatusInternalServerError, \"internal\", \"could not \"+op)"
+  line = 120
+  reason = "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -> 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "07257c7ebd994d79"
+  file = "internal/grants/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "return \"grants: revert failed for \" + strings.Join(e.Clients, \", \")"
+  line = 47
+  reason = "ARITHMETIC_BASE on the string concatenation in ErrRevertFailed.Error(): string - string does not compile (not viable). The type itself is exercised via errors.As in TestGrants_EndRevertFails / TestEngine_EndRevertFailure; only the Error() text is never read."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "149b5b8d30816792"
+  file = "internal/grants/grants.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 198
+  reason = "Killed when applied by hand (case err == nil -> err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
+  accepted_in = "04-grants-scheduler-reconciler"

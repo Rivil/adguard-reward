@@ -68,3 +68,21 @@
   choice = "duration is 1 minute to 24 hours inclusive; outside that POST and extend return 422"
   why = "Below a minute the 60 s reconciler cannot observe it; above a day it is a permanent toggle, which is M2"
   locked = true
+
+[[deferred]]
+  text = "survivor internal/grants/reconcile.go:133 (CONDITIONALS_NEGATION)"
+  why = "surviving mutant routed out of a verify run"
+  target = "06-deploy-nora"
+  survivor = "f0e20ee93ae67cec"
+
+[[deferred]]
+  text = "survivor internal/grants/reconcile.go:135 (CONDITIONALS_BOUNDARY)"
+  why = "surviving mutant routed out of a verify run"
+  target = "06-deploy-nora"
+  survivor = "5ad1a07d8eee3daf"
+
+[[deferred]]
+  text = "survivor internal/grants/reconcile.go:135 (CONDITIONALS_NEGATION)"
+  why = "surviving mutant routed out of a verify run"
+  target = "06-deploy-nora"
+  survivor = "a61fe48989cb6c24"
