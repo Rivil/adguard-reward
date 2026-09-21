@@ -5,7 +5,7 @@ import { tick } from 'svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.svelte'
-import { me, route } from './lib/api'
+import { me, navigate, route, setOnUnauthorized } from './lib/api'
 
 type Call = { method: string; url: string; init: RequestInit }
 type Answer = () => Response | Promise<Response>
@@ -207,6 +207,89 @@ describe('App', () => {
     expect(location.pathname).toBe('/')
     expect(get(route)).toBe('home')
     expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
+  })
+
+  it('reload on /buttons stays there', async () => {
+    history.replaceState(null, '', '/buttons')
+    route.set('buttons')
+    const calls = mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/buttons': () => json(200, { buttons: [] }),
+      '/api/v1/children': noChildren,
+      '/api/v1/services': () => json(200, { services: [] }),
+    })
+    render(App)
+    expect(await screen.findByRole('heading', { name: 'Buttons' })).toBeTruthy()
+    expect(location.pathname).toBe('/buttons')
+    expect(get(route)).toBe('buttons')
+    expect(calls.map((c) => c.url)).toContain('/api/v1/buttons')
+  })
+
+  it('buttons needs a session', async () => {
+    history.replaceState(null, '', '/buttons')
+    route.set('buttons')
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+    await tick()
+    expect(location.pathname).toBe('/login')
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+    expect(screen.queryByRole('heading', { name: 'Buttons' })).toBeNull()
+  })
+
+  it('Back from Buttons returns home', async () => {
+    history.replaceState(null, '', '/buttons')
+    route.set('buttons')
+    mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/buttons': () => json(200, { buttons: [] }),
+      '/api/v1/children': noChildren,
+      '/api/v1/services': () => json(200, { services: [] }),
+      '/api/v1/migration': () => json(200, { global: [], clients: [] }),
+    })
+    render(App)
+    await screen.findByRole('heading', { name: 'Buttons' })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(await screen.findByText(/Signed in as/)).toBeTruthy()
+    expect(location.pathname).toBe('/')
+    expect(get(route)).toBe('home')
+    expect(screen.queryByRole('heading', { name: 'Buttons' })).toBeNull()
+  })
+
+  it('a non-401 failure on /me lands on /login', async () => {
+    // A 502 never goes through onUnauthorized, so only App's own catch can
+    // move the page: the URL must follow, not just the rendered component.
+    for (const start of ['children', 'buttons'] as const) {
+      const spy = vi.fn()
+      setOnUnauthorized(spy)
+      history.replaceState(null, '', `/${start}`)
+      route.set(start)
+      mockFetch({ '/api/v1/me': () => json(502, { error: 'adguard_unavailable', message: 'down' }) })
+      const { unmount } = render(App)
+      expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy()
+      expect(location.pathname).toBe('/login')
+      expect(get(route)).toBe('login')
+      expect(spy).not.toHaveBeenCalled()
+      unmount()
+      vi.unstubAllGlobals()
+    }
+    setOnUnauthorized(() => navigate('login'))
+  })
+
+  it('back to /children while signed out stays on login', async () => {
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+
+    history.pushState(null, '', '/children')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    await tick()
+
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
   })
 
   it('children needs a session', async () => {
