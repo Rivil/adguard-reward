@@ -38,6 +38,24 @@
         }
       ]
     },
+    "t-11": {
+      "files": [
+        "web/src/App.test.ts",
+        "web/src/lib/Children.test.ts",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/MigrationBanner.test.ts"
+      ],
+      "commit": "275c341",
+      "completed_at": "2026-09-21T07:15:01.471261Z",
+      "landmarks": [
+        {
+          "feature": "children settings page",
+          "symbol": "MigrationBanner.test 'buttons lock while migrating'",
+          "loc": "web/src/lib/MigrationBanner.test.ts:141",
+          "what": "DOM tests pinning sign-in→home routing · checkbox unassign · known() existence · add-field reset · network alerts · in-flight button lock (verify amendment for c-5/c-6/c-7)"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/adguard/clients.go",
