@@ -19,6 +19,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"sync"
 	"testing"
@@ -460,6 +461,55 @@ func TestRun_SessionSurvivesRestart(t *testing.T) {
 	var me map[string]string
 	if err := json.NewDecoder(resp.Body).Decode(&me); err != nil || me["username"] != svcUser {
 		t.Fatalf("/me body %v err %v", me, err)
+	}
+}
+
+func TestRun_ChildrenSurviveRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	p := writeConfigIn(t, dataDir, fake.URL(), "")
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", p}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	type child struct {
+		ID      int64    `json:"id"`
+		Name    string   `json:"name"`
+		Clients []string `json:"clients"`
+	}
+	resp := call(t, c, http.MethodPost, base, "/api/v1/children",
+		map[string]any{"name": "Ada", "clients": []string{"Kid phone", "Kid tablet"}}, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST child: %d %s", resp.StatusCode, b)
+	}
+	var created child
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		t.Fatal(err)
+	}
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	p2 := writeConfigIn(t, dataDir, fake.URL(), "")
+	r2 := start(t, []string{"--config", p2}, map[string]string{"ADGUARD_REWARD_LISTEN": r.addr})
+	if r2.addr != r.addr {
+		t.Fatalf("second run bound %s, want %s", r2.addr, r.addr)
+	}
+	resp = call(t, c, http.MethodGet, base, "/api/v1/children", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /children after restart: %d", resp.StatusCode)
+	}
+	var list struct {
+		Children []child `json:"children"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		t.Fatal(err)
+	}
+	if len(list.Children) != 1 || list.Children[0].ID != created.ID || list.Children[0].Name != "Ada" ||
+		!reflect.DeepEqual(list.Children[0].Clients, []string{"Kid phone", "Kid tablet"}) {
+		t.Fatalf("after restart children = %+v, want the created %+v", list.Children, created)
 	}
 }
 
