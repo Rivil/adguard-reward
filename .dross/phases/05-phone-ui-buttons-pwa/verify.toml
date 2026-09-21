@@ -1,0 +1,504 @@
+[verify]
+  phase = "05-phone-ui-buttons-pwa"
+  generated_at = 2026-09-21T17:11:42.813767Z
+  verdict = "fail"
+  finalized = true
+  finalized_at = 2026-09-21T17:16:11.896209Z
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.8603104212860311
+  mutants_killed = 776
+  mutants_survived = 124
+  mutants_not_covered = 24
+  mutants_in_scope = 902
+  unclassified_in_scope = 87
+  criteria_total = 8
+  criteria_covered = 3
+  criteria_uncovered = 5
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 67
+    survived = 6
+    timeout = 0
+    in_scope = 73
+    score = 0.9178082191780822
+    file_count = 12
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main.go — adapter-lacks-range-runner", "cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/buttons.go — adapter-lacks-range-runner", "internal/api/buttons_test.go — adapter-lacks-range-runner", "internal/api/login_test.go — adapter-lacks-range-runner", "internal/spa/spa.go — adapter-lacks-range-runner", "internal/spa/spa_test.go — adapter-lacks-range-runner", "internal/store/buttons.go — adapter-lacks-range-runner", "internal/store/buttons_test.go — adapter-lacks-range-runner", "web/embed.go — adapter-lacks-range-runner", "web/embed_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 709
+    survived = 118
+    timeout = 2
+    in_scope = 829
+    score = 0.8552472858866104
+    file_count = 27
+    measured_on = "local"
+    ranges = ["web/src/App.test.ts:51-305 (ExpressionStatement)", "web/src/App.test.ts:8-8 (ImportDeclaration)", "web/src/lib/ActiveGrants.panel.test.ts:1-2 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:10-10 (TSTypeAliasDeclaration Answer)", "web/src/lib/ActiveGrants.panel.test.ts:11-11 (TSTypeAliasDeclaration Routes)", "web/src/lib/ActiveGrants.panel.test.ts:12-12 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:13-13 (VariableDeclaration T0)", "web/src/lib/ActiveGrants.panel.test.ts:14-14 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:15-17 (FunctionDeclaration json)", "web/src/lib/ActiveGrants.panel.test.ts:18-18 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:19-32 (FunctionDeclaration mockFetch)", "web/src/lib/ActiveGrants.panel.test.ts:3-3 (ImportDeclaration)", "web/src/lib/ActiveGrants.panel.test.ts:33-33 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:34-43 (FunctionDeclaration grant)", "web/src/lib/ActiveGrants.panel.test.ts:4-4 (ImportDeclaration)", "web/src/lib/ActiveGrants.panel.test.ts:44-45 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:46-53 (FunctionDeclaration server)", "web/src/lib/ActiveGrants.panel.test.ts:5-5 (ImportDeclaration)", "web/src/lib/ActiveGrants.panel.test.ts:54-54 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:55-55 (VariableDeclaration gets)", "web/src/lib/ActiveGrants.panel.test.ts:56-56 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:57-61 (FunctionDeclaration row)", "web/src/lib/ActiveGrants.panel.test.ts:6-6 (ImportDeclaration)", "web/src/lib/ActiveGrants.panel.test.ts:62-62 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:63-65 (FunctionDeclaration countdown)", "web/src/lib/ActiveGrants.panel.test.ts:66-66 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:67-72 (FunctionDeclaration button)", "web/src/lib/ActiveGrants.panel.test.ts:7-7 (ImportDeclaration)", "web/src/lib/ActiveGrants.panel.test.ts:73-74 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:75-77 (FunctionDeclaration settle)", "web/src/lib/ActiveGrants.panel.test.ts:78-78 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:79-79 (VariableDeclaration names)", "web/src/lib/ActiveGrants.panel.test.ts:8-8 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:80-80 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:81-86 (FunctionDeclaration mount)", "web/src/lib/ActiveGrants.panel.test.ts:87-87 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:88-92 (ExpressionStatement)", "web/src/lib/ActiveGrants.panel.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/ActiveGrants.panel.test.ts:93-93 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:94-97 (ExpressionStatement)", "web/src/lib/ActiveGrants.panel.test.ts:98-98 (hunk)", "web/src/lib/ActiveGrants.panel.test.ts:99-282 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:1-2 (hunk)", "web/src/lib/Buttons.test.ts:10-10 (TSTypeAliasDeclaration Routes)", "web/src/lib/Buttons.test.ts:102-102 (hunk)", "web/src/lib/Buttons.test.ts:103-105 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:106-106 (hunk)", "web/src/lib/Buttons.test.ts:107-222 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:11-11 (hunk)", "web/src/lib/Buttons.test.ts:12-14 (FunctionDeclaration json)", "web/src/lib/Buttons.test.ts:15-15 (hunk)", "web/src/lib/Buttons.test.ts:16-29 (FunctionDeclaration mockFetch)", "web/src/lib/Buttons.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Buttons.test.ts:30-30 (hunk)", "web/src/lib/Buttons.test.ts:31-31 (VariableDeclaration ada)", "web/src/lib/Buttons.test.ts:32-32 (VariableDeclaration ben)", "web/src/lib/Buttons.test.ts:33-33 (VariableDeclaration youtube)", "web/src/lib/Buttons.test.ts:34-34 (VariableDeclaration tiktok)", "web/src/lib/Buttons.test.ts:35-35 (VariableDeclaration roblox)", "web/src/lib/Buttons.test.ts:36-36 (hunk)", "web/src/lib/Buttons.test.ts:37-37 (VariableDeclaration b1)", "web/src/lib/Buttons.test.ts:38-38 (VariableDeclaration b2)", "web/src/lib/Buttons.test.ts:39-39 (VariableDeclaration b3)", "web/src/lib/Buttons.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Buttons.test.ts:40-40 (hunk)", "web/src/lib/Buttons.test.ts:41-41 (TSTypeAliasDeclaration Stored)", "web/src/lib/Buttons.test.ts:42-43 (hunk)", "web/src/lib/Buttons.test.ts:44-64 (FunctionDeclaration server)", "web/src/lib/Buttons.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Buttons.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Buttons.test.ts:65-65 (hunk)", "web/src/lib/Buttons.test.ts:66-66 (VariableDeclaration puts)", "web/src/lib/Buttons.test.ts:67-67 (VariableDeclaration getsOf)", "web/src/lib/Buttons.test.ts:68-68 (hunk)", "web/src/lib/Buttons.test.ts:69-71 (FunctionDeclaration rows)", "web/src/lib/Buttons.test.ts:7-7 (hunk)", "web/src/lib/Buttons.test.ts:72-72 (hunk)", "web/src/lib/Buttons.test.ts:73-78 (FunctionDeclaration rowButton)", "web/src/lib/Buttons.test.ts:79-79 (hunk)", "web/src/lib/Buttons.test.ts:8-8 (TSTypeAliasDeclaration Call)", "web/src/lib/Buttons.test.ts:80-80 (VariableDeclaration saveButton)", "web/src/lib/Buttons.test.ts:81-81 (VariableDeclaration labelInput)", "web/src/lib/Buttons.test.ts:82-82 (VariableDeclaration minutesInput)", "web/src/lib/Buttons.test.ts:83-83 (VariableDeclaration childSelect)", "web/src/lib/Buttons.test.ts:84-84 (hunk)", "web/src/lib/Buttons.test.ts:85-93 (FunctionDeclaration checkbox)", "web/src/lib/Buttons.test.ts:9-9 (TSTypeAliasDeclaration Answer)", "web/src/lib/Buttons.test.ts:94-94 (hunk)", "web/src/lib/Buttons.test.ts:95-101 (FunctionDeclaration mount)", "web/src/lib/GrantForm.test.ts:1-2 (hunk)", "web/src/lib/GrantForm.test.ts:10-10 (VariableDeclaration youtube)", "web/src/lib/GrantForm.test.ts:11-11 (VariableDeclaration tiktok)", "web/src/lib/GrantForm.test.ts:12-12 (hunk)", "web/src/lib/GrantForm.test.ts:13-15 (FunctionDeclaration mount)", "web/src/lib/GrantForm.test.ts:16-17 (hunk)", "web/src/lib/GrantForm.test.ts:18-20 (FunctionDeclaration value)", "web/src/lib/GrantForm.test.ts:21-21 (hunk)", "web/src/lib/GrantForm.test.ts:22-24 (FunctionDeclaration valid)", "web/src/lib/GrantForm.test.ts:25-25 (hunk)", "web/src/lib/GrantForm.test.ts:26-30 (FunctionDeclaration fieldset)", "web/src/lib/GrantForm.test.ts:3-3 (ImportDeclaration)", "web/src/lib/GrantForm.test.ts:31-31 (hunk)", "web/src/lib/GrantForm.test.ts:32-34 (FunctionDeclaration select)", "web/src/lib/GrantForm.test.ts:35-35 (hunk)", "web/src/lib/GrantForm.test.ts:36-38 (FunctionDeclaration minutes)", "web/src/lib/GrantForm.test.ts:39-39 (hunk)", "web/src/lib/GrantForm.test.ts:4-4 (ImportDeclaration)", "web/src/lib/GrantForm.test.ts:40-48 (FunctionDeclaration checkbox)", "web/src/lib/GrantForm.test.ts:49-49 (hunk)", "web/src/lib/GrantForm.test.ts:5-5 (ImportDeclaration)", "web/src/lib/GrantForm.test.ts:50-52 (FunctionDeclaration pickChild)", "web/src/lib/GrantForm.test.ts:53-53 (hunk)", "web/src/lib/GrantForm.test.ts:54-56 (FunctionDeclaration typeMinutes)", "web/src/lib/GrantForm.test.ts:57-57 (hunk)", "web/src/lib/GrantForm.test.ts:58-152 (ExpressionStatement)", "web/src/lib/GrantForm.test.ts:6-6 (ImportDeclaration)", "web/src/lib/GrantForm.test.ts:7-7 (hunk)", "web/src/lib/GrantForm.test.ts:8-8 (VariableDeclaration ada)", "web/src/lib/GrantForm.test.ts:9-9 (VariableDeclaration ben)", "web/src/lib/Home.test.ts:100-104 (FunctionDeclaration tile)", "web/src/lib/Home.test.ts:105-105 (hunk)", "web/src/lib/Home.test.ts:106-110 (FunctionDeclaration details)", "web/src/lib/Home.test.ts:111-111 (hunk)", "web/src/lib/Home.test.ts:112-115 (FunctionDeclaration open)", "web/src/lib/Home.test.ts:116-117 (hunk)", "web/src/lib/Home.test.ts:118-120 (FunctionDeclaration settle)", "web/src/lib/Home.test.ts:121-121 (hunk)", "web/src/lib/Home.test.ts:122-124 (FunctionDeclaration mount)", "web/src/lib/Home.test.ts:125-125 (hunk)", "web/src/lib/Home.test.ts:126-130 (FunctionDeclaration mountLoaded)", "web/src/lib/Home.test.ts:131-131 (hunk)", "web/src/lib/Home.test.ts:132-140 (FunctionDeclaration checkbox)", "web/src/lib/Home.test.ts:141-141 (hunk)", "web/src/lib/Home.test.ts:142-147 (ExpressionStatement)", "web/src/lib/Home.test.ts:149-575 (ExpressionStatement)", "web/src/lib/Home.test.ts:22-35 (FunctionDeclaration mockFetch)", "web/src/lib/Home.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Home.test.ts:38-38 (VariableDeclaration YT_ICON)", "web/src/lib/Home.test.ts:39-39 (VariableDeclaration T0)", "web/src/lib/Home.test.ts:40-40 (hunk)", "web/src/lib/Home.test.ts:41-41 (VariableDeclaration ada)", "web/src/lib/Home.test.ts:42-42 (VariableDeclaration ben)", "web/src/lib/Home.test.ts:43-47 (VariableDeclaration services)", "web/src/lib/Home.test.ts:48-48 (VariableDeclaration b1)", "web/src/lib/Home.test.ts:49-49 (VariableDeclaration b2)", "web/src/lib/Home.test.ts:50-50 (VariableDeclaration b3)", "web/src/lib/Home.test.ts:67-67 (hunk)", "web/src/lib/Home.test.ts:68-89 (FunctionDeclaration server)", "web/src/lib/Home.test.ts:7-7 (ImportDeclaration)", "web/src/lib/Home.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/Home.test.ts:91-91 (VariableDeclaration grantGets)", "web/src/lib/Home.test.ts:92-92 (VariableDeclaration posts)", "web/src/lib/Home.test.ts:93-93 (hunk)", "web/src/lib/Login.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Login.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Login.test.ts:44-130 (ExpressionStatement)", "web/src/lib/activeGrants.test.ts:1-2 (hunk)", "web/src/lib/activeGrants.test.ts:18-18 (hunk)", "web/src/lib/activeGrants.test.ts:19-21 (FunctionDeclaration json)", "web/src/lib/activeGrants.test.ts:22-22 (hunk)", "web/src/lib/activeGrants.test.ts:23-23 (TSTypeAliasDeclaration Answer)", "web/src/lib/activeGrants.test.ts:24-25 (hunk)", "web/src/lib/activeGrants.test.ts:26-36 (FunctionDeclaration grantsServer)", "web/src/lib/activeGrants.test.ts:3-3 (ImportDeclaration)", "web/src/lib/activeGrants.test.ts:37-37 (hunk)", "web/src/lib/activeGrants.test.ts:38-38 (VariableDeclaration ok)", "web/src/lib/activeGrants.test.ts:39-39 (VariableDeclaration netFail)", "web/src/lib/activeGrants.test.ts:4-4 (ImportDeclaration)", "web/src/lib/activeGrants.test.ts:40-40 (VariableDeclaration unauthorized)", "web/src/lib/activeGrants.test.ts:41-41 (hunk)", "web/src/lib/activeGrants.test.ts:42-42 (VariableDeclaration onUnauthorized)", "web/src/lib/activeGrants.test.ts:43-43 (VariableDeclaration stop)", "web/src/lib/activeGrants.test.ts:44-44 (hunk)", "web/src/lib/activeGrants.test.ts:45-48 (ExpressionStatement)", "web/src/lib/activeGrants.test.ts:49-49 (hunk)", "web/src/lib/activeGrants.test.ts:5-5 (ImportDeclaration)", "web/src/lib/activeGrants.test.ts:50-55 (ExpressionStatement)", "web/src/lib/activeGrants.test.ts:56-57 (hunk)", "web/src/lib/activeGrants.test.ts:58-60 (FunctionDeclaration settle)", "web/src/lib/activeGrants.test.ts:6-6 (ImportDeclaration)", "web/src/lib/activeGrants.test.ts:61-61 (hunk)", "web/src/lib/activeGrants.test.ts:62-178 (ExpressionStatement)", "web/src/lib/activeGrants.test.ts:7-7 (hunk)", "web/src/lib/activeGrants.test.ts:8-17 (FunctionDeclaration grant)", "web/src/lib/activeGrants.ts:1-4 (hunk)", "web/src/lib/activeGrants.ts:15-15 (hunk)", "web/src/lib/activeGrants.ts:16-16 (VariableDeclaration state)", "web/src/lib/activeGrants.ts:17-18 (hunk)", "web/src/lib/activeGrants.ts:19-19 (VariableDeclaration activeGrants)", "web/src/lib/activeGrants.ts:20-20 (hunk)", "web/src/lib/activeGrants.ts:21-21 (VariableDeclaration inFlight)", "web/src/lib/activeGrants.ts:22-23 (hunk)", "web/src/lib/activeGrants.ts:24-39 (FunctionDeclaration refresh)", "web/src/lib/activeGrants.ts:40-41 (hunk)", "web/src/lib/activeGrants.ts:42-48 (FunctionDeclaration merge)", "web/src/lib/activeGrants.ts:49-49 (hunk)", "web/src/lib/activeGrants.ts:5-5 (ImportDeclaration)", "web/src/lib/activeGrants.ts:50-52 (FunctionDeclaration remove)", "web/src/lib/activeGrants.ts:53-53 (hunk)", "web/src/lib/activeGrants.ts:54-54 (VariableDeclaration stopCurrent)", "web/src/lib/activeGrants.ts:55-60 (hunk)", "web/src/lib/activeGrants.ts:6-6 (ImportDeclaration)", "web/src/lib/activeGrants.ts:61-76 (FunctionDeclaration start)", "web/src/lib/activeGrants.ts:7-7 (hunk)", "web/src/lib/activeGrants.ts:77-78 (hunk)", "web/src/lib/activeGrants.ts:79-81 (FunctionDeclaration snapshot)", "web/src/lib/activeGrants.ts:8-14 (TSInterfaceDeclaration ActiveGrantsState)", "web/src/lib/api.test.ts:259-318 (ExpressionStatement)", "web/src/lib/api.test.ts:319-319 (hunk)", "web/src/lib/api.test.ts:320-410 (ExpressionStatement)", "web/src/lib/api.test.ts:5-34 (ImportDeclaration)", "web/src/lib/api.ts:106-122 (FunctionDeclaration request)", "web/src/lib/api.ts:11-27 (ClassDeclaration ApiError)", "web/src/lib/api.ts:257-258 (hunk)", "web/src/lib/api.ts:259-267 (TSInterfaceDeclaration Grant)", "web/src/lib/api.ts:268-268 (hunk)", "web/src/lib/api.ts:269-275 (TSInterfaceDeclaration GrantCreated)", "web/src/lib/api.ts:276-276 (hunk)", "web/src/lib/api.ts:277-283 (TSInterfaceDeclaration ButtonInput)", "web/src/lib/api.ts:284-284 (hunk)", "web/src/lib/api.ts:285-287 (TSInterfaceDeclaration Button)", "web/src/lib/api.ts:288-288 (hunk)", "web/src/lib/api.ts:289-289 (VariableDeclaration GRANTS)", "web/src/lib/api.ts:290-290 (VariableDeclaration BUTTONS)", "web/src/lib/api.ts:291-291 (hunk)", "web/src/lib/api.ts:292-295 (FunctionDeclaration listGrants)", "web/src/lib/api.ts:296-297 (hunk)", "web/src/lib/api.ts:298-300 (FunctionDeclaration createGrant)", "web/src/lib/api.ts:301-301 (hunk)", "web/src/lib/api.ts:302-304 (FunctionDeclaration extendGrant)", "web/src/lib/api.ts:305-305 (hunk)", "web/src/lib/api.ts:306-308 (FunctionDeclaration endGrant)", "web/src/lib/api.ts:309-309 (hunk)", "web/src/lib/api.ts:31-31 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:310-313 (FunctionDeclaration listButtons)", "web/src/lib/api.ts:314-315 (hunk)", "web/src/lib/api.ts:316-319 (FunctionDeclaration saveButtons)", "web/src/lib/api.ts:320-320 (hunk)", "web/src/lib/api.ts:33-33 (VariableDeclaration PATHS)", "web/src/lib/api.ts:73-77 (TSInterfaceDeclaration ErrorEnvelope)", "web/src/lib/api.ts:79-92 (FunctionDeclaration readEnvelope)", "web/src/lib/grants.test.ts:1-1 (hunk)", "web/src/lib/grants.test.ts:15-15 (hunk)", "web/src/lib/grants.test.ts:16-16 (VariableDeclaration T0)", "web/src/lib/grants.test.ts:17-17 (hunk)", "web/src/lib/grants.test.ts:18-27 (FunctionDeclaration grant)", "web/src/lib/grants.test.ts:2-2 (ImportDeclaration)", "web/src/lib/grants.test.ts:28-28 (hunk)", "web/src/lib/grants.test.ts:29-34 (ExpressionStatement)", "web/src/lib/grants.test.ts:3-3 (ImportDeclaration)", "web/src/lib/grants.test.ts:35-35 (hunk)", "web/src/lib/grants.test.ts:36-43 (ExpressionStatement)", "web/src/lib/grants.test.ts:4-14 (ImportDeclaration)", "web/src/lib/grants.test.ts:44-44 (hunk)", "web/src/lib/grants.test.ts:45-55 (ExpressionStatement)", "web/src/lib/grants.test.ts:56-56 (hunk)", "web/src/lib/grants.test.ts:57-65 (ExpressionStatement)", "web/src/lib/grants.test.ts:66-66 (hunk)", "web/src/lib/grants.test.ts:67-74 (ExpressionStatement)", "web/src/lib/grants.test.ts:75-75 (hunk)", "web/src/lib/grants.test.ts:76-95 (ExpressionStatement)", "web/src/lib/grants.test.ts:96-96 (hunk)", "web/src/lib/grants.test.ts:97-105 (ExpressionStatement)", "web/src/lib/grants.ts:1-3 (hunk)", "web/src/lib/grants.ts:11-14 (FunctionDeclaration remainingSeconds)", "web/src/lib/grants.ts:15-15 (hunk)", "web/src/lib/grants.ts:16-18 (FunctionDeclaration pad)", "web/src/lib/grants.ts:19-20 (hunk)", "web/src/lib/grants.ts:21-26 (FunctionDeclaration formatCountdown)", "web/src/lib/grants.ts:27-28 (hunk)", "web/src/lib/grants.ts:29-34 (FunctionDeclaration formatDuration)", "web/src/lib/grants.ts:35-40 (hunk)", "web/src/lib/grants.ts:4-4 (ImportDeclaration)", "web/src/lib/grants.ts:41-44 (FunctionDeclaration ownDuration)", "web/src/lib/grants.ts:45-45 (hunk)", "web/src/lib/grants.ts:46-51 (TSInterfaceDeclaration Overlap)", "web/src/lib/grants.ts:5-6 (hunk)", "web/src/lib/grants.ts:52-53 (hunk)", "web/src/lib/grants.ts:54-61 (FunctionDeclaration overlapsFor)", "web/src/lib/grants.ts:62-62 (hunk)", "web/src/lib/grants.ts:63-65 (FunctionDeclaration minutesToSeconds)", "web/src/lib/grants.ts:66-66 (hunk)", "web/src/lib/grants.ts:67-69 (FunctionDeclaration secondsToMinutes)", "web/src/lib/grants.ts:7-7 (VariableDeclaration MIN_DURATION)", "web/src/lib/grants.ts:8-8 (VariableDeclaration MAX_DURATION)", "web/src/lib/grants.ts:9-10 (hunk)", "web/src/lib/sw-routing.test.ts:1-2 (hunk)", "web/src/lib/sw-routing.test.ts:10-10 (VariableDeclaration ORIGIN)", "web/src/lib/sw-routing.test.ts:11-11 (VariableDeclaration webRoot)", "web/src/lib/sw-routing.test.ts:12-12 (hunk)", "web/src/lib/sw-routing.test.ts:13-16 (FunctionDeclaration req)", "web/src/lib/sw-routing.test.ts:17-17 (hunk)", "web/src/lib/sw-routing.test.ts:18-18 (VariableDeclaration precache)", "web/src/lib/sw-routing.test.ts:19-19 (hunk)", "web/src/lib/sw-routing.test.ts:20-49 (ExpressionStatement)", "web/src/lib/sw-routing.test.ts:3-3 (ImportDeclaration)", "web/src/lib/sw-routing.test.ts:4-4 (ImportDeclaration)", "web/src/lib/sw-routing.test.ts:5-5 (ImportDeclaration)", "web/src/lib/sw-routing.test.ts:50-50 (hunk)", "web/src/lib/sw-routing.test.ts:51-60 (ExpressionStatement)", "web/src/lib/sw-routing.test.ts:6-6 (ImportDeclaration)", "web/src/lib/sw-routing.test.ts:61-61 (hunk)", "web/src/lib/sw-routing.test.ts:62-70 (ExpressionStatement)", "web/src/lib/sw-routing.test.ts:7-7 (ImportDeclaration)", "web/src/lib/sw-routing.test.ts:71-71 (hunk)", "web/src/lib/sw-routing.test.ts:72-104 (ExpressionStatement)", "web/src/lib/sw-routing.test.ts:8-8 (ImportDeclaration)", "web/src/lib/sw-routing.test.ts:9-9 (hunk)", "web/src/lib/sw-routing.ts:1-5 (hunk)", "web/src/lib/sw-routing.ts:10-16 (TSInterfaceDeclaration RequestLike)", "web/src/lib/sw-routing.ts:17-23 (hunk)", "web/src/lib/sw-routing.ts:24-32 (FunctionDeclaration decide)", "web/src/lib/sw-routing.ts:33-38 (hunk)", "web/src/lib/sw-routing.ts:39-47 (FunctionDeclaration cacheName)", "web/src/lib/sw-routing.ts:6-6 (VariableDeclaration PUBLIC_SHELL)", "web/src/lib/sw-routing.ts:7-7 (hunk)", "web/src/lib/sw-routing.ts:8-8 (TSTypeAliasDeclaration Decision)", "web/src/lib/sw-routing.ts:9-9 (hunk)", "web/src/lib/tap.test.ts:1-1 (hunk)", "web/src/lib/tap.test.ts:11-11 (hunk)", "web/src/lib/tap.test.ts:119-119 (hunk)", "web/src/lib/tap.test.ts:12-12 (VariableDeclaration b1)", "web/src/lib/tap.test.ts:120-192 (ExpressionStatement)", "web/src/lib/tap.test.ts:13-13 (hunk)", "web/src/lib/tap.test.ts:14-19 (TSTypeAliasDeclaration Fake)", "web/src/lib/tap.test.ts:2-2 (ImportDeclaration)", "web/src/lib/tap.test.ts:20-20 (hunk)", "web/src/lib/tap.test.ts:21-29 (FunctionDeclaration fake)", "web/src/lib/tap.test.ts:3-3 (ImportDeclaration)", "web/src/lib/tap.test.ts:30-30 (hunk)", "web/src/lib/tap.test.ts:31-31 (VariableDeclaration created)", "web/src/lib/tap.test.ts:32-32 (VariableDeclaration conflict)", "web/src/lib/tap.test.ts:33-33 (hunk)", "web/src/lib/tap.test.ts:34-118 (ExpressionStatement)", "web/src/lib/tap.test.ts:4-4 (ImportDeclaration)", "web/src/lib/tap.test.ts:5-5 (hunk)", "web/src/lib/tap.test.ts:6-6 (VariableDeclaration ENDS)", "web/src/lib/tap.test.ts:7-7 (hunk)", "web/src/lib/tap.test.ts:8-10 (FunctionDeclaration grant)", "web/src/lib/tap.ts:1-4 (hunk)", "web/src/lib/tap.ts:107-113 (hunk)", "web/src/lib/tap.ts:114-140 (FunctionDeclaration acceptOffer)", "web/src/lib/tap.ts:18-18 (hunk)", "web/src/lib/tap.ts:19-26 (TSInterfaceDeclaration TapDeps)", "web/src/lib/tap.ts:27-27 (hunk)", "web/src/lib/tap.ts:28-33 (TSInterfaceDeclaration Offer)", "web/src/lib/tap.ts:34-34 (hunk)", "web/src/lib/tap.ts:35-40 (TSTypeAliasDeclaration Outcome)", "web/src/lib/tap.ts:41-41 (hunk)", "web/src/lib/tap.ts:42-42 (VariableDeclaration NETWORK_MESSAGE)", "web/src/lib/tap.ts:43-45 (hunk)", "web/src/lib/tap.ts:46-46 (VariableDeclaration inflight)", "web/src/lib/tap.ts:47-48 (hunk)", "web/src/lib/tap.ts:49-59 (FunctionDeclaration grantFrom)", "web/src/lib/tap.ts:5-5 (ImportDeclaration)", "web/src/lib/tap.ts:6-6 (ImportDeclaration)", "web/src/lib/tap.ts:60-60 (hunk)", "web/src/lib/tap.ts:61-64 (FunctionDeclaration errorOutcome)", "web/src/lib/tap.ts:65-66 (hunk)", "web/src/lib/tap.ts:67-80 (FunctionDeclaration create)", "web/src/lib/tap.ts:7-7 (hunk)", "web/src/lib/tap.ts:8-17 (TSInterfaceDeclaration TapSpec)", "web/src/lib/tap.ts:81-81 (hunk)", "web/src/lib/tap.ts:82-90 (FunctionDeclaration withKey)", "web/src/lib/tap.ts:91-92 (hunk)", "web/src/lib/tap.ts:93-106 (FunctionDeclaration runTap)", "web/src/main.ts:10-10 (hunk)", "web/src/main.ts:11-15 (IfStatement)", "web/src/main.ts:16-16 (hunk)", "web/src/pwa.test.ts:1-2 (hunk)", "web/src/pwa.test.ts:10-10 (VariableDeclaration read)", "web/src/pwa.test.ts:11-11 (hunk)", "web/src/pwa.test.ts:12-12 (TSTypeAliasDeclaration Icon)", "web/src/pwa.test.ts:13-22 (TSTypeAliasDeclaration Manifest)", "web/src/pwa.test.ts:23-23 (hunk)", "web/src/pwa.test.ts:24-24 (VariableDeclaration manifest)", "web/src/pwa.test.ts:25-25 (hunk)", "web/src/pwa.test.ts:26-65 (ExpressionStatement)", "web/src/pwa.test.ts:3-3 (ImportDeclaration)", "web/src/pwa.test.ts:4-4 (ImportDeclaration)", "web/src/pwa.test.ts:5-5 (ImportDeclaration)", "web/src/pwa.test.ts:6-8 (hunk)", "web/src/pwa.test.ts:9-9 (VariableDeclaration root)", "web/src/sw.test.ts:1-1 (hunk)", "web/src/sw.test.ts:13-14 (hunk)", "web/src/sw.test.ts:15-47 (FunctionDeclaration boot)", "web/src/sw.test.ts:2-2 (ImportDeclaration)", "web/src/sw.test.ts:3-3 (ImportDeclaration)", "web/src/sw.test.ts:4-4 (hunk)", "web/src/sw.test.ts:48-48 (hunk)", "web/src/sw.test.ts:49-53 (FunctionDeclaration fetchEvent)", "web/src/sw.test.ts:5-5 (TSTypeAliasDeclaration Listener)", "web/src/sw.test.ts:54-54 (hunk)", "web/src/sw.test.ts:55-58 (FunctionDeclaration responded)", "web/src/sw.test.ts:59-59 (hunk)", "web/src/sw.test.ts:6-6 (hunk)", "web/src/sw.test.ts:60-62 (ExpressionStatement)", "web/src/sw.test.ts:63-63 (hunk)", "web/src/sw.test.ts:64-141 (ExpressionStatement)", "web/src/sw.test.ts:7-7 (VariableDeclaration ORIGIN)", "web/src/sw.test.ts:8-8 (hunk)", "web/src/sw.test.ts:9-12 (FunctionDeclaration pathOf)", "web/src/sw.ts:1-5 (hunk)", "web/src/sw.ts:12-12 (VariableDeclaration PRECACHE)", "web/src/sw.ts:13-13 (VariableDeclaration PRECACHE_SET)", "web/src/sw.ts:14-14 (VariableDeclaration CACHE)", "web/src/sw.ts:15-15 (hunk)", "web/src/sw.ts:16-23 (ExpressionStatement)", "web/src/sw.ts:24-24 (hunk)", "web/src/sw.ts:25-32 (ExpressionStatement)", "web/src/sw.ts:33-33 (hunk)", "web/src/sw.ts:34-47 (ExpressionStatement)", "web/src/sw.ts:6-6 (ImportDeclaration)", "web/src/sw.ts:7-7 (hunk)", "web/src/sw.ts:8-8 (VariableDeclaration sw)", "web/src/sw.ts:9-11 (hunk)", "web/vite.config.ts:10-10 (VariableDeclaration here)", "web/vite.config.ts:11-11 (hunk)", "web/vite.config.ts:12-12 (VariableDeclaration PRECACHE_TOKEN)", "web/vite.config.ts:13-19 (hunk)", "web/vite.config.ts:20-38 (FunctionDeclaration swPrecache)", "web/vite.config.ts:41-74 (ExportDefaultDeclaration)", "web/vite.config.ts:5-5 (ImportDeclaration)", "web/vite.config.ts:8-8 (ImportDeclaration)", "web/vite.config.ts:9-9 (hunk)"]
+    whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/ActiveGrants.svelte — ast-unavailable", "web/src/lib/Buttons.svelte — ast-unavailable", "web/src/lib/GrantForm.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable", "web/src/lib/Login.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/api/buttons_test.go:TestButtons_Validation", "internal/api/buttons_test.go:TestButtons_RoundTrip", "internal/store/buttons_test.go:TestButtons_OrderPersists", "cmd/adguard-reward/main_test.go:TestRun_ButtonsSurviveRestart", "cmd/adguard-reward/main_test.go:TestRun_ButtonsWired"]
+  notes = "422 on unknown child / unknown service / duration 59 s, 0 and 86401 s asserted with the stored list unchanged; order and restart survival asserted through the binary. In-hunk survivor buttons.go:182 (indexOfChild) is the store-level ErrUnknownChild race path (child deleted between the pre-check and the tx) — the 422 status is intact, only the index in the message; no test fault-injects it (BLOCKING seeded below)."
+
+[[criterion]]
+  id = "c-2"
+  status = "weak"
+  tests = ["web/src/lib/Home.test.ts:it('tap posts the grant immediately')", "web/src/lib/Home.test.ts:it('outcomes render next to the child')", "web/src/lib/tap.test.ts:it('partial names the client')", "web/src/lib/tap.test.ts:it('errors carry code and message')"]
+  notes = "Stored order, one POST per tap, countdown visible after the optimistic merge, partial/network/502 alerts naming the failed client are all asserted. Weak: in-hunk survivors Home.svelte:116 (', ' join — only one failed client ever tested), Home.svelte:150/306/307 (ad-hoc form and Unlock not shown disabled while a tap is in flight), tap.ts:78 (failed ?? [] fallback never exercised)."
+
+[[criterion]]
+  id = "c-3"
+  status = "weak"
+  tests = ["web/src/lib/ActiveGrants.panel.test.ts:it('countdown follows ends_at')", "web/src/lib/ActiveGrants.panel.test.ts:it('expiry asks the server')", "web/src/lib/ActiveGrants.panel.test.ts:it('extend posts own duration')", "web/src/lib/ActiveGrants.panel.test.ts:it('end 502 keeps the entry')", "web/src/lib/ActiveGrants.panel.test.ts:it('unreachable badge')", "web/src/lib/Home.test.ts:it('409 offers extend and Extend delivers')", "web/src/lib/activeGrants.test.ts:it('failure keeps grants and sets unreachable')", "web/src/lib/grants.test.ts:describe('overlapsFor')"]
+  notes = "Per-second tick from ends_at, expiry → refresh → row leaves, extend by own duration, end-early, 409 → offer → extend + create, unreachable badge all asserted. Weak: in-hunk survivors grants.ts:17 (pad(10) → '010' — no countdown value at exactly 10 tested), grants.ts:56 (some → every — no partially-overlapping grant fixture), activeGrants.ts:32 (a 5xx ApiError does not flip unreachable; only a fetch TypeError is tested), ActiveGrants.svelte:37/55/65 (unknown-child fallback, network row message, non-502 row message), Home.svelte:164–166 (offer text names all tapped services, 'That'/'this child' fallbacks), tap.ts:103 (envelope-stub fields)."
+
+[[criterion]]
+  id = "c-4"
+  status = "weak"
+  tests = ["web/src/lib/Buttons.test.ts:it('add appends and PUTs everything')", "web/src/lib/Buttons.test.ts:it('edit keeps position and converts units')", "web/src/lib/Buttons.test.ts:it('delete PUTs without the item')", "web/src/lib/Buttons.test.ts:it('422 shows the server message and keeps the draft')", "cmd/adguard-reward/main_test.go:TestRun_ButtonsSurviveRestart", "web/src/lib/Home.test.ts:it('renders buttons per child in stored order')"]
+  notes = "Add/edit/delete each PUT the whole list with exact bodies; a 422 surfaces the server message; restart survival through the binary; Home renders the stored list. Weak: 20 in-hunk survivors in Buttons.svelte — pending never asserted (Save not disabled in flight, 53), 'keeps the draft' passes only because the reload wins a race (70), label.trim (82), child/service names in rows (90/94), form reset of services (107), empty state (138), 'New button'/'Edit button' heading (158), network-error alert (62), reload keeps the stale catalogue on a failed PUT (42) — plus 13 in GrantForm.svelte shared with c-8."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["cmd/adguard-reward/main_test.go:TestRun_SPAFallback", "internal/spa/spa_test.go:TestSPA_Fallback", "internal/spa/spa_test.go:TestSPA_NeverHTMLForAPI", "internal/spa/spa_test.go:TestHandler_MissingAssetIs404", "web/embed_test.go:TestEmbed_CompilesWithoutBuild"]
+  notes = "Against the built binary: /buttons and /children/7 return the embedded index.html byte-for-byte, /api/v1/nothing is 404 (401 without a cookie), /api/v2/x is a JSON 404, a missing asset is a non-HTML 404. The one gremlins survivor (spa.go:119) is a non-viable string-arith on the read-error 500 path — accepted."
+
+[[criterion]]
+  id = "c-6"
+  status = "weak"
+  tests = ["web/src/pwa.test.ts:it('manifest is installable')", "web/src/pwa.test.ts:it('icons are real PNGs')", "web/src/sw.test.ts:it('api requests bypass the worker')", "web/src/sw.test.ts:it('offline navigation serves the shell')", "web/src/sw.test.ts:it('assets come from the precache, never put at runtime')", "web/src/lib/sw-routing.test.ts:it('API and non-GET always bypass')", "cmd/adguard-reward/main_test.go:TestRun_PWAServed", "cmd/adguard-reward/main_test.go:TestRun_SWPrecacheListIsServed"]
+  notes = "Manifest (standalone, start_url /, 192/512 PNG icons), /api/* and /healthz never touched by the worker, shell precache only, served by the binary with the precache list free of /api paths — all asserted. Weak: the on-device installability check the criterion names was not observed this run (no device/Chrome/Lighthouse record anywhere in the phase); sw-routing.ts:29 in-hunk survivor — the bare '/api' clause is only asserted for a non-navigate GET."
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  tests = ["web/src/lib/api.test.ts:it('navigate to the current path pushes nothing')", "web/src/lib/Login.test.ts:it('fields start empty and idle')", "web/src/lib/Login.test.ts:it('locks the form while signing in')", "web/src/App.test.ts:it('a non-401 failure on /me lands on /login')", "web/src/lib/Home.test.ts:it('log out is enabled, then locked, then enabled')"]
+  notes = "This run's tests.json lists none of the 14 routed keys (321f5af2, 7c2c1aaf, 04a39c82, d2e9f9c6, 47163e3c, c68261e3, a094a307, beec743e, 56313b4a, 95210673, f868399f, 77ea4718, d248d03c, fd433887) among survivors; Login.svelte is 15/15 killed. Four of the 14 (321f5af2, 7c2c1aaf, 04a39c82, fd433887) cannot appear by construction — rewritten in phase 03, static-ignored, or already Killed — as t-16 recorded."
+
+[[criterion]]
+  id = "c-8"
+  status = "weak"
+  tests = ["web/src/lib/Home.test.ts:it('ad-hoc form creates a grant')", "web/src/lib/GrantForm.test.ts:it('binds child, services and minutes')", "web/src/lib/GrantForm.test.ts:it('valid tracks the bounds')", "web/src/lib/GrantForm.test.ts:it('one child is preselected')"]
+  notes = "With no buttons configured the disclosure is open, Unlock is disabled until valid, one tap POSTs the exact body and the countdown appears; a 409 becomes the offer. Weak: 13 in-hunk survivors in GrantForm.svelte — child guard in isValid (39), placeholder option (77), re-selecting the placeholder (55), select value when unset (76), null-catalogue Keeps hint (51/90/91), disabled default (21) — and Home.svelte:148/150/306/307 (stale-child guard, in-flight disabling)."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/api/buttons.go:182 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ActiveGrants.svelte:55 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ActiveGrants.svelte:37 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ActiveGrants.svelte:65 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ActiveGrants.svelte:65 (LogicalOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ActiveGrants.svelte:65 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ActiveGrants.svelte:65 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ActiveGrants.svelte:65 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:51 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:21 (BooleanLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:39 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:51 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:55 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:55 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:76 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:76 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:77 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:77 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:77 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:90 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:90 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:90 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:90 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:91 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:62 (ObjectLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:62 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:62 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:90 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:29 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:42 (BlockStatement)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:53 (BooleanLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:70 (BooleanLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:82 (MethodExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:90 (OptionalChaining)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:90 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:94 (OptionalChaining)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:94 (ArrowFunction)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:94 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:94 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:94 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:107 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:138 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:146 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:158 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:158 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:158 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:158 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Buttons.svelte:158 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/App.svelte:42 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/sw-routing.ts:29 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/sw-routing.ts:29 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:165 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:166 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:180 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:239 (ArrowFunction)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:239 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:301 (ArrowFunction)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:301 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:116 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:148 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:150 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:164 (MethodExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:165 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:165 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:165 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:174 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:174 (LogicalOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:188 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:194 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:194 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:228 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:236 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:306 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:306 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:306 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:306 (BooleanLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:307 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:67 (BlockStatement)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/tap.ts:78 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/tap.ts:103 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/tap.ts:103 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/tap.ts:103 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/tap.ts:103 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/activeGrants.ts:32 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/activeGrants.ts:32 (LogicalOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/grants.ts:17 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/grants.ts:56 (MethodExpression)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped .gitignore: no mutation adapter for .gitignore"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped Makefile: no mutation adapter for "
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0004_buttons.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/.gitignore: no mutation adapter for .gitignore"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/dist/.gitkeep: no mutation adapter for .gitkeep"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/index.html: no mutation adapter for .html"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/public/icon-192.png: no mutation adapter for .png"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/public/icon-512.png: no mutation adapter for .png"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/public/manifest.webmanifest: no mutation adapter for .webmanifest"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/tsconfig.app.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/tsconfig.sw.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/ActiveGrants.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Buttons.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "FLAG"
+  text = "c-6: the on-device installability check (phone, Chrome version, install prompt / Lighthouse PWA audit) was not observed this run — record it in these notes when done; the plan review (REVIEW.md) asked for it as an observation, not a claim"
+
+[[finding]]
+  severity = "NOTE"
+  text = "Every one of the 118 Stryker survivors was applied by hand and run against the full vitest suite (2 s each): 115 survived by hand, so the survivors are assertion gaps, not attribution artefacts; the 3 that died by hand (api.ts:33/289/290, Stryker static=true attributed to the first importing test) are accepted under stryker-static-attribution"
+
+[[finding]]
+  severity = "NOTE"
+  text = "28 survivors accepted this run in .dross/survivors.toml — 3 static-attribution, 2 Go non-viable string-arith, 6 svelte-preload-state, 3 tap-all-targets-gone (unreachable arm), 3 sw-cache-name-equality-only, 1 optional-chain-inside-try, 10 individually reasoned equivalents; 73 unique in-diff survivors (87 seeded rows — dross seeds per report row) remain BLOCKING by the user's decision to kill them in-phase rather than route them"

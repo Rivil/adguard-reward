@@ -42,6 +42,18 @@
   name = "checkbox-dom-semantics"
   reason = "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
 
+[[category]]
+  name = "stryker-static-attribution"
+  reason = "Module-level const mutants (Stryker static=true) are attributed by the vitest runner to the single test that first imported the module, so the tests that assert the value never run against them. Killed when applied by hand (full vitest suite red for api.ts:33 PATHS.buttons, :289 GRANTS and :290 BUTTONS → '', verified 2026-09-21). Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "tap-all-targets-gone"
+  reason = "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+
+[[category]]
+  name = "sw-cache-name-equality-only"
+  reason = "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -734,3 +746,255 @@
   line = 198
   reason = "Killed when applied by hand (case err == nil -> err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
   accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "64ea52ccaa4f8356"
+  file = "internal/spa/spa.go"
+  op = "ARITHMETIC_BASE"
+  text = "http.Error(w, \"read \"+name+\": \"+err.Error(), http.StatusInternalServerError)"
+  line = 119
+  category = "go-string-arith"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "4c5b495c5d67f3b8"
+  file = "web/embed.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"web: embedded dist dir missing: \" + err.Error())"
+  line = 20
+  category = "string-concat-panic-embed"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "791f265470427dc7"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children', buttons: '/buttons' }"
+  line = 33
+  category = "stryker-static-attribution"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "50b121555e021aa9"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const GRANTS = '/api/v1/grants'"
+  line = 289
+  category = "stryker-static-attribution"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "a1136f7a86c8a5f0"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const BUTTONS = '/api/v1/buttons'"
+  line = 290
+  category = "stryker-static-attribution"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "24dff3c1899b1c9f"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.grant_id === 'number') grantId = body.grant_id"
+  line = 87
+  category = "optional-chain-inside-try"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "f80851266a65b8c1"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ArrayDeclaration"
+  text = "let children = $state<Child[]>([])"
+  line = 21
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "cac773d5866378f2"
+  file = "web/src/lib/Buttons.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 25
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "958c5408e188c7cb"
+  file = "web/src/lib/Buttons.svelte"
+  op = "BooleanLiteral"
+  text = "let valid = $state(false)"
+  line = 31
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "286edbfec9fcea7e"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "BooleanLiteral"
+  text = "valid = $bindable(false),"
+  line = 20
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "9e7b970f78a207cf"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "let children = $state<Child[]>([])"
+  line = 29
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "332725e64d242d98"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "let buttons = $state<Button[]>([])"
+  line = 30
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "4a2c7171134bef4f"
+  file = "web/src/lib/Home.svelte"
+  op = "BooleanLiteral"
+  text = "let adhocValid = $state(false)"
+  line = 51
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "e528d9de6aadadb5"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "if (reloadOnError) {"
+  line = 63
+  reason = "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "6c8255537ab76c28"
+  file = "web/src/lib/Home.svelte"
+  op = "OptionalChaining"
+  text = "stopPolling?.()"
+  line = 78
+  reason = "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "6232b0be4db10034"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "default:"
+  line = 124
+  reason = "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "85c805b4f0c4fa20"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "if (!o) return"
+  line = 157
+  reason = "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "97404d5a1a2ab537"
+  file = "web/src/lib/Home.svelte"
+  op = "OptionalChaining"
+  text = "<p class=\"error\" role=\"alert\" data-error={notes[child.id]?.code}>{notes[child.id]?.text}</p>"
+  line = 256
+  reason = "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "796e4f25f8b64e3c"
+  file = "web/src/lib/ActiveGrants.svelte"
+  op = "ConditionalExpression"
+  text = "for (const id of asked) if (!present.has(id)) asked.delete(id)"
+  line = 33
+  reason = "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "0595a148ba48c2a0"
+  file = "web/src/lib/tap.ts"
+  op = "ConditionalExpression"
+  text = "for (const s of target.services) if (spec.services.includes(s)) remaining.add(s)"
+  line = 125
+  reason = "'remaining' is only read through spec.services.filter(remaining.has), so adding a 404'd target's non-spec services to it changes nothing."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "cfc9696c1e58b946"
+  file = "web/src/lib/tap.ts"
+  op = "ObjectLiteral"
+  text = "if (last === null) return { kind: 'error', code: 'not_found', message: 'That grant has already ended' }"
+  line = 137
+  category = "tap-all-targets-gone"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "a4cb0eb008e372b9"
+  file = "web/src/lib/tap.ts"
+  op = "StringLiteral"
+  text = "if (last === null) return { kind: 'error', code: 'not_found', message: 'That grant has already ended' }"
+  line = 137
+  category = "tap-all-targets-gone"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "bba5b332cdeb5fc2"
+  file = "web/src/lib/tap.ts"
+  op = "ConditionalExpression"
+  text = "if (last === null) return { kind: 'error', code: 'not_found', message: 'That grant has already ended' }"
+  line = 137
+  category = "tap-all-targets-gone"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "dc864a49300265c3"
+  file = "web/src/lib/activeGrants.ts"
+  op = "ConditionalExpression"
+  text = "if (stopCurrent === stop) stopCurrent = null"
+  line = 71
+  reason = "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "a8c65213a13dd7f8"
+  file = "web/src/lib/sw-routing.ts"
+  op = "StringLiteral"
+  text = "const joined = [...precache].sort().join('\\n')"
+  line = 40
+  category = "sw-cache-name-equality-only"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "ba55a94c7a967b53"
+  file = "web/src/lib/sw-routing.ts"
+  op = "EqualityOperator"
+  text = "for (let i = 0; i < joined.length; i++) {"
+  line = 42
+  category = "sw-cache-name-equality-only"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "b8724ad36168226d"
+  file = "web/src/lib/sw-routing.ts"
+  op = "StringLiteral"
+  text = "return 'shell-' + h.toString(16).padStart(8, '0')"
+  line = 46
+  category = "sw-cache-name-equality-only"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "3539806d54320b88"
+  file = "web/src/sw.ts"
+  op = "ConditionalExpression"
+  text = "default:"
+  line = 43
+  reason = "The switch's default arm (bypass) only returns; rewriting it changes nothing observable."
+  accepted_in = "05-phone-ui-buttons-pwa"
