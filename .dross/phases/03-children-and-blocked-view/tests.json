@@ -1,6 +1,6 @@
 {
   "phase": "03-children-and-blocked-view",
-  "generated_at": "2026-09-21T07:25:53.908015Z",
+  "generated_at": "2026-09-21T07:45:44.716336Z",
   "languages": [
     {
       "name": "go",
@@ -39,23 +39,23 @@
         "Surviving": [
           {
             "File": "internal/adguard/adguardtest/server.go",
-            "Line": 101,
-            "Op": "ARITHMETIC_BASE",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "4742d4bfe47ddb54",
-            "Lifecycle": "accepted",
-            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
-          },
-          {
-            "File": "internal/adguard/adguardtest/server.go",
             "Line": 105,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 101,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4742d4bfe47ddb54",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
@@ -183,6 +183,17 @@
           {
             "File": "internal/blocked/blocked.go",
             "Line": 98,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "d80e2d09b950a6b5",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 98,
             "Op": "CONDITIONALS_NEGATION",
             "Snippet": "",
             "NotCovered": true,
@@ -199,17 +210,6 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "55673a2b65311747",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
-          },
-          {
-            "File": "internal/blocked/blocked.go",
-            "Line": 98,
-            "Op": "CONDITIONALS_BOUNDARY",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "d80e2d09b950a6b5",
             "Lifecycle": "accepted",
             "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
           }
@@ -259,132 +259,12 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 221,
-        "Survived": 21,
+        "Killed": 223,
+        "Survived": 19,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.9132231404958677,
+        "Score": 0.9214876033057852,
         "Surviving": [
-          {
-            "File": "web/src/App.svelte",
-            "Line": 17,
-            "Op": "BlockStatement",
-            "Snippet": "{}",
-            "Origin": "inherited",
-            "Key": "d248d03cd68330af",
-            "Lifecycle": "routed",
-            "Note": "routed to 05-phone-ui-buttons-pwa"
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 39,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "8ef83e30b05b7491",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 18,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "efe4eae9dcf17bf2",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 23,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "fd2e2d4d8db99396",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 50,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "6485f7e42f3edd6a",
-            "Lifecycle": "accepted",
-            "Note": "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 68,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "23b258f0df7fd7fe",
-            "Lifecycle": "accepted",
-            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 68,
-            "Op": "LogicalOperator",
-            "Snippet": "checked || !d.clients.includes(name)",
-            "Origin": "in-hunk",
-            "Key": "5ad3db1cdd919929",
-            "Lifecycle": "accepted",
-            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "ArrowFunction",
-            "Snippet": "() =\u003e undefined",
-            "Origin": "in-hunk",
-            "Key": "7318eba99fe9b001",
-            "Lifecycle": "routed",
-            "Note": "routed to 04-grants-scheduler-reconciler"
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "1847f36ba1909811",
-            "Lifecycle": "routed",
-            "Note": "routed to 04-grants-scheduler-reconciler"
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 8,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "c68261e34f7582f6",
-            "Lifecycle": "routed",
-            "Note": "routed to 05-phone-ui-buttons-pwa"
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 30,
-            "Op": "BooleanLiteral",
-            "Snippet": "false",
-            "Origin": "inherited",
-            "Key": "a094a307b802163c",
-            "Lifecycle": "routed",
-            "Note": "routed to 05-phone-ui-buttons-pwa"
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 36,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "beec743e7af835d4",
-            "Lifecycle": "routed",
-            "Note": "routed to 05-phone-ui-buttons-pwa"
-          },
           {
             "File": "web/src/lib/MigrationBanner.svelte",
             "Line": 14,
@@ -474,6 +354,106 @@
             "Key": "2e5c825a43b53d61",
             "Lifecycle": "accepted",
             "Note": "'home' → '' in routeFor's skip-guard is equivalent: with the guard gone the loop still reaches PATHS.home ('/') and returns 'home' for '/', and every other pathname resolves exactly as before."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 8,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "c68261e34f7582f6",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 30,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "a094a307b802163c",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 36,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "beec743e7af835d4",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 17,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "inherited",
+            "Key": "d248d03cd68330af",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 39,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "8ef83e30b05b7491",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 18,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "efe4eae9dcf17bf2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 23,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "fd2e2d4d8db99396",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 50,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "6485f7e42f3edd6a",
+            "Lifecycle": "accepted",
+            "Note": "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 68,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "23b258f0df7fd7fe",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 68,
+            "Op": "LogicalOperator",
+            "Snippet": "checked || !d.clients.includes(name)",
+            "Origin": "in-hunk",
+            "Key": "5ad3db1cdd919929",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
           }
         ],
         "NotCovered": 0
@@ -700,7 +680,7 @@
           },
           {
             "start": 79,
-            "end": 284,
+            "end": 303,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1504,7 +1484,7 @@
       ".dross/phases/03-children-and-blocked-view/changes.json": [
         {
           "start": 1,
-          "end": 203
+          "end": 218
         }
       ],
       ".dross/phases/03-children-and-blocked-view/panel/mvp.md": [
@@ -1534,25 +1514,25 @@
       ".dross/phases/03-children-and-blocked-view/plan.toml": [
         {
           "start": 1,
-          "end": 121
+          "end": 132
         }
       ],
       ".dross/phases/03-children-and-blocked-view/spec.toml": [
         {
           "start": 1,
-          "end": 77
+          "end": 89
         }
       ],
       ".dross/phases/03-children-and-blocked-view/tests.json": [
         {
           "start": 1,
-          "end": 2194
+          "end": 1959
         }
       ],
       ".dross/phases/03-children-and-blocked-view/verify.toml": [
         {
           "start": 1,
-          "end": 256
+          "end": 148
         }
       ],
       ".dross/project.toml": [
@@ -1854,7 +1834,7 @@
       "web/src/lib/Children.test.ts": [
         {
           "start": 1,
-          "end": 284
+          "end": 303
         }
       ],
       "web/src/lib/Home.svelte": [

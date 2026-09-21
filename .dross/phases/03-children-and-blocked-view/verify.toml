@@ -1,22 +1,22 @@
 [verify]
   phase = "03-children-and-blocked-view"
-  generated_at = 2026-09-21T07:25:53.908015Z
-  verdict = "partial"
+  generated_at = 2026-09-21T07:45:44.716336Z
+  verdict = "pass"
   finalized = true
-  finalized_at = 2026-09-21T07:31:11.752621Z
+  finalized_at = 2026-09-21T07:53:43.062029Z
 
 [summary]
   mutation_status = "measured"
   measured_on = "local"
-  mutation_score = 0.9175946547884187
-  mutants_killed = 412
-  mutants_survived = 37
+  mutation_score = 0.9220489977728286
+  mutants_killed = 414
+  mutants_survived = 35
   mutants_not_covered = 16
   mutants_in_scope = 449
   unclassified_in_scope = 0
   criteria_total = 8
-  criteria_covered = 7
-  criteria_uncovered = 1
+  criteria_covered = 8
+  criteria_uncovered = 0
 
   [[summary.leg]]
     language = "go"
@@ -33,87 +33,63 @@
   [[summary.leg]]
     language = "typescript"
     tool = "stryker"
-    killed = 221
-    survived = 21
+    killed = 223
+    survived = 19
     timeout = 0
     in_scope = 242
-    score = 0.9132231404958677
+    score = 0.9214876033057852
     file_count = 10
     measured_on = "local"
-    ranges = ["web/src/App.test.ts:10-10 (TSTypeAliasDeclaration Call)", "web/src/App.test.ts:11-11 (TSTypeAliasDeclaration Answer)", "web/src/App.test.ts:12-12 (hunk)", "web/src/App.test.ts:13-13 (TSTypeAliasDeclaration Routes)", "web/src/App.test.ts:22-25 (hunk)", "web/src/App.test.ts:26-39 (FunctionDeclaration mockFetch)", "web/src/App.test.ts:41-41 (VariableDeclaration signedIn)", "web/src/App.test.ts:42-42 (VariableDeclaration noChildren)", "web/src/App.test.ts:43-43 (VariableDeclaration noSession)", "web/src/App.test.ts:44-44 (hunk)", "web/src/App.test.ts:45-49 (ExpressionStatement)", "web/src/App.test.ts:51-222 (ExpressionStatement)", "web/src/lib/Children.test.ts:1-2 (hunk)", "web/src/lib/Children.test.ts:10-10 (TSTypeAliasDeclaration Routes)", "web/src/lib/Children.test.ts:11-11 (hunk)", "web/src/lib/Children.test.ts:12-14 (FunctionDeclaration json)", "web/src/lib/Children.test.ts:15-15 (hunk)", "web/src/lib/Children.test.ts:16-29 (FunctionDeclaration mockFetch)", "web/src/lib/Children.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Children.test.ts:30-30 (hunk)", "web/src/lib/Children.test.ts:31-31 (VariableDeclaration ada)", "web/src/lib/Children.test.ts:32-32 (VariableDeclaration ben)", "web/src/lib/Children.test.ts:33-33 (hunk)", "web/src/lib/Children.test.ts:34-36 (FunctionDeclaration client)", "web/src/lib/Children.test.ts:37-38 (hunk)", "web/src/lib/Children.test.ts:39-46 (FunctionDeclaration server)", "web/src/lib/Children.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Children.test.ts:47-47 (hunk)", "web/src/lib/Children.test.ts:48-52 (FunctionDeclaration form)", "web/src/lib/Children.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Children.test.ts:53-53 (hunk)", "web/src/lib/Children.test.ts:54-62 (FunctionDeclaration checkbox)", "web/src/lib/Children.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Children.test.ts:63-63 (hunk)", "web/src/lib/Children.test.ts:64-69 (FunctionDeclaration button)", "web/src/lib/Children.test.ts:7-7 (hunk)", "web/src/lib/Children.test.ts:70-70 (hunk)", "web/src/lib/Children.test.ts:71-73 (FunctionDeclaration puts)", "web/src/lib/Children.test.ts:74-74 (hunk)", "web/src/lib/Children.test.ts:75-77 (ExpressionStatement)", "web/src/lib/Children.test.ts:78-78 (hunk)", "web/src/lib/Children.test.ts:79-284 (ExpressionStatement)", "web/src/lib/Children.test.ts:8-8 (TSTypeAliasDeclaration Call)", "web/src/lib/Children.test.ts:9-9 (TSTypeAliasDeclaration Answer)", "web/src/lib/Home.test.ts:1-2 (hunk)", "web/src/lib/Home.test.ts:10-10 (TSTypeAliasDeclaration Answer)", "web/src/lib/Home.test.ts:11-11 (hunk)", "web/src/lib/Home.test.ts:12-12 (TSTypeAliasDeclaration Routes)", "web/src/lib/Home.test.ts:13-13 (hunk)", "web/src/lib/Home.test.ts:14-16 (FunctionDeclaration json)", "web/src/lib/Home.test.ts:17-21 (hunk)", "web/src/lib/Home.test.ts:22-35 (FunctionDeclaration mockFetch)", "web/src/lib/Home.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Home.test.ts:36-36 (hunk)", "web/src/lib/Home.test.ts:37-37 (VariableDeclaration ICON)", "web/src/lib/Home.test.ts:38-38 (hunk)", "web/src/lib/Home.test.ts:39-50 (FunctionDeclaration view)", "web/src/lib/Home.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Home.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Home.test.ts:51-51 (hunk)", "web/src/lib/Home.test.ts:52-57 (VariableDeclaration twoChildren)", "web/src/lib/Home.test.ts:58-58 (hunk)", "web/src/lib/Home.test.ts:59-59 (VariableDeclaration noOffer)", "web/src/lib/Home.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Home.test.ts:60-60 (hunk)", "web/src/lib/Home.test.ts:61-68 (FunctionDeclaration routesFor)", "web/src/lib/Home.test.ts:69-69 (hunk)", "web/src/lib/Home.test.ts:7-7 (ImportDeclaration)", "web/src/lib/Home.test.ts:70-74 (FunctionDeclaration section)", "web/src/lib/Home.test.ts:75-75 (hunk)", "web/src/lib/Home.test.ts:76-80 (ExpressionStatement)", "web/src/lib/Home.test.ts:8-8 (hunk)", "web/src/lib/Home.test.ts:81-81 (hunk)", "web/src/lib/Home.test.ts:82-234 (ExpressionStatement)", "web/src/lib/Home.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/MigrationBanner.test.ts:1-2 (hunk)", "web/src/lib/MigrationBanner.test.ts:10-10 (TSTypeAliasDeclaration Answer)", "web/src/lib/MigrationBanner.test.ts:11-11 (TSTypeAliasDeclaration Routes)", "web/src/lib/MigrationBanner.test.ts:12-12 (hunk)", "web/src/lib/MigrationBanner.test.ts:13-15 (FunctionDeclaration json)", "web/src/lib/MigrationBanner.test.ts:16-16 (hunk)", "web/src/lib/MigrationBanner.test.ts:17-30 (FunctionDeclaration mockFetch)", "web/src/lib/MigrationBanner.test.ts:3-3 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:31-31 (hunk)", "web/src/lib/MigrationBanner.test.ts:32-35 (VariableDeclaration offer)", "web/src/lib/MigrationBanner.test.ts:36-36 (VariableDeclaration empty)", "web/src/lib/MigrationBanner.test.ts:37-37 (hunk)", "web/src/lib/MigrationBanner.test.ts:38-40 (FunctionDeclaration banner)", "web/src/lib/MigrationBanner.test.ts:4-4 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:41-41 (hunk)", "web/src/lib/MigrationBanner.test.ts:42-44 (FunctionDeclaration posts)", "web/src/lib/MigrationBanner.test.ts:45-45 (hunk)", "web/src/lib/MigrationBanner.test.ts:46-51 (ExpressionStatement)", "web/src/lib/MigrationBanner.test.ts:5-5 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:52-52 (hunk)", "web/src/lib/MigrationBanner.test.ts:53-190 (ExpressionStatement)", "web/src/lib/MigrationBanner.test.ts:6-6 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:7-7 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:8-8 (hunk)", "web/src/lib/MigrationBanner.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/api.test.ts:1-1 (hunk)", "web/src/lib/api.test.ts:202-202 (hunk)", "web/src/lib/api.test.ts:203-251 (ExpressionStatement)", "web/src/lib/api.test.ts:252-252 (hunk)", "web/src/lib/api.test.ts:253-276 (ExpressionStatement)", "web/src/lib/api.test.ts:277-277 (hunk)", "web/src/lib/api.test.ts:278-282 (ExpressionStatement)", "web/src/lib/api.test.ts:283-283 (hunk)", "web/src/lib/api.test.ts:284-293 (ExpressionStatement)", "web/src/lib/api.test.ts:294-294 (hunk)", "web/src/lib/api.test.ts:295-318 (ExpressionStatement)", "web/src/lib/api.test.ts:4-4 (ImportDeclaration)", "web/src/lib/api.test.ts:5-28 (ImportDeclaration)", "web/src/lib/api.ts:125-130 (hunk)", "web/src/lib/api.ts:131-131 (VariableDeclaration migrationDismissed)", "web/src/lib/api.ts:132-132 (hunk)", "web/src/lib/api.ts:133-136 (FunctionDeclaration login)", "web/src/lib/api.ts:138-144 (FunctionDeclaration logout)", "web/src/lib/api.ts:150-151 (hunk)", "web/src/lib/api.ts:152-156 (TSInterfaceDeclaration Child)", "web/src/lib/api.ts:157-157 (hunk)", "web/src/lib/api.ts:158-161 (TSInterfaceDeclaration ChildRef)", "web/src/lib/api.ts:162-162 (hunk)", "web/src/lib/api.ts:163-168 (TSInterfaceDeclaration ClientView)", "web/src/lib/api.ts:169-169 (hunk)", "web/src/lib/api.ts:170-175 (TSInterfaceDeclaration Service)", "web/src/lib/api.ts:176-176 (hunk)", "web/src/lib/api.ts:177-177 (TSTypeAliasDeclaration ServiceStateName)", "web/src/lib/api.ts:178-178 (hunk)", "web/src/lib/api.ts:179-183 (TSInterfaceDeclaration ServiceState)", "web/src/lib/api.ts:184-184 (hunk)", "web/src/lib/api.ts:185-189 (TSInterfaceDeclaration BlockedClient)", "web/src/lib/api.ts:190-190 (hunk)", "web/src/lib/api.ts:191-195 (TSInterfaceDeclaration BlockedView)", "web/src/lib/api.ts:196-196 (hunk)", "web/src/lib/api.ts:197-201 (TSInterfaceDeclaration MigrationClient)", "web/src/lib/api.ts:202-202 (hunk)", "web/src/lib/api.ts:203-207 (TSInterfaceDeclaration MigrationOffer)", "web/src/lib/api.ts:208-208 (hunk)", "web/src/lib/api.ts:209-209 (VariableDeclaration CHILDREN)", "web/src/lib/api.ts:210-210 (hunk)", "web/src/lib/api.ts:211-214 (FunctionDeclaration listChildren)", "web/src/lib/api.ts:215-215 (hunk)", "web/src/lib/api.ts:216-218 (FunctionDeclaration createChild)", "web/src/lib/api.ts:219-219 (hunk)", "web/src/lib/api.ts:220-222 (FunctionDeclaration updateChild)", "web/src/lib/api.ts:223-223 (hunk)", "web/src/lib/api.ts:224-226 (FunctionDeclaration deleteChild)", "web/src/lib/api.ts:227-227 (hunk)", "web/src/lib/api.ts:228-231 (FunctionDeclaration listClients)", "web/src/lib/api.ts:232-232 (hunk)", "web/src/lib/api.ts:233-236 (FunctionDeclaration listServices)", "web/src/lib/api.ts:237-237 (hunk)", "web/src/lib/api.ts:238-240 (FunctionDeclaration childBlocked)", "web/src/lib/api.ts:241-241 (hunk)", "web/src/lib/api.ts:242-244 (FunctionDeclaration migrationOffer)", "web/src/lib/api.ts:245-245 (hunk)", "web/src/lib/api.ts:246-249 (FunctionDeclaration applyMigration)", "web/src/lib/api.ts:250-251 (hunk)", "web/src/lib/api.ts:252-254 (FunctionDeclaration iconUrl)", "web/src/lib/api.ts:255-255 (hunk)", "web/src/lib/api.ts:258-262 (hunk)", "web/src/lib/api.ts:28-28 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:29-29 (hunk)", "web/src/lib/api.ts:30-30 (VariableDeclaration PATHS)", "web/src/lib/api.ts:32-37 (FunctionDeclaration routeFor)", "web/src/lib/api.ts:47-53 (FunctionDeclaration navigate)", "web/src/lib/api.ts:68-68 (TSTypeAliasDeclaration Method)"]
+    ranges = ["web/src/App.test.ts:10-10 (TSTypeAliasDeclaration Call)", "web/src/App.test.ts:11-11 (TSTypeAliasDeclaration Answer)", "web/src/App.test.ts:12-12 (hunk)", "web/src/App.test.ts:13-13 (TSTypeAliasDeclaration Routes)", "web/src/App.test.ts:22-25 (hunk)", "web/src/App.test.ts:26-39 (FunctionDeclaration mockFetch)", "web/src/App.test.ts:41-41 (VariableDeclaration signedIn)", "web/src/App.test.ts:42-42 (VariableDeclaration noChildren)", "web/src/App.test.ts:43-43 (VariableDeclaration noSession)", "web/src/App.test.ts:44-44 (hunk)", "web/src/App.test.ts:45-49 (ExpressionStatement)", "web/src/App.test.ts:51-222 (ExpressionStatement)", "web/src/lib/Children.test.ts:1-2 (hunk)", "web/src/lib/Children.test.ts:10-10 (TSTypeAliasDeclaration Routes)", "web/src/lib/Children.test.ts:11-11 (hunk)", "web/src/lib/Children.test.ts:12-14 (FunctionDeclaration json)", "web/src/lib/Children.test.ts:15-15 (hunk)", "web/src/lib/Children.test.ts:16-29 (FunctionDeclaration mockFetch)", "web/src/lib/Children.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Children.test.ts:30-30 (hunk)", "web/src/lib/Children.test.ts:31-31 (VariableDeclaration ada)", "web/src/lib/Children.test.ts:32-32 (VariableDeclaration ben)", "web/src/lib/Children.test.ts:33-33 (hunk)", "web/src/lib/Children.test.ts:34-36 (FunctionDeclaration client)", "web/src/lib/Children.test.ts:37-38 (hunk)", "web/src/lib/Children.test.ts:39-46 (FunctionDeclaration server)", "web/src/lib/Children.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Children.test.ts:47-47 (hunk)", "web/src/lib/Children.test.ts:48-52 (FunctionDeclaration form)", "web/src/lib/Children.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Children.test.ts:53-53 (hunk)", "web/src/lib/Children.test.ts:54-62 (FunctionDeclaration checkbox)", "web/src/lib/Children.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Children.test.ts:63-63 (hunk)", "web/src/lib/Children.test.ts:64-69 (FunctionDeclaration button)", "web/src/lib/Children.test.ts:7-7 (hunk)", "web/src/lib/Children.test.ts:70-70 (hunk)", "web/src/lib/Children.test.ts:71-73 (FunctionDeclaration puts)", "web/src/lib/Children.test.ts:74-74 (hunk)", "web/src/lib/Children.test.ts:75-77 (ExpressionStatement)", "web/src/lib/Children.test.ts:78-78 (hunk)", "web/src/lib/Children.test.ts:79-303 (ExpressionStatement)", "web/src/lib/Children.test.ts:8-8 (TSTypeAliasDeclaration Call)", "web/src/lib/Children.test.ts:9-9 (TSTypeAliasDeclaration Answer)", "web/src/lib/Home.test.ts:1-2 (hunk)", "web/src/lib/Home.test.ts:10-10 (TSTypeAliasDeclaration Answer)", "web/src/lib/Home.test.ts:11-11 (hunk)", "web/src/lib/Home.test.ts:12-12 (TSTypeAliasDeclaration Routes)", "web/src/lib/Home.test.ts:13-13 (hunk)", "web/src/lib/Home.test.ts:14-16 (FunctionDeclaration json)", "web/src/lib/Home.test.ts:17-21 (hunk)", "web/src/lib/Home.test.ts:22-35 (FunctionDeclaration mockFetch)", "web/src/lib/Home.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Home.test.ts:36-36 (hunk)", "web/src/lib/Home.test.ts:37-37 (VariableDeclaration ICON)", "web/src/lib/Home.test.ts:38-38 (hunk)", "web/src/lib/Home.test.ts:39-50 (FunctionDeclaration view)", "web/src/lib/Home.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Home.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Home.test.ts:51-51 (hunk)", "web/src/lib/Home.test.ts:52-57 (VariableDeclaration twoChildren)", "web/src/lib/Home.test.ts:58-58 (hunk)", "web/src/lib/Home.test.ts:59-59 (VariableDeclaration noOffer)", "web/src/lib/Home.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Home.test.ts:60-60 (hunk)", "web/src/lib/Home.test.ts:61-68 (FunctionDeclaration routesFor)", "web/src/lib/Home.test.ts:69-69 (hunk)", "web/src/lib/Home.test.ts:7-7 (ImportDeclaration)", "web/src/lib/Home.test.ts:70-74 (FunctionDeclaration section)", "web/src/lib/Home.test.ts:75-75 (hunk)", "web/src/lib/Home.test.ts:76-80 (ExpressionStatement)", "web/src/lib/Home.test.ts:8-8 (hunk)", "web/src/lib/Home.test.ts:81-81 (hunk)", "web/src/lib/Home.test.ts:82-234 (ExpressionStatement)", "web/src/lib/Home.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/MigrationBanner.test.ts:1-2 (hunk)", "web/src/lib/MigrationBanner.test.ts:10-10 (TSTypeAliasDeclaration Answer)", "web/src/lib/MigrationBanner.test.ts:11-11 (TSTypeAliasDeclaration Routes)", "web/src/lib/MigrationBanner.test.ts:12-12 (hunk)", "web/src/lib/MigrationBanner.test.ts:13-15 (FunctionDeclaration json)", "web/src/lib/MigrationBanner.test.ts:16-16 (hunk)", "web/src/lib/MigrationBanner.test.ts:17-30 (FunctionDeclaration mockFetch)", "web/src/lib/MigrationBanner.test.ts:3-3 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:31-31 (hunk)", "web/src/lib/MigrationBanner.test.ts:32-35 (VariableDeclaration offer)", "web/src/lib/MigrationBanner.test.ts:36-36 (VariableDeclaration empty)", "web/src/lib/MigrationBanner.test.ts:37-37 (hunk)", "web/src/lib/MigrationBanner.test.ts:38-40 (FunctionDeclaration banner)", "web/src/lib/MigrationBanner.test.ts:4-4 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:41-41 (hunk)", "web/src/lib/MigrationBanner.test.ts:42-44 (FunctionDeclaration posts)", "web/src/lib/MigrationBanner.test.ts:45-45 (hunk)", "web/src/lib/MigrationBanner.test.ts:46-51 (ExpressionStatement)", "web/src/lib/MigrationBanner.test.ts:5-5 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:52-52 (hunk)", "web/src/lib/MigrationBanner.test.ts:53-190 (ExpressionStatement)", "web/src/lib/MigrationBanner.test.ts:6-6 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:7-7 (ImportDeclaration)", "web/src/lib/MigrationBanner.test.ts:8-8 (hunk)", "web/src/lib/MigrationBanner.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/api.test.ts:1-1 (hunk)", "web/src/lib/api.test.ts:202-202 (hunk)", "web/src/lib/api.test.ts:203-251 (ExpressionStatement)", "web/src/lib/api.test.ts:252-252 (hunk)", "web/src/lib/api.test.ts:253-276 (ExpressionStatement)", "web/src/lib/api.test.ts:277-277 (hunk)", "web/src/lib/api.test.ts:278-282 (ExpressionStatement)", "web/src/lib/api.test.ts:283-283 (hunk)", "web/src/lib/api.test.ts:284-293 (ExpressionStatement)", "web/src/lib/api.test.ts:294-294 (hunk)", "web/src/lib/api.test.ts:295-318 (ExpressionStatement)", "web/src/lib/api.test.ts:4-4 (ImportDeclaration)", "web/src/lib/api.test.ts:5-28 (ImportDeclaration)", "web/src/lib/api.ts:125-130 (hunk)", "web/src/lib/api.ts:131-131 (VariableDeclaration migrationDismissed)", "web/src/lib/api.ts:132-132 (hunk)", "web/src/lib/api.ts:133-136 (FunctionDeclaration login)", "web/src/lib/api.ts:138-144 (FunctionDeclaration logout)", "web/src/lib/api.ts:150-151 (hunk)", "web/src/lib/api.ts:152-156 (TSInterfaceDeclaration Child)", "web/src/lib/api.ts:157-157 (hunk)", "web/src/lib/api.ts:158-161 (TSInterfaceDeclaration ChildRef)", "web/src/lib/api.ts:162-162 (hunk)", "web/src/lib/api.ts:163-168 (TSInterfaceDeclaration ClientView)", "web/src/lib/api.ts:169-169 (hunk)", "web/src/lib/api.ts:170-175 (TSInterfaceDeclaration Service)", "web/src/lib/api.ts:176-176 (hunk)", "web/src/lib/api.ts:177-177 (TSTypeAliasDeclaration ServiceStateName)", "web/src/lib/api.ts:178-178 (hunk)", "web/src/lib/api.ts:179-183 (TSInterfaceDeclaration ServiceState)", "web/src/lib/api.ts:184-184 (hunk)", "web/src/lib/api.ts:185-189 (TSInterfaceDeclaration BlockedClient)", "web/src/lib/api.ts:190-190 (hunk)", "web/src/lib/api.ts:191-195 (TSInterfaceDeclaration BlockedView)", "web/src/lib/api.ts:196-196 (hunk)", "web/src/lib/api.ts:197-201 (TSInterfaceDeclaration MigrationClient)", "web/src/lib/api.ts:202-202 (hunk)", "web/src/lib/api.ts:203-207 (TSInterfaceDeclaration MigrationOffer)", "web/src/lib/api.ts:208-208 (hunk)", "web/src/lib/api.ts:209-209 (VariableDeclaration CHILDREN)", "web/src/lib/api.ts:210-210 (hunk)", "web/src/lib/api.ts:211-214 (FunctionDeclaration listChildren)", "web/src/lib/api.ts:215-215 (hunk)", "web/src/lib/api.ts:216-218 (FunctionDeclaration createChild)", "web/src/lib/api.ts:219-219 (hunk)", "web/src/lib/api.ts:220-222 (FunctionDeclaration updateChild)", "web/src/lib/api.ts:223-223 (hunk)", "web/src/lib/api.ts:224-226 (FunctionDeclaration deleteChild)", "web/src/lib/api.ts:227-227 (hunk)", "web/src/lib/api.ts:228-231 (FunctionDeclaration listClients)", "web/src/lib/api.ts:232-232 (hunk)", "web/src/lib/api.ts:233-236 (FunctionDeclaration listServices)", "web/src/lib/api.ts:237-237 (hunk)", "web/src/lib/api.ts:238-240 (FunctionDeclaration childBlocked)", "web/src/lib/api.ts:241-241 (hunk)", "web/src/lib/api.ts:242-244 (FunctionDeclaration migrationOffer)", "web/src/lib/api.ts:245-245 (hunk)", "web/src/lib/api.ts:246-249 (FunctionDeclaration applyMigration)", "web/src/lib/api.ts:250-251 (hunk)", "web/src/lib/api.ts:252-254 (FunctionDeclaration iconUrl)", "web/src/lib/api.ts:255-255 (hunk)", "web/src/lib/api.ts:258-262 (hunk)", "web/src/lib/api.ts:28-28 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:29-29 (hunk)", "web/src/lib/api.ts:30-30 (VariableDeclaration PATHS)", "web/src/lib/api.ts:32-37 (FunctionDeclaration routeFor)", "web/src/lib/api.ts:47-53 (FunctionDeclaration navigate)", "web/src/lib/api.ts:68-68 (TSTypeAliasDeclaration Method)"]
     whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/Children.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable", "web/src/lib/MigrationBanner.svelte — ast-unavailable"]
 
 [[criterion]]
   id = "c-1"
   status = "covered"
   tests = ["internal/api/children_test.go:TestChildren_CRUD", "internal/api/children_test.go:TestChildren_Conflicts", "internal/api/children_test.go:TestChildren_PutAtomic", "internal/api/children_test.go:TestChildren_Validation", "internal/store/children_test.go:TestChildren_NameUnique", "internal/store/children_test.go:TestChildren_ClientOneOwner", "internal/store/children_test.go:TestChildren_Persist", "cmd/adguard-reward/main_test.go:TestRun_ChildrenSurviveRestart"]
-  notes = "409 on duplicate name (NOCASE) and on a taken client, tx rollback, restart proof. Only survivors are children.go:114/115 (string ARITHMETIC_BASE, non-viable — accepted)."
+  notes = "409 conflict naming the child (dup name, NOCASE) and the client+owner (taken client); PUT rollback; rows listed with the same id after a process restart. No gremlins survivor in children.go this run."
 
 [[criterion]]
   id = "c-2"
   status = "covered"
   tests = ["internal/api/clients_test.go:TestClients_LiveEveryCall", "internal/api/clients_test.go:TestClients_ChildAssignment"]
-  notes = "Three calls leave three /control/clients hits; MutateClient is visible on the next call; child join and auto_client exclusion asserted."
+  notes = "N calls leave N /control/clients hits and a fake-side mutation shows on the very next call; per-client child join asserted."
 
 [[criterion]]
   id = "c-3"
   status = "covered"
   tests = ["internal/api/clients_test.go:TestServices_Live"]
-  notes = "Two calls leave two /control/blocked_services/all hits; a replaced catalogue shows on the very next call."
+  notes = "Two calls leave two /control/blocked_services/all hits; a replaced catalogue shows on the next call."
 
 [[criterion]]
   id = "c-4"
   status = "covered"
   tests = ["internal/api/blocked_test.go:TestBlocked_View", "internal/api/blocked_test.go:TestBlocked_Live", "internal/api/blocked_test.go:TestBlocked_MissingIsNotAnError", "internal/api/blocked_test.go:TestBlocked_AdGuardDown", "internal/api/blocked_test.go:TestBlocked_NotFound", "internal/blocked/blocked_test.go:TestCompute_Fixture", "internal/blocked/blocked_test.go:TestCompute_MissingExcluded", "internal/blocked/blocked_test.go:TestCompute_NoPresentClients"]
-  notes = "blocked.go:98/101 survivors were killed when hand-applied (gremlins switch-case attribution) — accepted."
+  notes = "partial carries differs (and [] not null); Ghost reported missing with 200; every AdGuard failure mode → 502 with no partial body. The 16 gremlins survivors are all NotCovered by construction (accepted attribution ceiling)."
 
 [[criterion]]
   id = "c-5"
-  status = "weak"
-  tests = ["web/src/lib/Children.test.ts:'renders ownership'", "web/src/lib/Children.test.ts:'assign by checkbox'", "web/src/lib/Children.test.ts:'unassign by checkbox'", "web/src/lib/Children.test.ts:'rename and delete'", "web/src/lib/Children.test.ts:'missing client is struck through'", "web/src/lib/Children.test.ts:'add child'", "web/src/lib/Children.test.ts:'network failure shows an alert'", "web/src/lib/Children.test.ts:'renders the server after save'", "web/src/lib/Children.test.ts:'shows a conflict'", "web/src/App.test.ts:'reload on /children stays there'", "web/src/App.test.ts:'sign in through the login page lands on home'", "web/src/App.test.ts:'Back from Children returns home'"]
-  notes = "t-11 killed the sign-in→home, Back, known(), add-field and network survivors. One in-hunk pair remains at Children.svelte:69 (filter callback → undefined/false): 'unassign by checkbox' gives Ada a single client, so 'remove one' and 'remove all' both yield [] and the mutant that drops every client on an untick escapes. Routed to 04-grants-scheduler-reconciler; a two-client unassign test kills it."
+  status = "covered"
+  tests = ["web/src/lib/Children.test.ts:'renders ownership'", "web/src/lib/Children.test.ts:'assign by checkbox'", "web/src/lib/Children.test.ts:'unassign by checkbox'", "web/src/lib/Children.test.ts:'unassign one of two by checkbox'", "web/src/lib/Children.test.ts:'rename and delete'", "web/src/lib/Children.test.ts:'missing client is struck through'", "web/src/lib/Children.test.ts:'add child'", "web/src/lib/Children.test.ts:'network failure shows an alert'", "web/src/lib/Children.test.ts:'renders the server after save'", "web/src/lib/Children.test.ts:'shows a conflict'", "web/src/App.test.ts:'reload on /children stays there'", "web/src/App.test.ts:'sign in through the login page lands on home'", "web/src/App.test.ts:'Back from Children returns home'"]
+  notes = "Upgraded from weak: t-12's two-client untick pins PUT body {clients:[\"Kid phone\"]}, killing both Children.svelte:69 filter mutants. Remaining Children.svelte survivors (:18/:23 initial $state, :50 constant guard, :68 redundant includes) are accepted equivalents; none in-diff unclassified."
 
 [[criterion]]
   id = "c-6"
   status = "covered"
-  tests = ["web/src/lib/Home.test.ts:'lists blocked services per child'", "web/src/lib/Home.test.ts:'marks partial services'", "web/src/lib/Home.test.ts:'shows the uses-global badge'", "web/src/lib/Home.test.ts:'AdGuard down shows an error state'", "web/src/lib/Home.test.ts:'refetches on every mount'", "web/src/lib/Home.test.ts:'shows No children yet for an empty list'"]
-  notes = "Name+icon per service, partial differs list (two clients), 502 → alert with zero sections/lists and no stale names, network → alert, second mount re-fetches. Home.svelte:61/:87 in-hunk survivors killed by t-11; the three remaining (:8/:30/:36 pre-load booleans) are inherited and routed to 05."
+  tests = ["web/src/lib/Home.test.ts:'lists blocked services per child'", "web/src/lib/Home.test.ts:'marks partial services'", "web/src/lib/Home.test.ts:'shows the uses-global badge'", "web/src/lib/Home.test.ts:'AdGuard down shows an error state'", "web/src/lib/Home.test.ts:'refetches on every mount'", "web/src/lib/Home.test.ts:'shows \"No children yet\" for an empty list'"]
+  notes = "Name+icon per service, differs list, 502 → alert with no stale names, second mount re-fetches. Home.svelte:8/:30/:36 survivors are inherited pre-load booleans routed to 05, not part of this claim."
 
 [[criterion]]
   id = "c-7"
   status = "covered"
   tests = ["internal/adguard/clients_test.go:TestMigrateFromGlobal_Body", "internal/adguard/clients_test.go:TestMigrateFromGlobal_GlobalUntouched", "internal/api/migration_test.go:TestMigration_OfferScope", "internal/api/migration_test.go:TestMigration_OfferIsReadOnly", "internal/api/migration_test.go:TestMigration_Apply", "internal/api/migration_test.go:TestMigration_PartialFailure", "internal/blocked/blocked_test.go:TestOffer_Scope", "web/src/lib/MigrationBanner.test.ts:'shows who gains what'", "web/src/lib/MigrationBanner.test.ts:'nothing written until Migrate'", "web/src/lib/MigrationBanner.test.ts:'Not now hides until next login'", "web/src/lib/MigrationBanner.test.ts:'buttons lock while migrating'", "web/src/lib/Home.test.ts:'hosts the migration banner'"]
-  notes = "Exact gains, read-only offer, per-client write + flag flip, global untouched and partial-failure 502 pinned in Go; confirm-gated POST, Not-now-until-next-login and in-flight lock pinned in the DOM. No MigrationBanner survivors remain after t-11."
+  notes = "Exact gains, read-only offer (0 update hits), per-client list write + flag flip with no /control/blocked_services/set hit, partial-failure 502; DOM: only a GET before Migrate, Not-now-until-next-login, in-flight lock. MigrationBanner.svelte:14 survivor is an accepted no-op."
 
 [[criterion]]
   id = "c-8"
   status = "covered"
   tests = ["internal/store/sessions_test.go:TestSessions_DeleteExecError"]
-  notes = "Hand-applied: replacing the wrap at sessions.go:80 (was :79) with a bare return fails the test. sessions.go itself is outside this phase's diff so gremlins did not score it here."
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/App.svelte:17 (BlockStatement) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/Children.svelte:69 (ArrowFunction) — routed to 04-grants-scheduler-reconciler"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/Children.svelte:69 (ConditionalExpression) — routed to 04-grants-scheduler-reconciler"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/Home.svelte:8 (BooleanLiteral) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/Home.svelte:30 (BooleanLiteral) — routed to 05-phone-ui-buttons-pwa"
-
-[[finding]]
-  severity = "NOTE"
-  text = "stryker mutant survived: web/src/lib/Home.svelte:36 (BooleanLiteral) — routed to 05-phone-ui-buttons-pwa"
+  notes = "Asserts the \"delete session: \" prefix, errors.Unwrap != nil and \"no such table\" after DROP TABLE; sessions.go is outside this phase's diff so gremlins did not score it here."
 
 [[finding]]
   severity = "NOTE"
@@ -133,6 +109,22 @@
 
 [[finding]]
   severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:8 (BooleanLiteral) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:30 (BooleanLiteral) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/Home.svelte:36 (BooleanLiteral) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/App.svelte:17 (BlockStatement) — routed to 05-phone-ui-buttons-pwa"
+
+[[finding]]
+  severity = "NOTE"
   text = "skipped internal/store/migrations/0002_children.sql: no mutation adapter for .sql"
 
 [[finding]]
@@ -140,9 +132,9 @@
   text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Children.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/MigrationBanner.svelte (no parser for .svelte); mutating the whole file"
 
 [[finding]]
-  severity = "FLAG"
-  text = "Children.svelte:69 — untick with two assigned clients is unexercised ('unassign by checkbox' assigns one), so a filter that drops every client on any untick survives; routed to 04-grants-scheduler-reconciler, kill with a two-client unassign test"
+  severity = "NOTE"
+  text = "first dross verify run of this session: stryker leg exited 1 without a report (stale .stryker-tmp sandbox / vite deps cache race); cleared the sandbox and re-ran — both legs measured, 449 in-scope, 0.92 pooled, 0.96 over the 433 reachable"
 
 [[finding]]
   severity = "NOTE"
-  text = "t-11 (275c341) killed 24 of the previous run's 26 in-diff survivors across App/Children/Home/MigrationBanner; stryker leg went 196→221 killed of 242, pooled score 0.86→0.92 over the same 449 in-scope mutants"
+  text = "t-12 (63d8347) killed both Children.svelte:69 survivors (ArrowFunction, ConditionalExpression); c-5 upgraded weak→covered. spec.toml still carries their two [[deferred]] rows (7318eba99fe9b001, 1847f36ba1909811) routed to 04-grants-scheduler-reconciler — now dead routes, drop them so 04 does not chase a killed mutant"
