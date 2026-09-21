@@ -13,21 +13,24 @@ export class ApiError extends Error {
   readonly code: string
   /** Seconds from the Retry-After header, present on 429 only. */
   readonly retryAfter?: number
+  /** The active grant a 409 on grant creation names, when the envelope carries a numeric grant_id. */
+  readonly grantId?: number
 
-  constructor(status: number, code: string, message: string, retryAfter?: number) {
+  constructor(status: number, code: string, message: string, retryAfter?: number, grantId?: number) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.retryAfter = retryAfter
+    this.grantId = grantId
   }
 }
 
 // ---- routing -------------------------------------------------------------
 
-export type Route = 'login' | 'home' | 'children'
+export type Route = 'login' | 'home' | 'children' | 'buttons'
 
-const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children' }
+const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children', buttons: '/buttons' }
 
 function routeFor(pathname: string): Route {
   for (const r of Object.keys(PATHS) as Route[]) {
@@ -70,19 +73,22 @@ type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 interface ErrorEnvelope {
   error?: unknown
   message?: unknown
+  grant_id?: unknown
 }
 
-async function readEnvelope(res: Response): Promise<{ code: string; message: string }> {
+async function readEnvelope(res: Response): Promise<{ code: string; message: string; grantId?: number }> {
   let code = 'unknown'
   let message = res.statusText || `HTTP ${res.status}`
+  let grantId: number | undefined
   try {
     const body = (await res.json()) as ErrorEnvelope
     if (typeof body?.error === 'string') code = body.error
     if (typeof body?.message === 'string') message = body.message
+    if (typeof body?.grant_id === 'number') grantId = body.grant_id
   } catch {
     // Not JSON: keep the status text.
   }
-  return { code, message }
+  return { code, message, grantId }
 }
 
 function retryAfterOf(res: Response): number | undefined {
@@ -109,8 +115,8 @@ export async function request<T>(method: Method, path: string, body?: unknown): 
     if (res.status === 204) return undefined as T
     return (await res.json()) as T
   }
-  const { code, message } = await readEnvelope(res)
-  const err = new ApiError(res.status, code, message, retryAfterOf(res))
+  const { code, message, grantId } = await readEnvelope(res)
+  const err = new ApiError(res.status, code, message, retryAfterOf(res), grantId)
   if (res.status === 401 && path !== LOGIN_PATH) onUnauthorized()
   throw err
 }
@@ -246,6 +252,70 @@ export function migrationOffer(): Promise<MigrationOffer> {
 export async function applyMigration(): Promise<string[]> {
   const res = await request<{ migrated: string[] }>('POST', '/api/v1/migration')
   return res.migrated
+}
+
+// ---- grants and buttons --------------------------------------------------
+
+export interface Grant {
+  id: number
+  child_id: number
+  services: string[]
+  clients: string[]
+  /** RFC 3339. */
+  started_at: string
+  ends_at: string
+}
+
+export interface GrantCreated {
+  id: number
+  ends_at: string
+  /** False when at least one client could not be unblocked; failed names them. */
+  applied: boolean
+  failed: string[]
+}
+
+export interface ButtonInput {
+  label: string
+  child_id: number
+  services: string[]
+  /** Seconds. */
+  duration: number
+}
+
+export interface Button extends ButtonInput {
+  id: number
+}
+
+const GRANTS = '/api/v1/grants'
+const BUTTONS = '/api/v1/buttons'
+
+export async function listGrants(): Promise<Grant[]> {
+  const res = await request<{ grants: Grant[] }>('GET', GRANTS)
+  return res.grants
+}
+
+/** duration is seconds. A 409 rejects with grantId naming the overlapping grant. */
+export function createGrant(child_id: number, services: string[], duration: number): Promise<GrantCreated> {
+  return request<GrantCreated>('POST', GRANTS, { child_id, services, duration })
+}
+
+export function extendGrant(id: number, duration: number): Promise<{ id: number; ends_at: string }> {
+  return request<{ id: number; ends_at: string }>('POST', `${GRANTS}/${id}/extend`, { duration })
+}
+
+export function endGrant(id: number): Promise<void> {
+  return request<void>('POST', `${GRANTS}/${id}/end`)
+}
+
+export async function listButtons(): Promise<Button[]> {
+  const res = await request<{ buttons: Button[] }>('GET', BUTTONS)
+  return res.buttons
+}
+
+/** Replaces the whole list; the server assigns fresh ids and returns the stored list. */
+export async function saveButtons(buttons: ButtonInput[]): Promise<Button[]> {
+  const res = await request<{ buttons: Button[] }>('PUT', BUTTONS, { buttons })
+  return res.buttons
 }
 
 /** A data: URL for an <img> from a catalogue icon. */
