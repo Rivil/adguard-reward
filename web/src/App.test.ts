@@ -163,6 +163,52 @@ describe('App', () => {
     expect(location.pathname).toBe('/login')
   })
 
+  it('sign in through the login page lands on home', async () => {
+    let session = false
+    const calls = mockFetch({
+      '/api/v1/me': () => (session ? signedIn() : noSession()),
+      'POST /api/v1/login': () => {
+        session = true
+        return new Response(null, { status: 204 })
+      },
+      '/api/v1/children': noChildren,
+    })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+    expect(location.pathname).toBe('/login')
+
+    await fireEvent.input(screen.getByLabelText('Username'), { target: { value: 'mum' } })
+    await fireEvent.input(screen.getByLabelText('Password'), { target: { value: 'pw' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Sign in' }))
+
+    // refresh() must move a parent off the login page, not keep them there.
+    const p = await screen.findByText(/Signed in as/)
+    expect(p.textContent).toBe('Signed in as mum')
+    expect(location.pathname).toBe('/')
+    expect(get(route)).toBe('home')
+    expect(calls.map((c) => `${c.method} ${c.url}`)).toContain('POST /api/v1/login')
+  })
+
+  it('Back from Children returns home', async () => {
+    history.replaceState(null, '', '/children')
+    route.set('children')
+    mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/children': noChildren,
+      '/api/v1/clients': () => json(200, { clients: [] }),
+      '/api/v1/migration': () => json(200, { global: [], clients: [] }),
+    })
+    render(App)
+    await screen.findByRole('heading', { name: 'Children' })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(await screen.findByText(/Signed in as/)).toBeTruthy()
+    expect(location.pathname).toBe('/')
+    expect(get(route)).toBe('home')
+    expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
+  })
+
   it('children needs a session', async () => {
     history.replaceState(null, '', '/children')
     route.set('children')

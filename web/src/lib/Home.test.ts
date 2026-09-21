@@ -86,6 +86,7 @@ describe('Home', () => {
 
     expect(await screen.findByRole('heading', { name: 'Ada' })).toBeTruthy()
     expect(document.querySelectorAll('section[data-child]')).toHaveLength(2)
+    expect(screen.queryByText('No children yet')).toBeNull()
 
     const ada = section(1)
     const names = [...ada.querySelectorAll('li')].map((li) => li.textContent?.trim())
@@ -103,7 +104,9 @@ describe('Home', () => {
 
   it('marks partial services', async () => {
     const ada = view(1, 'Ada', {
-      services: [{ id: 'roblox', name: 'Roblox', icon: ICON, state: 'partial', differs: ['Kid phone'] }],
+      services: [
+        { id: 'roblox', name: 'Roblox', icon: ICON, state: 'partial', differs: ['Kid phone', 'Kid tablet'] },
+      ],
     })
     mockFetch(routesFor(ada, view(2, 'Ben')))
     render(Home, { username: 'mum', onLogout: vi.fn() })
@@ -112,7 +115,7 @@ describe('Home', () => {
     const li = section(1).querySelector('li[data-state="partial"]')
     expect(li).not.toBeNull()
     expect(li?.textContent).toContain('Roblox')
-    expect(li?.textContent).toContain('unblocked on Kid phone')
+    expect(li?.textContent).toContain('unblocked on Kid phone, Kid tablet')
   })
 
   it('shows the uses-global badge', async () => {

@@ -116,6 +116,20 @@ describe('Children', () => {
     expect(puts(calls)[0].body).toBe('{"name":"Ada","clients":["Kid phone","Kid tablet"]}')
   })
 
+  it('unassign by checkbox', async () => {
+    const { routes } = server([ada, ben], [client('Kid phone', { id: 1, name: 'Ada' }), client('Kid tablet')])
+    const calls = mockFetch({ ...routes, 'PUT /api/v1/children/1': () => json(200, { ...ada, clients: [] }) })
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ada')
+
+    await fireEvent.click(checkbox(form(1), 'Kid phone'))
+    expect(checkbox(form(1), 'Kid phone').checked).toBe(false)
+    expect(puts(calls)).toHaveLength(0)
+    await fireEvent.click(button(form(1), 'Save'))
+    await waitFor(() => expect(puts(calls)).toHaveLength(1))
+    expect(puts(calls)[0].body).toBe('{"name":"Ada","clients":[]}')
+  })
+
   it('rename and delete', async () => {
     const { state, routes } = server([ada, ben], [client('Kid phone', { id: 1, name: 'Ada' })])
     const calls = mockFetch({
@@ -142,14 +156,18 @@ describe('Children', () => {
 
   it('missing client is struck through', async () => {
     const withGhost = { ...ada, clients: ['Kid phone', 'Ghost'] }
-    const { routes } = server([withGhost], [client('Kid phone', { id: 1, name: 'Ada' })])
+    // Two known clients: a client is "known" if ANY AdGuard client matches it,
+    // so Kid phone must keep its checkbox while only Ghost is struck through.
+    const { routes } = server([withGhost], [client('Kid phone', { id: 1, name: 'Ada' }), client('Kid tablet')])
     const calls = mockFetch({ ...routes, 'PUT /api/v1/children/1': () => json(200, withGhost) })
     render(Children, { onBack: vi.fn() })
     await screen.findByDisplayValue('Ada')
 
-    const struck = form(1).querySelector('s[data-missing]')
-    expect(struck?.textContent).toBe('Ghost')
+    const struck = form(1).querySelectorAll('s[data-missing]')
+    expect(struck).toHaveLength(1)
+    expect(struck[0].textContent).toBe('Ghost')
     expect(() => checkbox(form(1), 'Ghost')).toThrow()
+    expect(checkbox(form(1), 'Kid phone').checked).toBe(true)
     expect(button(form(1), 'Remove')).toBeTruthy()
 
     await fireEvent.click(button(form(1), 'Save'))
@@ -177,13 +195,34 @@ describe('Children', () => {
     render(Children, { onBack: vi.fn() })
     await screen.findByDisplayValue('Ada')
 
-    await fireEvent.input(screen.getByLabelText('New child'), { target: { value: 'Cy' } })
+    const field = screen.getByLabelText('New child') as HTMLInputElement
+    expect(field.value).toBe('')
+    await fireEvent.input(field, { target: { value: 'Cy' } })
     await fireEvent.click(screen.getByRole('button', { name: 'Add child' }))
     await waitFor(() => expect(document.querySelector('form[data-child="3"]')).not.toBeNull())
     const post = calls.find((c) => c.method === 'POST')
     expect(post?.url).toBe('/api/v1/children')
     expect(post?.body).toBe('{"name":"Cy","clients":[]}')
     expect(document.querySelectorAll('form[data-child="3"]')).toHaveLength(1)
+    // A successful add clears the field for the next child.
+    await waitFor(() => expect((screen.getByLabelText('New child') as HTMLInputElement).value).toBe(''))
+  })
+
+  it('network failure shows an alert', async () => {
+    const { routes } = server([ada], [client('Kid phone', { id: 1, name: 'Ada' })])
+    mockFetch({
+      ...routes,
+      'PUT /api/v1/children/1': () => {
+        throw new TypeError('Failed to fetch')
+      },
+    })
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ada')
+
+    await fireEvent.click(button(form(1), 'Save'))
+    const alert = await screen.findByRole('alert')
+    expect(alert.getAttribute('data-error')).toBe('network')
+    expect(alert.textContent).toBe("Can't reach the server — check your connection")
   })
 
   it('renders the server after save', async () => {

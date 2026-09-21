@@ -141,4 +141,50 @@ describe('MigrationBanner', () => {
     expect(banner()).not.toBeNull()
     expect(onMigrated).not.toHaveBeenCalled()
   })
+
+  it('buttons lock while migrating', async () => {
+    let release: (r: Response) => void = () => {}
+    const inFlight = new Promise<Response>((resolve) => {
+      release = resolve
+    })
+    mockFetch({
+      '/api/v1/migration': () => json(200, offer),
+      'POST /api/v1/migration': () => inFlight,
+    })
+    render(MigrationBanner, { onMigrated: vi.fn() })
+    await screen.findByRole('status')
+    const migrate = () => screen.getByRole('button', { name: 'Migrate' }) as HTMLButtonElement
+    const notNow = () => screen.getByRole('button', { name: 'Not now' }) as HTMLButtonElement
+    expect(migrate().disabled).toBe(false)
+    expect(notNow().disabled).toBe(false)
+
+    await fireEvent.click(migrate())
+    await tick()
+    expect(migrate().disabled).toBe(true)
+    expect(notNow().disabled).toBe(true)
+
+    // A failed apply must unlock the buttons so the parent can retry.
+    release(json(502, { error: 'adguard_unavailable', message: 'down' }))
+    await screen.findByRole('alert')
+    await waitFor(() => expect(migrate().disabled).toBe(false))
+    expect(notNow().disabled).toBe(false)
+  })
+
+  it('migrate network failure shows an alert', async () => {
+    const onMigrated = vi.fn()
+    mockFetch({
+      '/api/v1/migration': () => json(200, offer),
+      'POST /api/v1/migration': () => {
+        throw new TypeError('Failed to fetch')
+      },
+    })
+    render(MigrationBanner, { onMigrated })
+    await screen.findByRole('status')
+    await fireEvent.click(screen.getByRole('button', { name: 'Migrate' }))
+    const alert = await screen.findByRole('alert')
+    expect(alert.getAttribute('data-error')).toBe('network')
+    expect(alert.textContent).toBe("Can't reach the server — check your connection")
+    expect(banner()).not.toBeNull()
+    expect(onMigrated).not.toHaveBeenCalled()
+  })
 })
