@@ -33,30 +33,34 @@ _introduced 01-config-adguard-client · 84c1bc9_
 
 ### AdGuard test double
 
-In-process fake of `/control/*` for tests: enforces basic auth, answers login, serves v0.107.x fixtures for clients / blocked services / status, echoes `clients/update` into the next read, records every request, and exposes SetStatus / Hang / SetAuth / MutateClient failure knobs.
+In-process fake of `/control/*` for tests: enforces basic auth, answers login, serves v0.107.x fixtures for clients / blocked services / status, echoes `clients/update` into the next read, records every request, and exposes SetStatus / Hang / SetAuth / MutateClient / SetUpdateStatus failure knobs plus BlockedServices / RemoveClient / CountRequests observers for grant tests.
 
 - adguardtest.New — internal/adguard/adguardtest/server.go:82
+- Server.BlockedServices — internal/adguard/adguardtest/server.go:189
+- Server.RemoveClient — internal/adguard/adguardtest/server.go:211
+- Server.CountRequests — internal/adguard/adguardtest/server.go:224
 
-_introduced 01-config-adguard-client · 5e65f87_
+_introduced 01-config-adguard-client · 5e65f87 · extended 04-grants-scheduler-reconciler · 3123562_
 
 ### API request hardening
 
 Every `/api/v1` response carries `Cache-Control: no-store`, every non-GET/HEAD/OPTIONS request must carry `X-Requested-With: adguard-reward` or is refused 403 before routing, and errors share one JSON envelope `{error, message}`; anonymous requests to unknown `/api/v1` paths get 401, not 404.
 
-- API.Handler — internal/api/api.go:110
+- API.Handler — internal/api/api.go:127
 - csrf — internal/api/middleware.go:25
 - noStore — internal/api/middleware.go:16
-- writeError — internal/api/errors.go:28
+- writeError — internal/api/errors.go:29
 
 _introduced 02-auth-sessions · fbbf1fc_
 
 ### App startup
 
-`--config` (default `config.yaml` beside the binary, env-only when absent) → config load → slog at the configured level → AdGuard client → startup probe (rejected credential is fatal, unreachable AdGuard is logged and served through) → SQLite store under `data_dir` → login limiter + session manager (cookie `Secure` when serving TLS or `base_url` is https) → `GET /healthz` open, `/api/v1` mounted behind the hardening chain → expired-session sweeper → HTTP or TLS serve with graceful shutdown; `version` is bound via `-X main.version`.
+`--config` (default `config.yaml` beside the binary, env-only when absent) → config load → slog at the configured level → AdGuard client → startup probe (rejected credential is fatal, unreachable AdGuard is logged and served through) → SQLite store under `data_dir` → grant engine, whose startup reconcile pass runs under a 30 s bound before `net.Listen` (error logged, never fatal) → login limiter + session manager (cookie `Secure` when serving TLS or `base_url` is https) → `GET /healthz` open, `/api/v1` mounted behind the hardening chain with `Grants` in `api.Deps` → expired-session sweeper and the 60 s grant reconciler loop (`reconcileInterval`, test-overridable) beside the prober → HTTP or TLS serve with graceful shutdown; `version` is bound via `-X main.version`.
 
-- run — cmd/adguard-reward/main.go:48
+- run — cmd/adguard-reward/main.go:57
+- reconcileInterval — cmd/adguard-reward/main.go:41
 
-_introduced 01-config-adguard-client · 3951cf9 · extended 02-auth-sessions · e58f0e9_
+_introduced 01-config-adguard-client · 3951cf9 · extended 02-auth-sessions · e58f0e9 · extended 04-grants-scheduler-reconciler · cdc438e_
 
 ### Children
 
@@ -91,7 +95,7 @@ _introduced 01-config-adguard-client · f7db57d · extended 02-auth-sessions · 
 
 When AdGuard's global blocked-services list is non-empty and a mapped client still has `use_global_blocked_services=true`, the home page shows a banner listing exactly which clients gain which service ids; `GET /api/v1/migration` is read-only, `POST /api/v1/migration` writes each client's own list and clears its flag in one locked read-modify-write per client (the global list is never touched), a mid-run failure answers 502 naming the client and keeps earlier writes. "Not now" hides the banner until the next login; nothing is persisted.
 
-- Client.MigrateFromGlobal — internal/adguard/clients.go:131
+- Client.MigrateFromGlobal — internal/adguard/clients.go:128
 - blocked.Offer — internal/blocked/blocked.go:125
 - API.handleMigrationOffer — internal/api/migration.go:54
 - API.handleMigrationApply — internal/api/migration.go:67
@@ -99,6 +103,39 @@ When AdGuard's global blocked-services list is non-empty and a mapped client sti
 - Server.SetUpdateStatus — internal/adguard/adguardtest/server.go:153
 
 _introduced 03-children-and-blocked-view · 4fe1606 · 5fb4414 · bffe283_
+
+### Grant persistence
+
+`grants` + `grant_services` + `grant_clients` rows (migration 0003) with a partial index over live grants: `CreateGrant` checks (child, service) overlap and inserts in one transaction, answering `*ErrGrantOverlap` with the existing grant id; `SetGrantStatus` is a compare-and-swap and the only exit from `active`, so a timer and an explicit end cannot both revert the same grant.
+
+- Store.CreateGrant — internal/store/grants.go:49
+- Store.ListActiveGrants — internal/store/grants.go:99
+- Store.ExtendGrant — internal/store/grants.go:126
+- Store.SetGrantStatus — internal/store/grants.go:154
+
+_introduced 04-grants-scheduler-reconciler · 13dc7bb_
+
+### Grant reconciliation
+
+One pass under the engine mutex reads AdGuard once, reverts every grant past `ends_at` the timer missed, removes any granted service id that has reappeared in a covered client's `blocked_services` (a parent re-blocked it in AdGuard's UI), and re-arms missing expiry timers; a pass with nothing to do issues no writes. `Start` runs the pass before the HTTP listener accepts, `Run` loops it on an injectable interval (60 s in production).
+
+- Engine.Reconcile — internal/grants/reconcile.go:32
+- Engine.Start — internal/grants/reconcile.go:112
+- Engine.Run — internal/grants/reconcile.go:123
+- run — cmd/adguard-reward/main.go:57
+
+_introduced 04-grants-scheduler-reconciler · 29444c6 · cdc438e_
+
+### Grants API
+
+`GET /api/v1/grants` lists active grants as `{id, child_id, services[], clients[], started_at, ends_at}`; `POST /api/v1/grants {child_id, services[], duration}` validates duration (1 min – 24 h) and service ids to 422 before the 404 child lookup before any AdGuard call, answers 409 `{grant_id}` on overlap and 201 `{id, ends_at, applied, failed[]}` on success (partial apply is reported, not rolled back); `POST /grants/{id}/extend` and `/grants/{id}/end` return 404 for unknown or non-active grants and `end` answers 502 naming the clients whose revert failed. All behind the session gate.
+
+- API.handleGrantsList — internal/api/grants.go:125
+- API.handleGrantCreate — internal/api/grants.go:144
+- API.handleGrantExtend — internal/api/grants.go:223
+- API.handleGrantEnd — internal/api/grants.go:250
+
+_introduced 04-grants-scheduler-reconciler · 21a1233_
 
 ### Health endpoint
 
@@ -162,13 +199,16 @@ _introduced 03-children-and-blocked-view · 3a50df3 · 1ec458d_
 
 ### Per-client blocked services
 
-Typed read of AdGuard's persistent clients and the global blocked-services list (raw objects retained), the runtime service catalogue, and a mutex-serialised fresh-read read-modify-write that rewrites only a client's `blocked_services` (sorted, de-duplicated, never null) via `POST /control/clients/update`.
+Typed read of AdGuard's persistent clients and the global blocked-services list (raw objects retained), the runtime service catalogue, and a mutex-serialised fresh-read read-modify-write that rewrites only a client's `blocked_services` (sorted, de-duplicated, never null) via `POST /control/clients/update`; `AddBlockedServices` / `RemoveBlockedServices` edit the live list as set-union / set-difference under the same mutex and skip the POST when nothing changes.
 
 - Client.Clients — internal/adguard/clients.go:38
 - Client.SetBlockedServices — internal/adguard/clients.go:111
+- Client.AddBlockedServices — internal/adguard/clients.go:158
+- Client.RemoveBlockedServices — internal/adguard/clients.go:149
+- editBlockedServices — internal/adguard/clients.go:166
 - Client.Services — internal/adguard/services.go:17
 
-_introduced 01-config-adguard-client · 1513504_
+_introduced 01-config-adguard-client · 1513504 · extended 04-grants-scheduler-reconciler · 3123562_
 
 ### Session authentication
 
@@ -213,3 +253,14 @@ Single typed fetch wrapper for the Svelte SPA: adds the CSRF header and same-ori
 - migrationDismissed — web/src/lib/api.ts:131
 
 _introduced 02-auth-sessions · 9dedea1 · extended 03-children-and-blocked-view · 295189b_
+
+### Timed grants
+
+A grant temporarily unblocks one or more catalogue services for one child: the engine owns every grant-related AdGuard write under one mutex with one `ApplyTimeout` context per operation. `Create` removes the services from each of the child's mapped clients and stores exactly that client list on the row (a client moved to another child mid-grant is still re-blocked at expiry); an in-process timer at `ends_at` re-blocks by set-union — idempotent — and CASes the grant to `expired`, while a failed AdGuard write leaves it `active` for the reconciler to retry; `Extend` reschedules the timer, `End` reverts immediately.
+
+- grants.New — internal/grants/grants.go:104
+- Engine.Create — internal/grants/grants.go:141
+- Engine.Extend — internal/grants/grants.go:260
+- Engine.End — internal/grants/grants.go:282
+
+_introduced 04-grants-scheduler-reconciler · 6064863_

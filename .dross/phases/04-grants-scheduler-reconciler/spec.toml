@@ -1,0 +1,88 @@
+[phase]
+  id = "04-grants-scheduler-reconciler"
+  title = "Grants, scheduler and reconciler"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "POST /api/v1/grants {child_id, services[], duration} writes an active grant row (new migration) and removes each service id from blocked_services of every client mapped to the child; responds 201 {id, ends_at} within 5 s; 404 unknown child, 422 unknown service id or duration outside bounds; the row survives a restart"
+
+[[criteria]]
+  id = "c-2"
+  text = "GET /api/v1/grants returns every active grant with {id, child_id, services[], clients[], started_at, ends_at}; expired and ended grants are not returned"
+
+[[criteria]]
+  id = "c-3"
+  text = "When ends_at passes, an in-process timer re-adds each service id to every covered client's blocked_services (set-union, idempotent — a second revert changes nothing) within 5 s and marks the grant expired; a failed AdGuard write leaves the grant active so the reconciler retries it"
+
+[[criteria]]
+  id = "c-4"
+  text = "On startup the reconciler runs one pass before the HTTP listener accepts: every active grant past ends_at is reverted and marked expired, every still-live grant is re-verified; a test stops the server mid-grant, restarts it after ends_at, and observes the block restored"
+
+[[criteria]]
+  id = "c-5"
+  text = "The reconciler runs every 60 s (interval injectable for tests), reads each covered client live from AdGuard, and for every active grant removes any granted service id that has reappeared in a client's blocked_services (a parent re-blocked it in AdGuard's UI); it also reverts any grant past ends_at the timer missed; a pass that finds nothing to do issues no writes"
+
+[[criteria]]
+  id = "c-6"
+  text = "POST /api/v1/grants/{id}/extend {duration} pushes ends_at by that much and reschedules the timer; POST /api/v1/grants/{id}/end reverts immediately and marks the grant ended; both return 404 for an unknown or non-active grant"
+
+[[decisions]]
+  key = "overlapping_grants"
+  choice = "One active grant per (child, service) at a time; a POST that overlaps returns 409 with the existing grant id in the body"
+  why = "Keeps revert logic single-owner; the phone UI (05) turns the 409 into an extend offer"
+  locked = true
+
+[[decisions]]
+  key = "revert_baseline"
+  choice = "Revert re-blocks every covered client regardless of its pre-grant state (set-union); no snapshot of prior state is stored"
+  why = "Matches PLAN.md and the milestone's 'block is restored' wording; granted services are blocked-by-default and permanent toggles are an M2 non-goal"
+  locked = true
+
+[[decisions]]
+  key = "partial_apply"
+  choice = "If the unblock succeeds on some clients and fails on others, the grant is still created active and POST returns 201 with applied=false and the failed client names; the next reconciler pass re-applies"
+  why = "The grant row is the intent; the reconciler exists to converge, so nothing is stranded and the parent is not left with nothing"
+  locked = true
+
+[[decisions]]
+  key = "client_set"
+  choice = "The grant row stores the client names it unblocked at creation; reconcile and revert always target exactly that list, not the child's current mapping"
+  why = "A client moved to another child mid-grant is still re-blocked at expiry — no stranded unblock, which is the core value"
+  locked = true
+
+[[decisions]]
+  key = "reconciler_cadence"
+  choice = "Reconciler interval is 60 s, injectable for tests"
+  why = "PLAN.md fixes 1/min; injectable so the restart and drift tests run in seconds"
+  locked = true
+
+[[decisions]]
+  key = "grant_shape"
+  choice = "A grant carries services[] (one or more catalogue ids) for one child; the overlap check is per (child, service)"
+  why = "PLAN.md's button model bundles several services in one tap"
+  locked = true
+
+[[decisions]]
+  key = "duration_bounds"
+  choice = "duration is 1 minute to 24 hours inclusive; outside that POST and extend return 422"
+  why = "Below a minute the 60 s reconciler cannot observe it; above a day it is a permanent toggle, which is M2"
+  locked = true
+
+[[deferred]]
+  text = "survivor internal/grants/reconcile.go:133 (CONDITIONALS_NEGATION)"
+  why = "surviving mutant routed out of a verify run"
+  target = "06-deploy-nora"
+  survivor = "f0e20ee93ae67cec"
+
+[[deferred]]
+  text = "survivor internal/grants/reconcile.go:135 (CONDITIONALS_BOUNDARY)"
+  why = "surviving mutant routed out of a verify run"
+  target = "06-deploy-nora"
+  survivor = "5ad1a07d8eee3daf"
+
+[[deferred]]
+  text = "survivor internal/grants/reconcile.go:135 (CONDITIONALS_NEGATION)"
+  why = "surviving mutant routed out of a verify run"
+  target = "06-deploy-nora"
+  survivor = "a61fe48989cb6c24"

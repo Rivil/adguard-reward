@@ -16,6 +16,7 @@ const (
 	CodeRateLimited        = "rate_limited"
 	CodeNotFound           = "not_found"
 	CodeConflict           = "conflict"
+	CodeUnprocessable      = "unprocessable"
 )
 
 // errorBody is the JSON envelope every error response carries.

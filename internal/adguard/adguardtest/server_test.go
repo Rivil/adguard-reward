@@ -310,3 +310,59 @@ func TestFake_SetUpdateStatus(t *testing.T) {
 		t.Errorf("after clearing: status %d, want 200", code)
 	}
 }
+
+func TestFake_GrantHelpers(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+
+	if got, ok := s.BlockedServices("Kid phone"); !ok || strings.Join(got, ",") != "youtube,tiktok" {
+		t.Errorf("BlockedServices(Kid phone) = %v, %v; want [youtube tiktok] true (fixture order)", got, ok)
+	}
+	if got, ok := s.BlockedServices("Old laptop"); !ok || got == nil || len(got) != 0 {
+		t.Errorf("BlockedServices(Old laptop) = %#v, %v; want [] true (null reads as empty)", got, ok)
+	}
+	if got, ok := s.BlockedServices("Nobody"); ok || got != nil {
+		t.Errorf("BlockedServices(Nobody) = %v, %v; want nil false", got, ok)
+	}
+	s.MutateClient("Kid phone", func(c map[string]json.RawMessage) {
+		c["blocked_services"] = json.RawMessage(`["roblox"]`)
+	})
+	if got, _ := s.BlockedServices("Kid phone"); strings.Join(got, ",") != "roblox" {
+		t.Errorf("BlockedServices after MutateClient = %v, want [roblox]", got)
+	}
+
+	s.RemoveClient("Kid tablet")
+	_, b := do(t, s, "GET", "/control/clients", "", true)
+	var doc struct {
+		Clients []map[string]json.RawMessage `json:"clients"`
+	}
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Clients) != 2 {
+		t.Errorf("GET /control/clients lists %d clients after RemoveClient, want 2", len(doc.Clients))
+	}
+	if strings.Contains(string(b), `"Kid tablet"`) {
+		t.Error("removed client still served")
+	}
+	resp, _ := do(t, s, "POST", "/control/clients/update",
+		`{"name":"Kid tablet","data":{"name":"Kid tablet","ids":[]}}`, true)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("update of removed client: status %d, want 400", resp.StatusCode)
+	}
+	if _, ok := s.BlockedServices("Kid tablet"); ok {
+		t.Error("BlockedServices still finds the removed client")
+	}
+
+	if n := s.CountRequests("POST", "/control/clients/update"); n != 1 {
+		t.Errorf("CountRequests(POST, /control/clients/update) = %d, want 1", n)
+	}
+	if n := s.CountRequests("GET", "/control/clients"); n != 1 {
+		t.Errorf("CountRequests(GET, /control/clients) = %d, want 1", n)
+	}
+	if n := s.CountRequests("GET", "/control/clients/update"); n != 0 {
+		t.Errorf("CountRequests must match method exactly, got %d", n)
+	}
+	if n := s.CountRequests("POST", "/control/clients"); n != 0 {
+		t.Errorf("CountRequests must match path exactly (no prefix match), got %d", n)
+	}
+}

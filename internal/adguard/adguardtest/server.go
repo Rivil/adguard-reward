@@ -183,6 +183,56 @@ func (s *Server) MutateClient(name string, fn func(c map[string]json.RawMessage)
 	s.dirty = true
 }
 
+// BlockedServices returns the stored blocked_services of the named client as
+// it would be served — a null or missing list reads as []. ok is false for a
+// client the fake does not have.
+func (s *Server) BlockedServices(name string) ([]string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	i := s.indexOf(name)
+	if i < 0 {
+		return nil, false
+	}
+	var ids []string
+	if raw, ok := s.clients[i]["blocked_services"]; ok && string(raw) != "null" {
+		if err := json.Unmarshal(raw, &ids); err != nil {
+			panic("adguardtest: BlockedServices: " + err.Error())
+		}
+	}
+	if ids == nil {
+		ids = []string{}
+	}
+	return ids, true
+}
+
+// RemoveClient deletes the named client, simulating a device removed in
+// AdGuard's UI: later GETs omit it and a POST /control/clients/update for it
+// answers 400. It panics if no such client exists.
+func (s *Server) RemoveClient(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	i := s.indexOf(name)
+	if i < 0 {
+		panic("adguardtest: RemoveClient: no client " + name)
+	}
+	s.clients = append(s.clients[:i:i], s.clients[i+1:]...)
+	s.dirty = true
+}
+
+// CountRequests returns how many recorded requests match method and path
+// exactly.
+func (s *Server) CountRequests(method, path string) int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	n := 0
+	for _, r := range s.requests {
+		if r.Method == method && r.Path == path {
+			n++
+		}
+	}
+	return n
+}
+
 // Requests returns a copy of every recorded request in arrival order.
 func (s *Server) Requests() []Request {
 	s.mu.Lock()

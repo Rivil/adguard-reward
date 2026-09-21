@@ -219,8 +219,10 @@ func TestSetBlockedServices_Serialised(t *testing.T) {
 	s.Hang("/control/clients", 20*time.Millisecond)
 	s.Hang("/control/clients/update", 30*time.Millisecond)
 
-	// Both writers share the one RMW lock: mixing them must still never
-	// overlap on the fake.
+	// Every writer shares the one RMW lock: mixing them must still never
+	// overlap on the fake. Add/Remove may legitimately skip their POST when
+	// the list is already as wanted, so the sequence is GET then at most one
+	// POST, never two GETs or two POSTs in a row.
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
@@ -228,10 +230,15 @@ func TestSetBlockedServices_Serialised(t *testing.T) {
 			defer wg.Done()
 			ids := []string{"svc", string(rune('a' + i))}
 			var err error
-			if i%2 == 0 {
+			switch i % 4 {
+			case 0:
 				err = c.SetBlockedServices(context.Background(), "Kid phone", ids)
-			} else {
+			case 1:
 				err = c.MigrateFromGlobal(context.Background(), "Kid tablet", ids)
+			case 2:
+				err = c.AddBlockedServices(context.Background(), "Kid phone", ids)
+			default:
+				err = c.RemoveBlockedServices(context.Background(), "Kid tablet", ids)
 			}
 			if err != nil {
 				t.Error(err)
@@ -249,11 +256,11 @@ func TestSetBlockedServices_Serialised(t *testing.T) {
 			seq = append(seq, r.Method)
 		}
 	}
-	if len(seq) != 20 {
-		t.Fatalf("expected 20 rmw requests, got %d: %v", len(seq), seq)
+	if n := s.CountRequests("GET", "/control/clients"); n != 10 {
+		t.Fatalf("expected 10 rmw reads, got %d: %v", n, seq)
 	}
-	for i := 0; i < len(seq); i += 2 {
-		if seq[i] != "GET" || seq[i+1] != "POST" {
+	for i, m := range seq {
+		if m == "POST" && (i == 0 || seq[i-1] != "GET") {
 			t.Fatalf("rmw sequence interleaved: %v", seq)
 		}
 	}
@@ -398,5 +405,107 @@ func TestMigrateFromGlobal_NotFound(t *testing.T) {
 	}
 	if s.LastUpdate() != nil {
 		t.Error("a client absent from the fresh read must not be written")
+	}
+}
+
+func TestAddBlockedServices_Union(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	s.MutateClient("Kid phone", func(m map[string]json.RawMessage) {
+		m["blocked_services"] = json.RawMessage(`["youtube","roblox"]`)
+	})
+	if err := c.AddBlockedServices(context.Background(), "Kid phone", []string{"tiktok", "youtube"}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := s.BlockedServices("Kid phone")
+	if want := []string{"roblox", "tiktok", "youtube"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("after Add = %v, want %v (sorted union, not a replace)", got, want)
+	}
+	name, data := decodeUpdate(t, s.LastUpdate())
+	if name != "Kid phone" || string(data["future_field"]) != "42" {
+		t.Errorf("update name=%q future_field=%s; every other field must go back verbatim", name, data["future_field"])
+	}
+}
+
+func TestAddBlockedServices_Idempotent(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	ctx := context.Background()
+	ids := []string{"roblox", "tiktok"}
+
+	if err := c.AddBlockedServices(ctx, "Kid phone", ids); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := s.BlockedServices("Kid phone")
+	if n := s.CountRequests("POST", "/control/clients/update"); n != 1 {
+		t.Fatalf("first Add issued %d update POSTs, want 1", n)
+	}
+	gets := s.CountRequests("GET", "/control/clients")
+
+	if err := c.AddBlockedServices(ctx, "Kid phone", ids); err != nil {
+		t.Fatal(err)
+	}
+	second, _ := s.BlockedServices("Kid phone")
+	if !reflect.DeepEqual(first, second) {
+		t.Errorf("second Add changed the list: %v -> %v", first, second)
+	}
+	if n := s.CountRequests("POST", "/control/clients/update"); n != 1 {
+		t.Errorf("second identical Add issued a POST (total %d, want 1) — the no-op skip is lost", n)
+	}
+	if n := s.CountRequests("GET", "/control/clients"); n != gets+1 {
+		t.Errorf("second Add issued %d GETs, want exactly 1", n-gets)
+	}
+
+	if err := c.RemoveBlockedServices(ctx, "Kid phone", []string{"nonexistent", "another"}); err != nil {
+		t.Fatal(err)
+	}
+	if n := s.CountRequests("POST", "/control/clients/update"); n != 1 {
+		t.Errorf("Remove of absent ids issued a POST (total %d, want 1)", n)
+	}
+	if n := s.CountRequests("GET", "/control/clients"); n != gets+2 {
+		t.Errorf("Remove issued %d GETs, want exactly 1", n-gets-1)
+	}
+}
+
+func TestRemoveBlockedServices_Diff(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	ctx := context.Background()
+
+	if err := c.RemoveBlockedServices(ctx, "Kid phone", []string{"tiktok", "nonexistent"}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := s.BlockedServices("Kid phone"); !reflect.DeepEqual(got, []string{"youtube"}) {
+		t.Errorf("Kid phone after Remove = %v, want [youtube]", got)
+	}
+	_, data := decodeUpdate(t, s.LastUpdate())
+	if string(data["future_field"]) != "42" {
+		t.Errorf("future_field = %s, want 42 preserved", data["future_field"])
+	}
+
+	posts := s.CountRequests("POST", "/control/clients/update")
+	if err := c.RemoveBlockedServices(ctx, "Old laptop", []string{"youtube"}); err != nil {
+		t.Fatalf("Remove on a null-list client: %v", err)
+	}
+	if n := s.CountRequests("POST", "/control/clients/update"); n != posts {
+		t.Errorf("Remove on a null list issued a POST; null and [] are the same empty set")
+	}
+	if got, ok := s.BlockedServices("Old laptop"); !ok || len(got) != 0 {
+		t.Errorf("Old laptop = %v, %v; want [] untouched", got, ok)
+	}
+}
+
+func TestRemoveAdd_NotFound(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	ctx := context.Background()
+	if err := c.RemoveBlockedServices(ctx, "Nobody", []string{"youtube"}); !errors.Is(err, ErrClientNotFound) {
+		t.Errorf("Remove err = %v, want ErrClientNotFound", err)
+	}
+	if err := c.AddBlockedServices(ctx, "Nobody", []string{"youtube"}); !errors.Is(err, ErrClientNotFound) {
+		t.Errorf("Add err = %v, want ErrClientNotFound", err)
+	}
+	if n := s.CountRequests("POST", "/control/clients/update"); n != 0 {
+		t.Errorf("unknown client produced %d update POSTs, want 0", n)
 	}
 }

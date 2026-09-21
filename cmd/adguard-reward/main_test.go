@@ -97,11 +97,25 @@ type runResult struct {
 // the test if run returns before onListen fires.
 func start(t *testing.T, args []string, env map[string]string) *runResult {
 	t.Helper()
+	return startWith(t, args, env, nil)
+}
+
+// startWith is start with a callback that runs inside run's onListen — at
+// the instant the listener opens, before this function returns — so a test
+// can observe fake state that the startup pass must already have produced.
+// The callback runs on run's goroutine: use t.Errorf, never t.Fatal.
+func startWith(t *testing.T, args []string, env map[string]string, onListen func(addr string)) *runResult {
+	t.Helper()
 	ctx, cancel := context.WithCancel(context.Background())
 	r := &runResult{stderr: &syncBuffer{}, done: make(chan struct{}), cancel: cancel}
 	listening := make(chan string, 1)
 	go func() {
-		r.code = run(ctx, args, envOf(env), r.stderr, func(addr string) { listening <- addr })
+		r.code = run(ctx, args, envOf(env), r.stderr, func(addr string) {
+			if onListen != nil {
+				onListen(addr)
+			}
+			listening <- addr
+		})
 		close(r.done)
 	}()
 	select {
@@ -292,7 +306,11 @@ func TestRun_Healthz(t *testing.T) {
 
 func TestRun_NoSecretsInLogs(t *testing.T) {
 	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
-	p := writeConfig(t, fake.URL(), fmt.Sprintf("ai:\n  api_key: %q\n", aiKey))
+	dataDir := t.TempDir()
+	// A seeded overdue grant makes the startup pass read and write AdGuard
+	// before the listener opens, so its log lines are covered too.
+	seedGrant(t, dataDir, []string{"Kid phone"}, []string{"tiktok"}, time.Now().Add(-time.Minute))
+	p := writeConfigIn(t, dataDir, fake.URL(), fmt.Sprintf("ai:\n  api_key: %q\n", aiKey))
 	env := map[string]string{"ADGUARD_REWARD_LOG_LEVEL": "debug"}
 
 	r := start(t, []string{"--config", p}, env)
@@ -300,7 +318,7 @@ func TestRun_NoSecretsInLogs(t *testing.T) {
 	r.stop(t)
 
 	out := r.stderr.String()
-	for _, want := range []string{"listening", "/control/status"} {
+	for _, want := range []string{"listening", "/control/status", "startup reconcile", "/control/clients"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("stderr lacks %q (positive control):\n%s", want, out)
 		}
@@ -737,4 +755,298 @@ func TestRun_Sweeper(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	t.Fatalf("expired session %d still present after 2s", id)
+}
+
+// seedGrant writes a child owning clients and an active grant for services
+// ending at endsAt straight into the store at dataDir, as a previous process
+// would have left them, and returns the grant id.
+func seedGrant(t *testing.T, dataDir string, clients, services []string, endsAt time.Time) int64 {
+	t.Helper()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	child, err := st.CreateChild(ctx, "Ada", clients)
+	if err != nil {
+		t.Fatal(err)
+	}
+	g, err := st.CreateGrant(ctx, child.ID, services, clients, endsAt.Add(-time.Hour), endsAt)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return g.ID
+}
+
+// rewindGrant sets a stored grant's ends_at, bypassing the API, between two
+// runs on the same data_dir.
+func rewindGrant(t *testing.T, dataDir string, id int64, endsAt time.Time) {
+	t.Helper()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	if _, err := st.DB().Exec(`UPDATE grants SET ends_at = ? WHERE id = ?`, endsAt.Unix(), id); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// grantStatus reads a grant's status from the store at dataDir.
+func grantStatus(t *testing.T, dataDir string, id int64) string {
+	t.Helper()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	g, err := st.GetGrant(context.Background(), id)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return g.Status
+}
+
+type grantCreated struct {
+	ID      int64    `json:"id"`
+	EndsAt  string   `json:"ends_at"`
+	Applied bool     `json:"applied"`
+	Failed  []string `json:"failed"`
+}
+
+type grantRow struct {
+	ID        int64    `json:"id"`
+	ChildID   int64    `json:"child_id"`
+	Services  []string `json:"services"`
+	Clients   []string `json:"clients"`
+	StartedAt string   `json:"started_at"`
+	EndsAt    string   `json:"ends_at"`
+}
+
+// postChildAndGrant creates a child owning Kid phone and a grant of tiktok
+// for duration seconds through the API, returning the 201 body.
+func postChildAndGrant(t *testing.T, c *http.Client, base string, ck *http.Cookie, duration int) grantCreated {
+	t.Helper()
+	resp := call(t, c, http.MethodPost, base, "/api/v1/children",
+		map[string]any{"name": "Ada", "clients": []string{"Kid phone"}}, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST child: %d %s", resp.StatusCode, b)
+	}
+	var child struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&child); err != nil {
+		t.Fatal(err)
+	}
+	resp = call(t, c, http.MethodPost, base, "/api/v1/grants",
+		map[string]any{"child_id": child.ID, "services": []string{"tiktok"}, "duration": duration}, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST grant: %d %s", resp.StatusCode, b)
+	}
+	var created grantCreated
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		t.Fatal(err)
+	}
+	return created
+}
+
+func listGrants(t *testing.T, c *http.Client, base string, ck *http.Cookie) (string, []grantRow) {
+	t.Helper()
+	resp := call(t, c, http.MethodGet, base, "/api/v1/grants", nil, withCookie(ck.Value))
+	b, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /api/v1/grants: %d %s", resp.StatusCode, b)
+	}
+	var body struct {
+		Grants []grantRow `json:"grants"`
+	}
+	if err := json.Unmarshal(b, &body); err != nil {
+		t.Fatal(err)
+	}
+	return strings.TrimSpace(string(b)), body.Grants
+}
+
+func phoneBlocks(fake *adguardtest.Server, id string) bool {
+	ids, _ := fake.BlockedServices("Kid phone")
+	for _, s := range ids {
+		if s == id {
+			return true
+		}
+	}
+	return false
+}
+
+// waitFor polls cond every 20 ms until it holds or d elapses.
+func waitFor(d time.Duration, cond func() bool) bool {
+	deadline := time.Now().Add(d)
+	for time.Now().Before(deadline) {
+		if cond() {
+			return true
+		}
+		time.Sleep(20 * time.Millisecond)
+	}
+	return cond()
+}
+
+func TestRun_GrantRestoredAfterRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 60)
+	if phoneBlocks(fake, "tiktok") {
+		t.Fatal("Kid phone still blocks tiktok after the grant")
+	}
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+	rewindGrant(t, dataDir, created.ID, time.Now().Add(-60*time.Second))
+
+	restored := false
+	r2 := startWith(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")},
+		map[string]string{"ADGUARD_REWARD_LISTEN": r.addr},
+		func(string) { restored = phoneBlocks(fake, "tiktok") })
+	if !restored {
+		t.Error("Kid phone did not block tiktok at the instant the listener opened; the startup pass must run before net.Listen")
+	}
+	if r2.addr != r.addr {
+		t.Fatalf("second run bound %s, want %s", r2.addr, r.addr)
+	}
+	if raw, _ := listGrants(t, c, base, ck); raw != `{"grants":[]}` {
+		t.Errorf("GET /api/v1/grants after restart = %s, want {\"grants\":[]}", raw)
+	}
+}
+
+func TestRun_GrantSurvivesRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 1800)
+	_, before := listGrants(t, c, base, ck)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, map[string]string{"ADGUARD_REWARD_LISTEN": r.addr})
+	_, after := listGrants(t, c, base, ck)
+	if len(after) != 1 || after[0].ID != created.ID || after[0].EndsAt != created.EndsAt || !reflect.DeepEqual(after, before) {
+		t.Fatalf("after restart grants = %+v, want %+v (id %d, ends_at %s)", after, before, created.ID, created.EndsAt)
+	}
+	if phoneBlocks(fake, "tiktok") {
+		t.Error("a live grant was re-blocked by the restart")
+	}
+}
+
+func TestRun_LiveGrantRearmed(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = time.Hour
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	created := postChildAndGrant(t, c, base, loginOK(t, c, base), 1800)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d", code)
+	}
+	rewindGrant(t, dataDir, created.ID, time.Now().Add(2*time.Second))
+
+	start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	if phoneBlocks(fake, "tiktok") {
+		t.Fatal("live grant re-blocked at startup; it has 2 s left")
+	}
+	if !waitFor(5*time.Second, func() bool { return phoneBlocks(fake, "tiktok") }) {
+		t.Fatal("tiktok not re-blocked within 5 s of listening; Start must re-arm timers for live grants")
+	}
+	if got := grantStatus(t, dataDir, created.ID); got != store.StatusExpired {
+		t.Errorf("status = %q, want expired", got)
+	}
+}
+
+func TestRun_ReconcilerDrift(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = 50 * time.Millisecond
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	c := apiClient(false)
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	postChildAndGrant(t, c, base, loginOK(t, c, base), 1800)
+
+	posts := fake.CountRequests("POST", "/control/clients/update")
+	time.Sleep(500 * time.Millisecond)
+	if n := fake.CountRequests("POST", "/control/clients/update") - posts; n != 0 {
+		t.Errorf("reconciler issued %d update POSTs with nothing drifted", n)
+	}
+
+	fake.MutateClient("Kid phone", func(m map[string]json.RawMessage) {
+		m["blocked_services"] = json.RawMessage(`["youtube","tiktok"]`)
+	})
+	if !waitFor(2*time.Second, func() bool { return !phoneBlocks(fake, "tiktok") }) {
+		t.Fatal("re-blocked tiktok not removed within 2 s; the reconciler is not running on reconcileInterval")
+	}
+
+	// At the production cadence the same drift is still there half a second on.
+	reconcileInterval = 60 * time.Second
+	fake2 := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r2 := start(t, []string{"--config", writeConfig(t, fake2.URL(), "")}, nil)
+	base2 := "http://" + r2.addr
+	postChildAndGrant(t, c, base2, loginOK(t, c, base2), 1800)
+	fake2.MutateClient("Kid phone", func(m map[string]json.RawMessage) {
+		m["blocked_services"] = json.RawMessage(`["youtube","tiktok"]`)
+	})
+	time.Sleep(500 * time.Millisecond)
+	if !phoneBlocks(fake2, "tiktok") {
+		t.Error("drift repaired within 500 ms at a 60 s interval; something other than the reconciler wrote")
+	}
+}
+
+func TestRun_StartupAdGuardDown(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = 50 * time.Millisecond
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	fake.SetStatus("/control/clients", http.StatusInternalServerError)
+	dataDir := t.TempDir()
+	fake.MutateClient("Kid phone", func(m map[string]json.RawMessage) {
+		m["blocked_services"] = json.RawMessage(`["youtube"]`)
+	})
+	id := seedGrant(t, dataDir, []string{"Kid phone"}, []string{"tiktok"}, time.Now().Add(-time.Minute))
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	if !strings.Contains(r.stderr.String(), `msg="startup reconcile" err=`) {
+		t.Errorf("stderr lacks the startup reconcile error:\n%s", r.stderr.String())
+	}
+	if got := grantStatus(t, dataDir, id); got != store.StatusActive {
+		t.Errorf("status = %q, want active while AdGuard is unreadable", got)
+	}
+	if phoneBlocks(fake, "tiktok") {
+		t.Fatal("tiktok re-blocked while /control/clients answers 500")
+	}
+
+	fake.SetResponse("/control/clients", 0, nil)
+	if !waitFor(2*time.Second, func() bool { return phoneBlocks(fake, "tiktok") }) {
+		t.Fatal("block not restored within 2 s of AdGuard recovering")
+	}
+	if !waitFor(2*time.Second, func() bool { return grantStatus(t, dataDir, id) == store.StatusExpired }) {
+		t.Errorf("status = %q, want expired", grantStatus(t, dataDir, id))
+	}
+	if code := r.stop(t); code == 1 {
+		t.Fatalf("exit = 1; an unreachable AdGuard at boot must not be fatal:\n%s", r.stderr.String())
+	}
 }

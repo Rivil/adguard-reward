@@ -1,0 +1,111 @@
+{
+  "phase": "04-grants-scheduler-reconciler",
+  "pr": 4,
+  "base": "milestone/v0.1",
+  "base_commit": "8ee2cc7a7c11c9fc234bc51d7d734ccee4282fc9",
+  "status": "shipped",
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/store/migrations/0003_grants.sql",
+        "internal/store/grants.go",
+        "internal/store/grants_test.go"
+      ],
+      "commit": "13dc7bb",
+      "completed_at": "2026-09-21T09:06:16.677673Z",
+      "landmarks": [
+        {
+          "feature": "grant persistence",
+          "symbol": "SetGrantStatus",
+          "loc": "internal/store/grants.go:157",
+          "what": "grants/grant_services/grant_clients schema with partial live index; CreateGrant overlap-checked in one tx; CAS SetGrantStatus is the only exit from active"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/adguard/clients.go",
+        "internal/adguard/clients_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go"
+      ],
+      "commit": "3123562",
+      "completed_at": "2026-09-21T09:09:22.420624Z",
+      "landmarks": [
+        {
+          "feature": "per-client blocked services write",
+          "symbol": "editBlockedServices",
+          "loc": "internal/adguard/clients.go:166",
+          "what": "Add/RemoveBlockedServices edit the live list under the RMW mutex as set-union/difference and skip the POST when nothing changes; fake gains BlockedServices/RemoveClient/CountRequests"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go"
+      ],
+      "commit": "6064863",
+      "completed_at": "2026-09-21T09:15:51.610728Z",
+      "landmarks": [
+        {
+          "feature": "timed grants",
+          "symbol": "Engine.Create",
+          "loc": "internal/grants/grants.go:141",
+          "what": "Engine owns every grant AdGuard write under one mutex with one ApplyTimeout ctx per operation: Create unblocks stored clients (partial apply reported, never rolled back), timer expiry re-blocks by set-union and CASes to expired, Extend reschedules, End reverts now"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go"
+      ],
+      "commit": "29444c6",
+      "completed_at": "2026-09-21T09:19:06.540712Z",
+      "landmarks": [
+        {
+          "feature": "grant reconciliation",
+          "symbol": "Engine.Reconcile",
+          "loc": "internal/grants/reconcile.go:32",
+          "what": "one pass under mu reads AdGuard once, reverts overdue grants, removes re-blocked granted ids per drifted client, re-arms missing timers; Start runs it before listen, Run loops on an injectable interval"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/api/grants.go",
+        "internal/api/grants_test.go",
+        "internal/api/api.go",
+        "internal/api/errors.go",
+        "internal/api/login_test.go"
+      ],
+      "commit": "21a1233",
+      "completed_at": "2026-09-21T09:23:40.231514Z",
+      "landmarks": [
+        {
+          "feature": "grants API",
+          "symbol": "handleGrantCreate",
+          "loc": "internal/api/grants.go:144",
+          "what": "/api/v1/grants GET/POST plus {id}/extend and {id}/end behind the session gate: 422 duration/service validation before the 404 child lookup before any AdGuard call, 409 with grant_id on overlap, 201 {id, ends_at, applied, failed}, 502 naming clients on a failed end revert"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "cdc438e",
+      "completed_at": "2026-09-21T09:27:10.766189Z",
+      "landmarks": [
+        {
+          "feature": "grant reconciliation",
+          "symbol": "run",
+          "loc": "cmd/adguard-reward/main.go:110",
+          "what": "main builds the grant engine after store.Open, runs its startup pass under a 30 s bound before net.Listen (error logged, never fatal), wires Grants into api.Deps and loops eng.Run on reconcileInterval (60 s, test-overridable) beside the prober and sweeper"
+        }
+      ]
+    }
+  }
+}
