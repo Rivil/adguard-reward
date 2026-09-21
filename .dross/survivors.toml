@@ -1,6 +1,6 @@
 [[category]]
   name = "gremlins-switch-case"
-  reason = "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+  reason = "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
 
 [[category]]
   name = "string-concat-initializer"
@@ -25,6 +25,22 @@
 [[category]]
   name = "stryker-self-config"
   reason = "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+
+[[category]]
+  name = "go-string-arith"
+  reason = "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+
+[[category]]
+  name = "stryker-whole-file-attribution"
+  reason = "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "svelte-preload-state"
+  reason = "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+
+[[category]]
+  name = "checkbox-dom-semantics"
+  reason = "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
 
 [[accepted]]
   key = "51a958b88e117c6a"
@@ -529,3 +545,129 @@
   line = 12
   category = "stryker-self-config"
   accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d69e57f7ae237fb9"
+  file = "internal/api/children.go"
+  op = "ARITHMETIC_BASE"
+  text = "a.log.Error(op+\" failed\", \"err\", err)"
+  line = 114
+  category = "go-string-arith"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "6cc7c18da6e15549"
+  file = "internal/api/children.go"
+  op = "ARITHMETIC_BASE"
+  text = "writeError(w, http.StatusInternalServerError, \"internal\", \"could not \"+op)"
+  line = 115
+  category = "go-string-arith"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "91ca0896550367aa"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case len(presents) > 0 && blockedOn == len(presents):"
+  line = 98
+  category = "gremlins-switch-case"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "d80e2d09b950a6b5"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case len(presents) > 0 && blockedOn == len(presents):"
+  line = 98
+  category = "gremlins-switch-case"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "55673a2b65311747"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case blockedOn == 0:"
+  line = 101
+  category = "gremlins-switch-case"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "4e3c141d619c1c5f"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (r !== 'home' && PATHS[r] === pathname) return r"
+  line = 34
+  category = "stryker-whole-file-attribution"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "8ef83e30b05b7491"
+  file = "web/src/App.svelte"
+  op = "ConditionalExpression"
+  text = "{:else if $route === 'children' && username !== null}"
+  line = 39
+  category = "stryker-whole-file-attribution"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "2e5c825a43b53d61"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (r !== 'home' && PATHS[r] === pathname) return r"
+  line = 34
+  reason = "'home' → '' in routeFor's skip-guard is equivalent: with the guard gone the loop still reaches PATHS.home ('/') and returns 'home' for '/', and every other pathname resolves exactly as before."
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "efe4eae9dcf17bf2"
+  file = "web/src/lib/Children.svelte"
+  op = "ArrayDeclaration"
+  text = "let clients = $state<ClientView[]>([])"
+  line = 18
+  category = "svelte-preload-state"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "fd2e2d4d8db99396"
+  file = "web/src/lib/Children.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 23
+  category = "svelte-preload-state"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "6485f7e42f3edd6a"
+  file = "web/src/lib/Children.svelte"
+  op = "ConditionalExpression"
+  text = "if (reloadOnError) {"
+  line = 50
+  reason = "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "23b258f0df7fd7fe"
+  file = "web/src/lib/Children.svelte"
+  op = "ConditionalExpression"
+  text = "if (checked && !d.clients.includes(name)) d.clients = [...d.clients, name]"
+  line = 68
+  category = "checkbox-dom-semantics"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "5ad3db1cdd919929"
+  file = "web/src/lib/Children.svelte"
+  op = "LogicalOperator"
+  text = "if (checked && !d.clients.includes(name)) d.clients = [...d.clients, name]"
+  line = 68
+  category = "checkbox-dom-semantics"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "71812182bec5af4d"
+  file = "web/src/lib/MigrationBanner.svelte"
+  op = "BlockStatement"
+  text = "} catch {"
+  line = 14
+  reason = "The catch body sets offer = null, which is already its value before the await; removing it changes nothing."
+  accepted_in = "03-children-and-blocked-view"

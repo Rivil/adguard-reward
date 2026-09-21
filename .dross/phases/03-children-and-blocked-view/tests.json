@@ -1,0 +1,2194 @@
+{
+  "phase": "03-children-and-blocked-view",
+  "generated_at": "2026-09-21T07:02:31.465599Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go",
+        "internal/adguard/clients.go",
+        "internal/adguard/clients_test.go",
+        "internal/api/api.go",
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go",
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/clients.go",
+        "internal/api/clients_test.go",
+        "internal/api/errors.go",
+        "internal/api/login_test.go",
+        "internal/api/migration.go",
+        "internal/api/migration_test.go",
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go",
+        "internal/store/children.go",
+        "internal/store/children_test.go",
+        "internal/store/sessions_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 191,
+        "Survived": 16,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9227053140096618,
+        "Surviving": [
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 105,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 101,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4742d4bfe47ddb54",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 180,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 360,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 369,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 105,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 101,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4742d4bfe47ddb54",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 180,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 360,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 369,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/api/children.go",
+            "Line": 114,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "d69e57f7ae237fb9",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+          },
+          {
+            "File": "internal/api/children.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6cc7c18da6e15549",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 101,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "55673a2b65311747",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 98,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 98,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "d80e2d09b950a6b5",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 98,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          }
+        ],
+        "NotCovered": 16
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main.go": "adapter-lacks-range-runner",
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/blocked.go": "adapter-lacks-range-runner",
+        "internal/api/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/api/children.go": "adapter-lacks-range-runner",
+        "internal/api/children_test.go": "adapter-lacks-range-runner",
+        "internal/api/clients.go": "adapter-lacks-range-runner",
+        "internal/api/clients_test.go": "adapter-lacks-range-runner",
+        "internal/api/errors.go": "adapter-lacks-range-runner",
+        "internal/api/login_test.go": "adapter-lacks-range-runner",
+        "internal/api/migration.go": "adapter-lacks-range-runner",
+        "internal/api/migration_test.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/store/children.go": "adapter-lacks-range-runner",
+        "internal/store/children_test.go": "adapter-lacks-range-runner",
+        "internal/store/sessions_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/App.svelte",
+        "web/src/App.test.ts",
+        "web/src/lib/Children.svelte",
+        "web/src/lib/Children.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/MigrationBanner.svelte",
+        "web/src/lib/MigrationBanner.test.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 196,
+        "Survived": 46,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.8099173553719008,
+        "Surviving": [
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 8,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "c68261e34f7582f6",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 30,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "a094a307b802163c",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 36,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "beec743e7af835d4",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 61,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "f312e912d673d98d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 87,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "17b48545d4e52bb3",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 16,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "34c2ba1fa85bafa1",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 40,
+            "Op": "ArrowFunction",
+            "Snippet": "() =\u003e undefined",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "aa98c87b402c5eca",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 40,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1f4da63427cff84d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 16,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "d640e08d9f9b47f7",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 16,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "34c2ba1fa85bafa1",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 21,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "fd433887aedbf00e",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 17,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "inherited",
+            "Key": "d248d03cd68330af",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 39,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "8ef83e30b05b7491",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 49,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "d2e9f9c6f43dd01e",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 49,
+            "Op": "LogicalOperator",
+            "Snippet": "typeof history !== 'undefined' || currentPath() !== path",
+            "Origin": "inherited",
+            "Key": "47163e3c3caeeb87",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 49,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "d2e9f9c6f43dd01e",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 49,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "d335c2ed61ddcc43",
+            "Lifecycle": "accepted",
+            "Note": "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 49,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "d2e9f9c6f43dd01e",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 50,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "inherited",
+            "Key": "94cf19252c2aef02",
+            "Lifecycle": "accepted",
+            "Note": "history.pushState title argument is ignored by every browser per the HTML spec; no observable behaviour"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 34,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "4e3c141d619c1c5f",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 34,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "2e5c825a43b53d61",
+            "Lifecycle": "accepted",
+            "Note": "'home' → '' in routeFor's skip-guard is equivalent: with the guard gone the loop still reaches PATHS.home ('/') and returns 'home' for '/', and every other pathname resolves exactly as before."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 49,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "b66843172421f250",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 49,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "74c92ea123984a4b",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 49,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "74c92ea123984a4b",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "MethodExpression",
+            "Snippet": "d.clients",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1336b278ee6645e4",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "ArrowFunction",
+            "Snippet": "() =\u003e undefined",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "7318eba99fe9b001",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1847f36ba1909811",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1847f36ba1909811",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "EqualityOperator",
+            "Snippet": "c === name",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "e77bfe0d2978763a",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 18,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "efe4eae9dcf17bf2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 22,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "8ff6f24ee5c066d6",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 23,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "fd2e2d4d8db99396",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 50,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "6485f7e42f3edd6a",
+            "Lifecycle": "accepted",
+            "Note": "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 63,
+            "Op": "MethodExpression",
+            "Snippet": "clients.every(c =\u003e c.name === name)",
+            "Origin": "in-hunk",
+            "Key": "7157f39fc880c3b4",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 68,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "23b258f0df7fd7fe",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 68,
+            "Op": "LogicalOperator",
+            "Snippet": "checked || !d.clients.includes(name)",
+            "Origin": "in-hunk",
+            "Key": "5ad3db1cdd919929",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "1847f36ba1909811",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 96,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "ced403a9f1147ef1",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 37,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9c48cd4a31bb7b2b",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 37,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4b26f0c30b9b0539",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 37,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4b26f0c30b9b0539",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 8,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "d2d6bffad02ed0b2",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 14,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "71812182bec5af4d",
+            "Lifecycle": "accepted",
+            "Note": "The catch body sets offer = null, which is already its value before the await; removing it changes nothing."
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 27,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "99db4412bdebab6e",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 38,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "d5baf77faef14446",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 39,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "ef7d03e3ef78c2c3",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          }
+        ],
+        "NotCovered": 14
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/App.test.ts": [
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "hunk"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "TSTypeAliasDeclaration Routes"
+          },
+          {
+            "start": 22,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 39,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "VariableDeclaration signedIn"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "VariableDeclaration noChildren"
+          },
+          {
+            "start": 43,
+            "end": 43,
+            "construct": "VariableDeclaration noSession"
+          },
+          {
+            "start": 44,
+            "end": 44,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 49,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 51,
+            "end": 176,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Children.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Routes"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 14,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 29,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "VariableDeclaration ada"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "VariableDeclaration ben"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "hunk"
+          },
+          {
+            "start": 34,
+            "end": 36,
+            "construct": "FunctionDeclaration client"
+          },
+          {
+            "start": 37,
+            "end": 38,
+            "construct": "hunk"
+          },
+          {
+            "start": 39,
+            "end": 46,
+            "construct": "FunctionDeclaration server"
+          },
+          {
+            "start": 47,
+            "end": 47,
+            "construct": "hunk"
+          },
+          {
+            "start": 48,
+            "end": 52,
+            "construct": "FunctionDeclaration form"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 62,
+            "construct": "FunctionDeclaration checkbox"
+          },
+          {
+            "start": 63,
+            "end": 63,
+            "construct": "hunk"
+          },
+          {
+            "start": 64,
+            "end": 69,
+            "construct": "FunctionDeclaration button"
+          },
+          {
+            "start": 70,
+            "end": 70,
+            "construct": "hunk"
+          },
+          {
+            "start": 71,
+            "end": 73,
+            "construct": "FunctionDeclaration puts"
+          },
+          {
+            "start": 74,
+            "end": 74,
+            "construct": "hunk"
+          },
+          {
+            "start": 75,
+            "end": 77,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 78,
+            "end": 78,
+            "construct": "hunk"
+          },
+          {
+            "start": 79,
+            "end": 245,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Home.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "TSTypeAliasDeclaration Routes"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "hunk"
+          },
+          {
+            "start": 14,
+            "end": 16,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 17,
+            "end": 21,
+            "construct": "hunk"
+          },
+          {
+            "start": 22,
+            "end": 35,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 36,
+            "end": 36,
+            "construct": "hunk"
+          },
+          {
+            "start": 37,
+            "end": 37,
+            "construct": "VariableDeclaration ICON"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "hunk"
+          },
+          {
+            "start": 39,
+            "end": 50,
+            "construct": "FunctionDeclaration view"
+          },
+          {
+            "start": 51,
+            "end": 51,
+            "construct": "hunk"
+          },
+          {
+            "start": 52,
+            "end": 57,
+            "construct": "VariableDeclaration twoChildren"
+          },
+          {
+            "start": 58,
+            "end": 58,
+            "construct": "hunk"
+          },
+          {
+            "start": 59,
+            "end": 59,
+            "construct": "VariableDeclaration noOffer"
+          },
+          {
+            "start": 60,
+            "end": 60,
+            "construct": "hunk"
+          },
+          {
+            "start": 61,
+            "end": 68,
+            "construct": "FunctionDeclaration routesFor"
+          },
+          {
+            "start": 69,
+            "end": 69,
+            "construct": "hunk"
+          },
+          {
+            "start": 70,
+            "end": 74,
+            "construct": "FunctionDeclaration section"
+          },
+          {
+            "start": 75,
+            "end": 75,
+            "construct": "hunk"
+          },
+          {
+            "start": 76,
+            "end": 80,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 81,
+            "end": 81,
+            "construct": "hunk"
+          },
+          {
+            "start": 82,
+            "end": 231,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/MigrationBanner.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "TSTypeAliasDeclaration Routes"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "hunk"
+          },
+          {
+            "start": 13,
+            "end": 15,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 16,
+            "end": 16,
+            "construct": "hunk"
+          },
+          {
+            "start": 17,
+            "end": 30,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "hunk"
+          },
+          {
+            "start": 32,
+            "end": 35,
+            "construct": "VariableDeclaration offer"
+          },
+          {
+            "start": 36,
+            "end": 36,
+            "construct": "VariableDeclaration empty"
+          },
+          {
+            "start": 37,
+            "end": 37,
+            "construct": "hunk"
+          },
+          {
+            "start": 38,
+            "end": 40,
+            "construct": "FunctionDeclaration banner"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "hunk"
+          },
+          {
+            "start": 42,
+            "end": 44,
+            "construct": "FunctionDeclaration posts"
+          },
+          {
+            "start": 45,
+            "end": 45,
+            "construct": "hunk"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 52,
+            "end": 52,
+            "construct": "hunk"
+          },
+          {
+            "start": 53,
+            "end": 144,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 28,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 202,
+            "end": 202,
+            "construct": "hunk"
+          },
+          {
+            "start": 203,
+            "end": 251,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 252,
+            "end": 252,
+            "construct": "hunk"
+          },
+          {
+            "start": 253,
+            "end": 276,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 277,
+            "end": 277,
+            "construct": "hunk"
+          },
+          {
+            "start": 278,
+            "end": 282,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 283,
+            "end": 283,
+            "construct": "hunk"
+          },
+          {
+            "start": 284,
+            "end": 293,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 294,
+            "end": 294,
+            "construct": "hunk"
+          },
+          {
+            "start": 295,
+            "end": 318,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 28,
+            "end": 28,
+            "construct": "TSTypeAliasDeclaration Route"
+          },
+          {
+            "start": 29,
+            "end": 29,
+            "construct": "hunk"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "VariableDeclaration PATHS"
+          },
+          {
+            "start": 32,
+            "end": 37,
+            "construct": "FunctionDeclaration routeFor"
+          },
+          {
+            "start": 47,
+            "end": 53,
+            "construct": "FunctionDeclaration navigate"
+          },
+          {
+            "start": 68,
+            "end": 68,
+            "construct": "TSTypeAliasDeclaration Method"
+          },
+          {
+            "start": 125,
+            "end": 130,
+            "construct": "hunk"
+          },
+          {
+            "start": 131,
+            "end": 131,
+            "construct": "VariableDeclaration migrationDismissed"
+          },
+          {
+            "start": 132,
+            "end": 132,
+            "construct": "hunk"
+          },
+          {
+            "start": 133,
+            "end": 136,
+            "construct": "FunctionDeclaration login"
+          },
+          {
+            "start": 138,
+            "end": 144,
+            "construct": "FunctionDeclaration logout"
+          },
+          {
+            "start": 150,
+            "end": 151,
+            "construct": "hunk"
+          },
+          {
+            "start": 152,
+            "end": 156,
+            "construct": "TSInterfaceDeclaration Child"
+          },
+          {
+            "start": 157,
+            "end": 157,
+            "construct": "hunk"
+          },
+          {
+            "start": 158,
+            "end": 161,
+            "construct": "TSInterfaceDeclaration ChildRef"
+          },
+          {
+            "start": 162,
+            "end": 162,
+            "construct": "hunk"
+          },
+          {
+            "start": 163,
+            "end": 168,
+            "construct": "TSInterfaceDeclaration ClientView"
+          },
+          {
+            "start": 169,
+            "end": 169,
+            "construct": "hunk"
+          },
+          {
+            "start": 170,
+            "end": 175,
+            "construct": "TSInterfaceDeclaration Service"
+          },
+          {
+            "start": 176,
+            "end": 176,
+            "construct": "hunk"
+          },
+          {
+            "start": 177,
+            "end": 177,
+            "construct": "TSTypeAliasDeclaration ServiceStateName"
+          },
+          {
+            "start": 178,
+            "end": 178,
+            "construct": "hunk"
+          },
+          {
+            "start": 179,
+            "end": 183,
+            "construct": "TSInterfaceDeclaration ServiceState"
+          },
+          {
+            "start": 184,
+            "end": 184,
+            "construct": "hunk"
+          },
+          {
+            "start": 185,
+            "end": 189,
+            "construct": "TSInterfaceDeclaration BlockedClient"
+          },
+          {
+            "start": 190,
+            "end": 190,
+            "construct": "hunk"
+          },
+          {
+            "start": 191,
+            "end": 195,
+            "construct": "TSInterfaceDeclaration BlockedView"
+          },
+          {
+            "start": 196,
+            "end": 196,
+            "construct": "hunk"
+          },
+          {
+            "start": 197,
+            "end": 201,
+            "construct": "TSInterfaceDeclaration MigrationClient"
+          },
+          {
+            "start": 202,
+            "end": 202,
+            "construct": "hunk"
+          },
+          {
+            "start": 203,
+            "end": 207,
+            "construct": "TSInterfaceDeclaration MigrationOffer"
+          },
+          {
+            "start": 208,
+            "end": 208,
+            "construct": "hunk"
+          },
+          {
+            "start": 209,
+            "end": 209,
+            "construct": "VariableDeclaration CHILDREN"
+          },
+          {
+            "start": 210,
+            "end": 210,
+            "construct": "hunk"
+          },
+          {
+            "start": 211,
+            "end": 214,
+            "construct": "FunctionDeclaration listChildren"
+          },
+          {
+            "start": 215,
+            "end": 215,
+            "construct": "hunk"
+          },
+          {
+            "start": 216,
+            "end": 218,
+            "construct": "FunctionDeclaration createChild"
+          },
+          {
+            "start": 219,
+            "end": 219,
+            "construct": "hunk"
+          },
+          {
+            "start": 220,
+            "end": 222,
+            "construct": "FunctionDeclaration updateChild"
+          },
+          {
+            "start": 223,
+            "end": 223,
+            "construct": "hunk"
+          },
+          {
+            "start": 224,
+            "end": 226,
+            "construct": "FunctionDeclaration deleteChild"
+          },
+          {
+            "start": 227,
+            "end": 227,
+            "construct": "hunk"
+          },
+          {
+            "start": 228,
+            "end": 231,
+            "construct": "FunctionDeclaration listClients"
+          },
+          {
+            "start": 232,
+            "end": 232,
+            "construct": "hunk"
+          },
+          {
+            "start": 233,
+            "end": 236,
+            "construct": "FunctionDeclaration listServices"
+          },
+          {
+            "start": 237,
+            "end": 237,
+            "construct": "hunk"
+          },
+          {
+            "start": 238,
+            "end": 240,
+            "construct": "FunctionDeclaration childBlocked"
+          },
+          {
+            "start": 241,
+            "end": 241,
+            "construct": "hunk"
+          },
+          {
+            "start": 242,
+            "end": 244,
+            "construct": "FunctionDeclaration migrationOffer"
+          },
+          {
+            "start": 245,
+            "end": 245,
+            "construct": "hunk"
+          },
+          {
+            "start": 246,
+            "end": 249,
+            "construct": "FunctionDeclaration applyMigration"
+          },
+          {
+            "start": 250,
+            "end": 251,
+            "construct": "hunk"
+          },
+          {
+            "start": 252,
+            "end": 254,
+            "construct": "FunctionDeclaration iconUrl"
+          },
+          {
+            "start": 255,
+            "end": 255,
+            "construct": "hunk"
+          },
+          {
+            "start": 258,
+            "end": 262,
+            "construct": "hunk"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/App.svelte": "ast-unavailable",
+        "web/src/lib/Children.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable",
+        "web/src/lib/MigrationBanner.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/store/migrations/0002_children.sql",
+      "reason": "no mutation adapter for .sql"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_BOUNDARY",
+      "language": "go",
+      "key": "51a958b88e117c6a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9430031ee34baa69",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_BOUNDARY",
+      "language": "go",
+      "key": "51a958b88e117c6a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9430031ee34baa69",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 183,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "68505a7be9631dc8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 183,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "68505a7be9631dc8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 185,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "cfecbf0de85b0129",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/milestones/v0.1.toml",
+      ".dross/phases/03-children-and-blocked-view/REVIEW.md",
+      ".dross/phases/03-children-and-blocked-view/changes.json",
+      ".dross/phases/03-children-and-blocked-view/panel/mvp.md",
+      ".dross/phases/03-children-and-blocked-view/panel/risk.md",
+      ".dross/phases/03-children-and-blocked-view/panel/synthesis.md",
+      ".dross/phases/03-children-and-blocked-view/panel/verification.md",
+      ".dross/phases/03-children-and-blocked-view/plan.toml",
+      ".dross/phases/03-children-and-blocked-view/spec.toml",
+      ".dross/project.toml",
+      "cmd/adguard-reward/main.go",
+      "cmd/adguard-reward/main_test.go",
+      "internal/adguard/adguardtest/server.go",
+      "internal/adguard/adguardtest/server_test.go",
+      "internal/adguard/clients.go",
+      "internal/adguard/clients_test.go",
+      "internal/api/api.go",
+      "internal/api/blocked.go",
+      "internal/api/blocked_test.go",
+      "internal/api/children.go",
+      "internal/api/children_test.go",
+      "internal/api/clients.go",
+      "internal/api/clients_test.go",
+      "internal/api/errors.go",
+      "internal/api/login_test.go",
+      "internal/api/migration.go",
+      "internal/api/migration_test.go",
+      "internal/blocked/blocked.go",
+      "internal/blocked/blocked_test.go",
+      "internal/store/children.go",
+      "internal/store/children_test.go",
+      "internal/store/migrations/0002_children.sql",
+      "internal/store/sessions_test.go",
+      "web/src/App.svelte",
+      "web/src/App.test.ts",
+      "web/src/lib/Children.svelte",
+      "web/src/lib/Children.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Home.test.ts",
+      "web/src/lib/MigrationBanner.svelte",
+      "web/src/lib/MigrationBanner.test.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts"
+    ],
+    "hunks": {
+      ".dross/milestones/v0.1.toml": [
+        {
+          "start": 1,
+          "end": 1
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 47
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/changes.json": [
+        {
+          "start": 1,
+          "end": 185
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 314
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 499
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 646
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 505
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/plan.toml": [
+        {
+          "start": 1,
+          "end": 110
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/spec.toml": [
+        {
+          "start": 1,
+          "end": 71
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      "cmd/adguard-reward/main.go": [
+        {
+          "start": 110,
+          "end": 110
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 22,
+          "end": 22
+        },
+        {
+          "start": 467,
+          "end": 515
+        }
+      ],
+      "internal/adguard/adguardtest/server.go": [
+        {
+          "start": 71,
+          "end": 71
+        },
+        {
+          "start": 85,
+          "end": 90
+        },
+        {
+          "start": 149,
+          "end": 162
+        },
+        {
+          "start": 335,
+          "end": 338
+        }
+      ],
+      "internal/adguard/adguardtest/server_test.go": [
+        {
+          "start": 288,
+          "end": 312
+        }
+      ],
+      "internal/adguard/clients.go": [
+        {
+          "start": 112,
+          "end": 159
+        },
+        {
+          "start": 182,
+          "end": 184
+        }
+      ],
+      "internal/adguard/clients_test.go": [
+        {
+          "start": 220,
+          "end": 220
+        },
+        {
+          "start": 222,
+          "end": 223
+        },
+        {
+          "start": 225,
+          "end": 225
+        },
+        {
+          "start": 229,
+          "end": 236
+        },
+        {
+          "start": 252,
+          "end": 253
+        },
+        {
+          "start": 311,
+          "end": 402
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 14,
+          "end": 14
+        },
+        {
+          "start": 17,
+          "end": 17
+        },
+        {
+          "start": 23,
+          "end": 36
+        },
+        {
+          "start": 48,
+          "end": 48
+        },
+        {
+          "start": 82,
+          "end": 91
+        }
+      ],
+      "internal/api/blocked.go": [
+        {
+          "start": 1,
+          "end": 68
+        }
+      ],
+      "internal/api/blocked_test.go": [
+        {
+          "start": 1,
+          "end": 190
+        }
+      ],
+      "internal/api/children.go": [
+        {
+          "start": 1,
+          "end": 199
+        }
+      ],
+      "internal/api/children_test.go": [
+        {
+          "start": 1,
+          "end": 278
+        }
+      ],
+      "internal/api/clients.go": [
+        {
+          "start": 1,
+          "end": 101
+        }
+      ],
+      "internal/api/clients_test.go": [
+        {
+          "start": 1,
+          "end": 139
+        }
+      ],
+      "internal/api/errors.go": [
+        {
+          "start": 18,
+          "end": 18
+        }
+      ],
+      "internal/api/login_test.go": [
+        {
+          "start": 107,
+          "end": 107
+        }
+      ],
+      "internal/api/migration.go": [
+        {
+          "start": 1,
+          "end": 85
+        }
+      ],
+      "internal/api/migration_test.go": [
+        {
+          "start": 1,
+          "end": 263
+        }
+      ],
+      "internal/blocked/blocked.go": [
+        {
+          "start": 1,
+          "end": 172
+        }
+      ],
+      "internal/blocked/blocked_test.go": [
+        {
+          "start": 1,
+          "end": 252
+        }
+      ],
+      "internal/store/children.go": [
+        {
+          "start": 1,
+          "end": 272
+        }
+      ],
+      "internal/store/children_test.go": [
+        {
+          "start": 1,
+          "end": 353
+        }
+      ],
+      "internal/store/migrations/0002_children.sql": [
+        {
+          "start": 1,
+          "end": 16
+        }
+      ],
+      "internal/store/sessions_test.go": [
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 204,
+          "end": 238
+        }
+      ],
+      "web/src/App.svelte": [
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 15,
+          "end": 16
+        },
+        {
+          "start": 39,
+          "end": 40
+        }
+      ],
+      "web/src/App.test.ts": [
+        {
+          "start": 10,
+          "end": 13
+        },
+        {
+          "start": 22,
+          "end": 26
+        },
+        {
+          "start": 31,
+          "end": 35
+        },
+        {
+          "start": 41,
+          "end": 44
+        },
+        {
+          "start": 47,
+          "end": 48
+        },
+        {
+          "start": 53,
+          "end": 53
+        },
+        {
+          "start": 64,
+          "end": 64
+        },
+        {
+          "start": 74,
+          "end": 78
+        },
+        {
+          "start": 85,
+          "end": 85
+        },
+        {
+          "start": 89,
+          "end": 93
+        },
+        {
+          "start": 96,
+          "end": 96
+        },
+        {
+          "start": 109,
+          "end": 109
+        },
+        {
+          "start": 123,
+          "end": 123
+        },
+        {
+          "start": 141,
+          "end": 175
+        }
+      ],
+      "web/src/lib/Children.svelte": [
+        {
+          "start": 1,
+          "end": 202
+        }
+      ],
+      "web/src/lib/Children.test.ts": [
+        {
+          "start": 1,
+          "end": 245
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 2,
+          "end": 4
+        },
+        {
+          "start": 9,
+          "end": 27
+        },
+        {
+          "start": 40,
+          "end": 43
+        },
+        {
+          "start": 49,
+          "end": 95
+        },
+        {
+          "start": 104,
+          "end": 145
+        }
+      ],
+      "web/src/lib/Home.test.ts": [
+        {
+          "start": 1,
+          "end": 231
+        }
+      ],
+      "web/src/lib/MigrationBanner.svelte": [
+        {
+          "start": 1,
+          "end": 94
+        }
+      ],
+      "web/src/lib/MigrationBanner.test.ts": [
+        {
+          "start": 1,
+          "end": 144
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 1,
+          "end": 1
+        },
+        {
+          "start": 4,
+          "end": 28
+        },
+        {
+          "start": 202,
+          "end": 318
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 28,
+          "end": 30
+        },
+        {
+          "start": 33,
+          "end": 36
+        },
+        {
+          "start": 48,
+          "end": 48
+        },
+        {
+          "start": 68,
+          "end": 68
+        },
+        {
+          "start": 125,
+          "end": 135
+        },
+        {
+          "start": 138,
+          "end": 143
+        },
+        {
+          "start": 150,
+          "end": 255
+        },
+        {
+          "start": 258,
+          "end": 262
+        }
+      ]
+    },
+    "base": "7e491b757eda69a779825145ab936f381fa88575",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Children.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/MigrationBanner.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local"
+}

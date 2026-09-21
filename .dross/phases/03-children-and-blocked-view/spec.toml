@@ -69,3 +69,9 @@
   text = "Create and label AdGuard persistent clients from auto_clients inside the app so a parent never opens AdGuard for a new phone"
   why = "M2 auto-client labelling per PLAN.md; this phase only reads the client list"
   target = "auto-client-labelling"
+
+[[deferred]]
+  text = "survivor web/src/App.svelte:21 (StringLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "fd433887aedbf00e"
