@@ -75,3 +75,15 @@
   why = "surviving mutant routed out of a verify run"
   target = "05-phone-ui-buttons-pwa"
   survivor = "fd433887aedbf00e"
+
+[[deferred]]
+  text = "survivor web/src/lib/Children.svelte:69 (ArrowFunction)"
+  why = "surviving mutant routed out of a verify run"
+  target = "04-grants-scheduler-reconciler"
+  survivor = "7318eba99fe9b001"
+
+[[deferred]]
+  text = "survivor web/src/lib/Children.svelte:69 (ConditionalExpression)"
+  why = "surviving mutant routed out of a verify run"
+  target = "04-grants-scheduler-reconciler"
+  survivor = "1847f36ba1909811"

@@ -1,6 +1,6 @@
 {
   "phase": "03-children-and-blocked-view",
-  "generated_at": "2026-09-21T07:02:31.465599Z",
+  "generated_at": "2026-09-21T07:25:53.908015Z",
   "languages": [
     {
       "name": "go",
@@ -39,23 +39,23 @@
         "Surviving": [
           {
             "File": "internal/adguard/adguardtest/server.go",
-            "Line": 105,
-            "Op": "ARITHMETIC_BASE",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "82d078c2c4de2ddd",
-            "Lifecycle": "accepted",
-            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
-          },
-          {
-            "File": "internal/adguard/adguardtest/server.go",
             "Line": 101,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "4742d4bfe47ddb54",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 105,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
@@ -171,6 +171,28 @@
           },
           {
             "File": "internal/blocked/blocked.go",
+            "Line": 98,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 98,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
             "Line": 101,
             "Op": "CONDITIONALS_NEGATION",
             "Snippet": "",
@@ -183,33 +205,11 @@
           {
             "File": "internal/blocked/blocked.go",
             "Line": 98,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "91ca0896550367aa",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
-          },
-          {
-            "File": "internal/blocked/blocked.go",
-            "Line": 98,
             "Op": "CONDITIONALS_BOUNDARY",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "d80e2d09b950a6b5",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
-          },
-          {
-            "File": "internal/blocked/blocked.go",
-            "Line": 98,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "91ca0896550367aa",
             "Lifecycle": "accepted",
             "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
           }
@@ -259,12 +259,102 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 196,
-        "Survived": 46,
+        "Killed": 221,
+        "Survived": 21,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.8099173553719008,
+        "Score": 0.9132231404958677,
         "Surviving": [
+          {
+            "File": "web/src/App.svelte",
+            "Line": 17,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "inherited",
+            "Key": "d248d03cd68330af",
+            "Lifecycle": "routed",
+            "Note": "routed to 05-phone-ui-buttons-pwa"
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 39,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "8ef83e30b05b7491",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 18,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "efe4eae9dcf17bf2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 23,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "fd2e2d4d8db99396",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 50,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "6485f7e42f3edd6a",
+            "Lifecycle": "accepted",
+            "Note": "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 68,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "23b258f0df7fd7fe",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 68,
+            "Op": "LogicalOperator",
+            "Snippet": "checked || !d.clients.includes(name)",
+            "Origin": "in-hunk",
+            "Key": "5ad3db1cdd919929",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "ArrowFunction",
+            "Snippet": "() =\u003e undefined",
+            "Origin": "in-hunk",
+            "Key": "7318eba99fe9b001",
+            "Lifecycle": "routed",
+            "Note": "routed to 04-grants-scheduler-reconciler"
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 69,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "1847f36ba1909811",
+            "Lifecycle": "routed",
+            "Note": "routed to 04-grants-scheduler-reconciler"
+          },
           {
             "File": "web/src/lib/Home.svelte",
             "Line": 8,
@@ -296,107 +386,14 @@
             "Note": "routed to 05-phone-ui-buttons-pwa"
           },
           {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 61,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "f312e912d673d98d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 87,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "17b48545d4e52bb3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 16,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "34c2ba1fa85bafa1",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 40,
-            "Op": "ArrowFunction",
-            "Snippet": "() =\u003e undefined",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "aa98c87b402c5eca",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 40,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "1f4da63427cff84d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 16,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "d640e08d9f9b47f7",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 16,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "34c2ba1fa85bafa1",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 21,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "inherited",
-            "Key": "fd433887aedbf00e",
-            "Lifecycle": "routed",
-            "Note": "routed to 05-phone-ui-buttons-pwa"
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 17,
+            "File": "web/src/lib/MigrationBanner.svelte",
+            "Line": 14,
             "Op": "BlockStatement",
             "Snippet": "{}",
-            "Origin": "inherited",
-            "Key": "d248d03cd68330af",
-            "Lifecycle": "routed",
-            "Note": "routed to 05-phone-ui-buttons-pwa"
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 39,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
             "Origin": "in-hunk",
-            "Key": "8ef83e30b05b7491",
+            "Key": "71812182bec5af4d",
             "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+            "Note": "The catch body sets offer = null, which is already its value before the await; removing it changes nothing."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -477,270 +474,9 @@
             "Key": "2e5c825a43b53d61",
             "Lifecycle": "accepted",
             "Note": "'home' → '' in routeFor's skip-guard is equivalent: with the guard gone the loop still reaches PATHS.home ('/') and returns 'home' for '/', and every other pathname resolves exactly as before."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 49,
-            "Op": "ObjectLiteral",
-            "Snippet": "{}",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "b66843172421f250",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 49,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "74c92ea123984a4b",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 49,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "74c92ea123984a4b",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "MethodExpression",
-            "Snippet": "d.clients",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "1336b278ee6645e4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "ArrowFunction",
-            "Snippet": "() =\u003e undefined",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "7318eba99fe9b001",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "1847f36ba1909811",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "1847f36ba1909811",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "EqualityOperator",
-            "Snippet": "c === name",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "e77bfe0d2978763a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 18,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "efe4eae9dcf17bf2",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 22,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "8ff6f24ee5c066d6",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 23,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "fd2e2d4d8db99396",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 50,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "6485f7e42f3edd6a",
-            "Lifecycle": "accepted",
-            "Note": "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 63,
-            "Op": "MethodExpression",
-            "Snippet": "clients.every(c =\u003e c.name === name)",
-            "Origin": "in-hunk",
-            "Key": "7157f39fc880c3b4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 68,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "23b258f0df7fd7fe",
-            "Lifecycle": "accepted",
-            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 68,
-            "Op": "LogicalOperator",
-            "Snippet": "checked || !d.clients.includes(name)",
-            "Origin": "in-hunk",
-            "Key": "5ad3db1cdd919929",
-            "Lifecycle": "accepted",
-            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 69,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "1847f36ba1909811",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Children.svelte",
-            "Line": 96,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "ced403a9f1147ef1",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 37,
-            "Op": "ObjectLiteral",
-            "Snippet": "{}",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "9c48cd4a31bb7b2b",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 37,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "4b26f0c30b9b0539",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 37,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "4b26f0c30b9b0539",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 8,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "d2d6bffad02ed0b2",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 14,
-            "Op": "BlockStatement",
-            "Snippet": "{}",
-            "Origin": "in-hunk",
-            "Key": "71812182bec5af4d",
-            "Lifecycle": "accepted",
-            "Note": "The catch body sets offer = null, which is already its value before the await; removing it changes nothing."
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 27,
-            "Op": "BooleanLiteral",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "99db4412bdebab6e",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 38,
-            "Op": "BlockStatement",
-            "Snippet": "{}",
-            "Origin": "in-hunk",
-            "Key": "d5baf77faef14446",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/MigrationBanner.svelte",
-            "Line": 39,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "ef7d03e3ef78c2c3",
-            "Lifecycle": "in-diff",
-            "Note": ""
           }
         ],
-        "NotCovered": 14
+        "NotCovered": 0
       },
       "measured_on": "local",
       "ranges": {
@@ -802,7 +538,7 @@
           },
           {
             "start": 51,
-            "end": 176,
+            "end": 222,
             "construct": "ExpressionStatement"
           }
         ],
@@ -964,7 +700,7 @@
           },
           {
             "start": 79,
-            "end": 245,
+            "end": 284,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1121,7 +857,7 @@
           },
           {
             "start": 82,
-            "end": 231,
+            "end": 234,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1248,7 +984,7 @@
           },
           {
             "start": 53,
-            "end": 144,
+            "end": 190,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1714,7 +1450,10 @@
       ".dross/phases/03-children-and-blocked-view/panel/verification.md",
       ".dross/phases/03-children-and-blocked-view/plan.toml",
       ".dross/phases/03-children-and-blocked-view/spec.toml",
+      ".dross/phases/03-children-and-blocked-view/tests.json",
+      ".dross/phases/03-children-and-blocked-view/verify.toml",
       ".dross/project.toml",
+      ".dross/survivors.toml",
       "cmd/adguard-reward/main.go",
       "cmd/adguard-reward/main_test.go",
       "internal/adguard/adguardtest/server.go",
@@ -1765,7 +1504,7 @@
       ".dross/phases/03-children-and-blocked-view/changes.json": [
         {
           "start": 1,
-          "end": 185
+          "end": 203
         }
       ],
       ".dross/phases/03-children-and-blocked-view/panel/mvp.md": [
@@ -1795,19 +1534,45 @@
       ".dross/phases/03-children-and-blocked-view/plan.toml": [
         {
           "start": 1,
-          "end": 110
+          "end": 121
         }
       ],
       ".dross/phases/03-children-and-blocked-view/spec.toml": [
         {
           "start": 1,
-          "end": 71
+          "end": 77
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/tests.json": [
+        {
+          "start": 1,
+          "end": 2194
+        }
+      ],
+      ".dross/phases/03-children-and-blocked-view/verify.toml": [
+        {
+          "start": 1,
+          "end": 256
         }
       ],
       ".dross/project.toml": [
         {
           "start": 3,
           "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 3,
+          "end": 3
+        },
+        {
+          "start": 29,
+          "end": 44
+        },
+        {
+          "start": 548,
+          "end": 673
         }
       ],
       "cmd/adguard-reward/main.go": [
@@ -2077,7 +1842,7 @@
         },
         {
           "start": 141,
-          "end": 175
+          "end": 221
         }
       ],
       "web/src/lib/Children.svelte": [
@@ -2089,7 +1854,7 @@
       "web/src/lib/Children.test.ts": [
         {
           "start": 1,
-          "end": 245
+          "end": 284
         }
       ],
       "web/src/lib/Home.svelte": [
@@ -2117,7 +1882,7 @@
       "web/src/lib/Home.test.ts": [
         {
           "start": 1,
-          "end": 231
+          "end": 234
         }
       ],
       "web/src/lib/MigrationBanner.svelte": [
@@ -2129,7 +1894,7 @@
       "web/src/lib/MigrationBanner.test.ts": [
         {
           "start": 1,
-          "end": 144
+          "end": 190
         }
       ],
       "web/src/lib/api.test.ts": [
