@@ -10,9 +10,11 @@ import (
 	"log/slog"
 	"net/http"
 	"net/netip"
+	"time"
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
 	"github.com/Rivil/adguard-reward/internal/auth"
+	"github.com/Rivil/adguard-reward/internal/grants"
 	"github.com/Rivil/adguard-reward/internal/ratelimit"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
@@ -36,6 +38,16 @@ type ChildStore interface {
 	DeleteChild(ctx context.Context, id int64) (bool, error)
 }
 
+// Grants is the slice of *grants.Engine the grant handlers need. It speaks
+// store.Grant and the engine's sentinels (ErrGrantNotFound,
+// *ErrRevertFailed) plus the store's *ErrGrantOverlap.
+type Grants interface {
+	Create(ctx context.Context, childID int64, services, clients []string, d time.Duration) (grants.Result, error)
+	List(ctx context.Context) ([]store.Grant, error)
+	Extend(ctx context.Context, id int64, d time.Duration) (store.Grant, error)
+	End(ctx context.Context, id int64) error
+}
+
 // Deps is everything the handlers reach for. Interfaces are api-local so
 // the package compiles against fakes.
 type Deps struct {
@@ -46,6 +58,7 @@ type Deps struct {
 	Limiter  *ratelimit.Limiter
 	Sessions auth.SessionStore
 	Children ChildStore
+	Grants   Grants
 }
 
 // API is the router plus its dependencies.
@@ -89,6 +102,10 @@ func (a *API) routes() {
 	a.mux.Handle("GET /api/v1/services", a.requireSession(http.HandlerFunc(a.handleServices)))
 	a.mux.Handle("GET /api/v1/migration", a.requireSession(http.HandlerFunc(a.handleMigrationOffer)))
 	a.mux.Handle("POST /api/v1/migration", a.requireSession(http.HandlerFunc(a.handleMigrationApply)))
+	a.mux.Handle("GET /api/v1/grants", a.requireSession(http.HandlerFunc(a.handleGrantsList)))
+	a.mux.Handle("POST /api/v1/grants", a.requireSession(http.HandlerFunc(a.handleGrantCreate)))
+	a.mux.Handle("POST /api/v1/grants/{id}/extend", a.requireSession(http.HandlerFunc(a.handleGrantExtend)))
+	a.mux.Handle("POST /api/v1/grants/{id}/end", a.requireSession(http.HandlerFunc(a.handleGrantEnd)))
 	// Unknown paths are 401 without a session and 404 with one, so the
 	// route table cannot be probed anonymously.
 	a.mux.Handle("/api/v1/", a.requireSession(http.NotFoundHandler()))

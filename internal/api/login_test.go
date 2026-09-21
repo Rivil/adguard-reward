@@ -18,9 +18,15 @@ import (
 	"github.com/Rivil/adguard-reward/internal/adguard"
 	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
 	"github.com/Rivil/adguard-reward/internal/auth"
+	"github.com/Rivil/adguard-reward/internal/grants"
 	"github.com/Rivil/adguard-reward/internal/ratelimit"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
+
+// harnessApplyTimeout bounds the harness engine's AdGuard writes. A test
+// that needs a short bound overrides it before newHarness and restores it
+// in Cleanup, mirroring sweepInterval in main_test.
+var harnessApplyTimeout = 4 * time.Second
 
 const (
 	fakeUser = "mum"
@@ -97,6 +103,8 @@ func newHarness(t *testing.T, trusted []*net.IPNet, clientIP func(*http.Request)
 	if clientIP == nil {
 		clientIP = ClientIP(trusted)
 	}
+	eng := grants.New(st, client, grants.Options{Now: c.Now, ApplyTimeout: harnessApplyTimeout, Log: log})
+	t.Cleanup(eng.Close)
 	a := New(Deps{
 		AdGuard:  client,
 		ClientIP: clientIP,
@@ -105,6 +113,7 @@ func newHarness(t *testing.T, trusted []*net.IPNet, clientIP func(*http.Request)
 		Limiter:  ratelimit.New(cfg),
 		Sessions: st,
 		Children: st,
+		Grants:   eng,
 	})
 	return &harness{t: t, fake: fake, store: st, clock: c, logs: logs, h: a.Handler()}
 }
