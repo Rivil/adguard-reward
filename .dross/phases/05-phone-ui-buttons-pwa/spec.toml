@@ -1,0 +1,99 @@
+[phase]
+  id = "05-phone-ui-buttons-pwa"
+  title = "Phone UI: buttons, active grants and PWA shell"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "GET/PUT /api/v1/buttons stores an ordered list of {id, label, child_id, services[], duration} in SQLite (new migration); the list survives a restart; PUT returns 422 on unknown child, unknown service id, or duration outside 1 min–24 h"
+
+[[criteria]]
+  id = "c-2"
+  text = "Home renders the configured buttons in stored order; one tap POSTs the grant and the new active-grant entry with its countdown is visible within 5 s; a failed POST or a 201 with applied=false shows an inline error naming the failed clients rather than being swallowed"
+
+[[criteria]]
+  id = "c-3"
+  text = "The active-grant panel lists every active grant (child, services, countdown ticking each second from server ends_at) with extend and end-early controls; a 409 on a button tap becomes an offer to extend the existing grant; a grant leaves the panel when it expires or is ended"
+
+[[criteria]]
+  id = "c-4"
+  text = "A buttons settings page lets a parent add, edit and delete buttons via a form (label, child picker, one-or-more services picker, duration); saving PUTs the list and the buttons render on Home after a server restart"
+
+[[criteria]]
+  id = "c-5"
+  text = "The built SPA (web/dist) is embedded in the Go binary and served at / with SPA fallback for client routes, same origin as /api; a test against the binary gets index.html for an unknown non-API path and 404 for an unknown /api/v1 path"
+
+[[criteria]]
+  id = "c-6"
+  text = "A web manifest (name, icons, display standalone, start_url /) and a service worker that precaches the app shell only are served; /api/* is never cached and always hits the network; the page passes the browser installability check from a phone"
+
+[[criteria]]
+  id = "c-7"
+  text = "The 14 Stryker survivors routed here from phases 02/03 (api.ts:31/34/43/44, Home.svelte:6/9/15, Login.svelte:6/7/13/44, App.svelte:15/21) are killed — the verify mutation run reports none of them surviving"
+
+[[criteria]]
+  id = "c-8"
+  text = "An ad-hoc grant form on Home (child picker, one-or-more services picker, duration) creates a grant with the same tap-to-countdown behaviour as a button, without any button being configured"
+
+[[decisions]]
+  key = "home_layout"
+  choice = "Active-grant panel first, then each child's buttons; that child's blocked-services list sits under a collapsed disclosure beneath its buttons"
+  why = "What is unlocked right now is the first thing a parent checks; buttons are the tap target; the blocked view stays reachable without pushing Home past one phone screen"
+  locked = true
+
+[[decisions]]
+  key = "extend_amount"
+  choice = "Extend adds the grant's own duration (ends_at − started_at); the 409 extend offer uses the tapped button's duration; no picker"
+  why = "One tap on a phone; a 1 h grant naturally extends by 1 h, and the API already takes a duration"
+  locked = true
+
+[[decisions]]
+  key = "overlap_offer"
+  choice = "When a multi-service tap overlaps an active grant, accepting the extend offer extends the existing grant by the button's duration AND creates a new grant for the non-overlapping services; overlaps may be resolved client-side from the loaded active-grant list"
+  why = "The tap must deliver the whole reward; leaving a bundled service blocked under-delivers and refusing the tap contradicts one-tap"
+  locked = true
+
+[[decisions]]
+  key = "no_confirm"
+  choice = "A button tap creates the grant immediately; no confirmation dialog"
+  why = "Core value is one tap; a confirm step doubles it"
+  locked = true
+
+[[decisions]]
+  key = "button_icon"
+  choice = "A button shows the AdGuard icon of its first service via the existing iconUrl; no custom icon field"
+  why = "The milestone lists label/child/service/duration only; custom icons are the M2 button editor"
+  locked = true
+
+[[decisions]]
+  key = "button_order"
+  choice = "Buttons render in stored array order; the settings form has no reorder controls"
+  why = "Reorder is the M2 full button editor; array order still lets a parent control it by add order"
+  locked = true
+
+[[decisions]]
+  key = "pwa_scope"
+  choice = "Manifest scope and start_url are root (/); subpath base_url deployments are not handled"
+  why = "nora serves at root; subpath handling is a proxy concern routed to 06-deploy-nora"
+  locked = true
+
+[[decisions]]
+  key = "unreachable_countdown"
+  choice = "When the grants poll fails, countdowns keep ticking from the last known ends_at and the panel shows a can't-reach-server badge; nothing is blanked"
+  why = "The revert is server-side, so a stale countdown is still truthful; blanking hides information the parent already had"
+  locked = true
+
+[[deferred]]
+  text = "Button reorder controls (drag / up-down) in the settings form"
+  why = "M2 full button editor"
+  target = "button-editor"
+
+[[deferred]]
+  text = "Custom per-button icon choice instead of the first service's AdGuard icon"
+  why = "M2 full button editor"
+  target = "button-editor"
+
+[[deferred]]
+  text = "PWA served under a subpath: base_url with a path prefix behind a proxy — manifest scope/start_url and SPA fallback honour the prefix"
+  why = "Proxy/base_url is a deploy concern"
+  target = "06-deploy-nora"
