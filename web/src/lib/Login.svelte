@@ -32,7 +32,17 @@
   <form onsubmit={submit}>
     <label>
       Username
-      <input name="username" type="text" autocomplete="username" required bind:value={username} disabled={pending} />
+      <input
+        name="username"
+        type="text"
+        autocomplete="username"
+        autocapitalize="none"
+        autocorrect="off"
+        spellcheck="false"
+        required
+        bind:value={username}
+        disabled={pending}
+      />
     </label>
     <label>
       Password
