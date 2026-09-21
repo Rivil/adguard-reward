@@ -44,6 +44,8 @@ const noSession = () => json(401, { error: 'unauthorized', message: 'no session'
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  history.replaceState(null, '', '/')
+  route.set('home')
 })
 
 describe('App', () => {
@@ -135,5 +137,40 @@ describe('App', () => {
     expect(get(route)).toBe('home')
     expect(screen.getByText(/Signed in as/)).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull()
+  })
+
+  it('reload on /children stays there', async () => {
+    history.replaceState(null, '', '/children')
+    route.set('children')
+    const calls = mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/children': noChildren,
+      '/api/v1/clients': () => json(200, { clients: [] }),
+    })
+    render(App)
+    expect(await screen.findByRole('heading', { name: 'Children' })).toBeTruthy()
+    expect(location.pathname).toBe('/children')
+    expect(get(route)).toBe('children')
+    expect(calls.map((c) => c.url)).toContain('/api/v1/children')
+  })
+
+  it('a 401 at /children lands on login', async () => {
+    history.replaceState(null, '', '/children')
+    route.set('children')
+    mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(location.pathname).toBe('/login')
+  })
+
+  it('children needs a session', async () => {
+    history.replaceState(null, '', '/children')
+    route.set('children')
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+    await tick()
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+    expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
   })
 })
