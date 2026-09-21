@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { ApiError, childBlocked, iconUrl, listChildren, logout, navigate, type BlockedView } from './api'
+  import MigrationBanner from './MigrationBanner.svelte'
 
   let { username, onLogout }: { username: string; onLogout: () => void } = $props()
 
@@ -49,6 +50,8 @@
     <button type="button" onclick={() => navigate('children')}>Children</button>
     <button type="button" onclick={signOut} disabled={pending}>Log out</button>
   </nav>
+
+  <MigrationBanner onMigrated={load} />
 
   {#if error !== null}
     <p class="error" role="alert" data-error={error}>
