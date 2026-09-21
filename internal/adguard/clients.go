@@ -109,6 +109,54 @@ func nonNil(s []string) []string {
 // only blocked_services changes. ids are sorted and deduplicated; nil or
 // empty is written as [] so AdGuard never sees null.
 func (c *Client) SetBlockedServices(ctx context.Context, clientName string, ids []string) error {
+	list, err := encodeIDs(ids)
+	if err != nil {
+		return err
+	}
+	return c.updateClient(ctx, clientName, func(data map[string]json.RawMessage) error {
+		if string(data["use_global_blocked_services"]) == "true" {
+			c.log.Warn("client uses the global blocked-services list; per-client write may be ignored by AdGuard",
+				"client", clientName, "use_global_blocked_services", true)
+		}
+		data["blocked_services"] = list
+		return nil
+	})
+}
+
+// MigrateFromGlobal moves the named client off AdGuard's global
+// blocked-services list in one write: blocked_services becomes ids (sorted,
+// deduplicated, never null) and use_global_blocked_services is cleared.
+// Nothing else on the client changes and the global list itself is never
+// touched — /control/blocked_services/set is not called.
+func (c *Client) MigrateFromGlobal(ctx context.Context, clientName string, ids []string) error {
+	list, err := encodeIDs(ids)
+	if err != nil {
+		return err
+	}
+	return c.updateClient(ctx, clientName, func(data map[string]json.RawMessage) error {
+		data["blocked_services"] = list
+		data["use_global_blocked_services"] = json.RawMessage("false")
+		return nil
+	})
+}
+
+// encodeIDs sorts, dedups and marshals a service-id list, [] for nil.
+func encodeIDs(ids []string) (json.RawMessage, error) {
+	normalised := slices.Clone(ids)
+	slices.Sort(normalised)
+	normalised = slices.Compact(normalised)
+	list, err := json.Marshal(nonNil(normalised))
+	if err != nil {
+		return nil, fmt.Errorf("adguard: encode blocked_services: %w", err)
+	}
+	return list, nil
+}
+
+// updateClient is the locked read-modify-write every per-client writer
+// shares: re-read /control/clients under c.rmw, copy the named client's raw
+// object verbatim, let mutate edit the copy, and POST it back. An unknown
+// name is ErrClientNotFound and writes nothing.
+func (c *Client) updateClient(ctx context.Context, clientName string, mutate func(data map[string]json.RawMessage) error) error {
 	c.rmw.Lock()
 	defer c.rmw.Unlock()
 
@@ -126,24 +174,14 @@ func (c *Client) SetBlockedServices(ctx context.Context, clientName string, ids 
 	if target == nil {
 		return fmt.Errorf("%w: %q", ErrClientNotFound, clientName)
 	}
-	if target.UseGlobalBlockedServices {
-		c.log.Warn("client uses the global blocked-services list; per-client write may be ignored by AdGuard",
-			"client", clientName, "use_global_blocked_services", true)
-	}
-
-	normalised := slices.Clone(ids)
-	slices.Sort(normalised)
-	normalised = slices.Compact(normalised)
-	list, err := json.Marshal(nonNil(normalised))
-	if err != nil {
-		return fmt.Errorf("adguard: encode blocked_services: %w", err)
-	}
 
 	data := make(map[string]json.RawMessage, len(target.raw)+1)
 	for k, v := range target.raw {
 		data[k] = v
 	}
-	data["blocked_services"] = list
+	if err := mutate(data); err != nil {
+		return err
+	}
 
 	body := struct {
 		Name string                     `json:"name"`

@@ -285,3 +285,28 @@ func TestFake_Requests(t *testing.T) {
 		t.Errorf("MaxInFlightUpdates = %d, want 1 for sequential calls", s.MaxInFlightUpdates())
 	}
 }
+
+func TestFake_SetUpdateStatus(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	update := func(name string) int {
+		resp, _ := do(t, s, "POST", "/control/clients/update",
+			`{"name":"`+name+`","data":{"name":"`+name+`","ids":[]}}`, true)
+		return resp.StatusCode
+	}
+
+	s.SetUpdateStatus("Kid tablet", 500)
+	if code := update("Kid tablet"); code != 500 {
+		t.Errorf("faulted client: status %d, want 500", code)
+	}
+	if s.LastUpdate() != nil {
+		t.Error("a faulted update must not be stored")
+	}
+	if code := update("Kid phone"); code != 200 {
+		t.Errorf("other client: status %d, want 200", code)
+	}
+
+	s.SetUpdateStatus("Kid tablet", 0)
+	if code := update("Kid tablet"); code != 200 {
+		t.Errorf("after clearing: status %d, want 200", code)
+	}
+}
