@@ -1,4 +1,4 @@
-task_seq = 11
+task_seq = 12
 
 [phase]
   id = "03-children-and-blocked-view"
@@ -118,4 +118,15 @@ task_seq = 11
   covers = ["c-5", "c-6", "c-7"]
   depends_on = ["t-8", "t-9", "t-10"]
   test_contract = ["if refresh() stops retaining the route or signs in to the wrong page, App.test 'sign in through the login page lands on home' fails: /me 401 first, submit mum/pw, POST /api/v1/login 204, /me now 200 → 'Signed in as mum' at location.pathname '/' and get(route) 'home'", "if the Children Back wiring in App breaks, App.test 'Back from Children returns home' fails: reload at /children signed in, click Back → 'Signed in as mum' renders and location.pathname is '/'", "if unticking is lost, Children.test 'unassign by checkbox' fails: untick Kid phone in Ada's form, Save → PUT body {\"name\":\"Ada\",\"clients\":[]}", "if known() is not an existence test, Children.test 'missing client is struck through' fails: with clients [Kid phone, Kid tablet] and Ada [Kid phone, Ghost], exactly one s[data-missing] whose text is Ghost and Kid phone's checkbox is present and checked", "if the add field is not initialised/cleared, Children.test 'add child' fails: the New child input value is '' before typing and '' again once form[data-child=3] appears", "if the network branch text drifts, Children.test 'network failure shows an alert' fails: a PUT that throws TypeError renders role=alert with data-error network and text \"Can't reach the server — check your connection\"", "if the empty-state guard is inverted, Home.test 'lists blocked services per child' fails: 'No children yet' is not in the document while two sections render", "if the differs separator drifts, Home.test 'marks partial services' fails: differs [Kid phone, Kid tablet] renders 'unblocked on Kid phone, Kid tablet'", "if in-flight state is wrong, MigrationBanner.test 'buttons lock while migrating' fails: Migrate and Not now enabled after render, both disabled while the POST is pending (deferred promise), both enabled again after a 502", "if the banner's network branch drifts, MigrationBanner.test 'migrate network failure shows an alert' fails: a POST that throws TypeError renders role=alert data-error network with text \"Can't reach the server — check your connection\" and the banner stays"]
+  status = "done"
+
+[[task]]
+  id = "t-12"
+  wave = 6
+  title = "Two-client unassign test kills the Children.svelte:69 untick survivor"
+  files = ["web/src/lib/Children.test.ts"]
+  description = "Verify amendment (verify.toml FLAG: c-5 weak — Children.svelte:69 ArrowFunction + ConditionalExpression survive because 'unassign by checkbox' assigns Ada one client, so dropping the unticked client and dropping every client both yield []). Test-only, no component change. Children.test.ts: give Ada [Kid phone, Kid tablet] with both clients owned by Ada, untick Kid tablet, assert Kid phone stays checked and Kid tablet is unchecked, Save → exactly one PUT whose body is {\"name\":\"Ada\",\"clients\":[\"Kid phone\"]}."
+  covers = ["c-5"]
+  depends_on = ["t-11"]
+  test_contract = ["if the untick filter at Children.svelte:69 drops every client (callback → undefined) or its predicate is forced false, Children.test 'unassign one of two by checkbox' fails: Ada [Kid phone, Kid tablet], untick Kid tablet, Save → PUT body {\"name\":\"Ada\",\"clients\":[\"Kid phone\"]}", "if the predicate is forced true (untick becomes a no-op), the same test fails: Kid tablet's checkbox reads unchecked after the click and the PUT body omits it"]
   status = "done"

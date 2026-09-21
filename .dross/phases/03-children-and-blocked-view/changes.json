@@ -56,6 +56,21 @@
         }
       ]
     },
+    "t-12": {
+      "files": [
+        "web/src/lib/Children.test.ts"
+      ],
+      "commit": "63d8347",
+      "completed_at": "2026-09-21T07:37:19.502012Z",
+      "landmarks": [
+        {
+          "feature": "children settings page",
+          "symbol": "Children.test.ts 'unassign one of two by checkbox'",
+          "loc": "web/src/lib/Children.test.ts:133",
+          "what": "two-client untick pins the toggle filter so dropping only the unticked client is observable (kills Children.svelte:69 survivors)"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/adguard/clients.go",
