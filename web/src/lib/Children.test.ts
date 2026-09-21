@@ -130,6 +130,25 @@ describe('Children', () => {
     expect(puts(calls)[0].body).toBe('{"name":"Ada","clients":[]}')
   })
 
+  it('unassign one of two by checkbox', async () => {
+    const two: Child = { ...ada, clients: ['Kid phone', 'Kid tablet'] }
+    const owner = { id: 1, name: 'Ada' }
+    const { routes } = server([two, ben], [client('Kid phone', owner), client('Kid tablet', owner)])
+    const calls = mockFetch({ ...routes, 'PUT /api/v1/children/1': () => json(200, { ...two, clients: ['Kid phone'] }) })
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ada')
+    expect(checkbox(form(1), 'Kid phone').checked).toBe(true)
+    expect(checkbox(form(1), 'Kid tablet').checked).toBe(true)
+
+    await fireEvent.click(checkbox(form(1), 'Kid tablet'))
+    expect(checkbox(form(1), 'Kid tablet').checked).toBe(false)
+    expect(checkbox(form(1), 'Kid phone').checked).toBe(true)
+    expect(puts(calls)).toHaveLength(0)
+    await fireEvent.click(button(form(1), 'Save'))
+    await waitFor(() => expect(puts(calls)).toHaveLength(1))
+    expect(puts(calls)[0].body).toBe('{"name":"Ada","clients":["Kid phone"]}')
+  })
+
   it('rename and delete', async () => {
     const { state, routes } = server([ada, ben], [client('Kid phone', { id: 1, name: 'Ada' })])
     const calls = mockFetch({
