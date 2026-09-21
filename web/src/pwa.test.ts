@@ -1,3 +1,4 @@
+/// <reference types="node" />
 // Stryker disable all: test sources are not mutation targets
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
