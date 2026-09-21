@@ -20,6 +20,7 @@ import (
 	"github.com/Rivil/adguard-reward/internal/api"
 	"github.com/Rivil/adguard-reward/internal/auth"
 	"github.com/Rivil/adguard-reward/internal/config"
+	"github.com/Rivil/adguard-reward/internal/grants"
 	"github.com/Rivil/adguard-reward/internal/health"
 	"github.com/Rivil/adguard-reward/internal/ratelimit"
 	"github.com/Rivil/adguard-reward/internal/store"
@@ -34,6 +35,14 @@ const probeInterval = 60 * time.Second
 // sweepInterval is how often expired sessions are deleted. A var, not a
 // const, so tests can lower it.
 var sweepInterval = time.Hour
+
+// reconcileInterval is how often the grant reconciler re-reads AdGuard
+// (locked reconciler_cadence). A var so tests can lower it.
+var reconcileInterval = 60 * time.Second
+
+// startupReconcileTimeout bounds the pre-listen reconcile pass so an
+// unreachable AdGuard cannot hold the listener closed.
+const startupReconcileTimeout = 30 * time.Second
 
 func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
@@ -91,6 +100,18 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 	}
 	defer func() { _ = st.Close() }()
 
+	// The grant engine's startup pass runs before the listener opens: a grant
+	// that expired while the process was down is reverted before any request
+	// is served. Like the startup probe, an unreachable AdGuard is logged,
+	// not fatal — the reconciler retries on its interval.
+	eng := grants.New(st, client, grants.Options{Log: log})
+	defer eng.Close()
+	startupCtx, cancelStartup := context.WithTimeout(ctx, startupReconcileTimeout)
+	if err := eng.Start(startupCtx); err != nil {
+		log.Error("startup reconcile", "err", err)
+	}
+	cancelStartup()
+
 	// The session cookie is Secure whenever the browser reaches us over
 	// TLS: our own listener, or a proxy announced through base_url.
 	tlsOn := cfg.TLS.Cert != "" // config.validate guarantees both-or-neither
@@ -108,6 +129,7 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 		Limiter:  ratelimit.New(ratelimit.Defaults()),
 		Sessions: st,
 		Children: st,
+		Grants:   eng,
 	}).Handler()
 
 	// /healthz stays on the plain mux, outside the API chain: it is
@@ -129,6 +151,7 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 
 	go prober.Run(ctx, probeInterval)
 	go sessions.RunSweeper(ctx, sweepInterval)
+	go eng.Run(ctx, reconcileInterval)
 
 	go func() {
 		<-ctx.Done()
