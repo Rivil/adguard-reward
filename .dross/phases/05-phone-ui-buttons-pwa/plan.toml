@@ -8,508 +8,166 @@ task_seq = 16
   wave = 1
   title = "Buttons schema and atomic replace store"
   files = ["internal/store/migrations/0004_buttons.sql", "internal/store/buttons.go", "internal/store/buttons_test.go"]
-  description = """
-0004_buttons.sql: buttons(id INTEGER PRIMARY KEY AUTOINCREMENT, position INTEGER NOT NULL UNIQUE,
-label TEXT NOT NULL, child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE, duration
-INTEGER NOT NULL CHECK (duration > 0) /* seconds */); button_services(button_id INTEGER NOT NULL
-REFERENCES buttons(id) ON DELETE CASCADE, position INTEGER NOT NULL, service_id TEXT NOT NULL,
-PRIMARY KEY (button_id, service_id)). AUTOINCREMENT so an id is never reused across PUTs; FK cascade
-because a button has no reason to outlive its child (unlike grants). buttons.go: Button{ID, ChildID
-int64; Label string; Services []string (given order, deduped on first occurrence, never nil);
-Duration time.Duration}; typed *ErrUnknownChild{ChildID}. ListButtons(ctx) runs BOTH reads inside one
-BeginTx (the read tx holds the single connection, so a concurrent Replace cannot commit between the
-buttons query and the services query): buttons position ASC, then button_services by (button_id,
-position), each scanned to completion before the next query (single-connection rule), folded in Go,
-empty -> []Button{}. ReplaceButtons(ctx, in []Button) ([]Button, error) in ONE tx: DELETE FROM
-buttons (cascade clears services); per item SELECT 1 FROM children WHERE id=? -> *ErrUnknownChild
-(rollback, old list intact); INSERT with position = index; returns the stored list with fresh ids.
-Incoming IDs are ignored.
-"""
+  description = "0004_buttons.sql: buttons(id INTEGER PRIMARY KEY AUTOINCREMENT, position INTEGER NOT NULL UNIQUE,\nlabel TEXT NOT NULL, child_id INTEGER NOT NULL REFERENCES children(id) ON DELETE CASCADE, duration\nINTEGER NOT NULL CHECK (duration > 0) /* seconds */); button_services(button_id INTEGER NOT NULL\nREFERENCES buttons(id) ON DELETE CASCADE, position INTEGER NOT NULL, service_id TEXT NOT NULL,\nPRIMARY KEY (button_id, service_id)). AUTOINCREMENT so an id is never reused across PUTs; FK cascade\nbecause a button has no reason to outlive its child (unlike grants). buttons.go: Button{ID, ChildID\nint64; Label string; Services []string (given order, deduped on first occurrence, never nil);\nDuration time.Duration}; typed *ErrUnknownChild{ChildID}. ListButtons(ctx) runs BOTH reads inside one\nBeginTx (the read tx holds the single connection, so a concurrent Replace cannot commit between the\nbuttons query and the services query): buttons position ASC, then button_services by (button_id,\nposition), each scanned to completion before the next query (single-connection rule), folded in Go,\nempty -> []Button{}. ReplaceButtons(ctx, in []Button) ([]Button, error) in ONE tx: DELETE FROM\nbuttons (cascade clears services); per item SELECT 1 FROM children WHERE id=? -> *ErrUnknownChild\n(rollback, old list intact); INSERT with position = index; returns the stored list with fresh ids.\nIncoming IDs are ignored.\n"
   covers = ["c-1"]
-  test_contract = [
-    "if the replace is not atomic, TestButtons_ReplaceAtomic fails: list [A,B] stored; ReplaceButtons([C, D{ChildID: 999}]) -> *ErrUnknownChild{999} and ListButtons still returns [A,B] with their original ids; likewise a second item with Duration 0 (CHECK) leaves the previous list intact",
-    "if order or persistence breaks, TestButtons_OrderPersists fails: Replace [C,A,B] -> List returns labels [C,A,B] with ids ascending; Close, Open same dir -> identical list (ids, labels, services, durations); schema_migrations lists 0004_buttons.sql exactly once, after 0003_grants.sql",
-    "if services are sorted or not deduped, TestButtons_ServicesOrderKept fails: Services [\"youtube\",\"tiktok\",\"youtube\"] reads back [\"youtube\",\"tiktok\"]; [\"tiktok\",\"youtube\"] reads back in that order (locked button_icon)",
-    "if the FK cascade is missing, TestButtons_ChildCascade fails: buttons for ada (two) and ben; DeleteChild(ada) -> (true, nil); List holds only ben's; SELECT count(*) FROM button_services counts only ben's rows",
-    "if empty lists read back as nil, TestButtons_ReplaceEmpty fails: fresh store -> []Button{} non-nil; Replace(nil) -> [] and button_services is empty; a button with Services [] reads back []string{} never nil",
-    "if the child check is outside the tx, TestButtons_ChildCheckInTx fails: a child deleted on another goroutine between two Replace calls yields *ErrUnknownChild, never a raw \"FOREIGN KEY constraint failed\"",
-    "if ids are reused, TestButtons_FreshIDs fails: after Replace [A] (id 1) then Replace [B], B.ID > 1",
-    "if ListButtons reads outside a single tx and can observe a half-written replace, TestButtons_ReplaceRace fails under go test -race: 10 goroutines each Replace a distinct 3-item list while 5 goroutines List for 200 ms -> every List result equals one submitted list exactly (labels and services, no button with an empty service list that was submitted non-empty), never a mix, finishing within 5 s",
-  ]
-  status = "pending"
+  test_contract = ["if the replace is not atomic, TestButtons_ReplaceAtomic fails: list [A,B] stored; ReplaceButtons([C, D{ChildID: 999}]) -> *ErrUnknownChild{999} and ListButtons still returns [A,B] with their original ids; likewise a second item with Duration 0 (CHECK) leaves the previous list intact", "if order or persistence breaks, TestButtons_OrderPersists fails: Replace [C,A,B] -> List returns labels [C,A,B] with ids ascending; Close, Open same dir -> identical list (ids, labels, services, durations); schema_migrations lists 0004_buttons.sql exactly once, after 0003_grants.sql", "if services are sorted or not deduped, TestButtons_ServicesOrderKept fails: Services [\"youtube\",\"tiktok\",\"youtube\"] reads back [\"youtube\",\"tiktok\"]; [\"tiktok\",\"youtube\"] reads back in that order (locked button_icon)", "if the FK cascade is missing, TestButtons_ChildCascade fails: buttons for ada (two) and ben; DeleteChild(ada) -> (true, nil); List holds only ben's; SELECT count(*) FROM button_services counts only ben's rows", "if empty lists read back as nil, TestButtons_ReplaceEmpty fails: fresh store -> []Button{} non-nil; Replace(nil) -> [] and button_services is empty; a button with Services [] reads back []string{} never nil", "if the child check is outside the tx, TestButtons_ChildCheckInTx fails: a child deleted on another goroutine between two Replace calls yields *ErrUnknownChild, never a raw \"FOREIGN KEY constraint failed\"", "if ids are reused, TestButtons_FreshIDs fails: after Replace [A] (id 1) then Replace [B], B.ID > 1", "if ListButtons reads outside a single tx and can observe a half-written replace, TestButtons_ReplaceRace fails under go test -race: 10 goroutines each Replace a distinct 3-item list while 5 goroutines List for 200 ms -> every List result equals one submitted list exactly (labels and services, no button with an empty service list that was submitted non-empty), never a mix, finishing within 5 s"]
+  status = "done"
 
 [[task]]
   id = "t-2"
   wave = 1
   title = "SPA static handler: resolve table, fallback, caching"
   files = ["internal/spa/spa.go", "internal/spa/spa_test.go"]
-  description = """
-internal/spa: pure resolve(fsys fs.FS, path string) (file string, kind kind) with a table test;
-Handler(fsys) http.Handler is thin: GET/HEAD only (405 with Allow); path.Clean, reject ..; a path
-under /api/ or equal to /healthz -> 404 JSON {"error":"not_found"}, never HTML; dotfiles (base
-starting with ".") and directories -> treated as missing; an existing file -> http.ServeFileFS with
-Cache-Control: no-cache for /, /index.html, /sw.js, /manifest.webmanifest; public,
-max-age=31536000, immutable under /assets/; public, max-age=3600 otherwise; Content-Type:
-application/manifest+json forced for .webmanifest. "Has an extension" is defined as path.Ext(base)
-!= "" — so a missing /.gitkeep, like any missing extensioned path, is 404 (never HTML); any other
-missing path -> index.html 200 no-cache (SPA fallback); index.html itself absent -> 503 text
-"frontend not built: run make build-web". No directory listing ever. Tests use fstest.MapFS only;
-the real embed is wired in t-14.
-"""
+  description = "internal/spa: pure resolve(fsys fs.FS, path string) (file string, kind kind) with a table test;\nHandler(fsys) http.Handler is thin: GET/HEAD only (405 with Allow); path.Clean, reject ..; a path\nunder /api/ or equal to /healthz -> 404 JSON {\"error\":\"not_found\"}, never HTML; dotfiles (base\nstarting with \".\") and directories -> treated as missing; an existing file -> http.ServeFileFS with\nCache-Control: no-cache for /, /index.html, /sw.js, /manifest.webmanifest; public,\nmax-age=31536000, immutable under /assets/; public, max-age=3600 otherwise; Content-Type:\napplication/manifest+json forced for .webmanifest. \"Has an extension\" is defined as path.Ext(base)\n!= \"\" — so a missing /.gitkeep, like any missing extensioned path, is 404 (never HTML); any other\nmissing path -> index.html 200 no-cache (SPA fallback); index.html itself absent -> 503 text\n\"frontend not built: run make build-web\". No directory listing ever. Tests use fstest.MapFS only;\nthe real embed is wired in t-14.\n"
   covers = ["c-5", "c-6"]
-  test_contract = [
-    "if resolve misroutes any class of path, TestResolve_Table fails on fstest.MapFS{index.html, assets/app-abc.js, sw.js, manifest.webmanifest, icon-192.png, .gitkeep}: / -> index.html; /children, /buttons/deep/path -> index.html; /assets/app-abc.js -> that file, kind immutable; /assets/gone.js, /favicon.ico, /old-hash.js, /.gitkeep, /.env -> 404 (dotfile treated as missing, and it carries an extension); /api/v2/x, /api/, /healthz -> api-404; /sw.js -> file, kind no-cache; /assets/ -> index.html (directory treated as missing, no extension)",
-    "if the SPA fallback breaks, TestSPA_Fallback fails: GET /buttons and /children/7 -> 200 text/html, body == index.html, Cache-Control: no-cache; GET /assets/app-abc.js -> 200 immutable; GET /assets/ -> index.html body containing no \"app-abc.js\" link",
-    "if an API-prefixed miss gets HTML, TestSPA_NeverHTMLForAPI fails: GET /api/v2/x, /api/v1/, /healthz -> 404 application/json {\"error\":\"not_found\"}; body never contains <html",
-    "if a missing extensioned path falls back to HTML, TestHandler_MissingAssetIs404 fails: GET /assets/old-hash.js, /favicon.ico and /.gitkeep -> 404 whose Content-Type is not text/html",
-    "if an unbuilt dist serves silently, TestSPA_NotBuilt fails: MapFS{\".gitkeep\"} -> GET / is 503 with body containing \"make build-web\"; MapFS{} same",
-    "if cache headers or method handling regress, TestSPA_CacheHeaders fails: /sw.js and /manifest.webmanifest -> no-cache; /icon-192.png -> max-age=3600; /assets/app-abc.js -> public, max-age=31536000, immutable; a HEAD carries the same headers and no body; POST / -> 405 with Allow containing GET",
-    "if the manifest is served with the wrong type, TestSPA_ManifestType fails: Content-Type for /manifest.webmanifest == application/manifest+json; GET / Content-Type starts text/html",
-    "if traversal escapes the fs, TestSPA_NoListing fails: /../embed.go and /assets/../index.html -> 200 index.html or 400, never a file outside fsys",
-  ]
-  status = "pending"
+  test_contract = ["if resolve misroutes any class of path, TestResolve_Table fails on fstest.MapFS{index.html, assets/app-abc.js, sw.js, manifest.webmanifest, icon-192.png, .gitkeep}: / -> index.html; /children, /buttons/deep/path -> index.html; /assets/app-abc.js -> that file, kind immutable; /assets/gone.js, /favicon.ico, /old-hash.js, /.gitkeep, /.env -> 404 (dotfile treated as missing, and it carries an extension); /api/v2/x, /api/, /healthz -> api-404; /sw.js -> file, kind no-cache; /assets/ -> index.html (directory treated as missing, no extension)", "if the SPA fallback breaks, TestSPA_Fallback fails: GET /buttons and /children/7 -> 200 text/html, body == index.html, Cache-Control: no-cache; GET /assets/app-abc.js -> 200 immutable; GET /assets/ -> index.html body containing no \"app-abc.js\" link", "if an API-prefixed miss gets HTML, TestSPA_NeverHTMLForAPI fails: GET /api/v2/x, /api/v1/, /healthz -> 404 application/json {\"error\":\"not_found\"}; body never contains <html", "if a missing extensioned path falls back to HTML, TestHandler_MissingAssetIs404 fails: GET /assets/old-hash.js, /favicon.ico and /.gitkeep -> 404 whose Content-Type is not text/html", "if an unbuilt dist serves silently, TestSPA_NotBuilt fails: MapFS{\".gitkeep\"} -> GET / is 503 with body containing \"make build-web\"; MapFS{} same", "if cache headers or method handling regress, TestSPA_CacheHeaders fails: /sw.js and /manifest.webmanifest -> no-cache; /icon-192.png -> max-age=3600; /assets/app-abc.js -> public, max-age=31536000, immutable; a HEAD carries the same headers and no body; POST / -> 405 with Allow containing GET", "if the manifest is served with the wrong type, TestSPA_ManifestType fails: Content-Type for /manifest.webmanifest == application/manifest+json; GET / Content-Type starts text/html", "if traversal escapes the fs, TestSPA_NoListing fails: /../embed.go and /assets/../index.html -> 200 index.html or 400, never a file outside fsys"]
+  status = "done"
 
 [[task]]
   id = "t-3"
   wave = 1
   title = "Embed web/dist, gitkeep, Makefile build/lint plumbing"
   files = ["web/embed.go", "web/embed_test.go", "web/dist/.gitkeep", ".gitignore", "web/.gitignore", "Makefile"]
-  description = """
-web/embed.go: package web, //go:embed all:dist, Dist() fs.FS via fs.Sub. A committed web/dist/.gitkeep
-(root .gitignore: web/dist/* + !web/dist/.gitkeep; web/.gitignore: dist/* + !dist/.gitkeep) keeps the
-embed pattern matching when nothing is built, so go vet/go test compile on a fresh clone. Makefile:
-build-web runs pnpm build && touch dist/.gitkeep (vite empties outDir); test-go depends on build-web so
-the Go suite alone never sees an unbuilt dist; lint/fmt exclude ./web/node_modules and ./web/.stryker-tmp
-instead of all of ./web so embed.go is gofmt-checked. web/embed_test.go is the compile-time proof that
-the pattern matches on an unbuilt tree. Note for the verifier: gremlins runs go test without make, so
-if its working tree lacks web/dist the t-14 binary tests fatal — t-14 records the precondition.
-"""
+  description = "web/embed.go: package web, //go:embed all:dist, Dist() fs.FS via fs.Sub. A committed web/dist/.gitkeep\n(root .gitignore: web/dist/* + !web/dist/.gitkeep; web/.gitignore: dist/* + !dist/.gitkeep) keeps the\nembed pattern matching when nothing is built, so go vet/go test compile on a fresh clone. Makefile:\nbuild-web runs pnpm build && touch dist/.gitkeep (vite empties outDir); test-go depends on build-web so\nthe Go suite alone never sees an unbuilt dist; lint/fmt exclude ./web/node_modules and ./web/.stryker-tmp\ninstead of all of ./web so embed.go is gofmt-checked. web/embed_test.go is the compile-time proof that\nthe pattern matches on an unbuilt tree. Note for the verifier: gremlins runs go test without make, so\nif its working tree lacks web/dist the t-14 binary tests fatal — t-14 records the precondition.\n"
   covers = ["c-5"]
-  test_contract = [
-    "if the embed pattern breaks on an unbuilt tree, TestEmbed_CompilesWithoutBuild (package web) fails to compile; at runtime it asserts Dist() opens and either contains index.html or only .gitkeep",
-    "if the gitignore exceptions are wrong, TestEmbed_GitkeepTracked fails: git ls-files web/dist/.gitkeep (run from the repo root, skipped when git is absent) prints the path, and git check-ignore -q web/dist/assets/x.js exits 0",
-    "if lint stops covering embed.go, a deliberately misformatted web/embed.go makes make lint exit non-zero (recorded by hand in the commit body, not a Go test)",
-  ]
-  status = "pending"
+  test_contract = ["if the embed pattern breaks on an unbuilt tree, TestEmbed_CompilesWithoutBuild (package web) fails to compile; at runtime it asserts Dist() opens and either contains index.html or only .gitkeep", "if the gitignore exceptions are wrong, TestEmbed_GitkeepTracked fails: git ls-files web/dist/.gitkeep (run from the repo root, skipped when git is absent) prints the path, and git check-ignore -q web/dist/assets/x.js exits 0", "if lint stops covering embed.go, a deliberately misformatted web/embed.go makes make lint exit non-zero (recorded by hand in the commit body, not a Go test)"]
+  status = "done"
 
 [[task]]
   id = "t-4"
   wave = 1
   title = "Web manifest, PNG icons and shell metadata"
   files = ["web/public/manifest.webmanifest", "web/public/icon-192.png", "web/public/icon-512.png", "web/index.html", "web/src/pwa.test.ts"]
-  description = """
-manifest.webmanifest: name "adguard-reward", short_name "Reward", id "/", start_url "/", scope "/"
-(locked pwa_scope), display "standalone", background_color/theme_color, icons [{src:"/icon-192.png",
-sizes:"192x192", type:"image/png"}, {src:"/icon-512.png", sizes:"512x512", type:"image/png",
-purpose:"any maskable"}] — PNG because Chrome's installability check does not accept SVG-only icon
-sets. PNGs are generated once (solid colour + glyph from the existing mark) and committed; the generator
-is not committed. index.html: <title>adguard-reward</title>, <link rel="manifest"
-href="/manifest.webmanifest">, <meta name="theme-color">, <link rel="apple-touch-icon"
-href="/icon-192.png">, viewport unchanged. pwa.test.ts runs under node and reads the static files from
-disk. SW registration in main.ts lands with the worker in t-9.
-"""
+  description = "manifest.webmanifest: name \"adguard-reward\", short_name \"Reward\", id \"/\", start_url \"/\", scope \"/\"\n(locked pwa_scope), display \"standalone\", background_color/theme_color, icons [{src:\"/icon-192.png\",\nsizes:\"192x192\", type:\"image/png\"}, {src:\"/icon-512.png\", sizes:\"512x512\", type:\"image/png\",\npurpose:\"any maskable\"}] — PNG because Chrome's installability check does not accept SVG-only icon\nsets. PNGs are generated once (solid colour + glyph from the existing mark) and committed; the generator\nis not committed. index.html: <title>adguard-reward</title>, <link rel=\"manifest\"\nhref=\"/manifest.webmanifest\">, <meta name=\"theme-color\">, <link rel=\"apple-touch-icon\"\nhref=\"/icon-192.png\">, viewport unchanged. pwa.test.ts runs under node and reads the static files from\ndisk. SW registration in main.ts lands with the worker in t-9.\n"
   covers = ["c-6"]
-  test_contract = [
-    "if the manifest loses an installability field, pwa.test \"manifest is installable\" fails: JSON.parse of public/manifest.webmanifest has display === 'standalone', start_url === '/', scope === '/', non-empty name and short_name, icons containing sizes 192x192 and 512x512 both type image/png with src under /",
-    "if an icon is not a real PNG of the declared size, pwa.test \"icons are real PNGs\" fails: for each manifest icon the file exists under public/, its first 8 bytes are the PNG signature, and the IHDR width/height (bytes 16-23) equal the declared size",
-    "if index.html drops the shell metadata, pwa.test \"shell links the manifest\" fails: index.html contains rel=\"manifest\" href=\"/manifest.webmanifest\", a theme-color meta, an apple-touch-icon link, and a <title> that is not \"web\"",
-    "manual, recorded in the verify notes: Chrome on Android against the TLS listener shows the install prompt / Lighthouse \"installable\" and the installed app opens standalone at / (HTTPS is a precondition the tests cannot supply)",
-  ]
-  status = "pending"
+  test_contract = ["if the manifest loses an installability field, pwa.test \"manifest is installable\" fails: JSON.parse of public/manifest.webmanifest has display === 'standalone', start_url === '/', scope === '/', non-empty name and short_name, icons containing sizes 192x192 and 512x512 both type image/png with src under /", "if an icon is not a real PNG of the declared size, pwa.test \"icons are real PNGs\" fails: for each manifest icon the file exists under public/, its first 8 bytes are the PNG signature, and the IHDR width/height (bytes 16-23) equal the declared size", "if index.html drops the shell metadata, pwa.test \"shell links the manifest\" fails: index.html contains rel=\"manifest\" href=\"/manifest.webmanifest\", a theme-color meta, an apple-touch-icon link, and a <title> that is not \"web\"", "manual, recorded in the verify notes: Chrome on Android against the TLS listener shows the install prompt / Lighthouse \"installable\" and the installed app opens standalone at / (HTTPS is a precondition the tests cannot supply)"]
+  status = "done"
 
 [[task]]
   id = "t-5"
   wave = 1
   title = "API client endpoints, pure grant helpers, api.ts kills"
   files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts", "web/src/lib/grants.ts", "web/src/lib/grants.test.ts"]
-  description = """
-api.ts: Route gains 'buttons' (PATHS.buttons = '/buttons'); ApiError gains readonly grantId?: number
-parsed from a numeric grant_id in the envelope (409); types Grant{id, child_id, services, clients,
-started_at, ends_at}, GrantCreated{id, ends_at, applied, failed}, ButtonInput{label, child_id, services,
-duration /* seconds */}, Button extends ButtonInput{id}; listGrants(), createGrant(child_id, services,
-duration), extendGrant(id, duration), endGrant(id), listButtons(), saveButtons(ButtonInput[]) (PUT
-{buttons} -> the stored Button[]). The typeof history/location/window guards stay as they are; the
-routed api.ts keys (d2e9f9c6, 47163e3c) die by test. grants.ts (pure, node env — best mutation
-attribution): MIN_DURATION = 60, MAX_DURATION = 86400 (mirror grants.go); remainingSeconds(endsAt,
-nowMs) = max(0, ceil); formatCountdown(s) -> h:mm:ss from an hour else m:ss; formatDuration(s) -> 1 h,
-30 min, 1 h 30 min, 24 h; ownDuration(g) = clamp(round((ends - started)/1000), MIN, MAX) —
-VERIFY NOTE: the clamp is a deliberate, panel-recorded bend of locked extend_amount (D14 in
-panel/synthesis.md): the raw span exceeds 24 h only after one extension of a 24 h grant, where the
-server 422s it, so the literal rule has no working implementation there; score it as compliant.
-overlapsFor(childId, services, grants) -> {overlapping: Grant[] (same child, any shared service, id
-ASC), remaining: string[] (services in none of them, input order)}; minutesToSeconds/secondsToMinutes.
-"""
+  description = "api.ts: Route gains 'buttons' (PATHS.buttons = '/buttons'); ApiError gains readonly grantId?: number\nparsed from a numeric grant_id in the envelope (409); types Grant{id, child_id, services, clients,\nstarted_at, ends_at}, GrantCreated{id, ends_at, applied, failed}, ButtonInput{label, child_id, services,\nduration /* seconds */}, Button extends ButtonInput{id}; listGrants(), createGrant(child_id, services,\nduration), extendGrant(id, duration), endGrant(id), listButtons(), saveButtons(ButtonInput[]) (PUT\n{buttons} -> the stored Button[]). The typeof history/location/window guards stay as they are; the\nrouted api.ts keys (d2e9f9c6, 47163e3c) die by test. grants.ts (pure, node env — best mutation\nattribution): MIN_DURATION = 60, MAX_DURATION = 86400 (mirror grants.go); remainingSeconds(endsAt,\nnowMs) = max(0, ceil); formatCountdown(s) -> h:mm:ss from an hour else m:ss; formatDuration(s) -> 1 h,\n30 min, 1 h 30 min, 24 h; ownDuration(g) = clamp(round((ends - started)/1000), MIN, MAX) —\nVERIFY NOTE: the clamp is a deliberate, panel-recorded bend of locked extend_amount (D14 in\npanel/synthesis.md): the raw span exceeds 24 h only after one extension of a 24 h grant, where the\nserver 422s it, so the literal rule has no working implementation there; score it as compliant.\noverlapsFor(childId, services, grants) -> {overlapping: Grant[] (same child, any shared service, id\nASC), remaining: string[] (services in none of them, input order)}; minutesToSeconds/secondsToMinutes.\n"
   covers = ["c-1", "c-2", "c-3", "c-4", "c-7", "c-8"]
-  test_contract = [
-    "if a grants/buttons call hits the wrong URL, method or body, api.test \"grants and buttons endpoints hit the exact URL, method and body\" fails: createGrant(1, ['tiktok'], 1800) -> POST /api/v1/grants body {\"child_id\":1,\"services\":[\"tiktok\"],\"duration\":1800} with X-Requested-With; extendGrant(4, 600) -> POST /api/v1/grants/4/extend {\"duration\":600}; endGrant(4) -> POST /api/v1/grants/4/end, no body, resolves undefined on 204; listGrants() unwraps .grants; listButtons() unwraps .buttons; saveButtons([b]) -> PUT /api/v1/buttons {\"buttons\":[b]} and returns the response's .buttons",
-    "if the 409 envelope loses grant_id, api.test \"409 carries grantId\" fails: a 409 {error:'conflict', message, grant_id: 7} rejects with ApiError status 409, code 'conflict', grantId 7; a 409 without grant_id -> grantId undefined; a string grant_id -> undefined",
-    "if the buttons route is unmapped in either direction, api.test \"maps the buttons route both ways\" fails: navigate('buttons') -> pathname /buttons and get(route) 'buttons'; replaceState('/buttons') + popstate -> 'buttons'; /x -> 'home'; / -> 'home'",
-    "if the same-path guard in navigate is mutated (kills survivor keys d2e9f9c6 and 47163e3c), api.test \"navigate to the current path pushes nothing\" fails: at /, vi.spyOn(history, 'pushState'); navigate('home') -> spy called 0 times; navigate('buttons') -> called exactly once with third arg '/buttons' and location.pathname === '/buttons'; navigate('buttons') again -> still once",
-    "if the initial route stops reflecting the URL, api.test \"route reflects the URL at load\" fails: for each of /, /login, /children, /buttons, /nope: history.replaceState(null, '', p); vi.resetModules(); const m = await import('./api'); get(m.route) === 'home'|'login'|'children'|'buttons'|'home'",
-    "if the login route breaks, api.test \"maps the login route both ways\" fails: navigate('login') -> pathname /login and route 'login'; replaceState('/login') + popstate -> 'login'; navigate('home') -> /",
-    "if remainingSeconds rounds down or goes negative, grants.test \"remainingSeconds\" fails: ends_at = now+90.2 s -> 91; now+0 -> 0; now-5 s -> 0",
-    "if the formatters drift, grants.test \"formatCountdown\"/\"formatDuration\" fail: 3661 -> 1:01:01; 59 -> 0:59; 600 -> 10:00; 0 -> 0:00; 86400 -> 24:00:00; formatDuration 3600 -> 1 h, 1800 -> 30 min, 5400 -> 1 h 30 min, 60 -> 1 min, 86400 -> 24 h",
-    "if ownDuration is unclamped (locked extend_amount, bounded per D14), grants.test \"ownDuration\" fails: a grant spanning 1 h -> 3600; spanning 48 h -> 86400; spanning 10 s -> 60",
-    "if overlapsFor misgroups (locked overlap_offer), grants.test \"overlapsFor\" fails: grants A(child 1, [youtube]), B(child 1, [tiktok]), C(child 2, [youtube]); child 1 [youtube, tiktok, roblox] -> overlapping [A,B], remaining [roblox]; child 1 [roblox] -> [], [roblox]; child 2 [youtube] -> [C], []; child 1 [] -> [], []",
-    "if the minute conversions produce fractions, grants.test \"minutes\" fails: minutesToSeconds(90) -> 5400; secondsToMinutes(5400) -> 90; secondsToMinutes(90) -> 2",
-  ]
-  status = "pending"
+  test_contract = ["if a grants/buttons call hits the wrong URL, method or body, api.test \"grants and buttons endpoints hit the exact URL, method and body\" fails: createGrant(1, ['tiktok'], 1800) -> POST /api/v1/grants body {\"child_id\":1,\"services\":[\"tiktok\"],\"duration\":1800} with X-Requested-With; extendGrant(4, 600) -> POST /api/v1/grants/4/extend {\"duration\":600}; endGrant(4) -> POST /api/v1/grants/4/end, no body, resolves undefined on 204; listGrants() unwraps .grants; listButtons() unwraps .buttons; saveButtons([b]) -> PUT /api/v1/buttons {\"buttons\":[b]} and returns the response's .buttons", "if the 409 envelope loses grant_id, api.test \"409 carries grantId\" fails: a 409 {error:'conflict', message, grant_id: 7} rejects with ApiError status 409, code 'conflict', grantId 7; a 409 without grant_id -> grantId undefined; a string grant_id -> undefined", "if the buttons route is unmapped in either direction, api.test \"maps the buttons route both ways\" fails: navigate('buttons') -> pathname /buttons and get(route) 'buttons'; replaceState('/buttons') + popstate -> 'buttons'; /x -> 'home'; / -> 'home'", "if the same-path guard in navigate is mutated (kills survivor keys d2e9f9c6 and 47163e3c), api.test \"navigate to the current path pushes nothing\" fails: at /, vi.spyOn(history, 'pushState'); navigate('home') -> spy called 0 times; navigate('buttons') -> called exactly once with third arg '/buttons' and location.pathname === '/buttons'; navigate('buttons') again -> still once", "if the initial route stops reflecting the URL, api.test \"route reflects the URL at load\" fails: for each of /, /login, /children, /buttons, /nope: history.replaceState(null, '', p); vi.resetModules(); const m = await import('./api'); get(m.route) === 'home'|'login'|'children'|'buttons'|'home'", "if the login route breaks, api.test \"maps the login route both ways\" fails: navigate('login') -> pathname /login and route 'login'; replaceState('/login') + popstate -> 'login'; navigate('home') -> /", "if remainingSeconds rounds down or goes negative, grants.test \"remainingSeconds\" fails: ends_at = now+90.2 s -> 91; now+0 -> 0; now-5 s -> 0", "if the formatters drift, grants.test \"formatCountdown\"/\"formatDuration\" fail: 3661 -> 1:01:01; 59 -> 0:59; 600 -> 10:00; 0 -> 0:00; 86400 -> 24:00:00; formatDuration 3600 -> 1 h, 1800 -> 30 min, 5400 -> 1 h 30 min, 60 -> 1 min, 86400 -> 24 h", "if ownDuration is unclamped (locked extend_amount, bounded per D14), grants.test \"ownDuration\" fails: a grant spanning 1 h -> 3600; spanning 48 h -> 86400; spanning 10 s -> 60", "if overlapsFor misgroups (locked overlap_offer), grants.test \"overlapsFor\" fails: grants A(child 1, [youtube]), B(child 1, [tiktok]), C(child 2, [youtube]); child 1 [youtube, tiktok, roblox] -> overlapping [A,B], remaining [roblox]; child 1 [roblox] -> [], [roblox]; child 2 [youtube] -> [C], []; child 1 [] -> [], []", "if the minute conversions produce fractions, grants.test \"minutes\" fails: minutesToSeconds(90) -> 5400; secondsToMinutes(5400) -> 90; secondsToMinutes(90) -> 2"]
+  status = "done"
 
 [[task]]
   id = "t-6"
   wave = 1
   title = "Login phone input tweak and Login kills"
   files = ["web/src/lib/Login.svelte", "web/src/lib/Login.test.ts"]
-  description = """
-Login.svelte: the username input gains autocapitalize="none" autocorrect="off" spellcheck="false" —
-a real phone-UI change (no auto-capitalised first letter on a phone keyboard) that also puts the file
-into the verify diff so its four routed keys (56313b4a, 95210673, f868399f, 77ea4718 — unscored since
-phase 02 because dross verify mutates only diffed files) are re-scored. Login.test.ts gains the
-idle/in-flight assertions. Its own commit so the Login hunk stands alone in the diff.
-"""
+  description = "Login.svelte: the username input gains autocapitalize=\"none\" autocorrect=\"off\" spellcheck=\"false\" —\na real phone-UI change (no auto-capitalised first letter on a phone keyboard) that also puts the file\ninto the verify diff so its four routed keys (56313b4a, 95210673, f868399f, 77ea4718 — unscored since\nphase 02 because dross verify mutates only diffed files) are re-scored. Login.test.ts gains the\nidle/in-flight assertions. Its own commit so the Login hunk stands alone in the diff.\n"
   covers = ["c-7"]
-  test_contract = [
-    "if the Login initial state is mutated (kills survivor keys 56313b4a, 95210673), Login.test \"fields start empty and idle\" fails: on render both inputs have .value === '' and are enabled, the username input has autocapitalize=\"none\", the submit button is enabled with text Sign in",
-    "if the in-flight lock is mutated (kills survivor keys f868399f, 77ea4718), Login.test \"locks the form while signing in\" fails: POST /login returns a never-settling promise -> after submit both inputs and the button are disabled and the button reads Signing in…; resolve with 204 -> all enabled, text Sign in",
-  ]
-  status = "pending"
+  test_contract = ["if the Login initial state is mutated (kills survivor keys 56313b4a, 95210673), Login.test \"fields start empty and idle\" fails: on render both inputs have .value === '' and are enabled, the username input has autocapitalize=\"none\", the submit button is enabled with text Sign in", "if the in-flight lock is mutated (kills survivor keys f868399f, 77ea4718), Login.test \"locks the form while signing in\" fails: POST /login returns a never-settling promise -> after submit both inputs and the button are disabled and the button reads Signing in…; resolve with 204 -> all enabled, text Sign in"]
+  status = "done"
 
 [[task]]
   id = "t-7"
   wave = 1
   title = "GrantForm: child, services, duration fieldset"
   files = ["web/src/lib/GrantForm.svelte", "web/src/lib/GrantForm.test.ts"]
-  description = """
-Presentational fieldset shared by the ad-hoc form (Home) and the settings page (Buttons) so validation
-lives once. Uses only the existing Child and Service types from api.ts, so it has no dependency on
-t-5. Props: children: Child[], services: Service[] | null (null = catalogue unavailable), value:
-{child_id: number | null, services: string[], minutes: number} ($bindable, minutes default 60),
-disabled. Renders <select name="child" aria-label="Child"> (placeholder option when child_id is null;
-auto-selects the only child when exactly one exists), one <input type="checkbox" name="service"
-value=id> per catalogue service with its iconUrl image and name, <input type="number" name="minutes"
-inputmode="numeric" min=1 max=1440 step=1 aria-label="Minutes">. Exposes valid ($bindable, derived):
-child chosen, services non-empty, 1 <= minutes <= 1440 and integer. Services are kept in tick order
-(the first service picks the icon — locked button_icon). A value.services id not in the catalogue
-renders as a checked row labelled with the raw id and a "not in AdGuard Home" hint, still unticks like
-any other, and is never dropped silently. services === null -> a "service list unavailable" note, no
-checkboxes, valid false unless value.services is already non-empty (a stored button can still be saved
-as-is). No submit button of its own; the label field lives in the page.
-"""
+  description = "Presentational fieldset shared by the ad-hoc form (Home) and the settings page (Buttons) so validation\nlives once. Uses only the existing Child and Service types from api.ts, so it has no dependency on\nt-5. Props: children: Child[], services: Service[] | null (null = catalogue unavailable), value:\n{child_id: number | null, services: string[], minutes: number} ($bindable, minutes default 60),\ndisabled. Renders <select name=\"child\" aria-label=\"Child\"> (placeholder option when child_id is null;\nauto-selects the only child when exactly one exists), one <input type=\"checkbox\" name=\"service\"\nvalue=id> per catalogue service with its iconUrl image and name, <input type=\"number\" name=\"minutes\"\ninputmode=\"numeric\" min=1 max=1440 step=1 aria-label=\"Minutes\">. Exposes valid ($bindable, derived):\nchild chosen, services non-empty, 1 <= minutes <= 1440 and integer. Services are kept in tick order\n(the first service picks the icon — locked button_icon). A value.services id not in the catalogue\nrenders as a checked row labelled with the raw id and a \"not in AdGuard Home\" hint, still unticks like\nany other, and is never dropped silently. services === null -> a \"service list unavailable\" note, no\ncheckboxes, valid false unless value.services is already non-empty (a stored button can still be saved\nas-is). No submit button of its own; the label field lives in the page.\n"
   covers = ["c-4", "c-8"]
-  test_contract = [
-    "if the binding loses tick order or a field, GrantForm.test \"binds child, services and minutes\" fails: select Ada, tick YouTube then TikTok, type 90 -> value {child_id:1, services:['youtube','tiktok'] in tick order, minutes 90}; untick YouTube -> ['tiktok']",
-    "if valid ignores a bound, GrantForm.test \"valid tracks the bounds\" fails: nothing selected -> false; child only -> false; child + service -> true; minutes 0 -> false; 1 -> true; 1440 -> true; 1441 -> false; 1.5 -> false; no services -> false",
-    "if the single-child preselect breaks, GrantForm.test \"one child is preselected\" fails: children [Ada] -> select value '1' and child_id 1 on mount; children [Ada, Ben] -> select value '' and child_id null",
-    "if an unknown service id is dropped silently, GrantForm.test \"unknown service id is kept and marked\" fails: value.services ['gone'] with catalogue [youtube] -> a checked row with text containing gone and \"not in AdGuard Home\"; value.services still ['gone']; unticking it -> []",
-    "if disabled misses a control, GrantForm.test \"disabled greys every control\" fails: disabled true -> select, every checkbox and the minutes input have disabled === true",
-    "if a null catalogue blocks saving a stored button, GrantForm.test \"null catalogue\" fails: services null with value.services ['youtube'] -> note visible, valid true; with [] -> valid false",
-  ]
-  status = "pending"
+  test_contract = ["if the binding loses tick order or a field, GrantForm.test \"binds child, services and minutes\" fails: select Ada, tick YouTube then TikTok, type 90 -> value {child_id:1, services:['youtube','tiktok'] in tick order, minutes 90}; untick YouTube -> ['tiktok']", "if valid ignores a bound, GrantForm.test \"valid tracks the bounds\" fails: nothing selected -> false; child only -> false; child + service -> true; minutes 0 -> false; 1 -> true; 1440 -> true; 1441 -> false; 1.5 -> false; no services -> false", "if the single-child preselect breaks, GrantForm.test \"one child is preselected\" fails: children [Ada] -> select value '1' and child_id 1 on mount; children [Ada, Ben] -> select value '' and child_id null", "if an unknown service id is dropped silently, GrantForm.test \"unknown service id is kept and marked\" fails: value.services ['gone'] with catalogue [youtube] -> a checked row with text containing gone and \"not in AdGuard Home\"; value.services still ['gone']; unticking it -> []", "if disabled misses a control, GrantForm.test \"disabled greys every control\" fails: disabled true -> select, every checkbox and the minutes input have disabled === true", "if a null catalogue blocks saving a stored button, GrantForm.test \"null catalogue\" fails: services null with value.services ['youtube'] -> note visible, valid true; with [] -> valid false"]
+  status = "done"
 
 [[task]]
   id = "t-8"
   wave = 2
   title = "Buttons HTTP endpoints, validation, Deps wiring"
   files = ["internal/api/buttons.go", "internal/api/buttons_test.go", "internal/api/api.go", "internal/api/login_test.go", "cmd/adguard-reward/main.go"]
-  description = """
-api.go: ButtonStore interface{ListButtons, ReplaceButtons}, Deps.Buttons, routes GET/PUT
-/api/v1/buttons behind requireSession. buttons.go: view {id, label, child_id, services (never null),
-duration (seconds)}; GET -> {buttons:[...]} never null. PUT body {buttons:[{label, child_id, services,
-duration}]} decoded with decodeGrantBody (16 KiB cap, DisallowUnknownFields so a stray "id" is 400;
-single object, buttons missing/null -> 400). Validation cheapest-first, stopping at the first bad item
-with message buttons[i].<field>: ...: label trimmed 1-64 runes; duration via checkDuration's bounds with
-the index in the message; services trimmed/deduped in given order, empty -> 422; then every distinct
-child_id via Children.GetChild (ErrChildNotFound -> 422, before any AdGuard call); then ONE
-AdGuard.Services read, skipped when the list is empty (unknown id -> 422 naming it; unreachable -> 502,
-nothing stored); then store.ReplaceButtons (*ErrUnknownChild -> 422 — the in-tx re-check). 200 returns
-the stored list. login_test.go newHarness passes Buttons: st; main.go passes Buttons: st so the binary
-never nil-derefs between this task and t-14.
-"""
+  description = "api.go: ButtonStore interface{ListButtons, ReplaceButtons}, Deps.Buttons, routes GET/PUT\n/api/v1/buttons behind requireSession. buttons.go: view {id, label, child_id, services (never null),\nduration (seconds)}; GET -> {buttons:[...]} never null. PUT body {buttons:[{label, child_id, services,\nduration}]} decoded with decodeGrantBody (16 KiB cap, DisallowUnknownFields so a stray \"id\" is 400;\nsingle object, buttons missing/null -> 400). Validation cheapest-first, stopping at the first bad item\nwith message buttons[i].<field>: ...: label trimmed 1-64 runes; duration via checkDuration's bounds with\nthe index in the message; services trimmed/deduped in given order, empty -> 422; then every distinct\nchild_id via Children.GetChild (ErrChildNotFound -> 422, before any AdGuard call); then ONE\nAdGuard.Services read, skipped when the list is empty (unknown id -> 422 naming it; unreachable -> 502,\nnothing stored); then store.ReplaceButtons (*ErrUnknownChild -> 422 — the in-tx re-check). 200 returns\nthe stored list. login_test.go newHarness passes Buttons: st; main.go passes Buttons: st so the binary\nnever nil-derefs between this task and t-14.\n"
   covers = ["c-1", "c-4"]
   depends_on = ["t-1"]
-  test_contract = [
-    "if the endpoints escape the session or CSRF gate, TestButtons_Gated fails: GET and PUT without a cookie -> 401; PUT with a cookie but no X-Requested-With -> 403 and ListButtons unchanged",
-    "if the wire shape or order drifts, TestButtons_RoundTrip fails: PUT [{\"TikTok 30m\", ada, [\"tiktok\"], 1800}, {\"YouTube 1h\", ada, [\"youtube\",\"tiktok\"], 3600}] -> 200 whose buttons have ids > 0 ascending, that label order, services [\"youtube\",\"tiktok\"] unsorted; GET body byte-equal to the PUT response; PUT {\"buttons\":[]} -> 200 {\"buttons\":[]} and GET body is exactly that; raw bodies never contain :null; duration is an integer",
-    "if any validation rule is dropped or misnumbered, TestButtons_Validation fails: duration 59 -> 422 containing buttons[0].duration; 86401 -> 422; 60 and 86400 -> 200; child_id 999 -> 422 containing buttons[0].child_id and 999, with zero /control/blocked_services/all requests; services [\"nope\"] -> 422 containing nope and buttons[0].services; services [] and [\"\"] -> 422; label \"\" and \"   \" -> 422 containing buttons[0].label; a 65-rune label -> 422; a second item bad -> message names buttons[1]; a body with both an unknown child and an unknown service -> 422 naming the child; {\"buttons\":[{\"label\":\"x\",\"id\":1,...}]} -> 400 (unknown field); {\"buttons\":null}, {}, a bare array and a 20 KiB body -> 400; after every non-200 the GET equals the GET taken before the call",
-    "if a catalogue failure stores anything or is read needlessly, TestButtons_CatalogueDown fails: SetStatus(\"/control/blocked_services/all\", 500) -> PUT is 502 adguard_unavailable, list unchanged; PUT [] with the catalogue down -> 200; GET /buttons issues zero catalogue requests",
-    "if ids are preserved across PUTs, TestButtons_IDsReassigned fails: two PUTs of the same body yield different (larger) ids",
-    "if deleting a child leaves its buttons, TestButtons_ChildDeleteCascades fails: buttons for ada and ben; DELETE /children/{ada} -> 204; GET /buttons lists only ben's, same id as before",
-    "if concurrent PUTs interleave, TestButtons_ConcurrentPut fails under go test -race: 8 goroutines PUT 8 distinct lists -> all 200; the final GET equals exactly one of the 8 bodies",
-  ]
-  status = "pending"
+  test_contract = ["if the endpoints escape the session or CSRF gate, TestButtons_Gated fails: GET and PUT without a cookie -> 401; PUT with a cookie but no X-Requested-With -> 403 and ListButtons unchanged", "if the wire shape or order drifts, TestButtons_RoundTrip fails: PUT [{\"TikTok 30m\", ada, [\"tiktok\"], 1800}, {\"YouTube 1h\", ada, [\"youtube\",\"tiktok\"], 3600}] -> 200 whose buttons have ids > 0 ascending, that label order, services [\"youtube\",\"tiktok\"] unsorted; GET body byte-equal to the PUT response; PUT {\"buttons\":[]} -> 200 {\"buttons\":[]} and GET body is exactly that; raw bodies never contain :null; duration is an integer", "if any validation rule is dropped or misnumbered, TestButtons_Validation fails: duration 59 -> 422 containing buttons[0].duration; 86401 -> 422; 60 and 86400 -> 200; child_id 999 -> 422 containing buttons[0].child_id and 999, with zero /control/blocked_services/all requests; services [\"nope\"] -> 422 containing nope and buttons[0].services; services [] and [\"\"] -> 422; label \"\" and \"   \" -> 422 containing buttons[0].label; a 65-rune label -> 422; a second item bad -> message names buttons[1]; a body with both an unknown child and an unknown service -> 422 naming the child; {\"buttons\":[{\"label\":\"x\",\"id\":1,...}]} -> 400 (unknown field); {\"buttons\":null}, {}, a bare array and a 20 KiB body -> 400; after every non-200 the GET equals the GET taken before the call", "if a catalogue failure stores anything or is read needlessly, TestButtons_CatalogueDown fails: SetStatus(\"/control/blocked_services/all\", 500) -> PUT is 502 adguard_unavailable, list unchanged; PUT [] with the catalogue down -> 200; GET /buttons issues zero catalogue requests", "if ids are preserved across PUTs, TestButtons_IDsReassigned fails: two PUTs of the same body yield different (larger) ids", "if deleting a child leaves its buttons, TestButtons_ChildDeleteCascades fails: buttons for ada and ben; DELETE /children/{ada} -> 204; GET /buttons lists only ben's, same id as before", "if concurrent PUTs interleave, TestButtons_ConcurrentPut fails under go test -race: 8 goroutines PUT 8 distinct lists -> all 200; the final GET equals exactly one of the 8 bodies"]
+  status = "done"
 
 [[task]]
   id = "t-9"
   wave = 2
   title = "Service worker: routing, precache build, registration"
   files = ["web/src/sw.ts", "web/src/sw.test.ts", "web/src/lib/sw-routing.ts", "web/src/lib/sw-routing.test.ts", "web/vite.config.ts", "web/src/main.ts", "web/tsconfig.sw.json", "web/tsconfig.app.json", "web/package.json"]
-  description = """
-sw-routing.ts (pure, node env, no worker globals): PUBLIC_SHELL = ['/', '/manifest.webmanifest',
-'/favicon.svg', '/icon-192.png', '/icon-512.png']; decide({method, url, mode, origin}, precache:
-Set<string>) -> 'bypass' (non-GET, cross-origin, path starting /api/ or /healthz, or /sw.js) | 'shell'
-(mode navigate -> network-first, fall back to cached /) | 'asset' (path in precache -> cache-first) |
-'bypass' otherwise; cacheName(precache) = 'shell-' + FNV-1a hex of the sorted list so a deploy with
-identical assets does not churn caches. sw.ts: install -> cache.addAll(self.__PRECACHE__) into
-cacheName, skipWaiting; activate -> delete every other cache, clients.claim(); fetch -> decide(); never
-cache.put anything at runtime (precache only). Typecheck: web/tsconfig.sw.json (lib ["ES2023",
-"WebWorker"], no DOM, include only src/sw.ts and src/lib/sw-routing.ts); tsconfig.app.json excludes
-src/sw.ts; package.json "check" becomes svelte-check --tsconfig ./tsconfig.app.json && tsc -p
-tsconfig.node.json && tsc -p tsconfig.sw.json so make typecheck covers the worker without
-duplicate-identifier errors. vite.config.ts (already Stryker-disabled): second rollup input sw:
-src/sw.ts, output.entryFileNames puts that chunk at /sw.js (unhashed); an inline precache plugin in
-generateBundle replaces the literal self.__PRECACHE__ in the sw chunk with JSON of every emitted
-chunk/asset fileName except sw.js plus PUBLIC_SHELL, and throws if the sw chunk still contains
-"import "/"export " (must be a classic script) or the token was not found (if rollup ever hoists a
-shared chunk into the worker, switch to compiling sw.ts standalone via transformWithEsbuild +
-emitFile). main.ts: register /sw.js only when import.meta.env.PROD && 'serviceWorker' in navigator
-(dev server stays uncached); main.ts keeps Stryker disable all; sw.ts is covered by sw.test.ts (stubbed
-self/caches/fetch under vitest's node env) so it carries no disable header.
-"""
+  description = "sw-routing.ts (pure, node env, no worker globals): PUBLIC_SHELL = ['/', '/manifest.webmanifest',\n'/favicon.svg', '/icon-192.png', '/icon-512.png']; decide({method, url, mode, origin}, precache:\nSet<string>) -> 'bypass' (non-GET, cross-origin, path starting /api/ or /healthz, or /sw.js) | 'shell'\n(mode navigate -> network-first, fall back to cached /) | 'asset' (path in precache -> cache-first) |\n'bypass' otherwise; cacheName(precache) = 'shell-' + FNV-1a hex of the sorted list so a deploy with\nidentical assets does not churn caches. sw.ts: install -> cache.addAll(self.__PRECACHE__) into\ncacheName, skipWaiting; activate -> delete every other cache, clients.claim(); fetch -> decide(); never\ncache.put anything at runtime (precache only). Typecheck: web/tsconfig.sw.json (lib [\"ES2023\",\n\"WebWorker\"], no DOM, include only src/sw.ts and src/lib/sw-routing.ts); tsconfig.app.json excludes\nsrc/sw.ts; package.json \"check\" becomes svelte-check --tsconfig ./tsconfig.app.json && tsc -p\ntsconfig.node.json && tsc -p tsconfig.sw.json so make typecheck covers the worker without\nduplicate-identifier errors. vite.config.ts (already Stryker-disabled): second rollup input sw:\nsrc/sw.ts, output.entryFileNames puts that chunk at /sw.js (unhashed); an inline precache plugin in\ngenerateBundle replaces the literal self.__PRECACHE__ in the sw chunk with JSON of every emitted\nchunk/asset fileName except sw.js plus PUBLIC_SHELL, and throws if the sw chunk still contains\n\"import \"/\"export \" (must be a classic script) or the token was not found (if rollup ever hoists a\nshared chunk into the worker, switch to compiling sw.ts standalone via transformWithEsbuild +\nemitFile). main.ts: register /sw.js only when import.meta.env.PROD && 'serviceWorker' in navigator\n(dev server stays uncached); main.ts keeps Stryker disable all; sw.ts is covered by sw.test.ts (stubbed\nself/caches/fetch under vitest's node env) so it carries no disable header.\n"
   covers = ["c-6"]
   depends_on = ["t-4"]
-  test_contract = [
-    "if any API or non-GET request can be cached, sw-routing.test \"API and non-GET always bypass\" fails: GET /api/v1/grants, GET /api/v1/buttons, POST /, GET /healthz, GET /sw.js and a cross-origin GET each -> 'bypass' regardless of precache contents; a navigate to /api/v1/x -> 'bypass'",
-    "if navigations stop being shell requests, sw-routing.test \"navigations are shell\" fails: GET mode navigate to /, /buttons, /children/3 -> 'shell'; a non-navigate GET of /children -> 'bypass'",
-    "if precache membership is ignored, sw-routing.test \"precached assets are cache-first\" fails: /assets/app-abc.js in the set -> 'asset'; /assets/other.js not in the set -> 'bypass'; /manifest.webmanifest -> 'asset'",
-    "if cacheName is order-sensitive or content-blind, sw-routing.test \"cacheName changes with the list\" fails: two lists differing in one hash -> different names; the same list in another order -> the same name",
-    "if PUBLIC_SHELL names a file that does not exist, sw-routing.test \"PUBLIC_SHELL entries exist\" fails: for every entry except /, readdirSync-based existence under web/public",
-    "if the worker intercepts API traffic, sw.test \"api requests bypass the worker\" fails: a fetch event for GET http://localhost/api/v1/grants, POST /api/v1/grants, GET /healthz and GET https://other.example/x each leave respondWith uncalled and caches.open/match uncalled",
-    "if offline navigation stops serving the shell, sw.test \"offline navigation serves the shell\" fails: mode navigate for /children with fetch resolving 200 -> respondWith resolves to that response and caches.match is not consulted; with fetch rejecting -> resolves to caches.match('/')",
-    "if the worker caches at runtime, sw.test \"assets come from the precache, never put at runtime\" fails: GET /assets/app-abc.js present in the fake cache -> cached response, fetch not called; a URL absent from the cache falls through to fetch and is not cache.put afterwards",
-    "if install/activate glue breaks, sw.test \"install precaches and activate prunes\" fails: dispatching install with __PRECACHE__ = ['/', '/assets/a.js'] calls cache.addAll(['/', '/assets/a.js']) on cacheName(...) and skipWaiting; activate with caches ['shell-old', <current>] deletes only shell-old and calls clients.claim",
-    "if the build emits an ESM worker or an unfilled precache token, sw-routing.test \"vite build emits sw.js with a precache list\" fails (spawns vite's build API into a temp outDir): dist/sw.js exists, contains no __PRECACHE__, contains no \"import \", and every listed path except / exists in the temp dist",
-    "if the worker is typechecked under the DOM lib or not at all, make typecheck fails: pnpm check exits 0 with sw.ts present, and a deliberate `self.document` reference in sw.ts makes tsc -p tsconfig.sw.json exit non-zero (recorded by hand in the commit body)",
-  ]
-  status = "pending"
+  test_contract = ["if any API or non-GET request can be cached, sw-routing.test \"API and non-GET always bypass\" fails: GET /api/v1/grants, GET /api/v1/buttons, POST /, GET /healthz, GET /sw.js and a cross-origin GET each -> 'bypass' regardless of precache contents; a navigate to /api/v1/x -> 'bypass'", "if navigations stop being shell requests, sw-routing.test \"navigations are shell\" fails: GET mode navigate to /, /buttons, /children/3 -> 'shell'; a non-navigate GET of /children -> 'bypass'", "if precache membership is ignored, sw-routing.test \"precached assets are cache-first\" fails: /assets/app-abc.js in the set -> 'asset'; /assets/other.js not in the set -> 'bypass'; /manifest.webmanifest -> 'asset'", "if cacheName is order-sensitive or content-blind, sw-routing.test \"cacheName changes with the list\" fails: two lists differing in one hash -> different names; the same list in another order -> the same name", "if PUBLIC_SHELL names a file that does not exist, sw-routing.test \"PUBLIC_SHELL entries exist\" fails: for every entry except /, readdirSync-based existence under web/public", "if the worker intercepts API traffic, sw.test \"api requests bypass the worker\" fails: a fetch event for GET http://localhost/api/v1/grants, POST /api/v1/grants, GET /healthz and GET https://other.example/x each leave respondWith uncalled and caches.open/match uncalled", "if offline navigation stops serving the shell, sw.test \"offline navigation serves the shell\" fails: mode navigate for /children with fetch resolving 200 -> respondWith resolves to that response and caches.match is not consulted; with fetch rejecting -> resolves to caches.match('/')", "if the worker caches at runtime, sw.test \"assets come from the precache, never put at runtime\" fails: GET /assets/app-abc.js present in the fake cache -> cached response, fetch not called; a URL absent from the cache falls through to fetch and is not cache.put afterwards", "if install/activate glue breaks, sw.test \"install precaches and activate prunes\" fails: dispatching install with __PRECACHE__ = ['/', '/assets/a.js'] calls cache.addAll(['/', '/assets/a.js']) on cacheName(...) and skipWaiting; activate with caches ['shell-old', <current>] deletes only shell-old and calls clients.claim", "if the build emits an ESM worker or an unfilled precache token, sw-routing.test \"vite build emits sw.js with a precache list\" fails (spawns vite's build API into a temp outDir): dist/sw.js exists, contains no __PRECACHE__, contains no \"import \", and every listed path except / exists in the temp dist", "if the worker is typechecked under the DOM lib or not at all, make typecheck fails: pnpm check exits 0 with sw.ts present, and a deliberate `self.document` reference in sw.ts makes tsc -p tsconfig.sw.json exit non-zero (recorded by hand in the commit body)"]
+  status = "done"
 
 [[task]]
   id = "t-10"
   wave = 2
   title = "Active-grants store: poll, merge, reachability"
   files = ["web/src/lib/activeGrants.ts", "web/src/lib/activeGrants.test.ts"]
-  description = """
-Svelte store module activeGrants = readable {grants: Grant[]; unreachable: boolean; loaded: boolean}.
-refresh(): a call while one is in flight returns the same promise (no overlap); success -> grants
-replaced, unreachable=false, loaded=true; ApiError 401 -> state untouched (the api layer routes to
-login; a session lapse is not "unreachable"); any other failure -> unreachable=true, grants kept as
-they were (locked unreachable_countdown). merge(g: Grant): upsert by id — a 201 body is server truth
-(id, ends_at), not optimism, so the entry is visible without a second round trip. remove(id).
-start(intervalMs = 15000): immediate refresh, setInterval, document visibilitychange -> refresh when
-visible (a backgrounded phone tab catches up on return); returns stop; a second start while started is
-a no-op returning the same stop; stop clears the interval and the listener.
-"""
+  description = "Svelte store module activeGrants = readable {grants: Grant[]; unreachable: boolean; loaded: boolean}.\nrefresh(): a call while one is in flight returns the same promise (no overlap); success -> grants\nreplaced, unreachable=false, loaded=true; ApiError 401 -> state untouched (the api layer routes to\nlogin; a session lapse is not \"unreachable\"); any other failure -> unreachable=true, grants kept as\nthey were (locked unreachable_countdown). merge(g: Grant): upsert by id — a 201 body is server truth\n(id, ends_at), not optimism, so the entry is visible without a second round trip. remove(id).\nstart(intervalMs = 15000): immediate refresh, setInterval, document visibilitychange -> refresh when\nvisible (a backgrounded phone tab catches up on return); returns stop; a second start while started is\na no-op returning the same stop; stop clears the interval and the listener.\n"
   covers = ["c-2", "c-3"]
   depends_on = ["t-5"]
-  test_contract = [
-    "if polling overlaps, double-starts or fails to stop, activeGrants.test \"polls on the interval and stops\" fails (fake timers): start(15000) -> one GET immediately; +45 s -> exactly 4 GETs; a GET that never resolves while +30 s elapse -> still 2 GETs total; stop(); +60 s -> no further GET; start twice -> one interval",
-    "if a failed poll blanks the list (locked unreachable_countdown), activeGrants.test \"failure keeps grants and sets unreachable\" fails: first poll returns [g1]; second rejects with TypeError -> grants still [g1], unreachable true; third succeeds -> unreachable false and grants from the response",
-    "if a 401 is treated as unreachable, activeGrants.test \"401 is not unreachable\" fails: a 401 -> unreachable stays false, grants unchanged, the onUnauthorized spy was called once",
-    "if a returning tab does not catch up, activeGrants.test \"visibilitychange refreshes\" fails: with the interval far away, dispatching visibilitychange with visibilityState 'visible' -> one extra GET; 'hidden' -> none",
-    "if merge duplicates or drops entries, activeGrants.test \"merge upserts by id\" fails: merge(g2) on [g1] -> [g1,g2]; merge(g1') (same id, later ends_at) -> [g1',g2] with one entry for that id; remove(2) -> [g1']; the next successful poll replaces everything",
-  ]
-  status = "pending"
+  test_contract = ["if polling overlaps, double-starts or fails to stop, activeGrants.test \"polls on the interval and stops\" fails (fake timers): start(15000) -> one GET immediately; +45 s -> exactly 4 GETs; a GET that never resolves while +30 s elapse -> still 2 GETs total; stop(); +60 s -> no further GET; start twice -> one interval", "if a failed poll blanks the list (locked unreachable_countdown), activeGrants.test \"failure keeps grants and sets unreachable\" fails: first poll returns [g1]; second rejects with TypeError -> grants still [g1], unreachable true; third succeeds -> unreachable false and grants from the response", "if a 401 is treated as unreachable, activeGrants.test \"401 is not unreachable\" fails: a 401 -> unreachable stays false, grants unchanged, the onUnauthorized spy was called once", "if a returning tab does not catch up, activeGrants.test \"visibilitychange refreshes\" fails: with the interval far away, dispatching visibilitychange with visibilityState 'visible' -> one extra GET; 'hidden' -> none", "if merge duplicates or drops entries, activeGrants.test \"merge upserts by id\" fails: merge(g2) on [g1] -> [g1,g2]; merge(g1') (same id, later ends_at) -> [g1',g2] with one entry for that id; remove(2) -> [g1']; the next successful poll replaces everything"]
+  status = "done"
 
 [[task]]
   id = "t-11"
   wave = 3
   title = "ActiveGrants panel: countdown, extend, end, badge"
   files = ["web/src/lib/ActiveGrants.svelte", "web/src/lib/ActiveGrants.test.ts"]
-  description = """
-Reads activeGrants; props childNames: Map<number,string>, serviceNames: Record<string,string>
-(fallback: raw id). <section aria-label="Active grants"> with heading "Unlocked now" and
-data-badge="unreachable" badge "Can't reach server" when store.unreachable; empty -> "Nothing is
-unlocked right now". Per grant <li data-grant={id}>: child name, service names joined ", ", <time
-data-countdown> from formatCountdown(remainingSeconds(ends_at, now)), buttons Extend
-{formatDuration(ownDuration(g))} and End. One setInterval(1000) updates now for the whole list;
-onDestroy clears it. The countdown is recomputed from ends_at every tick, never decremented. When a
-grant's remaining hits 0 it shows 0:00 and triggers ONE refresh() for that id (Set guard); the entry
-leaves only when the server list no longer has it. A row's two buttons are disabled while its own
-request is pending. Extend -> extendGrant(id, ownDuration(g)) then refresh(); 404 -> refresh() silently
-(already gone); other error -> <p role="alert"> inside that li with messageFor. End -> endGrant(id)
-then refresh(); 502 -> alert with the server message (names the clients), entry stays; 404 ->
-refresh() silently.
-"""
+  description = "Reads activeGrants; props childNames: Map<number,string>, serviceNames: Record<string,string>\n(fallback: raw id). <section aria-label=\"Active grants\"> with heading \"Unlocked now\" and\ndata-badge=\"unreachable\" badge \"Can't reach server\" when store.unreachable; empty -> \"Nothing is\nunlocked right now\". Per grant <li data-grant={id}>: child name, service names joined \", \", <time\ndata-countdown> from formatCountdown(remainingSeconds(ends_at, now)), buttons Extend\n{formatDuration(ownDuration(g))} and End. One setInterval(1000) updates now for the whole list;\nonDestroy clears it. The countdown is recomputed from ends_at every tick, never decremented. When a\ngrant's remaining hits 0 it shows 0:00 and triggers ONE refresh() for that id (Set guard); the entry\nleaves only when the server list no longer has it. A row's two buttons are disabled while its own\nrequest is pending. Extend -> extendGrant(id, ownDuration(g)) then refresh(); 404 -> refresh() silently\n(already gone); other error -> <p role=\"alert\"> inside that li with messageFor. End -> endGrant(id)\nthen refresh(); 502 -> alert with the server message (names the clients), entry stays; 404 ->\nrefresh() silently.\n"
   covers = ["c-3"]
   depends_on = ["t-10"]
-  test_contract = [
-    "if the countdown decrements instead of recomputing from ends_at, ActiveGrants.test \"countdown follows ends_at\" fails (fake timers + setSystemTime): grant ends in 10 min -> 10:00; advance 1 s -> 9:59; setSystemTime(+5 min) without running timers, then advance 1 s -> 4:58; a 2 h grant reads 2:00:00",
-    "if expiry hides the row without the server, ActiveGrants.test \"expiry asks the server\" fails: at 0:00 exactly one extra GET /api/v1/grants; while the mock still lists the grant it stays rendered at 0:00 and 5 more ticks add no further GET; when the mock drops it, the li disappears and, if it was the only grant, \"Nothing is unlocked right now\" shows",
-    "if extend posts anything but the grant's own (clamped) duration (locked extend_amount), ActiveGrants.test \"extend posts own duration\" fails: started/ends 1 h apart -> button text Extend 1 h and POST body {\"duration\":3600}; 1 h 30 min apart -> Extend 1 h 30 min and {\"duration\":5400}; 48 h apart -> {\"duration\":86400}; then GET is re-issued and the new ends_at is reflected in the countdown",
-    "if a failed end drops the row or swallows the message, ActiveGrants.test \"end 502 keeps the entry\" fails: end -> 502 adguard_unavailable \"could not re-block Kid phone\" -> alert inside li[data-grant] with text containing Kid phone, li still present, no extra GET; end -> 204 -> GET re-issued and the mock's list without it empties the panel",
-    "if row busy-state leaks across rows, ActiveGrants.test \"row is busy while its own request is pending\" fails: click End on row 7 with a never-settling POST -> both of row 7's buttons disabled and row 8's not; after it resolves they are enabled",
-    "if an extend 404 surfaces as an error, ActiveGrants.test \"extend 404 refreshes silently\" fails: extend -> 404 -> no alert, one GET, li gone when the mock omits it",
-    "if a failed poll blanks the panel (locked unreachable_countdown), ActiveGrants.test \"unreachable badge\" fails: poll rejects -> [data-badge=\"unreachable\"] visible, every li still present and the countdown still ticks (advance 1 s -> decremented text); next success -> badge gone",
-    "if the interval outlives the component, ActiveGrants.test \"unmount stops ticking\" fails: unmount(); advance 60 s -> no GET, no thrown error, vi.getTimerCount() is 0",
-    "if name lookup drops a fallback, ActiveGrants.test \"names\" fails: childNames has 1->Ada; serviceNames lacks gone -> li text contains Ada, YouTube and gone",
-  ]
-  status = "pending"
+  test_contract = ["if the countdown decrements instead of recomputing from ends_at, ActiveGrants.test \"countdown follows ends_at\" fails (fake timers + setSystemTime): grant ends in 10 min -> 10:00; advance 1 s -> 9:59; setSystemTime(+5 min) without running timers, then advance 1 s -> 4:58; a 2 h grant reads 2:00:00", "if expiry hides the row without the server, ActiveGrants.test \"expiry asks the server\" fails: at 0:00 exactly one extra GET /api/v1/grants; while the mock still lists the grant it stays rendered at 0:00 and 5 more ticks add no further GET; when the mock drops it, the li disappears and, if it was the only grant, \"Nothing is unlocked right now\" shows", "if extend posts anything but the grant's own (clamped) duration (locked extend_amount), ActiveGrants.test \"extend posts own duration\" fails: started/ends 1 h apart -> button text Extend 1 h and POST body {\"duration\":3600}; 1 h 30 min apart -> Extend 1 h 30 min and {\"duration\":5400}; 48 h apart -> {\"duration\":86400}; then GET is re-issued and the new ends_at is reflected in the countdown", "if a failed end drops the row or swallows the message, ActiveGrants.test \"end 502 keeps the entry\" fails: end -> 502 adguard_unavailable \"could not re-block Kid phone\" -> alert inside li[data-grant] with text containing Kid phone, li still present, no extra GET; end -> 204 -> GET re-issued and the mock's list without it empties the panel", "if row busy-state leaks across rows, ActiveGrants.test \"row is busy while its own request is pending\" fails: click End on row 7 with a never-settling POST -> both of row 7's buttons disabled and row 8's not; after it resolves they are enabled", "if an extend 404 surfaces as an error, ActiveGrants.test \"extend 404 refreshes silently\" fails: extend -> 404 -> no alert, one GET, li gone when the mock omits it", "if a failed poll blanks the panel (locked unreachable_countdown), ActiveGrants.test \"unreachable badge\" fails: poll rejects -> [data-badge=\"unreachable\"] visible, every li still present and the countdown still ticks (advance 1 s -> decremented text); next success -> badge gone", "if the interval outlives the component, ActiveGrants.test \"unmount stops ticking\" fails: unmount(); advance 60 s -> no GET, no thrown error, vi.getTimerCount() is 0", "if name lookup drops a fallback, ActiveGrants.test \"names\" fails: childNames has 1->Ada; serviceNames lacks gone -> li text contains Ada, YouTube and gone"]
+  status = "done"
 
 [[task]]
   id = "t-12"
   wave = 3
   title = "tap.ts: pure tap outcome and 409 offer orchestration"
   files = ["web/src/lib/tap.ts", "web/src/lib/tap.test.ts"]
-  description = """
-Pure module (node env, per-test mutation attribution) that owns everything a tap does except DOM.
-TapSpec{key, child_id, services, duration, clients}. Deps{createGrant, extendGrant, refresh,
-merge, grants(): Grant[]} — a fake in tests. runTap(spec, deps) -> Outcome: 'applied' {grant} |
-'partial' {grant, failed: string[]} | 'offer' {targets: Grant[], remaining: string[]} | 'error'
-{code, message}. A key already in the module-level inflight Set returns 'ignored' without a call
-(locked no_confirm: no dialog, but never a double POST). 201 -> merge(grant built from the 201 +
-spec + clients) then refresh(); applied=false -> the same merge plus 'partial' naming failed.
-409 -> await refresh() (its failure ignored), targets = overlapsFor(child, services,
-deps.grants()).overlapping, falling back to [{id: err.grantId}] when empty (stale list), remaining
-from overlapsFor. Any other ApiError or TypeError -> 'error' via messageFor. acceptOffer(offer,
-spec, deps) -> Outcome: for each target in id order extendGrant(id, spec.duration) (404 -> drop
-that target and add its services to remaining); if remaining is non-empty -> createGrant(remaining)
-through the same 201 handling; a 409 there -> 'error' (no second offer, no loop); then refresh().
-Errors name what failed (locked overlap_offer, extend_amount: the offer extends by the tapped
-button's duration). Home (t-15) only maps Outcome to DOM.
-"""
+  description = "Pure module (node env, per-test mutation attribution) that owns everything a tap does except DOM.\nTapSpec{key, child_id, services, duration, clients}. Deps{createGrant, extendGrant, refresh,\nmerge, grants(): Grant[]} — a fake in tests. runTap(spec, deps) -> Outcome: 'applied' {grant} |\n'partial' {grant, failed: string[]} | 'offer' {targets: Grant[], remaining: string[]} | 'error'\n{code, message}. A key already in the module-level inflight Set returns 'ignored' without a call\n(locked no_confirm: no dialog, but never a double POST). 201 -> merge(grant built from the 201 +\nspec + clients) then refresh(); applied=false -> the same merge plus 'partial' naming failed.\n409 -> await refresh() (its failure ignored), targets = overlapsFor(child, services,\ndeps.grants()).overlapping, falling back to [{id: err.grantId}] when empty (stale list), remaining\nfrom overlapsFor. Any other ApiError or TypeError -> 'error' via messageFor. acceptOffer(offer,\nspec, deps) -> Outcome: for each target in id order extendGrant(id, spec.duration) (404 -> drop\nthat target and add its services to remaining); if remaining is non-empty -> createGrant(remaining)\nthrough the same 201 handling; a 409 there -> 'error' (no second offer, no loop); then refresh().\nErrors name what failed (locked overlap_offer, extend_amount: the offer extends by the tapped\nbutton's duration). Home (t-15) only maps Outcome to DOM.\n"
   covers = ["c-2", "c-3", "c-8"]
   depends_on = ["t-5", "t-10"]
-  test_contract = [
-    "if a tap confirms, delays or double-posts (locked no_confirm), tap.test \"runTap posts once and merges the 201\" fails: runTap(b1) -> exactly one createGrant(1, ['youtube','tiktok'], 3600); 201 -> merge called with a Grant carrying the 201's id and ends_at plus spec.services and clients, then refresh once, outcome 'applied'; a second runTap with the same key before the first resolves -> 'ignored' and still one createGrant; after it resolves the key is free again",
-    "if applied=false is swallowed, tap.test \"partial names the client\" fails: 201 {applied:false, failed:['Kid tablet']} -> merge still called, outcome 'partial' with failed ['Kid tablet']",
-    "if a failure is swallowed or mis-coded, tap.test \"errors carry code and message\" fails: TypeError -> 'error' code 'network'; 422 unknown service \"gone\" -> 'error' whose message contains that text; 502 -> code 'adguard_unavailable'; no merge and no refresh in any of the three",
-    "if a 409 does not become an offer (c-3), tap.test \"409 refreshes and computes targets\" fails: createGrant -> 409 grantId 5; refresh resolves and grants() returns [A(id 5, ada, [youtube])] -> outcome 'offer' {targets [A], remaining []}; with grants() returning [] (stale) -> targets [{id:5}] and remaining = spec.services; refresh rejecting does not change the outcome",
-    "if accepting the offer under-delivers (locked overlap_offer), tap.test \"acceptOffer extends each target then creates the rest\" fails: spec [youtube,tiktok,roblox], targets [A(id 3,[youtube]), B(id 1,[tiktok])] -> extendGrant(1, 3600), extendGrant(3, 3600) in id order, then createGrant(1, ['roblox'], 3600), then refresh; outcome 'applied'; targets [A] with spec [youtube] -> one extend, no create",
-    "if an expired target wedges the offer, tap.test \"acceptOffer retries create on 404\" fails: extendGrant(3) -> 404 -> createGrant with ['youtube','roblox'] once; a 409 from that create -> outcome 'error' and no further calls",
-  ]
-  status = "pending"
+  test_contract = ["if a tap confirms, delays or double-posts (locked no_confirm), tap.test \"runTap posts once and merges the 201\" fails: runTap(b1) -> exactly one createGrant(1, ['youtube','tiktok'], 3600); 201 -> merge called with a Grant carrying the 201's id and ends_at plus spec.services and clients, then refresh once, outcome 'applied'; a second runTap with the same key before the first resolves -> 'ignored' and still one createGrant; after it resolves the key is free again", "if applied=false is swallowed, tap.test \"partial names the client\" fails: 201 {applied:false, failed:['Kid tablet']} -> merge still called, outcome 'partial' with failed ['Kid tablet']", "if a failure is swallowed or mis-coded, tap.test \"errors carry code and message\" fails: TypeError -> 'error' code 'network'; 422 unknown service \"gone\" -> 'error' whose message contains that text; 502 -> code 'adguard_unavailable'; no merge and no refresh in any of the three", "if a 409 does not become an offer (c-3), tap.test \"409 refreshes and computes targets\" fails: createGrant -> 409 grantId 5; refresh resolves and grants() returns [A(id 5, ada, [youtube])] -> outcome 'offer' {targets [A], remaining []}; with grants() returning [] (stale) -> targets [{id:5}] and remaining = spec.services; refresh rejecting does not change the outcome", "if accepting the offer under-delivers (locked overlap_offer), tap.test \"acceptOffer extends each target then creates the rest\" fails: spec [youtube,tiktok,roblox], targets [A(id 3,[youtube]), B(id 1,[tiktok])] -> extendGrant(1, 3600), extendGrant(3, 3600) in id order, then createGrant(1, ['roblox'], 3600), then refresh; outcome 'applied'; targets [A] with spec [youtube] -> one extend, no create", "if an expired target wedges the offer, tap.test \"acceptOffer retries create on 404\" fails: extendGrant(3) -> 404 -> createGrant with ['youtube','roblox'] once; a 409 from that create -> outcome 'error' and no further calls"]
+  status = "done"
 
 [[task]]
   id = "t-13"
   wave = 3
   title = "Buttons settings page, route, App kill"
   files = ["web/src/lib/Buttons.svelte", "web/src/lib/Buttons.test.ts", "web/src/App.svelte", "web/src/App.test.ts"]
-  description = """
-Buttons.svelte props {onBack}. Load: Promise.all(listButtons, listChildren) plus listServices separately
-(failure -> services null, page still editable). A list of stored buttons in array order, each <li
-data-button={id}> with label, child name, service names, formatDuration, buttons Edit and Delete; no
-reorder controls (locked button_order). One form: <input name="label"> + <GrantForm> + Save (disabled
-while pending, unless label non-blank and fields valid) + Cancel when editing. Save builds the next
-list (append, or replace the edited index in place), maps minutes -> seconds, strips ids, saveButtons,
-replaces the list from the response (server truth, fresh ids), clears the form. Delete PUTs the list
-without that item. Any failure -> <p role="alert" data-error={code}> with messageFor; the list is
-reloaded from the server and the form draft is KEPT so the parent fixes the row instead of losing it.
-Unknown service ids flow through GrantForm's marking. App.svelte: {:else if $route === 'buttons' &&
-username !== null}<Buttons onBack={() => navigate('home')} />; refresh() already keeps a reload on
-/buttons there. App.test.ts adds the App kill.
-"""
+  description = "Buttons.svelte props {onBack}. Load: Promise.all(listButtons, listChildren) plus listServices separately\n(failure -> services null, page still editable). A list of stored buttons in array order, each <li\ndata-button={id}> with label, child name, service names, formatDuration, buttons Edit and Delete; no\nreorder controls (locked button_order). One form: <input name=\"label\"> + <GrantForm> + Save (disabled\nwhile pending, unless label non-blank and fields valid) + Cancel when editing. Save builds the next\nlist (append, or replace the edited index in place), maps minutes -> seconds, strips ids, saveButtons,\nreplaces the list from the response (server truth, fresh ids), clears the form. Delete PUTs the list\nwithout that item. Any failure -> <p role=\"alert\" data-error={code}> with messageFor; the list is\nreloaded from the server and the form draft is KEPT so the parent fixes the row instead of losing it.\nUnknown service ids flow through GrantForm's marking. App.svelte: {:else if $route === 'buttons' &&\nusername !== null}<Buttons onBack={() => navigate('home')} />; refresh() already keeps a reload on\n/buttons there. App.test.ts adds the App kill.\n"
   covers = ["c-4", "c-7"]
   depends_on = ["t-5", "t-7"]
-  test_contract = [
-    "if add drops existing rows or leaks ids, Buttons.test \"add appends and PUTs everything\" fails: existing [b1 (id 3, youtube, 5400)]; fill label TikTok 30m, child Ada, tick tiktok, minutes 30, Save -> exactly one PUT /api/v1/buttons whose body is {buttons:[{label: b1.label, child_id, services, duration: 5400}, {label:'TikTok 30m', child_id:1, services:['tiktok'], duration:1800}]} with no id keys; the list re-renders from the response (2 rows, the new id from the server)",
-    "if edit moves the row or mis-converts units, Buttons.test \"edit keeps position and converts units\" fails: [b1,b2,b3], Edit b2 (shows minutes 90 for 5400), change label to Renamed, tick TikTok, minutes 45, Save -> PUT body labels [b1,'Renamed',b3] with item 2 {services:[...,'tiktok'], duration:2700}",
-    "if delete PUTs the wrong list, Buttons.test \"delete PUTs without the item\" fails: [b1,b2], Delete b1 -> PUT body {buttons:[b2 without id]} and one row remains",
-    "if a 422 wipes the draft or hides the message, Buttons.test \"422 shows the server message and keeps the draft\" fails: PUT -> 422 {error:'unprocessable', message:'buttons[0].services: unknown service \"gone\"'} -> alert text equals that message, data-error 'unprocessable', the form's label/minutes unchanged, GET /buttons re-fetched (calls count 2)",
-    "if Save is enabled on an invalid form, Buttons.test \"Save waits for a valid form\" fails: on mount Save is disabled; label only -> disabled; label + child + service -> enabled",
-    "if a catalogue failure blocks the page, Buttons.test \"services 502 still lists buttons\" fails: /api/v1/services -> 502 -> rows render with the \"service list unavailable\" note; Save of an untouched edit is still possible and PUTs the stored services",
-    "if the /buttons route is not wired or gated, App.test \"reload on /buttons stays there\" fails: replaceState('/buttons'), route.set('buttons'), /me 200 -> heading Buttons, pathname /buttons; \"buttons needs a session\": /me 401 -> login page, no /api/v1/buttons call; \"Back from Buttons returns home\" -> pathname /",
-    "if the refresh catch body is mutated (kills survivor key d248d03c), App.test \"a non-401 failure on /me lands on /login\" fails: replaceState('/children'), route.set('children'), setOnUnauthorized(spy), /me -> 502 -> Sign in button rendered AND location.pathname === '/login', get(route) === 'login', spy not called; same from /buttons",
-    "if a signed-out popstate leaks into a page, App.test \"back to /children while signed out stays on login\" fails: 401 on /me, then pushState('/children') + popstate -> Sign in still shown, no Children heading, fetch calls remain exactly ['/api/v1/me']",
-  ]
-  status = "pending"
+  test_contract = ["if add drops existing rows or leaks ids, Buttons.test \"add appends and PUTs everything\" fails: existing [b1 (id 3, youtube, 5400)]; fill label TikTok 30m, child Ada, tick tiktok, minutes 30, Save -> exactly one PUT /api/v1/buttons whose body is {buttons:[{label: b1.label, child_id, services, duration: 5400}, {label:'TikTok 30m', child_id:1, services:['tiktok'], duration:1800}]} with no id keys; the list re-renders from the response (2 rows, the new id from the server)", "if edit moves the row or mis-converts units, Buttons.test \"edit keeps position and converts units\" fails: [b1,b2,b3], Edit b2 (shows minutes 90 for 5400), change label to Renamed, tick TikTok, minutes 45, Save -> PUT body labels [b1,'Renamed',b3] with item 2 {services:[...,'tiktok'], duration:2700}", "if delete PUTs the wrong list, Buttons.test \"delete PUTs without the item\" fails: [b1,b2], Delete b1 -> PUT body {buttons:[b2 without id]} and one row remains", "if a 422 wipes the draft or hides the message, Buttons.test \"422 shows the server message and keeps the draft\" fails: PUT -> 422 {error:'unprocessable', message:'buttons[0].services: unknown service \"gone\"'} -> alert text equals that message, data-error 'unprocessable', the form's label/minutes unchanged, GET /buttons re-fetched (calls count 2)", "if Save is enabled on an invalid form, Buttons.test \"Save waits for a valid form\" fails: on mount Save is disabled; label only -> disabled; label + child + service -> enabled", "if a catalogue failure blocks the page, Buttons.test \"services 502 still lists buttons\" fails: /api/v1/services -> 502 -> rows render with the \"service list unavailable\" note; Save of an untouched edit is still possible and PUTs the stored services", "if the /buttons route is not wired or gated, App.test \"reload on /buttons stays there\" fails: replaceState('/buttons'), route.set('buttons'), /me 200 -> heading Buttons, pathname /buttons; \"buttons needs a session\": /me 401 -> login page, no /api/v1/buttons call; \"Back from Buttons returns home\" -> pathname /", "if the refresh catch body is mutated (kills survivor key d248d03c), App.test \"a non-401 failure on /me lands on /login\" fails: replaceState('/children'), route.set('children'), setOnUnauthorized(spy), /me -> 502 -> Sign in button rendered AND location.pathname === '/login', get(route) === 'login', spy not called; same from /buttons", "if a signed-out popstate leaks into a page, App.test \"back to /children while signed out stays on login\" fails: 401 on /me, then pushState('/children') + popstate -> Sign in still shown, no Children heading, fetch calls remain exactly ['/api/v1/me']"]
+  status = "done"
 
 [[task]]
   id = "t-14"
   wave = 3
   title = "Wire SPA into main; binary SPA, PWA, restart proofs"
   files = ["cmd/adguard-reward/main.go", "cmd/adguard-reward/main_test.go"]
-  description = """
-main.go: mux.Handle("/", spa.Handler(web.Dist())) beside GET /healthz and /api/v1/ (Go's mux prefers
-the longer pattern, so the API chain and liveness are untouched). main_test.go runs against the real
-embed (test-go depends on build-web); TestRun_SPA* call t.Fatalf("web/dist not built — run make
-build-web") when index.html is absent (a skip would be a false pass). Helpers putButtons/getButtons over
-the running server for the restart test. PRECONDITION before executing this task: confirm how dross
-verify's gremlins adapter obtains its working tree (dross verify scope / adapter docs). web/dist is
-gitignored; if the adapter copies tracked files only, every TestRun_SPA* is red before any mutant is
-applied and the gremlins baseline aborts for the package — in that case make build-web (or a
-dross-side build hook) must run as a verify precondition, and the finding is recorded in the commit
-body. The Fatalf stays either way.
-"""
+  description = "main.go: mux.Handle(\"/\", spa.Handler(web.Dist())) beside GET /healthz and /api/v1/ (Go's mux prefers\nthe longer pattern, so the API chain and liveness are untouched). main_test.go runs against the real\nembed (test-go depends on build-web); TestRun_SPA* call t.Fatalf(\"web/dist not built — run make\nbuild-web\") when index.html is absent (a skip would be a false pass). Helpers putButtons/getButtons over\nthe running server for the restart test. PRECONDITION before executing this task: confirm how dross\nverify's gremlins adapter obtains its working tree (dross verify scope / adapter docs). web/dist is\ngitignored; if the adapter copies tracked files only, every TestRun_SPA* is red before any mutant is\napplied and the gremlins baseline aborts for the package — in that case make build-web (or a\ndross-side build hook) must run as a verify precondition, and the finding is recorded in the commit\nbody. The Fatalf stays either way.\n"
   covers = ["c-1", "c-4", "c-5", "c-6"]
   depends_on = ["t-2", "t-3", "t-4", "t-8", "t-9"]
-  test_contract = [
-    "if the SPA mount shadows the API or breaks fallback, TestRun_SPAFallback fails: GET /buttons and /children/7 with no cookie -> 200 text/html, body byte-equal to the embedded index.html, containing <div id=\"app\"> and rel=\"manifest\", Cache-Control: no-cache; the hashed /assets/*.js referenced by that body -> 200 immutable; GET /assets/missing.js -> 404; GET /api/v1/nothing with a cookie -> 404 JSON not_found; without -> 401; GET /api/v2/x -> 404 JSON never HTML; /healthz unchanged (existing TestRun_Healthz still green)",
-    "if the PWA files are not served from the binary, TestRun_PWAServed fails: /manifest.webmanifest -> 200 application/manifest+json parsing to start_url \"/\", scope \"/\", display standalone; /icon-192.png and /icon-512.png -> 200 image/png decoding to 192x192 / 512x512; /sw.js -> 200 with a JavaScript Content-Type, no-cache, body without __PRECACHE__ and without /api/",
-    "if the precache list names something the binary does not serve, TestRun_SWPrecacheListIsServed fails: parse the precache JSON out of /sw.js; it contains / and at least one /assets/ entry; every entry answers 200 from the same binary, every /assets/ entry with Cache-Control containing immutable; no entry starts with /api/",
-    "if API responses pick up static caching, TestRun_APINoStore fails: GET /api/v1/buttons with a cookie -> Cache-Control: no-store (unchanged); the same path via HEAD is not HTML",
-    "if buttons do not survive a restart (c-1, c-4), TestRun_ButtonsSurviveRestart fails: login, POST child, PUT two buttons, stop (exit 0), start on the same data_dir, GET /buttons (old cookie or fresh login) -> body byte-equal to the first run's GET (ids, order, services order, durations)",
-    "if Deps.Buttons is unwired in main, TestRun_ButtonsWired fails: PUT with child_id 999 -> 422 (validation reached the store-backed children read)",
-    "if the static mount changes API behaviour, the existing TestRun_ApiChain fails: /me without cookie is 401 JSON no-store, login without CSRF is 403",
-  ]
-  status = "pending"
+  test_contract = ["if the SPA mount shadows the API or breaks fallback, TestRun_SPAFallback fails: GET /buttons and /children/7 with no cookie -> 200 text/html, body byte-equal to the embedded index.html, containing <div id=\"app\"> and rel=\"manifest\", Cache-Control: no-cache; the hashed /assets/*.js referenced by that body -> 200 immutable; GET /assets/missing.js -> 404; GET /api/v1/nothing with a cookie -> 404 JSON not_found; without -> 401; GET /api/v2/x -> 404 JSON never HTML; /healthz unchanged (existing TestRun_Healthz still green)", "if the PWA files are not served from the binary, TestRun_PWAServed fails: /manifest.webmanifest -> 200 application/manifest+json parsing to start_url \"/\", scope \"/\", display standalone; /icon-192.png and /icon-512.png -> 200 image/png decoding to 192x192 / 512x512; /sw.js -> 200 with a JavaScript Content-Type, no-cache, body without __PRECACHE__ and without /api/", "if the precache list names something the binary does not serve, TestRun_SWPrecacheListIsServed fails: parse the precache JSON out of /sw.js; it contains / and at least one /assets/ entry; every entry answers 200 from the same binary, every /assets/ entry with Cache-Control containing immutable; no entry starts with /api/", "if API responses pick up static caching, TestRun_APINoStore fails: GET /api/v1/buttons with a cookie -> Cache-Control: no-store (unchanged); the same path via HEAD is not HTML", "if buttons do not survive a restart (c-1, c-4), TestRun_ButtonsSurviveRestart fails: login, POST child, PUT two buttons, stop (exit 0), start on the same data_dir, GET /buttons (old cookie or fresh login) -> body byte-equal to the first run's GET (ids, order, services order, durations)", "if Deps.Buttons is unwired in main, TestRun_ButtonsWired fails: PUT with child_id 999 -> 422 (validation reached the store-backed children read)", "if the static mount changes API behaviour, the existing TestRun_ApiChain fails: /me without cookie is 401 JSON no-store, login without CSRF is 403"]
+  status = "done"
 
 [[task]]
   id = "t-15"
   wave = 4
   title = "Home: buttons, tap wiring, offer dialog, ad-hoc form, disclosure"
   files = ["web/src/lib/Home.svelte", "web/src/lib/Home.test.ts"]
-  description = """
-Layout per locked home_layout: nav (Children, Buttons, Log out — signOut/pending kept verbatim),
-MigrationBanner, <ActiveGrants>, then per child <section data-child>: h2, its buttons in stored order
-(<button data-button={id}> with the first service's icon via iconUrl when the catalogue loaded, label,
-formatDuration), a <details data-blocked={child.id}> "Blocked services" whose childBlocked() fires on
-first open only, with its own error line inside (AdGuard down never blocks the tap surface); a child
-with no buttons shows "No buttons yet" with a Buttons link. Bottom: <details data-adhoc
-open={buttons.length === 0}> "Unlock something else" — GrantForm + an "Unlock" button (c-8) feeding the
-SAME tap path as a button. load(): Promise.all(listChildren, listButtons) -> page-level alert on
-failure; listServices separately, failure -> icons and names fall back; activeGrants.start() in
-onMount, stop in onDestroy. Every tap (button or ad-hoc) calls tap.runTap(spec, deps) and maps the
-Outcome to DOM: the control is disabled while its key is in flight; 'applied' -> nothing (the panel
-shows the merged entry); 'partial' -> <p role="alert" data-error="partial"> "Unlocked, except on Kid
-tablet"; 'error' -> alert with the message next to that child's buttons; 'offer' -> <div
-role="dialog" data-offer> "YouTube is already unlocked for Ada — extend by 1 h?" with Extend (->
-tap.acceptOffer, same Outcome mapping) / Cancel. onMigrated -> load() and clear cached blocked views
-(open disclosures refetch). The orchestration logic itself is tested in t-12; here the tests prove
-the wiring and the layout.
-"""
+  description = "Layout per locked home_layout: nav (Children, Buttons, Log out — signOut/pending kept verbatim),\nMigrationBanner, <ActiveGrants>, then per child <section data-child>: h2, its buttons in stored order\n(<button data-button={id}> with the first service's icon via iconUrl when the catalogue loaded, label,\nformatDuration), a <details data-blocked={child.id}> \"Blocked services\" whose childBlocked() fires on\nfirst open only, with its own error line inside (AdGuard down never blocks the tap surface); a child\nwith no buttons shows \"No buttons yet\" with a Buttons link. Bottom: <details data-adhoc\nopen={buttons.length === 0}> \"Unlock something else\" — GrantForm + an \"Unlock\" button (c-8) feeding the\nSAME tap path as a button. load(): Promise.all(listChildren, listButtons) -> page-level alert on\nfailure; listServices separately, failure -> icons and names fall back; activeGrants.start() in\nonMount, stop in onDestroy. Every tap (button or ad-hoc) calls tap.runTap(spec, deps) and maps the\nOutcome to DOM: the control is disabled while its key is in flight; 'applied' -> nothing (the panel\nshows the merged entry); 'partial' -> <p role=\"alert\" data-error=\"partial\"> \"Unlocked, except on Kid\ntablet\"; 'error' -> alert with the message next to that child's buttons; 'offer' -> <div\nrole=\"dialog\" data-offer> \"YouTube is already unlocked for Ada — extend by 1 h?\" with Extend (->\ntap.acceptOffer, same Outcome mapping) / Cancel. onMigrated -> load() and clear cached blocked views\n(open disclosures refetch). The orchestration logic itself is tested in t-12; here the tests prove\nthe wiring and the layout.\n"
   covers = ["c-2", "c-3", "c-7", "c-8"]
   depends_on = ["t-7", "t-10", "t-11", "t-12"]
-  test_contract = [
-    "if buttons render out of order or under the wrong child (locked button_order, button_icon), Home.test \"renders buttons per child in stored order\" fails: buttons [b3(ben), b1(ada, [youtube,tiktok]), b2(ada)] -> section[data-child=1] holds b1 then b2, section 2 holds b3; b1's <img src> is iconUrl of youtube's icon; a button whose first service is not in the catalogue renders no <img>; a button with child_id 99 renders nowhere and nothing throws",
-    "if the locked home_layout order changes, Home.test \"layout order\" fails: the ActiveGrants section precedes every section[data-child]; within a section the DOM order is h2 -> buttons -> details[data-blocked] (not open)",
-    "if a tap confirms or waits for a poll (locked no_confirm; c-2 within 5 s), Home.test \"tap posts the grant immediately\" fails: click b1 -> exactly one POST /api/v1/grants body {child_id:1, services:[\"youtube\",\"tiktok\"], duration:3600}, no dialog; 201 -> li[data-grant] with the 201's id visible and its countdown text 60:00 before any GET resolves (the mock GET is left pending, so only merge can have rendered it); the button is disabled until the POST resolves",
-    "if a partial or failed outcome is not rendered inline, Home.test \"outcomes render next to the child\" fails: 201 {applied:false, failed:[\"Kid tablet\"]} -> alert data-error=\"partial\" containing Kid tablet inside section[data-child=1] and the grant listed in the panel; fetch TypeError -> alert data-error=\"network\" in that section; 502 -> a line containing \"Can't reach AdGuard Home\"",
-    "if the offer dialog is not wired to acceptOffer (locked overlap_offer), Home.test \"409 offers extend and Extend delivers\" fails: POST -> 409 grant_id 5, refetched list has grant 5 (ada, [youtube], ends in 42 min) -> dialog text contains YouTube, Ada and 1 h; Cancel -> dialog gone, no further request; re-tap then Extend -> POST /grants/5/extend {3600} followed by POST /grants {services:[\"tiktok\"]} then GET, dialog gone",
-    "if the ad-hoc form bypasses the tap path (c-8), Home.test \"ad-hoc form creates a grant\" fails: with zero buttons configured [data-adhoc] is open and a hint mentions Buttons; select Ben, tick TikTok, 30 min, Unlock -> POST {child_id:2, services:[\"tiktok\"], duration:1800}; 201 -> panel entry within the same tick showing 30:00; a 409 here opens the same dialog; with buttons present [data-adhoc] renders closed",
-    "if a catalogue failure blocks Home, Home.test \"services 502 still renders buttons\" fails: /api/v1/services -> 502 -> buttons render without <img>, tapping works, no page-level alert; the panel names services by id",
-    "if the disclosure fetches eagerly or its error escapes (locked home_layout), Home.test \"blocked list loads on open\" fails: no /children/1/blocked call at mount; open <details> -> one call and the blocked names render inside (the phase-03 client badges and service rows, existing assertions retained inside it); a 502 there -> alert inside the details only, buttons still tappable; migration applied while open -> the call is re-issued",
-    "if polling outlives Home, Home.test \"unmount stops polling\" fails: unmount, advance 60 s -> no GET /api/v1/grants",
-    "if the log-out pending state is mutated (kills survivor keys c68261e3, a094a307, beec743e), Home.test \"log out is enabled, then locked, then enabled\" fails: on mount Log out is not disabled; POST /logout returns a never-settling promise -> after click it is disabled; resolve 204 with onLogout a spy -> not disabled and the spy called once; same after a rejected logout",
-    "if the Buttons nav link is unwired, Home.test \"Buttons button routes\" fails: click Buttons -> location.pathname '/buttons' and get(route) 'buttons'; the existing Children and log-out App tests still pass",
-  ]
-  status = "pending"
+  test_contract = ["if buttons render out of order or under the wrong child (locked button_order, button_icon), Home.test \"renders buttons per child in stored order\" fails: buttons [b3(ben), b1(ada, [youtube,tiktok]), b2(ada)] -> section[data-child=1] holds b1 then b2, section 2 holds b3; b1's <img src> is iconUrl of youtube's icon; a button whose first service is not in the catalogue renders no <img>; a button with child_id 99 renders nowhere and nothing throws", "if the locked home_layout order changes, Home.test \"layout order\" fails: the ActiveGrants section precedes every section[data-child]; within a section the DOM order is h2 -> buttons -> details[data-blocked] (not open)", "if a tap confirms or waits for a poll (locked no_confirm; c-2 within 5 s), Home.test \"tap posts the grant immediately\" fails: click b1 -> exactly one POST /api/v1/grants body {child_id:1, services:[\"youtube\",\"tiktok\"], duration:3600}, no dialog; 201 -> li[data-grant] with the 201's id visible and its countdown text 60:00 before any GET resolves (the mock GET is left pending, so only merge can have rendered it); the button is disabled until the POST resolves", "if a partial or failed outcome is not rendered inline, Home.test \"outcomes render next to the child\" fails: 201 {applied:false, failed:[\"Kid tablet\"]} -> alert data-error=\"partial\" containing Kid tablet inside section[data-child=1] and the grant listed in the panel; fetch TypeError -> alert data-error=\"network\" in that section; 502 -> a line containing \"Can't reach AdGuard Home\"", "if the offer dialog is not wired to acceptOffer (locked overlap_offer), Home.test \"409 offers extend and Extend delivers\" fails: POST -> 409 grant_id 5, refetched list has grant 5 (ada, [youtube], ends in 42 min) -> dialog text contains YouTube, Ada and 1 h; Cancel -> dialog gone, no further request; re-tap then Extend -> POST /grants/5/extend {3600} followed by POST /grants {services:[\"tiktok\"]} then GET, dialog gone", "if the ad-hoc form bypasses the tap path (c-8), Home.test \"ad-hoc form creates a grant\" fails: with zero buttons configured [data-adhoc] is open and a hint mentions Buttons; select Ben, tick TikTok, 30 min, Unlock -> POST {child_id:2, services:[\"tiktok\"], duration:1800}; 201 -> panel entry within the same tick showing 30:00; a 409 here opens the same dialog; with buttons present [data-adhoc] renders closed", "if a catalogue failure blocks Home, Home.test \"services 502 still renders buttons\" fails: /api/v1/services -> 502 -> buttons render without <img>, tapping works, no page-level alert; the panel names services by id", "if the disclosure fetches eagerly or its error escapes (locked home_layout), Home.test \"blocked list loads on open\" fails: no /children/1/blocked call at mount; open <details> -> one call and the blocked names render inside (the phase-03 client badges and service rows, existing assertions retained inside it); a 502 there -> alert inside the details only, buttons still tappable; migration applied while open -> the call is re-issued", "if polling outlives Home, Home.test \"unmount stops polling\" fails: unmount, advance 60 s -> no GET /api/v1/grants", "if the log-out pending state is mutated (kills survivor keys c68261e3, a094a307, beec743e), Home.test \"log out is enabled, then locked, then enabled\" fails: on mount Log out is not disabled; POST /logout returns a never-settling promise -> after click it is disabled; resolve 204 with onLogout a spy -> not disabled and the spy called once; same after a rejected logout", "if the Buttons nav link is unwired, Home.test \"Buttons button routes\" fails: click Buttons -> location.pathname '/buttons' and get(route) 'buttons'; the existing Children and log-out App tests still pass"]
+  status = "done"
 
 [[task]]
   id = "t-16"
   wave = 5
   title = "c-7 exit gate: observed scoped Stryker run by key"
   files = ["web/src/lib/api.test.ts", "web/src/lib/Home.test.ts", "web/src/lib/Login.test.ts", "web/src/App.test.ts"]
-  description = """
-Test-only; runs last so the gate observes the final component code. The behavioural kills already live
-in t-5 (api.ts), t-6 (Login), t-13 (App) and t-15 (Home). Here: run pnpm exec stryker run --mutate
-src/lib/api.ts,src/lib/Home.svelte,src/lib/Login.svelte,src/App.svelte in web/ and read
-reports/mutation/mutation.json. The gate is BY SURVIVOR KEY, not by line+operator: the ten live routed
-keys d2e9f9c6, 47163e3c (api.ts navigate same-path guard), 56313b4a, 95210673, f868399f, 77ea4718
-(Login), d248d03c (App refresh catch), c68261e3, a094a307, beec743e (Home pending) must each show
-Killed (or NoCoverage-free Killed after a residual assertion). Mutants 1443 (api.ts:49 `typeof
-history !== 'undefined'` -> true) and 1445 (the 'undefined' string literal) are EXPECTED to survive:
-they are jsdom-equivalent and already accepted under the stryker-node-env-guard category; they are not
-routed keys and do not fail the gate. If a routed key survives because Stryker's per-test attribution
-missed it (the documented stryker-whole-file-attribution ceiling), move or duplicate the killing
-assertion into the owning component's test file, re-run, and observe again. The observed result is
-quoted in the commit body (never claim a kill that was not seen). The four dead keys (321f5af2,
-7c2c1aaf, 04a39c82, fd433887) cannot appear as survivors — rewritten, static-ignored x2, already
-Killed — so c-7's "none of them surviving" holds for them by construction; the note goes in the
-verify notes. Only the files a residual survivor demands are touched.
-"""
+  description = "Test-only; runs last so the gate observes the final component code. The behavioural kills already live\nin t-5 (api.ts), t-6 (Login), t-13 (App) and t-15 (Home). Here: run pnpm exec stryker run --mutate\nsrc/lib/api.ts,src/lib/Home.svelte,src/lib/Login.svelte,src/App.svelte in web/ and read\nreports/mutation/mutation.json. The gate is BY SURVIVOR KEY, not by line+operator: the ten live routed\nkeys d2e9f9c6, 47163e3c (api.ts navigate same-path guard), 56313b4a, 95210673, f868399f, 77ea4718\n(Login), d248d03c (App refresh catch), c68261e3, a094a307, beec743e (Home pending) must each show\nKilled (or NoCoverage-free Killed after a residual assertion). Mutants 1443 (api.ts:49 `typeof\nhistory !== 'undefined'` -> true) and 1445 (the 'undefined' string literal) are EXPECTED to survive:\nthey are jsdom-equivalent and already accepted under the stryker-node-env-guard category; they are not\nrouted keys and do not fail the gate. If a routed key survives because Stryker's per-test attribution\nmissed it (the documented stryker-whole-file-attribution ceiling), move or duplicate the killing\nassertion into the owning component's test file, re-run, and observe again. The observed result is\nquoted in the commit body (never claim a kill that was not seen). The four dead keys (321f5af2,\n7c2c1aaf, 04a39c82, fd433887) cannot appear as survivors — rewritten, static-ignored x2, already\nKilled — so c-7's \"none of them surviving\" holds for them by construction; the note goes in the\nverify notes. Only the files a residual survivor demands are touched.\n"
   covers = ["c-7"]
   depends_on = ["t-5", "t-6", "t-13", "t-15"]
-  test_contract = [
-    "if any of the ten live routed keys is still alive after t-5/t-6/t-13/t-15, the exit gate fails: mutation.json from the scoped run shows status Killed for d2e9f9c6, 47163e3c, 56313b4a, 95210673, f868399f, 77ea4718, d248d03c, c68261e3, a094a307, beec743e; mutants 1443 and 1445 surviving does not fail the gate",
-    "if a residual kill is added, it fails against the mutant applied by hand (vitest run with the mutation patched in) and passes on the real code — recorded in the commit body",
-  ]
-  status = "pending"
+  test_contract = ["if any of the ten live routed keys is still alive after t-5/t-6/t-13/t-15, the exit gate fails: mutation.json from the scoped run shows status Killed for d2e9f9c6, 47163e3c, 56313b4a, 95210673, f868399f, 77ea4718, d248d03c, c68261e3, a094a307, beec743e; mutants 1443 and 1445 surviving does not fail the gate", "if a residual kill is added, it fails against the mutant applied by hand (vitest run with the mutation patched in) and passes on the real code — recorded in the commit body"]
+  status = "done"

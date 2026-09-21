@@ -2,5 +2,289 @@
   "phase": "05-phone-ui-buttons-pwa",
   "base": "milestone/v0.1",
   "base_commit": "5799b8a833be16bd332fcc4f9141fecc535c3b0e",
-  "tasks": {}
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/store/migrations/0004_buttons.sql",
+        "internal/store/buttons.go",
+        "internal/store/buttons_test.go"
+      ],
+      "commit": "2b8fa07",
+      "completed_at": "2026-09-21T13:54:52.645375Z",
+      "landmarks": [
+        {
+          "feature": "Button presets",
+          "symbol": "ReplaceButtons",
+          "loc": "internal/store/buttons.go:62",
+          "what": "buttons + button_services tables (0004) with ordered atomic whole-list replace, typed ErrUnknownChild, snapshot-consistent ListButtons"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "web/src/lib/activeGrants.ts",
+        "web/src/lib/activeGrants.test.ts"
+      ],
+      "commit": "e2b9115",
+      "completed_at": "2026-09-21T14:20:34.011417Z",
+      "landmarks": [
+        {
+          "feature": "Active grants panel",
+          "symbol": "refresh",
+          "loc": "web/src/lib/activeGrants.ts:25",
+          "what": "polled active-grant store: shared in-flight refresh, 15 s interval + visibilitychange catch-up, failures keep the list and flag unreachable (401 excepted), merge/remove upserts from server responses"
+        }
+      ]
+    },
+    "t-11": {
+      "files": [
+        "web/src/lib/ActiveGrants.svelte",
+        "web/src/lib/ActiveGrants.panel.test.ts"
+      ],
+      "commit": "2dab1f8",
+      "completed_at": "2026-09-21T14:23:15.814724Z",
+      "notes": "test file renamed to ActiveGrants.panel.test.ts: the planned name collides with activeGrants.test.ts on case-insensitive filesystems",
+      "landmarks": [
+        {
+          "feature": "Active grants panel",
+          "symbol": "ActiveGrants.svelte",
+          "loc": "web/src/lib/ActiveGrants.svelte:1",
+          "what": "per-grant rows with a shared 1 s clock recomputing countdowns from ends_at, extend by own span, end, per-row busy/alert, expiry asks the server once, unreachable badge keeps ticking"
+        }
+      ]
+    },
+    "t-12": {
+      "files": [
+        "web/src/lib/tap.ts",
+        "web/src/lib/tap.test.ts"
+      ],
+      "commit": "257ccc3",
+      "completed_at": "2026-09-21T14:24:56.449512Z",
+      "landmarks": [
+        {
+          "feature": "Timed grants",
+          "symbol": "runTap",
+          "loc": "web/src/lib/tap.ts:95",
+          "what": "tap orchestration: single in-flight POST per key, 201 merged as server truth, partial names failed clients, 409 becomes an extend offer from the synced list, acceptOffer extends overlaps by the tap's duration then creates the rest"
+        }
+      ]
+    },
+    "t-13": {
+      "files": [
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts",
+        "web/src/App.svelte",
+        "web/src/App.test.ts"
+      ],
+      "commit": "efa1c46",
+      "completed_at": "2026-09-21T14:28:33.97544Z",
+      "landmarks": [
+        {
+          "feature": "Button presets",
+          "symbol": "Buttons.svelte",
+          "loc": "web/src/lib/Buttons.svelte:1",
+          "what": "/buttons settings page: stored list in array order with Edit/Delete, one label+GrantForm form that PUTs the whole list (minutes to seconds, ids stripped) and re-renders from the response; failures keep the draft"
+        }
+      ]
+    },
+    "t-14": {
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "2109098",
+      "completed_at": "2026-09-21T14:31:05.390844Z",
+      "notes": "verify precondition: run make build-web before dross verify; gremlins runs locally on this tree and web/dist is gitignored",
+      "landmarks": [
+        {
+          "feature": "SPA serving",
+          "symbol": "run",
+          "loc": "cmd/adguard-reward/main.go:143",
+          "what": "the embedded SPA is mounted at / beside /healthz and /api/v1/ in the one binary; binary tests prove fallback, PWA files, precache list served, API no-store and buttons surviving a restart"
+        }
+      ]
+    },
+    "t-15": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "f323709",
+      "completed_at": "2026-09-21T14:35:38.395258Z",
+      "landmarks": [
+        {
+          "feature": "Home page",
+          "symbol": "Home.svelte",
+          "loc": "web/src/lib/Home.svelte:1",
+          "what": "active-grant panel first, then per child its buttons in stored order (first-service icon), one-tap grant with inline partial/error lines, 409 extend-offer dialog, blocked list under a lazy disclosure, ad-hoc unlock form through the same tap path"
+        }
+      ]
+    },
+    "t-16": {
+      "files": [
+        "web/src/lib/api.test.ts",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/Login.test.ts",
+        "web/src/App.test.ts"
+      ],
+      "commit": "b5bf7d1",
+      "completed_at": "2026-09-21T14:54:11.392887Z",
+      "notes": "Observed scoped Stryker run 2026-09-21 15:37-15:52 (pnpm exec stryker run --mutate src/lib/api.ts,src/lib/Home.svelte,src/lib/Login.svelte,src/App.svelte; 404 mutants: 335 killed, 54 survived, 7 no-coverage, 7 timeout). All ten routed keys Killed: d2e9f9c6=api.ts#255 and 47163e3c=#257 by 'navigate to the current path pushes nothing'; 56313b4a=Login#212, 95210673=#213, 77ea4718=#226 by 'fields start empty and idle'; f868399f=#216 by 'locks the form while signing in'; d248d03c=App#8 by 'a non-401 failure on /me lands on /login'; c68261e3=Home#42, a094a307=#63, beec743e=#66 by 'log out is enabled, then locked, then enabled'. Expected jsdom-equivalent survivors api.ts#258 (typeof history guard -\u003e true) and #260 ('undefined' literal) survived as predicted (accepted category stryker-node-env-guard). No residual assertion was needed; no file changed, so the record points at HEAD (b5bf7d1). Report: web/reports/mutation/mutation.json.",
+      "landmarks": [
+        {
+          "feature": "Mutation exit gate",
+          "symbol": "mutation.json",
+          "loc": "web/reports/mutation/mutation.json:1",
+          "what": "c-7 exit gate observed: all ten routed Stryker survivors from phases 02/03 killed by name in a scoped run"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/spa/spa.go",
+        "internal/spa/spa_test.go"
+      ],
+      "commit": "1b8647f",
+      "completed_at": "2026-09-21T13:57:11.750968Z",
+      "landmarks": [
+        {
+          "feature": "SPA serving",
+          "symbol": "Handler",
+          "loc": "internal/spa/spa.go:85",
+          "what": "fs.FS static handler with client-route fallback to index.html, extensioned-miss 404, JSON 404 under /api and /healthz, no-cache shell/sw/manifest vs immutable /assets, 503 when dist is unbuilt"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "web/embed.go",
+        "web/embed_test.go",
+        "web/dist/.gitkeep",
+        ".gitignore",
+        "web/.gitignore",
+        "Makefile"
+      ],
+      "commit": "4de11cf",
+      "completed_at": "2026-09-21T13:59:00.219628Z",
+      "landmarks": [
+        {
+          "feature": "SPA serving",
+          "symbol": "Dist",
+          "loc": "web/embed.go:17",
+          "what": "web/dist embedded via go:embed all:dist behind a tracked .gitkeep so an unbuilt clone still compiles; make test-go builds the frontend first and lint covers web/embed.go"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "web/public/manifest.webmanifest",
+        "web/public/icon-192.png",
+        "web/public/icon-512.png",
+        "web/index.html",
+        "web/src/pwa.test.ts"
+      ],
+      "commit": "7d1dc40",
+      "completed_at": "2026-09-21T14:00:18.992904Z",
+      "landmarks": [
+        {
+          "feature": "PWA shell",
+          "symbol": "manifest.webmanifest",
+          "loc": "web/public/manifest.webmanifest:1",
+          "what": "installable manifest (standalone, root scope/start_url, 192/512 PNG icons incl. maskable) plus index.html manifest/theme-color/apple-touch-icon links and a real title"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/grants.ts",
+        "web/src/lib/grants.test.ts"
+      ],
+      "commit": "2322e19",
+      "completed_at": "2026-09-21T14:04:00.033349Z",
+      "landmarks": [
+        {
+          "feature": "Timed grants",
+          "symbol": "overlapsFor",
+          "loc": "web/src/lib/grants.ts:54",
+          "what": "SPA client for grants/buttons endpoints (409 grantId, buttons route) plus pure countdown/duration/own-span/overlap helpers mirroring the server bounds"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "web/src/lib/Login.svelte",
+        "web/src/lib/Login.test.ts"
+      ],
+      "commit": "4caa9aa",
+      "completed_at": "2026-09-21T14:05:28.483074Z",
+      "landmarks": [
+        {
+          "feature": "Login page",
+          "symbol": "Login.svelte",
+          "loc": "web/src/lib/Login.svelte:36",
+          "what": "username input opts out of phone auto-capitalise/autocorrect; idle and in-flight lock states pinned by test"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts"
+      ],
+      "commit": "60f0d6c",
+      "completed_at": "2026-09-21T14:10:23.99003Z",
+      "landmarks": [
+        {
+          "feature": "Grant form",
+          "symbol": "GrantForm.svelte",
+          "loc": "web/src/lib/GrantForm.svelte:14",
+          "what": "shared child/services/minutes fieldset with bindable value+valid, tick-order services, single-child preselect, unknown-id rows kept and marked, null-catalogue note"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "internal/api/buttons.go",
+        "internal/api/buttons_test.go",
+        "internal/api/api.go",
+        "internal/api/login_test.go",
+        "cmd/adguard-reward/main.go"
+      ],
+      "commit": "3ae3217",
+      "completed_at": "2026-09-21T14:12:52.908573Z",
+      "landmarks": [
+        {
+          "feature": "Buttons API",
+          "symbol": "handleButtonsReplace",
+          "loc": "internal/api/buttons.go:80",
+          "what": "GET/PUT /api/v1/buttons: whole-list replace validated cheapest-first (label 1-64 runes, 1 min-24 h, services, child before one catalogue read) with 422 naming buttons[i].field; ButtonStore in Deps"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "web/src/sw.ts",
+        "web/src/sw.test.ts",
+        "web/src/lib/sw-routing.ts",
+        "web/src/lib/sw-routing.test.ts",
+        "web/vite.config.ts",
+        "web/src/main.ts",
+        "web/tsconfig.sw.json",
+        "web/tsconfig.app.json",
+        "web/package.json"
+      ],
+      "commit": "cf5d7b7",
+      "completed_at": "2026-09-21T14:16:05.11036Z",
+      "landmarks": [
+        {
+          "feature": "PWA shell",
+          "symbol": "decide",
+          "loc": "web/src/lib/sw-routing.ts:26",
+          "what": "precache-only service worker (shell network-first with cached / fallback, assets cache-first, /api and /healthz always bypassed) built as a classic /sw.js with the emitted asset list injected at build; registered in production only"
+        }
+      ]
+    }
+  }
 }
