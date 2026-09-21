@@ -104,6 +104,7 @@ func newHarness(t *testing.T, trusted []*net.IPNet, clientIP func(*http.Request)
 		Auth:     mgr,
 		Limiter:  ratelimit.New(cfg),
 		Sessions: st,
+		Children: st,
 	})
 	return &harness{t: t, fake: fake, store: st, clock: c, logs: logs, h: a.Handler()}
 }

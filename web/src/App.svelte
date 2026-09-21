@@ -3,6 +3,7 @@
   import { me, navigate, route } from './lib/api'
   import Login from './lib/Login.svelte'
   import Home from './lib/Home.svelte'
+  import Children from './lib/Children.svelte'
 
   let username = $state<string | null>(null)
   let ready = $state(false)
@@ -11,7 +12,8 @@
     try {
       const m = await me()
       username = m.username
-      navigate('home')
+      // A reload on /children stays there; only the login page bounces home.
+      navigate($route === 'login' ? 'home' : $route)
     } catch {
       // A 401 already routed to login through onUnauthorized; any other
       // failure also lands there rather than on a blank page.
@@ -34,6 +36,8 @@
 {#if ready}
   {#if $route === 'home' && username !== null}
     <Home {username} onLogout={signedOut} />
+  {:else if $route === 'children' && username !== null}
+    <Children onBack={() => navigate('home')} />
   {:else}
     <Login onSuccess={refresh} />
   {/if}

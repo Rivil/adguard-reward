@@ -68,6 +68,7 @@ type Server struct {
 	authOK      bool
 	forced      map[string]forced
 	hang        map[string]time.Duration
+	updateFault map[string]int             // client name -> forced status on /control/clients/update
 	clientsDoc  map[string]json.RawMessage // top-level of clients.json
 	clients     []map[string]json.RawMessage
 	dirty       bool // clients modified since the fixture was loaded
@@ -81,11 +82,12 @@ type Server struct {
 func New(t testing.TB, opts Options) *Server {
 	t.Helper()
 	s := &Server{
-		user:   opts.User,
-		pass:   opts.Pass,
-		authOK: true,
-		forced: map[string]forced{},
-		hang:   map[string]time.Duration{},
+		user:        opts.User,
+		pass:        opts.Pass,
+		authOK:      true,
+		forced:      map[string]forced{},
+		hang:        map[string]time.Duration{},
+		updateFault: map[string]int{},
 	}
 	s.loadClients()
 	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
@@ -142,6 +144,20 @@ func (s *Server) Hang(path string, d time.Duration) {
 		return
 	}
 	s.hang[path] = d
+}
+
+// SetUpdateStatus makes POST /control/clients/update answer code for the
+// named client only, after the body has been parsed and before anything is
+// stored, so a multi-client write can fail on its second client while the
+// first went through. 0 clears it. Other clients are unaffected.
+func (s *Server) SetUpdateStatus(name string, code int) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if code == 0 {
+		delete(s.updateFault, name)
+		return
+	}
+	s.updateFault[name] = code
 }
 
 // SetAuth controls whether the configured credential is accepted. When false
@@ -316,6 +332,10 @@ func (s *Server) handleUpdate(w http.ResponseWriter, body []byte) {
 
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	if code, ok := s.updateFault[in.Name]; ok {
+		http.Error(w, "forced status "+strconv.Itoa(code)+" for "+in.Name, code)
+		return
+	}
 	i := s.indexOf(in.Name)
 	if i < 0 {
 		http.Error(w, "client not found: "+in.Name, http.StatusBadRequest)

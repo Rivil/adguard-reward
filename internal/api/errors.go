@@ -15,6 +15,7 @@ const (
 	CodeAdGuardUnavailable = "adguard_unavailable"
 	CodeRateLimited        = "rate_limited"
 	CodeNotFound           = "not_found"
+	CodeConflict           = "conflict"
 )
 
 // errorBody is the JSON envelope every error response carries.

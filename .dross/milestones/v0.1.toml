@@ -1,4 +1,4 @@
-phases = ["01-config-adguard-client", "02-auth-sessions", "03-children-and-blocked-view", "04-grants-scheduler-reconciler", "05-phone-ui-buttons-pwa", "06-deploy-nora"]
+phases = ["01-config-adguard-client", "02-auth-sessions", "03-children-and-blocked-view", "04-grants-scheduler-reconciler", "05-phone-ui-buttons-pwa", "06-deploy-nora", "auto-client-labelling"]
 
 [milestone]
   version = "v0.1"

@@ -25,10 +25,15 @@ export class ApiError extends Error {
 
 // ---- routing -------------------------------------------------------------
 
-export type Route = 'login' | 'home'
+export type Route = 'login' | 'home' | 'children'
+
+const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children' }
 
 function routeFor(pathname: string): Route {
-  return pathname === '/login' ? 'login' : 'home'
+  for (const r of Object.keys(PATHS) as Route[]) {
+    if (r !== 'home' && PATHS[r] === pathname) return r
+  }
+  return 'home'
 }
 
 function currentPath(): string {
@@ -40,7 +45,7 @@ export const route = writable<Route>(routeFor(currentPath()))
 
 /** Switch page and push the matching URL. */
 export function navigate(r: Route): void {
-  const path = r === 'login' ? '/login' : '/'
+  const path = PATHS[r]
   if (typeof history !== 'undefined' && currentPath() !== path) {
     history.pushState(null, '', path)
   }
@@ -60,7 +65,7 @@ export function setOnUnauthorized(fn: () => void): void {
 
 // ---- transport -----------------------------------------------------------
 
-type Method = 'GET' | 'POST' | 'DELETE'
+type Method = 'GET' | 'POST' | 'PUT' | 'DELETE'
 
 interface ErrorEnvelope {
   error?: unknown
@@ -117,21 +122,144 @@ export interface Me {
   expires_at: string
 }
 
-export function login(username: string, password: string): Promise<void> {
-  return request<void>('POST', LOGIN_PATH, { username, password })
+/**
+ * Whether the parent said "not now" to the global-list migration banner.
+ * Per login only: reset by login() and logout(), never persisted, so a
+ * device still on the global list resurfaces on the next sign-in
+ * (locked: migration_offer_ux).
+ */
+export const migrationDismissed = writable(false)
+
+export async function login(username: string, password: string): Promise<void> {
+  await request<void>('POST', LOGIN_PATH, { username, password })
+  migrationDismissed.set(false)
 }
 
-export function logout(): Promise<void> {
-  return request<void>('POST', '/api/v1/logout')
+export async function logout(): Promise<void> {
+  try {
+    await request<void>('POST', '/api/v1/logout')
+  } finally {
+    migrationDismissed.set(false)
+  }
 }
 
 export function me(): Promise<Me> {
   return request<Me>('GET', '/api/v1/me')
 }
 
+// ---- children, clients, services ----------------------------------------
+
+export interface Child {
+  id: number
+  name: string
+  clients: string[]
+}
+
+export interface ChildRef {
+  id: number
+  name: string
+}
+
+export interface ClientView {
+  name: string
+  ids: string[]
+  use_global_blocked_services: boolean
+  child: ChildRef | null
+}
+
+export interface Service {
+  id: string
+  name: string
+  /** icon_svg as AdGuard serves it: base64 SVG. */
+  icon: string
+}
+
+export type ServiceStateName = 'blocked' | 'partial' | 'unblocked'
+
+export interface ServiceState extends Service {
+  state: ServiceStateName
+  /** Present clients on which a partial service is NOT blocked. */
+  differs: string[]
+}
+
+export interface BlockedClient {
+  name: string
+  missing: boolean
+  uses_global: boolean
+}
+
+export interface BlockedView {
+  child: ChildRef
+  clients: BlockedClient[]
+  services: ServiceState[]
+}
+
+export interface MigrationClient {
+  name: string
+  child: ChildRef
+  gains: string[]
+}
+
+export interface MigrationOffer {
+  global: string[]
+  /** Empty means there is nothing to offer. */
+  clients: MigrationClient[]
+}
+
+const CHILDREN = '/api/v1/children'
+
+export async function listChildren(): Promise<Child[]> {
+  const res = await request<{ children: Child[] }>('GET', CHILDREN)
+  return res.children
+}
+
+export function createChild(name: string, clients: string[]): Promise<Child> {
+  return request<Child>('POST', CHILDREN, { name, clients })
+}
+
+export function updateChild(id: number, name: string, clients: string[]): Promise<Child> {
+  return request<Child>('PUT', `${CHILDREN}/${id}`, { name, clients })
+}
+
+export function deleteChild(id: number): Promise<void> {
+  return request<void>('DELETE', `${CHILDREN}/${id}`)
+}
+
+export async function listClients(): Promise<ClientView[]> {
+  const res = await request<{ clients: ClientView[] }>('GET', '/api/v1/clients')
+  return res.clients
+}
+
+export async function listServices(): Promise<Service[]> {
+  const res = await request<{ services: Service[] }>('GET', '/api/v1/services')
+  return res.services
+}
+
+export function childBlocked(id: number): Promise<BlockedView> {
+  return request<BlockedView>('GET', `${CHILDREN}/${id}/blocked`)
+}
+
+export function migrationOffer(): Promise<MigrationOffer> {
+  return request<MigrationOffer>('GET', '/api/v1/migration')
+}
+
+export async function applyMigration(): Promise<string[]> {
+  const res = await request<{ migrated: string[] }>('POST', '/api/v1/migration')
+  return res.migrated
+}
+
+/** A data: URL for an <img> from a catalogue icon. */
+export function iconUrl(icon: string): string {
+  return 'data:image/svg+xml;base64,' + icon
+}
+
 // ---- messages ------------------------------------------------------------
 
-/** The line the login page shows for an ApiError. */
+/**
+ * The line a page shows for an ApiError. Codes without a fixed line — a
+ * 409 conflict among them — echo the server's message verbatim, which
+ * already names the child or client involved.
+ */
 export function messageFor(e: ApiError): string {
   switch (e.code) {
     case 'bad_credentials':

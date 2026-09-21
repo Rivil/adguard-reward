@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -198,5 +199,40 @@ func TestSessions_ListOrder(t *testing.T) {
 	got := ids(rows)
 	if len(got) != 3 || got[0] != earlier || got[1] != same || got[2] != later {
 		t.Fatalf("order = %v, want [%d %d %d] (created_at ASC, then id)", got, earlier, same, later)
+	}
+}
+
+// Delete must wrap the exec error (c-8): a bare `return err` or a swallowed
+// error would let the handler report success on a row that is still there.
+func TestSessions_DeleteExecError(t *testing.T) {
+	s, _ := openTemp(t)
+	id1 := insert(t, s, "alice", 1, base)
+	id2 := insert(t, s, "alice", 2, base.Add(time.Second))
+	if err := s.Delete(ctx, id1); err != nil {
+		t.Fatalf("Delete(id1): %v", err)
+	}
+	rows, err := s.ListByUser(ctx, "alice")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := ids(rows); len(got) != 1 || got[0] != id2 {
+		t.Fatalf("after Delete(id1) sessions = %v, want [%d]", got, id2)
+	}
+
+	if _, err := s.DB().Exec(`DROP TABLE sessions`); err != nil {
+		t.Fatal(err)
+	}
+	err = s.Delete(ctx, id2)
+	if err == nil {
+		t.Fatal("Delete after DROP TABLE returned nil")
+	}
+	if !strings.HasPrefix(err.Error(), "delete session: ") {
+		t.Fatalf("err = %q, want prefix \"delete session: \"", err)
+	}
+	if errors.Unwrap(err) == nil {
+		t.Fatalf("err %q does not wrap the driver error", err)
+	}
+	if !strings.Contains(err.Error(), "no such table") {
+		t.Fatalf("err = %q, want it to name the missing table", err)
 	}
 }

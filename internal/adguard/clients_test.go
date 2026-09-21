@@ -217,13 +217,23 @@ func TestSetBlockedServices_Serialised(t *testing.T) {
 	s := newFake(t)
 	c := newClient(t, s)
 	s.Hang("/control/clients", 20*time.Millisecond)
+	s.Hang("/control/clients/update", 30*time.Millisecond)
 
+	// Both writers share the one RMW lock: mixing them must still never
+	// overlap on the fake.
 	var wg sync.WaitGroup
-	for i := 0; i < 5; i++ {
+	for i := 0; i < 10; i++ {
 		wg.Add(1)
 		go func(i int) {
 			defer wg.Done()
-			if err := c.SetBlockedServices(context.Background(), "Kid phone", []string{"svc", string(rune('a' + i))}); err != nil {
+			ids := []string{"svc", string(rune('a' + i))}
+			var err error
+			if i%2 == 0 {
+				err = c.SetBlockedServices(context.Background(), "Kid phone", ids)
+			} else {
+				err = c.MigrateFromGlobal(context.Background(), "Kid tablet", ids)
+			}
+			if err != nil {
 				t.Error(err)
 			}
 		}(i)
@@ -239,8 +249,8 @@ func TestSetBlockedServices_Serialised(t *testing.T) {
 			seq = append(seq, r.Method)
 		}
 	}
-	if len(seq) != 10 {
-		t.Fatalf("expected 10 rmw requests, got %d: %v", len(seq), seq)
+	if len(seq) != 20 {
+		t.Fatalf("expected 20 rmw requests, got %d: %v", len(seq), seq)
 	}
 	for i := 0; i < len(seq); i += 2 {
 		if seq[i] != "GET" || seq[i+1] != "POST" {
@@ -296,5 +306,97 @@ func TestClients_PartialFailure(t *testing.T) {
 	}
 	if res.Persistent != nil || res.GlobalBlockedServices != nil {
 		t.Errorf("partial result returned alongside the error: %+v", res)
+	}
+}
+
+func TestMigrateFromGlobal_Body(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	if err := c.MigrateFromGlobal(context.Background(), "Kid tablet", []string{"tiktok", "roblox", "tiktok"}); err != nil {
+		t.Fatal(err)
+	}
+	name, data := decodeUpdate(t, s.LastUpdate())
+	if name != "Kid tablet" {
+		t.Errorf("update name = %q, want Kid tablet", name)
+	}
+	if got := asAny(t, data["blocked_services"]); !reflect.DeepEqual(got, []any{"roblox", "tiktok"}) {
+		t.Errorf("data.blocked_services = %v, want [roblox tiktok] (sorted, deduped)", got)
+	}
+	if string(data["use_global_blocked_services"]) != "false" {
+		t.Errorf("data.use_global_blocked_services = %s, want false", data["use_global_blocked_services"])
+	}
+
+	orig := fixtureClient(t, "Kid tablet")
+	for _, k := range []string{"blocked_services", "use_global_blocked_services"} {
+		delete(orig, k)
+		delete(data, k)
+	}
+	if len(orig) != len(data) {
+		t.Errorf("field count: sent %d, read %d", len(data), len(orig))
+	}
+	for k, v := range orig {
+		got, ok := data[k]
+		if !ok {
+			t.Errorf("field %q dropped from the update", k)
+			continue
+		}
+		if !reflect.DeepEqual(asAny(t, got), asAny(t, v)) {
+			t.Errorf("field %q changed: sent %s, read %s", k, got, v)
+		}
+	}
+	if string(data["upstreams_cache_size"]) != "0" {
+		t.Errorf("upstreams_cache_size = %s, want 0 preserved", data["upstreams_cache_size"])
+	}
+}
+
+func TestMigrateFromGlobal_GlobalUntouched(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	ctx := context.Background()
+	if err := c.MigrateFromGlobal(ctx, "Kid tablet", []string{"tiktok", "roblox"}); err != nil {
+		t.Fatal(err)
+	}
+	var gets, posts int
+	for _, r := range s.Requests() {
+		switch {
+		case r.Method == "GET" && r.Path == "/control/clients":
+			gets++
+		case r.Method == "POST" && r.Path == "/control/clients/update":
+			posts++
+		case strings.HasPrefix(r.Path, "/control/blocked_services/"):
+			t.Errorf("migration touched %s %s — the global list must never be written", r.Method, r.Path)
+		}
+	}
+	if gets != 1 || posts != 1 {
+		t.Errorf("requests: %d GET /control/clients, %d POST update; want 1 and 1", gets, posts)
+	}
+	res, err := c.Clients(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !reflect.DeepEqual(res.GlobalBlockedServices, []string{"tiktok", "roblox"}) {
+		t.Errorf("global list after migration = %v, want the fixture [tiktok roblox]", res.GlobalBlockedServices)
+	}
+	if tab := find(res.Persistent, "Kid tablet"); tab == nil || tab.UseGlobalBlockedServices {
+		t.Errorf("Kid tablet still uses the global list after migration: %+v", tab)
+	}
+}
+
+func TestMigrateFromGlobal_NotFound(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	ctx := context.Background()
+	if err := c.MigrateFromGlobal(ctx, "Nobody", []string{"tiktok"}); !errors.Is(err, ErrClientNotFound) {
+		t.Errorf("Nobody: err = %v, want ErrClientNotFound", err)
+	}
+	if s.LastUpdate() != nil {
+		t.Error("unknown client must not produce a write")
+	}
+	s.SetResponse("/control/clients", 200, []byte(`{"clients":[]}`))
+	if err := c.MigrateFromGlobal(ctx, "Kid tablet", []string{"tiktok"}); !errors.Is(err, ErrClientNotFound) {
+		t.Errorf("empty client list: err = %v, want ErrClientNotFound", err)
+	}
+	if s.LastUpdate() != nil {
+		t.Error("a client absent from the fresh read must not be written")
 	}
 }

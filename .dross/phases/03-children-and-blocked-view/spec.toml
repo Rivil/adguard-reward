@@ -1,0 +1,89 @@
+[phase]
+  id = "03-children-and-blocked-view"
+  title = "Children and blocked view"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "POST/GET/PUT/DELETE /api/v1/children manage {id, name, clients[]} rows in SQLite (new migration); names are unique (409 on duplicate), an AdGuard client name can belong to at most one child (409 otherwise), and the rows survive a restart"
+
+[[criteria]]
+  id = "c-2"
+  text = "GET /api/v1/clients returns AdGuard persistent clients live (name, ids, use_global_blocked_services) plus, per client, the child it is assigned to if any; every request hits AdGuard (the fake records one /control/clients hit per call)"
+
+[[criteria]]
+  id = "c-3"
+  text = "GET /api/v1/services returns the built-in catalogue (id, name, icon) live from /control/blocked_services/all; nothing vendored, nothing cached across requests"
+
+[[criteria]]
+  id = "c-4"
+  text = "GET /api/v1/children/{id}/blocked reads every mapped client from AdGuard on each request and returns per service its state (blocked | partial | unblocked) across the child's clients, listing which clients differ when partial; a mapped client name no longer in AdGuard is reported as missing, not an error; AdGuard unreachable returns 502"
+
+[[criteria]]
+  id = "c-5"
+  text = "A children settings page creates, renames, deletes children and assigns clients by checkbox; a client already on another child is shown disabled with that child's name; a missing client is shown struck-through with a remove control; changes persist across reload"
+
+[[criteria]]
+  id = "c-6"
+  text = "The home page lists each child with its currently blocked services (name + icon), re-fetched on load; when AdGuard is unreachable it shows an error state rather than a stale list"
+
+[[criteria]]
+  id = "c-7"
+  text = "When the global blocked_services list is non-empty and any mapped client has use_global_blocked_services=true, a home banner offers a one-time migration showing exactly which clients gain which ids; on confirm the app writes each client's list and flips the flag, leaving the global list untouched; nothing is written without the confirm"
+
+[[criteria]]
+  id = "c-8"
+  text = "Store.Delete returns a wrapped error when the exec fails, asserted by a test (kills survivor 7682485717754728 at internal/store/sessions.go:79)"
+
+[[decisions]]
+  key = "cross_client_state"
+  choice = "A service's state for a child is blocked when every mapped client blocks it, unblocked when none does, partial otherwise; partial carries the list of clients that differ"
+  why = "Honest about drift between a child's devices, and phase 04's grant on a partial service simply unblocks the remainder"
+  locked = true
+
+[[decisions]]
+  key = "global_list_clients"
+  choice = "A mapped client with use_global_blocked_services=true has its blocked set resolved from AdGuard's global list and is shown with a 'uses global list' badge; the c-7 migration offer is the fix, the view never hides it"
+  why = "The view must be truthful about what the child can reach; a client on the global list is really blocked by it until migrated"
+  locked = true
+
+[[decisions]]
+  key = "migration_offer_ux"
+  choice = "The c-7 offer is a home banner shown whenever the condition holds; 'not now' hides it for the session and it reappears on next login until migrated; no persisted dismissed flag"
+  why = "The condition is the state, so there is nothing to store and nothing to drift; a parent cannot permanently silence a device still on the global list"
+  locked = true
+
+[[decisions]]
+  key = "dangling_client"
+  choice = "A child row keeps a client name that AdGuard no longer knows; c-4 reports it as missing and the settings page shows it struck-through with a remove control; nothing is auto-pruned"
+  why = "A transient AdGuard glitch must not silently unmap a device; a rename is fixed by re-assigning"
+  locked = true
+
+[[decisions]]
+  key = "client_identity"
+  choice = "Children reference AdGuard clients by persistent-client name; no ids (MAC/IP) are stored"
+  why = "Name is the only key /control/clients/update and $client= rules accept; ids change as often as names"
+  locked = true
+
+[[deferred]]
+  text = "Create and label AdGuard persistent clients from auto_clients inside the app so a parent never opens AdGuard for a new phone"
+  why = "M2 auto-client labelling per PLAN.md; this phase only reads the client list"
+  target = "auto-client-labelling"
+
+[[deferred]]
+  text = "survivor web/src/App.svelte:21 (StringLiteral)"
+  why = "surviving mutant routed out of a verify run"
+  target = "05-phone-ui-buttons-pwa"
+  survivor = "fd433887aedbf00e"
+
+[[deferred]]
+  text = "survivor web/src/lib/Children.svelte:69 (ArrowFunction)"
+  why = "surviving mutant routed out of a verify run"
+  target = "04-grants-scheduler-reconciler"
+  survivor = "7318eba99fe9b001"
+
+[[deferred]]
+  text = "survivor web/src/lib/Children.svelte:69 (ConditionalExpression)"
+  why = "surviving mutant routed out of a verify run"
+  target = "04-grants-scheduler-reconciler"
+  survivor = "1847f36ba1909811"
