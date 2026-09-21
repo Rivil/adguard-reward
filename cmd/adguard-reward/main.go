@@ -130,6 +130,7 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 		Sessions: st,
 		Children: st,
 		Grants:   eng,
+		Buttons:  st,
 	}).Handler()
 
 	// /healthz stays on the plain mux, outside the API chain: it is

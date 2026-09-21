@@ -48,6 +48,13 @@ type Grants interface {
 	End(ctx context.Context, id int64) error
 }
 
+// ButtonStore is the slice of *store.Store the buttons handlers need. It
+// speaks store.Button and the store's *ErrUnknownChild.
+type ButtonStore interface {
+	ListButtons(ctx context.Context) ([]store.Button, error)
+	ReplaceButtons(ctx context.Context, in []store.Button) ([]store.Button, error)
+}
+
 // Deps is everything the handlers reach for. Interfaces are api-local so
 // the package compiles against fakes.
 type Deps struct {
@@ -59,6 +66,7 @@ type Deps struct {
 	Sessions auth.SessionStore
 	Children ChildStore
 	Grants   Grants
+	Buttons  ButtonStore
 }
 
 // API is the router plus its dependencies.
@@ -106,6 +114,8 @@ func (a *API) routes() {
 	a.mux.Handle("POST /api/v1/grants", a.requireSession(http.HandlerFunc(a.handleGrantCreate)))
 	a.mux.Handle("POST /api/v1/grants/{id}/extend", a.requireSession(http.HandlerFunc(a.handleGrantExtend)))
 	a.mux.Handle("POST /api/v1/grants/{id}/end", a.requireSession(http.HandlerFunc(a.handleGrantEnd)))
+	a.mux.Handle("GET /api/v1/buttons", a.requireSession(http.HandlerFunc(a.handleButtonsList)))
+	a.mux.Handle("PUT /api/v1/buttons", a.requireSession(http.HandlerFunc(a.handleButtonsReplace)))
 	// Unknown paths are 401 without a session and 404 with one, so the
 	// route table cannot be probed anonymously.
 	a.mux.Handle("/api/v1/", a.requireSession(http.NotFoundHandler()))
