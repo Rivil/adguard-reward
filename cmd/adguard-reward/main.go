@@ -23,7 +23,9 @@ import (
 	"github.com/Rivil/adguard-reward/internal/grants"
 	"github.com/Rivil/adguard-reward/internal/health"
 	"github.com/Rivil/adguard-reward/internal/ratelimit"
+	"github.com/Rivil/adguard-reward/internal/spa"
 	"github.com/Rivil/adguard-reward/internal/store"
+	"github.com/Rivil/adguard-reward/web"
 )
 
 // version is bound at build time via -ldflags '-X main.version=...'.
@@ -135,9 +137,13 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 
 	// /healthz stays on the plain mux, outside the API chain: it is
 	// liveness for systemd and Docker, so no cookie and no CSRF header.
+	// The SPA takes everything else: Go's mux prefers the longer pattern,
+	// so /healthz and /api/v1/ are untouched and the static handler still
+	// answers any other /api/ path with a JSON 404 rather than the shell.
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", prober.Handler())
 	mux.Handle("/api/v1/", apiHandler)
+	mux.Handle("/", spa.Handler(web.Dist()))
 
 	srv := &http.Server{
 		Handler:           mux,
