@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"reflect"
 	"slices"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -315,4 +316,130 @@ func TestReconcile_RunLoop(t *testing.T) {
 	case <-time.After(100 * time.Millisecond):
 		t.Fatal("Run did not return within 100 ms of cancel")
 	}
+}
+
+// Log lines Run emits. "reconcile failed" carries a space so slog quotes it;
+// the trailing space on logPass therefore cannot match it, which keeps the
+// two assertions independent (and "startup reconcile" out of both).
+const (
+	logFailed = `msg="reconcile failed"`
+	logPass   = "msg=reconcile "
+)
+
+// runUntil runs the engine at a 20 ms interval until until() holds or d
+// passes, then cancels and waits for Run to return. It returns the whole log
+// buffer, read after Run has stopped writing to it.
+func (e *env) runUntil(until func() bool, d time.Duration) string {
+	e.t.Helper()
+	runCtx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		e.eng.Run(runCtx, 20*time.Millisecond)
+	}()
+	for deadline := time.Now().Add(d); time.Now().Before(deadline) && !until(); {
+		time.Sleep(5 * time.Millisecond)
+	}
+	cancel()
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		e.t.Fatal("Run did not return within 1 s of cancel")
+	}
+	return e.logs.String()
+}
+
+// TestReconcile_RunLogs pins which log line each pass outcome produces. Run's
+// switch is pure reporting, so only the log tells a failed pass from a quiet
+// one — without these the conditions can be inverted or their boundaries
+// widened and every other test still passes.
+func TestReconcile_RunLogs(t *testing.T) {
+	// A failing pass is reported, not swallowed.
+	t.Run("failed", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+		e.fake.SetStatus("/control/clients", 500)
+
+		logs := e.runUntil(func() bool { return strings.Contains(e.logs.String(), logFailed) }, 300*time.Millisecond)
+		if !strings.Contains(logs, logFailed) {
+			t.Fatalf("a failing pass logged no %s line:\n%s", logFailed, logs)
+		}
+	})
+
+	// A pass that fails only because the process is shutting down is not an
+	// error — cancellation is the expected way Run ends.
+	t.Run("cancelled", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+		e.fake.Hang("/control/clients", 200*time.Millisecond)
+
+		runCtx, cancel := context.WithCancel(context.Background())
+		done := make(chan struct{})
+		go func() {
+			defer close(done)
+			e.eng.Run(runCtx, 20*time.Millisecond)
+		}()
+		time.Sleep(50 * time.Millisecond)
+		cancel()
+		select {
+		case <-done:
+		case <-time.After(time.Second):
+			t.Fatal("Run did not return within 1 s of cancel")
+		}
+		if logs := e.logs.String(); strings.Contains(logs, logFailed) {
+			t.Fatalf("cancellation logged %s:\n%s", logFailed, logs)
+		}
+	})
+
+	// Nothing to report means nothing is logged — a per-interval heartbeat
+	// would bury the lines that matter.
+	t.Run("quiet", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+		gets := e.gets()
+
+		logs := e.runUntil(func() bool { return e.gets()-gets >= 3 }, time.Second)
+		if n := e.gets() - gets; n < 3 {
+			t.Fatalf("only %d passes ran; the quiet assertion needs at least 3", n)
+		}
+		if strings.Contains(logs, logFailed) || strings.Contains(logs, logPass) {
+			t.Fatalf("%d consistent passes logged:\n%s", e.gets()-gets, logs)
+		}
+	})
+
+	// A revert is reported once, with its own counter set and the other zero.
+	t.Run("reverted", func(t *testing.T) {
+		e := newEnv(t, withNoTimers)
+		e.offGlobal("youtube", "tiktok")
+		res := e.create(1, []string{"tiktok"}, both)
+		e.clk.Advance(d)
+		if e.status(res.Grant.ID) != store.StatusActive {
+			t.Fatal("timer fired; this test needs a missed timer")
+		}
+
+		logs := e.runUntil(func() bool { return strings.Contains(e.logs.String(), logPass) }, time.Second)
+		if n := strings.Count(logs, logPass); n != 1 {
+			t.Fatalf("revert logged %d %s lines, want exactly 1:\n%s", n, logPass, logs)
+		}
+		if !strings.Contains(logs, "reverted=1") || !strings.Contains(logs, "repaired=0") {
+			t.Fatalf("want a line with reverted=1 repaired=0:\n%s", logs)
+		}
+	})
+
+	// So is a repair — the other operand of the same condition.
+	t.Run("repaired", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+		e.fake.MutateClient("Kid phone", func(m map[string]json.RawMessage) {
+			m["blocked_services"] = json.RawMessage(`["youtube","tiktok"]`)
+		})
+
+		logs := e.runUntil(func() bool { return strings.Contains(e.logs.String(), logPass) }, time.Second)
+		if n := strings.Count(logs, logPass); n != 1 {
+			t.Fatalf("repair logged %d %s lines, want exactly 1:\n%s", n, logPass, logs)
+		}
+		if !strings.Contains(logs, "repaired=1") || !strings.Contains(logs, "reverted=0") {
+			t.Fatalf("want a line with repaired=1 reverted=0:\n%s", logs)
+		}
+	})
 }
