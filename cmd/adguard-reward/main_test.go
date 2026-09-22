@@ -1358,3 +1358,78 @@ func TestRun_ButtonsWired(t *testing.T) {
 		t.Fatalf("GET /api/v1/buttons = %s, want {\"buttons\":[]}", body)
 	}
 }
+
+// TestRun_NoraConfig boots the process on the *shipped* nora template, with
+// only what cannot be committed supplied from the environment, and simulates
+// tailscale serve: requests arrive from 127.0.0.1 carrying the phone's tailnet
+// address in X-Forwarded-For. Nothing else exercises the template end to end,
+// and every clause here is one that only shows up on the host.
+func TestRun_NoraConfig(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	stateDir := t.TempDir()
+	pwFile := filepath.Join(t.TempDir(), "adguard_password")
+	if err := os.WriteFile(pwFile, []byte(svcPass+"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+
+	r := start(t, []string{"--config", "../../deploy/config.nora.yaml"}, map[string]string{
+		"STATE_DIRECTORY":                      stateDir,
+		"ADGUARD_REWARD_LISTEN":                "127.0.0.1:0",
+		"ADGUARD_REWARD_ADGUARD_URL":           fake.URL(),
+		"ADGUARD_REWARD_ADGUARD_USERNAME":      svcUser,
+		"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": pwFile,
+	})
+	base := "http://" + r.addr
+
+	// The unit gives the service $STATE_DIRECTORY and nothing else writable;
+	// the database has to land there. (No assertion about ./data: it exists
+	// on dev machines and this package's tests run in parallel.)
+	if _, err := os.Stat(filepath.Join(stateDir, store.FileName)); err != nil {
+		t.Fatalf("database not in $STATE_DIRECTORY: %v", err)
+	}
+
+	// The phone, as tailscale serve presents it: peer 127.0.0.1, real address
+	// in X-Forwarded-For. A limiter keyed on the peer would lock out the whole
+	// household on one phone's typo.
+	c := apiClient(false)
+	phone := withHeader("X-Forwarded-For", "100.64.0.5")
+	for i := 0; i < 5; i++ {
+		if resp := login(t, c, base, svcUser, "nope", phone); resp.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("failure %d = %d, want 401 (a limiter keyed on the peer answers 429 here)", i+1, resp.StatusCode)
+		}
+	}
+	if resp := login(t, c, base, svcUser, "nope", phone); resp.StatusCode != http.StatusTooManyRequests {
+		t.Fatalf("6th from 100.64.0.5 = %d, want 429", resp.StatusCode)
+	}
+
+	// A second phone is a second bucket — the first one's lockout is its own.
+	other := withHeader("X-Forwarded-For", "100.64.0.6")
+	if resp := login(t, c, base, svcUser, "nope", other); resp.StatusCode != http.StatusUnauthorized {
+		t.Errorf("1st from 100.64.0.6 = %d, want 401 (the limiter is keyed on the proxy, not the phone)", resp.StatusCode)
+	}
+
+	// Tailnet addresses are IPv6 as often as not.
+	const v6 = "fd7a:115c:a1e0::1"
+	login(t, c, base, svcUser, "nope", withHeader("X-Forwarded-For", v6))
+
+	// https:// base_url is what makes the session cookie Secure — and, on the
+	// phone, what makes the origin a secure context so the PWA can install.
+	// Through the proxy, like every other request the deployment sees.
+	ck := sessionCookie(t, login(t, c, base, svcUser, svcPass, withHeader("X-Forwarded-For", "100.64.0.7")))
+	if !ck.Secure {
+		t.Error("session cookie lacks Secure; the template's base_url is not https")
+	}
+
+	out := r.stderr.String()
+	if !strings.Contains(out, "secure_cookie=true") {
+		t.Errorf("listening line does not report secure_cookie=true:\n%s", out)
+	}
+	for _, want := range []string{"ip=100.64.0.5", "ip=100.64.0.6", "ip=100.64.0.7", "ip=" + v6} {
+		if !strings.Contains(out, want) {
+			t.Errorf("login lines lack %q (the forwarded address never reached the limiter):\n%s", want, out)
+		}
+	}
+	if strings.Contains(out, "ip=127.0.0.1") {
+		t.Errorf("a login was logged against the proxy's own address:\n%s", out)
+	}
+}
