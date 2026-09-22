@@ -5,9 +5,13 @@ package main
 // typo in them until the service failed to start on the host.
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"errors"
 	"net/http"
 	"net/netip"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -276,4 +280,390 @@ func TestNoraConfigNoSecrets(t *testing.T) {
 		}
 	}
 	walk("", rawNoraConfig(t))
+}
+
+// ---- deploy/install-nora.sh --------------------------------------------
+//
+// The installer only ever runs as root on nora, so these drive it against a
+// temp tree (DESTDIR) with systemctl, curl, tailscale and journalctl stubbed
+// on PATH. Every stub appends to one ordered log, so the order of the calls is
+// checkable as well as their arguments.
+
+const (
+	installScript = "../../deploy/install-nora.sh"
+	// The version the deploy claims to have built. Not a plausible git
+	// describe output, so a match can only come from this test.
+	installVersion = "v9.9.9-test"
+	// What the tailscale stub reports; the template's TAILNET becomes the
+	// part before .ts.net.
+	stubMagicDNS = "tail9abc.ts.net"
+	stubTailnet  = "tail9abc"
+)
+
+type install struct {
+	t     *testing.T
+	dest  string // DESTDIR: the pretend filesystem root
+	stage string // where `make deploy-nora` would have scp'd its three files
+	bin   string // the stub directory, first on PATH
+	calls string // one ordered log of every stub invocation
+}
+
+// stub writes an executable /bin/sh script that records its own name and
+// arguments in the shared call log, then runs body.
+func (in *install) stub(name, body string) {
+	in.t.Helper()
+	script := "#!/bin/sh\nprintf '%s %s\\n' " + shQuote(name) + " \"$*\" >> " + shQuote(in.calls) + "\n" + body + "\n"
+	if err := os.WriteFile(filepath.Join(in.bin, name), []byte(script), 0o755); err != nil { //nolint:gosec // a stub that must be executable
+		in.t.Fatal(err)
+	}
+}
+
+// shQuote single-quotes s for /bin/sh. Temp paths contain no quotes, but the
+// script text is generated, so it is quoted rather than assumed safe.
+func shQuote(s string) string { return "'" + strings.ReplaceAll(s, "'", `'\''`) + "'" }
+
+func copyInto(t *testing.T, src, dst string, mode os.FileMode) {
+	t.Helper()
+	b, err := os.ReadFile(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dst, b, mode); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// newInstall stages the real unit and template beside a stand-in binary and
+// installs the four stubs. curl carries the body the individual test needs.
+func newInstall(t *testing.T, curl string) *install {
+	t.Helper()
+	root := t.TempDir()
+	in := &install{
+		t:     t,
+		dest:  filepath.Join(root, "dest"),
+		stage: filepath.Join(root, "stage"),
+		bin:   filepath.Join(root, "bin"),
+		calls: filepath.Join(root, "calls.log"),
+	}
+	for _, d := range []string{in.dest, in.stage, in.bin} {
+		if err := os.MkdirAll(d, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := os.WriteFile(filepath.Join(in.stage, "adguard-reward.new"), []byte("#!/bin/sh\n# pretend binary\n"), 0o755); err != nil { //nolint:gosec // stands in for the deployed binary
+		t.Fatal(err)
+	}
+	copyInto(t, unitPath, filepath.Join(in.stage, "adguard-reward.service"), 0o644)
+	copyInto(t, noraConfigPath, filepath.Join(in.stage, "config.nora.yaml"), 0o644)
+
+	in.stub("systemctl", "")
+	in.stub("journalctl", "")
+	in.stub("tailscale", `case "$1" in status) printf '{"MagicDNSSuffix": "`+stubMagicDNS+`"}\n' ;; esac`)
+	in.stub("curl", curl)
+	return in
+}
+
+// healthyCurl answers /healthz with the version that was deployed.
+func healthyCurl(version string) string {
+	return `printf '{"status":"ok","version":"` + version + `"}\n'`
+}
+
+func (in *install) path(parts ...string) string {
+	return filepath.Join(append([]string{in.dest}, parts...)...)
+}
+
+func (in *install) confPath() string { return in.path("etc", "adguard-reward", "config.yaml") }
+func (in *install) credPath() string { return in.path("etc", "adguard-reward", "adguard_password") }
+
+// seedConfigured leaves the config and credential an operator has already
+// filled in, so the run gets past the first-run guard.
+func (in *install) seedConfigured(password string) {
+	in.t.Helper()
+	dir := filepath.Dir(in.confPath())
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		in.t.Fatal(err)
+	}
+	b, err := os.ReadFile(noraConfigPath)
+	if err != nil {
+		in.t.Fatal(err)
+	}
+	s := strings.ReplaceAll(string(b), "TAILNET", stubTailnet)
+	s = strings.ReplaceAll(s, "CHANGE-ME", "svc")
+	if err := os.WriteFile(in.confPath(), []byte(s+"# operator marker\n"), 0o644); err != nil { //nolint:gosec // 0644 is what the installer ships
+		in.t.Fatal(err)
+	}
+	if err := os.WriteFile(in.credPath(), []byte(password+"\n"), 0o600); err != nil {
+		in.t.Fatal(err)
+	}
+}
+
+// run feeds the script to `bash -s`, exactly as `make deploy-nora` does over
+// ssh, and returns its exit code with both streams.
+func (in *install) run(env ...string) (code int, stdout, stderr string) {
+	in.t.Helper()
+	f, err := os.Open(installScript)
+	if err != nil {
+		in.t.Fatal(err)
+	}
+	defer f.Close()
+
+	var out, errb bytes.Buffer
+	cmd := exec.Command("bash", "-s")
+	cmd.Stdin = f
+	cmd.Stdout = &out
+	cmd.Stderr = &errb
+	cmd.Env = append(os.Environ(),
+		"PATH="+in.bin+string(os.PathListSeparator)+os.Getenv("PATH"),
+		"VERSION="+installVersion,
+		"STAGE="+in.stage,
+		"DESTDIR="+in.dest,
+		"HEALTH_TIMEOUT=5",
+		"HEALTH_INTERVAL=0.1",
+	)
+	cmd.Env = append(cmd.Env, env...)
+
+	err = cmd.Run()
+	var ee *exec.ExitError
+	switch {
+	case err == nil:
+	case errors.As(err, &ee):
+		code = ee.ExitCode()
+	default:
+		in.t.Fatalf("running %s: %v", installScript, err)
+	}
+	return code, out.String(), errb.String()
+}
+
+// log is the ordered call log; missing means no stub ran.
+func (in *install) log() string {
+	b, err := os.ReadFile(in.calls)
+	if err != nil {
+		return ""
+	}
+	return string(b)
+}
+
+func (in *install) mode(t *testing.T, path string) os.FileMode {
+	t.Helper()
+	fi, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return fi.Mode().Perm()
+}
+
+func sha256Of(t *testing.T, path string) [32]byte {
+	t.Helper()
+	b, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return sha256.Sum256(b)
+}
+
+// TestInstallNora_FirstRun: a fresh host gets its files and is told what to
+// fill in — and the service is not started, because starting it with a
+// placeholder password would spray bad logins at AdGuard.
+func TestInstallNora_FirstRun(t *testing.T) {
+	in := newInstall(t, healthyCurl(installVersion))
+	code, _, stderr := in.run()
+
+	if code != 3 {
+		t.Fatalf("first run exited %d, want 3\nstderr:\n%s", code, stderr)
+	}
+	if got := in.mode(t, in.confPath()); got != 0o644 {
+		t.Errorf("config.yaml mode = %o, want 644", got)
+	}
+	conf, err := os.ReadFile(in.confPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(conf), "TAILNET") {
+		t.Error("config.yaml still contains TAILNET; the MagicDNS suffix was not substituted")
+	}
+	if !strings.Contains(string(conf), "nora."+stubTailnet+".ts.net") {
+		t.Errorf("config.yaml base_url does not name the tailnet %q:\n%s", stubTailnet, conf)
+	}
+
+	if got := in.mode(t, in.credPath()); got != 0o600 {
+		t.Errorf("credential mode = %o, want 600 (it will hold the AdGuard password)", got)
+	}
+	cred, err := os.ReadFile(in.credPath())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.TrimSpace(string(cred)) != "CHANGE-ME" {
+		t.Error("credential placeholder is not CHANGE-ME")
+	}
+
+	if got := in.mode(t, in.path("usr", "local", "bin", "adguard-reward")); got != 0o755 {
+		t.Errorf("binary mode = %o, want 755", got)
+	}
+	if _, err := os.Stat(in.path("etc", "systemd", "system", "adguard-reward.service")); err != nil {
+		t.Errorf("unit not installed: %v", err)
+	}
+
+	if strings.Contains(in.log(), "systemctl") {
+		t.Errorf("first run touched the service:\n%s", in.log())
+	}
+}
+
+// TestInstallNora_SecondRunPreservesEdits: a deploy replaces code, never the
+// operator's config or their password.
+func TestInstallNora_SecondRunPreservesEdits(t *testing.T) {
+	in := newInstall(t, healthyCurl(installVersion))
+	in.seedConfigured("real-password")
+	confSum, credSum := sha256Of(t, in.confPath()), sha256Of(t, in.credPath())
+
+	// Stale code from an earlier deploy.
+	binPath := in.path("usr", "local", "bin", "adguard-reward")
+	unitPathDest := in.path("etc", "systemd", "system", "adguard-reward.service")
+	for _, p := range []string{binPath, unitPathDest} {
+		if err := os.MkdirAll(filepath.Dir(p), 0o755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(p, []byte("stale\n"), 0o644); err != nil { //nolint:gosec // replaced by the run under test
+			t.Fatal(err)
+		}
+	}
+
+	if code, _, stderr := in.run(); code != 0 {
+		t.Fatalf("second run exited %d, want 0\nstderr:\n%s", code, stderr)
+	}
+	if sha256Of(t, in.confPath()) != confSum {
+		t.Error("config.yaml was overwritten; the operator's edits are gone")
+	}
+	if sha256Of(t, in.credPath()) != credSum {
+		t.Error("credential file was overwritten; the AdGuard password is gone")
+	}
+	for _, p := range []string{binPath, unitPathDest} {
+		b, err := os.ReadFile(p)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(b) == "stale\n" {
+			t.Errorf("%s was not replaced", p)
+		}
+	}
+}
+
+// TestInstallNora_HealthGate: the deploy has not succeeded until the running
+// service reports the version that was just built. A restart that silently
+// kept the old binary looks identical from the outside.
+func TestInstallNora_HealthGate(t *testing.T) {
+	t.Run("version mismatch", func(t *testing.T) {
+		in := newInstall(t, `printf '{"status":"ok","version":"other"}\n'`)
+		in.seedConfigured("real-password")
+
+		code, _, stderr := in.run()
+		if code != 4 {
+			t.Fatalf("mismatch exited %d, want 4\nstderr:\n%s", code, stderr)
+		}
+		for _, want := range []string{"other", installVersion} {
+			if !strings.Contains(stderr, want) {
+				t.Errorf("stderr does not name %q:\n%s", want, stderr)
+			}
+		}
+
+		// The gate is only meaningful after the new unit is actually running.
+		log := in.log()
+		reload := strings.Index(log, "systemctl daemon-reload")
+		restart := strings.Index(log, "systemctl restart")
+		curl := strings.Index(log, "curl")
+		if reload < 0 || restart < 0 || curl < 0 {
+			t.Fatalf("call log is missing daemon-reload, restart or curl:\n%s", log)
+		}
+		if !(reload < restart && restart < curl) {
+			t.Errorf("want daemon-reload, then restart, then curl:\n%s", log)
+		}
+	})
+
+	t.Run("version matches", func(t *testing.T) {
+		in := newInstall(t, healthyCurl(installVersion))
+		in.seedConfigured("real-password")
+		if code, _, stderr := in.run(); code != 0 {
+			t.Fatalf("matching version exited %d, want 0\nstderr:\n%s", code, stderr)
+		}
+	})
+}
+
+// TestInstallNora_PollsUntilUp: the service takes a moment to open its
+// listener, so a one-shot check would fail every healthy deploy.
+func TestInstallNora_PollsUntilUp(t *testing.T) {
+	root := t.TempDir()
+	counter := filepath.Join(root, "n")
+	in := newInstall(t, `n=$(cat `+shQuote(counter)+` 2>/dev/null || echo 0)
+n=$((n+1)); printf '%s' "$n" > `+shQuote(counter)+`
+[ "$n" -le 2 ] && exit 22
+`+healthyCurl(installVersion))
+	in.seedConfigured("real-password")
+
+	code, _, stderr := in.run("HEALTH_TIMEOUT=2", "HEALTH_INTERVAL=0.2")
+	if code != 0 {
+		t.Fatalf("exited %d, want 0 — a slow start must be waited out\nstderr:\n%s", code, stderr)
+	}
+	if n := strings.Count(in.log(), "curl"); n < 3 {
+		t.Errorf("curl was called %d times, want at least 3 (two refusals then success)", n)
+	}
+}
+
+// TestInstallNora_Unhealthy: a deploy that never came up must fail loudly and
+// leave the logs that explain why.
+func TestInstallNora_Unhealthy(t *testing.T) {
+	in := newInstall(t, "exit 22")
+	in.seedConfigured("real-password")
+
+	code, _, stderr := in.run("HEALTH_TIMEOUT=1", "HEALTH_INTERVAL=0.1")
+	if code == 0 {
+		t.Fatalf("a service that never answered exited 0\nstderr:\n%s", stderr)
+	}
+	if !strings.Contains(in.log(), "journalctl -u adguard-reward") {
+		t.Errorf("no journalctl -u adguard-reward in the call log; the failure is unexplained:\n%s", in.log())
+	}
+}
+
+// TestInstallNora_NoSecretOutput enforces the secret-handling rule the hard
+// way: the credential's value must not appear in any log or on either stream.
+// The check is a boolean — the sentinel is never printed, even on failure.
+func TestInstallNora_NoSecretOutput(t *testing.T) {
+	const sentinel = "pw-INSTALL-CANARY-4e21"
+	in := newInstall(t, healthyCurl(installVersion))
+	in.seedConfigured(sentinel)
+
+	code, stdout, stderr := in.run()
+	if code != 0 {
+		t.Fatalf("exited %d, want 0", code)
+	}
+	for name, s := range map[string]string{"stdout": stdout, "stderr": stderr, "call log": in.log()} {
+		if strings.Contains(s, sentinel) {
+			t.Errorf("the credential's value reached %s", name)
+		}
+	}
+}
+
+// TestInstallNora_TailscaleServe: serve must target the literal loopback
+// address the config trusts for X-Forwarded-For. "localhost" can resolve to
+// ::1, which is not in trusted_proxies, and the login limiter would then see
+// the proxy instead of the phone.
+func TestInstallNora_TailscaleServe(t *testing.T) {
+	in := newInstall(t, healthyCurl(installVersion))
+	in.seedConfigured("real-password")
+	if code, _, stderr := in.run(); code != 0 {
+		t.Fatalf("exited %d, want 0\nstderr:\n%s", code, stderr)
+	}
+
+	var serve string
+	for _, line := range strings.Split(in.log(), "\n") {
+		if strings.HasPrefix(line, "tailscale serve") {
+			serve = line
+		}
+	}
+	if serve == "" {
+		t.Fatalf("tailscale serve was never called:\n%s", in.log())
+	}
+	for _, want := range []string{"--bg", "--https=443", "http://127.0.0.1:8080"} {
+		if !strings.Contains(serve, want) {
+			t.Errorf("tailscale serve line %q lacks %q", serve, want)
+		}
+	}
 }
