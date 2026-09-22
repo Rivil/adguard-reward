@@ -667,3 +667,92 @@ func TestInstallNora_TailscaleServe(t *testing.T) {
 		}
 	}
 }
+
+// ---- make deploy-nora ---------------------------------------------------
+
+// TestMakeDeployNoraChain reads the recipe make would actually run. The chain
+// is only correct if all of it agrees on one artefact path and one version
+// string, and a rename in a single place is exactly the failure this catches.
+func TestMakeDeployNoraChain(t *testing.T) {
+	recipe := makeN(t, "deploy-nora")
+
+	// The cross-build must happen before the script is fed to the host, or a
+	// deploy ships whatever was in bin/ from last time.
+	build := strings.Index(recipe, "GOOS=linux GOARCH=amd64")
+	script := strings.Index(recipe, "install-nora.sh")
+	if build < 0 || script < 0 {
+		t.Fatalf("deploy-nora does not cross-build then run install-nora.sh:\n%s", recipe)
+	}
+	if build > script {
+		t.Errorf("deploy-nora runs install-nora.sh before building:\n%s", recipe)
+	}
+
+	// The wrong-host guard, and the transport the script expects: root
+	// without a password prompt, the script on stdin, VERSION in the env.
+	for _, want := range []string{"uname -m", "sudo -n", "bash -s", "VERSION="} {
+		if !strings.Contains(recipe, want) {
+			t.Errorf("deploy-nora recipe lacks %q:\n%s", want, recipe)
+		}
+	}
+
+	// One artefact path: whatever build-linux-bin writes is what gets scp'd.
+	// Both are read out of this same expansion, so $(LINUX_BIN) moving is fine
+	// and the two disagreeing is not.
+	built := outputOf(t, goBuildLine(t, recipe, "deploy-nora"))
+	scp := scpSource(t, recipe)
+	if built != scp {
+		t.Errorf("deploy-nora builds %q but copies %q", built, scp)
+	}
+}
+
+// outputOf returns the `-o <path>` argument of a go build line.
+func outputOf(t *testing.T, line string) string {
+	t.Helper()
+	f := strings.Fields(line)
+	for i, tok := range f {
+		if tok == "-o" && i+1 < len(f) {
+			return f[i+1]
+		}
+	}
+	t.Fatalf("no -o in go build line: %s", line)
+	return ""
+}
+
+// scpSource returns the local path of the scp that stages the binary.
+func scpSource(t *testing.T, recipe string) string {
+	t.Helper()
+	for _, line := range strings.Split(recipe, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "scp") && strings.Contains(line, "adguard-reward.new") {
+			return strings.Fields(line)[1]
+		}
+	}
+	t.Fatalf("deploy-nora never scps the binary to adguard-reward.new:\n%s", recipe)
+	return ""
+}
+
+// TestInstallPathMatchesUnit: the script writes the binary somewhere and the
+// unit executes a binary from somewhere. If those drift the service starts
+// against the previous deploy's code, or not at all.
+func TestInstallPathMatchesUnit(t *testing.T) {
+	want := execBinary(t, parseINI(t, unitPath))
+
+	b, err := os.ReadFile(installScript)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got string
+	for _, line := range strings.Split(string(b), "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "BIN=") {
+			// BIN="$DESTDIR/usr/local/bin/adguard-reward"
+			_, v, _ := strings.Cut(line, "=")
+			got = strings.TrimPrefix(strings.Trim(strings.TrimSpace(v), `"`), "$DESTDIR")
+			break
+		}
+	}
+	if got == "" {
+		t.Fatal("install-nora.sh has no BIN= assignment naming the install path")
+	}
+	if got != want {
+		t.Errorf("install-nora.sh installs to %q but the unit runs %q", got, want)
+	}
+}

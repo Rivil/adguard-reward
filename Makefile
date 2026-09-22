@@ -14,7 +14,10 @@ LDFLAGS  ?= -s -w -X main.version=$(VERSION)
 # test can drop it in a temp dir instead of bin/.
 LINUX_BIN ?= bin/$(BIN)-linux-amd64
 
-.PHONY: help dev dev-web dev-api build build-web build-linux build-linux-bin test test-go test-web smoke typecheck lint fmt clean
+# ssh host alias for the deploy target.
+NORA_HOST ?= nora
+
+.PHONY: help dev dev-web dev-api build build-web build-linux build-linux-bin deploy-nora test test-go test-web smoke typecheck lint fmt clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
@@ -40,6 +43,16 @@ build-linux: build-web build-linux-bin ## Build the linux/amd64 binary for nora 
 # compiling its embed of that directory at the same moment.
 build-linux-bin: ## Cross-compile the linux/amd64 binary only (no frontend rebuild)
 	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o $(LINUX_BIN) ./cmd/$(BIN)
+
+# The install script runs as root on the host and reads VERSION from the
+# environment; it gates the deploy on nora's /healthz reporting exactly the
+# version stamped into the binary this chain just built.
+deploy-nora: build-linux ## Build and deploy to nora over ssh, gated on /healthz
+	@test "$$(ssh $(NORA_HOST) uname -m)" = x86_64 || \
+		{ echo "deploy-nora: $(NORA_HOST) is not x86_64; $(LINUX_BIN) will not run there"; exit 1; }
+	scp $(LINUX_BIN) $(NORA_HOST):/tmp/adguard-reward.new
+	scp deploy/adguard-reward.service deploy/config.nora.yaml $(NORA_HOST):/tmp/
+	ssh $(NORA_HOST) sudo -n env VERSION=$(VERSION) bash -s < deploy/install-nora.sh
 
 test: test-go test-web ## Run the Go and web test suites (needs web/node_modules)
 
