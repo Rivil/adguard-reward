@@ -54,6 +54,10 @@
   name = "sw-cache-name-equality-only"
   reason = "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
 
+[[category]]
+  name = "svelte-lazy-derived-branch"
+  reason = "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -> ['Stryker was here'] and services === null -> false applied, 2026-09-22)."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -997,4 +1001,22 @@
   text = "default:"
   line = 43
   reason = "The switch's default arm (bypass) only returns; rewriting it changes nothing observable."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "9d3b09a97aead0f5"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ArrayDeclaration"
+  text = "const unknown = $derived(services === null ? [] : value.services.filter((id) => !services.some((s) => s.id === id)))"
+  line = 51
+  category = "svelte-lazy-derived-branch"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "9f8c19698c217d12"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = "const unknown = $derived(services === null ? [] : value.services.filter((id) => !services.some((s) => s.id === id)))"
+  line = 51
+  category = "svelte-lazy-derived-branch"
   accepted_in = "05-phone-ui-buttons-pwa"

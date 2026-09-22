@@ -139,6 +139,30 @@
         }
       ]
     },
+    "t-17": {
+      "files": [
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/Buttons.test.ts",
+        "web/src/lib/GrantForm.test.ts",
+        "web/src/lib/ActiveGrants.panel.test.ts",
+        "web/src/lib/tap.test.ts",
+        "web/src/lib/activeGrants.test.ts",
+        "web/src/lib/grants.test.ts",
+        "web/src/lib/sw-routing.test.ts",
+        "web/src/App.test.ts",
+        "internal/api/buttons_test.go"
+      ],
+      "commit": "9811aff",
+      "completed_at": "2026-09-22T06:30:39.850006Z",
+      "landmarks": [
+        {
+          "feature": "phone ui test hardening",
+          "symbol": "hand-kill gate",
+          "loc": "web/src/lib/Home.test.ts:1",
+          "what": "negative/boundary assertions that kill 71 of the 73 in-diff Stryker/gremlins survivors (2 GrantForm:51 equivalents accepted), each confirmed red against the mutant applied by hand"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/spa/spa.go",
