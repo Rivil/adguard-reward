@@ -4,9 +4,17 @@ MODULE   := github.com/Rivil/adguard-reward
 WEB      := web
 GOFLAGS  ?= -trimpath
 VERSION  ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo dev)
+# Pin it: `?=` leaves VERSION recursive, so every reference would re-run git
+# describe and a deploy could stamp the binary and gate its /healthz on two
+# different strings. A command-line VERSION= still overrides both lines.
+VERSION  := $(VERSION)
 LDFLAGS  ?= -s -w -X main.version=$(VERSION)
 
-.PHONY: help dev dev-web dev-api build build-web test test-go test-web smoke typecheck lint fmt clean
+# The linux/amd64 artefact `make deploy-nora` ships. Overridable so the build
+# test can drop it in a temp dir instead of bin/.
+LINUX_BIN ?= bin/$(BIN)-linux-amd64
+
+.PHONY: help dev dev-web dev-api build build-web build-linux build-linux-bin test test-go test-web smoke typecheck lint fmt clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
@@ -25,10 +33,20 @@ build-web: ## Build the frontend into web/dist
 build: build-web ## Build the single static binary
 	CGO_ENABLED=0 go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o bin/$(BIN) ./cmd/$(BIN)
 
+build-linux: build-web build-linux-bin ## Build the linux/amd64 binary for nora (frontend included)
+
+# Split out so the build test can compile a binary without build-web: pnpm
+# empties web/dist first, and under `go test ./...` another package may be
+# compiling its embed of that directory at the same moment.
+build-linux-bin: ## Cross-compile the linux/amd64 binary only (no frontend rebuild)
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build $(GOFLAGS) -ldflags '$(LDFLAGS)' -o $(LINUX_BIN) ./cmd/$(BIN)
+
 test: test-go test-web ## Run the Go and web test suites (needs web/node_modules)
 
+# ADGUARD_REWARD_BUILD_TEST opts the cross-build test in. It shells out to
+# make and compiles a second binary, so a bare `go test ./...` skips it.
 test-go: build-web ## Run Go tests (builds the frontend first: the binary tests serve web/dist)
-	go test -race ./...
+	ADGUARD_REWARD_BUILD_TEST=1 go test -race ./...
 
 test-web: ## Run web unit tests (vitest)
 	cd $(WEB) && pnpm test
