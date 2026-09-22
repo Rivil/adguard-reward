@@ -163,6 +163,21 @@
         }
       ]
     },
+    "t-18": {
+      "files": [
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "46a02b7",
+      "completed_at": "2026-09-22T07:09:34.646028Z",
+      "landmarks": [
+        {
+          "feature": "blocked-services disclosure",
+          "symbol": "toggle",
+          "loc": "web/src/lib/Home.test.ts:130",
+          "what": "disclosure tests drive jsdom's native toggle (one macrotask) instead of a synthetic event so migrated()'s refetch loop is the only post-migrate path and no toggle timer leaks across tests"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/spa/spa.go",

@@ -192,4 +192,4 @@ task_seq = 18
   covers = ["c-2"]
   depends_on = ["t-17"]
   test_contract = ["if migrated() skips its open-disclosure loop (Home.svelte:194 if (open) → if (false)), Home.test.ts it('migrating reloads open disclosures and the catalogue') fails"]
-  status = "in_progress"
+  status = "done"
