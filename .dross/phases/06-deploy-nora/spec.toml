@@ -63,3 +63,13 @@
   id = "2771100b94dbb1f4"
   text = "docs/deploy-nora.md runbook: prerequisites (ssh alias, sudo -n, systemd >= 247, tailscale), first-run exit 3 steps, phone install, exit codes 3/4 — with a test that greps the doc for the script's exit codes"
   why = "No criterion asks for it; the script's own stderr carries the exit-code meanings. Parked at plan time (panel t-7 borderline)"
+
+[[deferred]]
+  id = "2e10a2ae9544902d"
+  text = "gremlins derives its per-mutant timeout from the coverage run, so on a warm Go build cache (coverage ~0.4s instead of ~4.4s) every mutant reports TIMED OUT and efficacy reads 0.00% — a meaningless result that looks like a catastrophic regression. Pin a timeout floor/coefficient in the gremlins adapter, or cold the cache before the coverage pass."
+  why = "Observed 2026-09-22 during 06-deploy-nora t-2: three consecutive runs reported 0.00% efficacy / 38 TIMED OUT purely from cache warmth; the same tree with --timeout-coefficient 40 reported 91.89%. A verify run that hits this silently mismeasures the whole package."
+
+[[deferred]]
+  id = "4e9db81d03ae5f8c"
+  text = "Six accepted survivors are accepted only because gremlins cannot reach a switch-case condition (internal/adguard/client.go:181 x2, :183, :185; internal/config/config.go:112; internal/health/health.go:83 — all reasoned 'attribution ceiling, not a test gap'). Rewriting each two-arm switch as if/else-if puts the condition inside a coverage block and converts them from accepted debt into measured, killed mutants."
+  why = "Proven on internal/grants/reconcile.go during 06-deploy-nora t-2: the identical restructure took that package from 28 killed / 10 not-covered / 75.61% mutator coverage to 34 killed / 4 not-covered / 90.24%. The acceptances are honest but they hide real assertions nobody has written."
