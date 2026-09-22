@@ -1,6 +1,6 @@
 {
   "phase": "05-phone-ui-buttons-pwa",
-  "generated_at": "2026-09-22T06:42:08.539906Z",
+  "generated_at": "2026-09-22T07:10:39.642624Z",
   "languages": [
     {
       "name": "go",
@@ -135,81 +135,21 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 793,
-        "Survived": 35,
+        "Killed": 794,
+        "Survived": 34,
         "Timeout": 1,
         "Errors": 0,
-        "Score": 0.9565741857659831,
+        "Score": 0.9577804583835947,
         "Surviving": [
           {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 25,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "cac773d5866378f2",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 31,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "958c5408e188c7cb",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 63,
+            "File": "web/src/lib/ActiveGrants.svelte",
+            "Line": 33,
             "Op": "ConditionalExpression",
-            "Snippet": "true",
+            "Snippet": "false",
             "Origin": "in-hunk",
-            "Key": "e528d9de6aadadb5",
+            "Key": "796e4f25f8b64e3c",
             "Lifecycle": "accepted",
-            "Note": "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
-          },
-          {
-            "File": "web/src/lib/sw-routing.ts",
-            "Line": 40,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "a8c65213a13dd7f8",
-            "Lifecycle": "accepted",
-            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
-          },
-          {
-            "File": "web/src/lib/sw-routing.ts",
-            "Line": 42,
-            "Op": "EqualityOperator",
-            "Snippet": "i \u003c= joined.length",
-            "Origin": "in-hunk",
-            "Key": "ba55a94c7a967b53",
-            "Lifecycle": "accepted",
-            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
-          },
-          {
-            "File": "web/src/lib/sw-routing.ts",
-            "Line": 46,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "b8724ad36168226d",
-            "Lifecycle": "accepted",
-            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
-          },
-          {
-            "File": "web/src/lib/activeGrants.ts",
-            "Line": 71,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "dc864a49300265c3",
-            "Lifecycle": "accepted",
-            "Note": "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+            "Note": "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
           },
           {
             "File": "web/src/lib/Home.svelte",
@@ -263,16 +203,6 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 194,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "460e4e0d1983d03a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
             "Line": 256,
             "Op": "OptionalChaining",
             "Snippet": "notes[child.id].code",
@@ -300,111 +230,6 @@
             "Key": "6c8255537ab76c28",
             "Lifecycle": "accepted",
             "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 51,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "9d3b09a97aead0f5",
-            "Lifecycle": "accepted",
-            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 20,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "286edbfec9fcea7e",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 51,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "9f8c19698c217d12",
-            "Lifecycle": "accepted",
-            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 137,
-            "Op": "ObjectLiteral",
-            "Snippet": "{}",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "cfc9696c1e58b946",
-            "Lifecycle": "accepted",
-            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 137,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "a4cb0eb008e372b9",
-            "Lifecycle": "accepted",
-            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 137,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "a4cb0eb008e372b9",
-            "Lifecycle": "accepted",
-            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 137,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "a4cb0eb008e372b9",
-            "Lifecycle": "accepted",
-            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 125,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "0595a148ba48c2a0",
-            "Lifecycle": "accepted",
-            "Note": "'remaining' is only read through spec.services.filter(remaining.has), so adding a 404'd target's non-spec services to it changes nothing."
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 137,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "bba5b332cdeb5fc2",
-            "Lifecycle": "accepted",
-            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 33,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "796e4f25f8b64e3c",
-            "Lifecycle": "accepted",
-            "Note": "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -487,6 +312,140 @@
             "Note": "Module-level const mutants (Stryker static=true) are attributed by the vitest runner to the single test that first imported the module, so the tests that assert the value never run against them. Killed when applied by hand (full vitest suite red for api.ts:33 PATHS.buttons, :289 GRANTS and :290 BUTTONS → '', verified 2026-09-21). Attribution ceiling, not a test gap."
           },
           {
+            "File": "web/src/lib/activeGrants.ts",
+            "Line": 71,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "dc864a49300265c3",
+            "Lifecycle": "accepted",
+            "Note": "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 25,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "cac773d5866378f2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 31,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "958c5408e188c7cb",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 63,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "e528d9de6aadadb5",
+            "Lifecycle": "accepted",
+            "Note": "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
+          },
+          {
+            "File": "web/src/lib/sw-routing.ts",
+            "Line": 40,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "a8c65213a13dd7f8",
+            "Lifecycle": "accepted",
+            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+          },
+          {
+            "File": "web/src/lib/sw-routing.ts",
+            "Line": 42,
+            "Op": "EqualityOperator",
+            "Snippet": "i \u003c= joined.length",
+            "Origin": "in-hunk",
+            "Key": "ba55a94c7a967b53",
+            "Lifecycle": "accepted",
+            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+          },
+          {
+            "File": "web/src/lib/sw-routing.ts",
+            "Line": 46,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "b8724ad36168226d",
+            "Lifecycle": "accepted",
+            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "cfc9696c1e58b946",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a4cb0eb008e372b9",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a4cb0eb008e372b9",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a4cb0eb008e372b9",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 125,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "0595a148ba48c2a0",
+            "Lifecycle": "accepted",
+            "Note": "'remaining' is only read through spec.services.filter(remaining.has), so adding a 404'd target's non-spec services to it changes nothing."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "bba5b332cdeb5fc2",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
             "File": "web/src/sw.ts",
             "Line": 43,
             "Op": "ConditionalExpression",
@@ -495,6 +454,37 @@
             "Key": "3539806d54320b88",
             "Lifecycle": "accepted",
             "Note": "The switch's default arm (bypass) only returns; rewriting it changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 51,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9d3b09a97aead0f5",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 20,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "286edbfec9fcea7e",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 51,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "9f8c19698c217d12",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
           }
         ],
         "NotCovered": 5
@@ -1252,67 +1242,82 @@
           },
           {
             "start": 123,
-            "end": 123,
-            "construct": "hunk"
-          },
-          {
-            "start": 124,
-            "end": 127,
-            "construct": "FunctionDeclaration open"
-          },
-          {
-            "start": 128,
             "end": 129,
             "construct": "hunk"
           },
           {
             "start": 130,
-            "end": 132,
-            "construct": "FunctionDeclaration settle"
-          },
-          {
-            "start": 133,
             "end": 133,
-            "construct": "hunk"
+            "construct": "FunctionDeclaration toggle"
           },
           {
             "start": 134,
+            "end": 134,
+            "construct": "hunk"
+          },
+          {
+            "start": 135,
+            "end": 135,
+            "construct": "VariableDeclaration open"
+          },
+          {
+            "start": 136,
             "end": 136,
-            "construct": "FunctionDeclaration mount"
+            "construct": "VariableDeclaration close"
           },
           {
             "start": 137,
-            "end": 137,
+            "end": 138,
             "construct": "hunk"
           },
           {
-            "start": 138,
+            "start": 139,
+            "end": 141,
+            "construct": "FunctionDeclaration settle"
+          },
+          {
+            "start": 142,
             "end": 142,
-            "construct": "FunctionDeclaration mountLoaded"
+            "construct": "hunk"
           },
           {
             "start": 143,
-            "end": 143,
+            "end": 145,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 146,
+            "end": 146,
             "construct": "hunk"
           },
           {
-            "start": 144,
+            "start": 147,
+            "end": 151,
+            "construct": "FunctionDeclaration mountLoaded"
+          },
+          {
+            "start": 152,
             "end": 152,
-            "construct": "FunctionDeclaration checkbox"
+            "construct": "hunk"
           },
           {
             "start": 153,
-            "end": 153,
+            "end": 161,
+            "construct": "FunctionDeclaration checkbox"
+          },
+          {
+            "start": 162,
+            "end": 162,
             "construct": "hunk"
           },
           {
-            "start": 154,
-            "end": 159,
+            "start": 163,
+            "end": 168,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 161,
-            "end": 778,
+            "start": 170,
+            "end": 784,
             "construct": "ExpressionStatement"
           }
         ],
@@ -2917,7 +2922,7 @@
       ".dross/phases/05-phone-ui-buttons-pwa/changes.json": [
         {
           "start": 1,
-          "end": 314
+          "end": 329
         }
       ],
       ".dross/phases/05-phone-ui-buttons-pwa/panel/mvp.md": [
@@ -2947,7 +2952,7 @@
       ".dross/phases/05-phone-ui-buttons-pwa/plan.toml": [
         {
           "start": 1,
-          "end": 184
+          "end": 195
         }
       ],
       ".dross/phases/05-phone-ui-buttons-pwa/spec.toml": [
@@ -2959,13 +2964,13 @@
       ".dross/phases/05-phone-ui-buttons-pwa/tests.json": [
         {
           "start": 1,
-          "end": 4453
+          "end": 3668
         }
       ],
       ".dross/phases/05-phone-ui-buttons-pwa/verify.toml": [
         {
           "start": 1,
-          "end": 504
+          "end": 156
         }
       ],
       ".dross/project.toml": [
@@ -3359,103 +3364,103 @@
         },
         {
           "start": 112,
-          "end": 153
+          "end": 162
         },
         {
-          "start": 155,
-          "end": 155
+          "start": 164,
+          "end": 164
         },
         {
-          "start": 162,
-          "end": 174
+          "start": 171,
+          "end": 183
         },
         {
-          "start": 176,
-          "end": 197
+          "start": 185,
+          "end": 206
         },
         {
-          "start": 199,
-          "end": 204
+          "start": 208,
+          "end": 213
         },
         {
-          "start": 206,
-          "end": 236
+          "start": 215,
+          "end": 223
         },
         {
-          "start": 238,
-          "end": 256
+          "start": 225,
+          "end": 265
         },
         {
-          "start": 259,
-          "end": 282
+          "start": 268,
+          "end": 291
         },
         {
-          "start": 284,
-          "end": 383
+          "start": 293,
+          "end": 296
         },
         {
-          "start": 385,
-          "end": 436
+          "start": 298,
+          "end": 445
         },
         {
-          "start": 438,
-          "end": 453
+          "start": 447,
+          "end": 551
         },
         {
-          "start": 456,
-          "end": 546
-        },
-        {
-          "start": 551,
+          "start": 554,
           "end": 555
         },
         {
-          "start": 557,
-          "end": 571
+          "start": 560,
+          "end": 564
         },
         {
-          "start": 573,
-          "end": 625
+          "start": 566,
+          "end": 580
         },
         {
-          "start": 627,
-          "end": 671
+          "start": 582,
+          "end": 633
         },
         {
-          "start": 676,
-          "end": 679
+          "start": 635,
+          "end": 677
         },
         {
           "start": 682,
-          "end": 690
+          "end": 685
         },
         {
-          "start": 693,
-          "end": 722
+          "start": 688,
+          "end": 696
         },
         {
-          "start": 726,
-          "end": 727
+          "start": 699,
+          "end": 728
         },
         {
-          "start": 733,
-          "end": 747
+          "start": 732,
+          "end": 733
         },
         {
-          "start": 749,
-          "end": 749
+          "start": 739,
+          "end": 753
         },
         {
-          "start": 756,
-          "end": 756
+          "start": 755,
+          "end": 755
         },
         {
-          "start": 761,
+          "start": 762,
           "end": 762
         },
         {
-          "start": 766,
-          "end": 776
+          "start": 767,
+          "end": 768
+        },
+        {
+          "start": 772,
+          "end": 782
         }
       ],
       "web/src/lib/Login.svelte": [
