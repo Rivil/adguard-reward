@@ -22,7 +22,12 @@ adguard:
   url: "http://127.0.0.1:80"
   username: ""
   password: ""          # or password_file: /run/secrets/adguard_password
-data_dir: "./data"
+# Where the database lives. Leave unset and the binary uses systemd's
+# $STATE_DIRECTORY (StateDirectory=adguard-reward) when it is running under a
+# unit, or ./data when it is not. Setting it here wins over both — which is why
+# the shipped file leaves it commented out: a literal ./data under
+# ProtectSystem=strict (cwd is /) would crash-loop the service.
+# data_dir: "/var/lib/adguard-reward"
 ai:
   provider: ""          # anthropic | openai (optional)
   api_key: ""           # or api_key_file
