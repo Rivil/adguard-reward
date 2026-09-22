@@ -103,6 +103,21 @@ describe('GrantForm', () => {
     expect(value().services).toEqual([])
   })
 
+  it('needs a child, not just services', async () => {
+    mount()
+    await fireEvent.click(checkbox('YouTube'))
+    expect(value().services).toEqual(['youtube'])
+    expect(valid()).toBe(false)
+    await pickChild(1)
+    expect(valid()).toBe(true)
+
+    // Back to the placeholder clears the child (null, never 0) and the validity with it.
+    await pickChild('')
+    expect(value().child_id).toBeNull()
+    expect(valid()).toBe(false)
+    expect(select().selectedIndex).toBe(0)
+  })
+
   it('one child is preselected', () => {
     const one = mount({ children: [ada] })
     expect(select().value).toBe('1')
@@ -112,6 +127,20 @@ describe('GrantForm', () => {
     mount({ children: [ada, ben] })
     expect(select().value).toBe('')
     expect(value().child_id).toBeNull()
+  })
+
+  it('placeholder option exists only while no child is chosen', async () => {
+    mount()
+    // With nothing chosen the placeholder is the selected option, not a blank select.
+    expect(select().selectedIndex).toBe(0)
+    expect(select().options[0].value).toBe('')
+    expect(select().options[0].textContent).toBe('Choose a child…')
+    expect(select().options.length).toBe(3)
+
+    await pickChild(2)
+    expect(select().selectedIndex).toBe(1)
+    expect(select().value).toBe('2')
+    expect([...select().options].map((o) => o.value)).toEqual(['1', '2'])
   })
 
   it('unknown service id is kept and marked', async () => {
@@ -129,7 +158,16 @@ describe('GrantForm', () => {
   })
 
   it('disabled greys every control', () => {
-    mount({ disabled: true, value: { child_id: 1, services: ['youtube', 'gone'], minutes: 60 } })
+    const value = { child_id: 1, services: ['youtube', 'gone'], minutes: 60 }
+    const live = mount({ value })
+    expect(fieldset().disabled).toBe(false)
+    expect(select().disabled).toBe(false)
+    expect(minutes().disabled).toBe(false)
+    for (const b of document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')) expect(b.disabled).toBe(false)
+    live.unmount()
+
+    mount({ disabled: true, value })
+    expect(fieldset().disabled).toBe(true)
     expect(select().disabled).toBe(true)
     expect(minutes().disabled).toBe(true)
     const boxes = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')
@@ -138,15 +176,18 @@ describe('GrantForm', () => {
   })
 
   it('null catalogue', () => {
-    const stored = mount({ services: null, value: { child_id: 1, services: ['youtube'], minutes: 60 } })
+    const stored = mount({ services: null, value: { child_id: 1, services: ['youtube', 'tiktok'], minutes: 60 } })
     expect(document.querySelector('[data-unavailable]')).not.toBeNull()
     expect(document.querySelector('input[type="checkbox"]')).toBeNull()
     expect(valid()).toBe(true)
-    expect(value().services).toEqual(['youtube'])
+    expect(value().services).toEqual(['youtube', 'tiktok'])
+    // The stored ids are named, comma-separated, so the parent sees what a save keeps.
+    expect(fieldset().textContent).toContain('Keeps: youtube, tiktok')
     stored.unmount()
 
     mount({ services: null, value: { child_id: 1, services: [], minutes: 60 } })
     expect(document.querySelector('[data-unavailable]')).not.toBeNull()
     expect(valid()).toBe(false)
+    expect(fieldset().textContent).not.toContain('Keeps:')
   })
 })

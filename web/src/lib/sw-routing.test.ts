@@ -19,11 +19,13 @@ const precache = new Set(['/', '/assets/app-abc.js', '/manifest.webmanifest'])
 
 describe('decide', () => {
   it('API and non-GET always bypass', () => {
-    const full = new Set([...precache, '/api/v1/grants', '/api/v1/buttons', '/healthz', '/sw.js'])
+    const full = new Set([...precache, '/api', '/api/v1/grants', '/api/v1/buttons', '/healthz', '/sw.js'])
     for (const set of [precache, full]) {
       expect(decide(req('GET', '/api/v1/grants'), set)).toBe('bypass')
       expect(decide(req('GET', '/api/v1/buttons'), set)).toBe('bypass')
+      // The bare prefix too, even as a navigation and even if it were precached.
       expect(decide(req('GET', '/api'), set)).toBe('bypass')
+      expect(decide(req('GET', '/api', 'navigate'), set)).toBe('bypass')
       expect(decide(req('POST', '/'), set)).toBe('bypass')
       expect(decide(req('POST', '/', 'navigate'), set)).toBe('bypass')
       expect(decide(req('GET', '/healthz'), set)).toBe('bypass')

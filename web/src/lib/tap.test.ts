@@ -74,6 +74,12 @@ describe('runTap', () => {
     }
     expect(d.merge).toHaveBeenCalledTimes(1)
     expect(d.refresh).toHaveBeenCalledTimes(1)
+
+    // An envelope that omits `failed` still reports partial, with nobody named.
+    const bare = fake()
+    bare.createGrant.mockResolvedValueOnce({ id: 9, ends_at: ENDS, applied: false } as GrantCreated)
+    const none = await runTap(b1, bare)
+    expect(none).toMatchObject({ kind: 'partial', failed: [] })
   })
 
   it('errors carry code and message', async () => {
@@ -105,11 +111,13 @@ describe('runTap', () => {
     stale.createGrant.mockRejectedValueOnce(conflict(5))
     stale.refresh.mockRejectedValueOnce(new TypeError('Failed to fetch'))
     const fallback = await runTap(b1, stale)
-    expect(fallback.kind).toBe('offer')
-    if (fallback.kind === 'offer') {
-      expect(fallback.targets.map((t) => t.id)).toEqual([5])
-      expect(fallback.remaining).toEqual(['youtube', 'tiktok'])
-    }
+    // The stub carries nothing but the id the envelope named: no services
+    // (so nothing counts as already covered), no clients, no timestamps.
+    expect(fallback).toEqual({
+      kind: 'offer',
+      targets: [{ id: 5, child_id: 1, services: [], clients: [], started_at: '', ends_at: '' }],
+      remaining: ['youtube', 'tiktok'],
+    })
 
     const noId = fake([])
     noId.createGrant.mockRejectedValueOnce(conflict(undefined))

@@ -266,12 +266,44 @@ describe('ActiveGrants', () => {
   })
 
   it('names', async () => {
-    await mount([grant(1, 600, ['youtube', 'gone'])])
+    await mount([grant(1, 600, ['youtube', 'gone']), { ...grant(2, 600), child_id: 7 }])
     const text = row(1).textContent ?? ''
     expect(text).toContain('Ada')
     expect(text).toContain('YouTube')
     expect(text).toContain('gone')
     expect(text).not.toContain('TikTok')
+    // A child the list does not know is still identified, by id.
+    expect(row(2).querySelector('strong')?.textContent).toBe('child 7')
+  })
+
+  it('row messages', async () => {
+    // 502 carries the client names AdGuard would not re-block, so its own
+    // message wins — but only when it has one. Anything else goes through
+    // messageFor, so a 429's raw text is replaced and a dropped connection
+    // gets the network line.
+    let mode: 'network' | 'rate' | 'empty' = 'network'
+    await mount([grant(7, 600)], {
+      'POST /api/v1/grants/7/end': () => {
+        if (mode === 'network') return Promise.reject(new TypeError('Failed to fetch'))
+        if (mode === 'rate') return new Response(JSON.stringify({ error: 'rate_limited', message: 'slow down' }), { status: 429, headers: { 'Content-Type': 'application/json', 'Retry-After': '7' } })
+        return json(502, { error: 'adguard_unavailable', message: '' })
+      },
+    })
+    const alert = () => row(7).querySelector('[role="alert"]')?.textContent
+
+    await fireEvent.click(button(7, /^End/))
+    await settle()
+    expect(alert()).toBe("Can't reach the server — check your connection")
+
+    mode = 'rate'
+    await fireEvent.click(button(7, /^End/))
+    await settle()
+    expect(alert()).toBe('Too many attempts — wait 7s')
+
+    mode = 'empty'
+    await fireEvent.click(button(7, /^End/))
+    await settle()
+    expect(alert()).toBe("Can't reach AdGuard Home — try again in a moment")
   })
 
   it('empty state', async () => {

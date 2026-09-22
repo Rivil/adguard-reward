@@ -292,6 +292,23 @@ describe('App', () => {
     expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
   })
 
+  it('back to /buttons while signed out stays on login', async () => {
+    // The route alone must not open Buttons: username is still null, so the
+    // page (and its /api/v1/buttons load) never mounts.
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+
+    history.pushState(null, '', '/buttons')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    await tick()
+
+    expect(get(route)).toBe('buttons')
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Buttons' })).toBeNull()
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+  })
+
   it('children needs a session', async () => {
     history.replaceState(null, '', '/children')
     route.set('children')

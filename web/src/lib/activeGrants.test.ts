@@ -108,6 +108,17 @@ describe('activeGrants', () => {
     expect(onUnauthorized).not.toHaveBeenCalled()
   })
 
+  it('a server error is unreachable too', async () => {
+    // Only a lapsed session is exempt: any other ApiError is as unreachable
+    // as a dropped connection, and the list stays as it was.
+    const g1 = grant(1)
+    grantsServer(ok([g1]), () => Promise.resolve(json(502, { error: 'adguard_unavailable', message: 'down' })))
+    await refresh()
+    await refresh()
+    expect(get(activeGrants)).toEqual({ grants: [g1], unreachable: true, loaded: true })
+    expect(onUnauthorized).not.toHaveBeenCalled()
+  })
+
   it('401 is not unreachable', async () => {
     const g1 = grant(1)
     grantsServer(ok([g1]), unauthorized)

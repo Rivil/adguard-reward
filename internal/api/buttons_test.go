@@ -8,6 +8,8 @@ import (
 	"strings"
 	"sync"
 	"testing"
+
+	"github.com/Rivil/adguard-reward/internal/store"
 )
 
 func buttonItem(label string, childID int64, services []string, duration int) map[string]any {
@@ -295,5 +297,30 @@ func TestButtons_ConcurrentPut(t *testing.T) {
 	}
 	if !matched {
 		t.Errorf("final list %+v matches none of the submitted bodies", final)
+	}
+}
+
+// indexOfChild names the item in the 422 message when the store reports a
+// child that vanished between the request's check and the write: the first
+// item for that child, or 0 when none matches (the message still names the
+// child id, so a wrong index is a wrong pointer, not a wrong fact).
+func TestIndexOfChild(t *testing.T) {
+	items := []store.Button{{ChildID: 1}, {ChildID: 2}, {ChildID: 2}, {ChildID: 3}}
+	cases := []struct {
+		childID int64
+		want    int
+	}{
+		{1, 0},
+		{2, 1},
+		{3, 3},
+		{9, 0},
+	}
+	for _, c := range cases {
+		if got := indexOfChild(items, c.childID); got != c.want {
+			t.Errorf("indexOfChild(%d) = %d, want %d", c.childID, got, c.want)
+		}
+	}
+	if got := indexOfChild(nil, 1); got != 0 {
+		t.Errorf("indexOfChild(nil, 1) = %d, want 0", got)
 	}
 }

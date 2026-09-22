@@ -52,6 +52,14 @@ describe('formatCountdown', () => {
     expect(formatCountdown(0)).toBe('0:00')
     expect(formatCountdown(86400)).toBe('24:00:00')
   })
+
+  it('pads below ten only', () => {
+    // Exactly 10 is the boundary: two digits already, so no leading zero.
+    expect(formatCountdown(610)).toBe('10:10')
+    expect(formatCountdown(36610)).toBe('10:10:10')
+    expect(formatCountdown(3609)).toBe('1:00:09')
+    expect(formatCountdown(9)).toBe('0:09')
+  })
 })
 
 describe('formatDuration', () => {
@@ -85,6 +93,14 @@ describe('overlapsFor', () => {
     expect(overlapsFor(2, ['youtube'], all)).toEqual({ overlapping: [C], remaining: [] })
     expect(overlapsFor(1, [], all)).toEqual({ overlapping: [], remaining: [] })
     expect(overlapsFor(1, ['roblox', 'tiktok'], all)).toEqual({ overlapping: [B], remaining: ['roblox'] })
+  })
+
+  it('one shared service is enough to overlap', () => {
+    // A bundled grant only partly covered by the tap still collides on the
+    // shared service; its other services do not have to be in the tap.
+    const D = grant(4, 1, ['youtube', 'tiktok'])
+    expect(overlapsFor(1, ['youtube', 'roblox'], [D])).toEqual({ overlapping: [D], remaining: ['roblox'] })
+    expect(overlapsFor(1, ['roblox'], [D])).toEqual({ overlapping: [], remaining: ['roblox'] })
   })
 
   it('does not mutate the input list', () => {

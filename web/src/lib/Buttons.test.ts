@@ -40,16 +40,16 @@ const b3: Button = { id: 5, label: 'TikTok 30m', child_id: 1, services: ['tiktok
 
 type Stored = { label: string; child_id: number; services: string[]; duration: number }
 
-/** A mutable server: PUT replaces the list and hands back fresh ids. */
+/** A mutable server: PUT replaces the list and hands back fresh ids; `state.servicesDown` flips the catalogue mid-test. */
 function server(buttons: Button[], opts: { services?: Service[] | 'down'; put?: Answer } = {}) {
-  const state = { buttons, nextId: 100 }
+  const state = { buttons, nextId: 100, servicesDown: opts.services === 'down' }
   const routes: Routes = {
     '/api/v1/buttons': () => json(200, { buttons: state.buttons }),
     '/api/v1/children': () => json(200, { children: [ada, ben] }),
-    '/api/v1/services':
-      opts.services === 'down'
-        ? () => json(502, { error: 'adguard_unavailable', message: 'down' })
-        : () => json(200, { services: opts.services ?? [youtube, tiktok, roblox] }),
+    '/api/v1/services': () =>
+      state.servicesDown
+        ? json(502, { error: 'adguard_unavailable', message: 'down' })
+        : json(200, { services: opts.services === 'down' ? [] : (opts.services ?? [youtube, tiktok, roblox]) }),
     'PUT /api/v1/buttons':
       opts.put ??
       (() => {
@@ -81,6 +81,9 @@ const saveButton = () => screen.getByRole('button', { name: 'Save' }) as HTMLBut
 const labelInput = () => screen.getByLabelText('Label') as HTMLInputElement
 const minutesInput = () => screen.getByLabelText('Minutes') as HTMLInputElement
 const childSelect = () => screen.getByLabelText('Child') as HTMLSelectElement
+const formHeading = () => document.querySelector('form h2')?.textContent
+const grantForm = () => document.querySelector('fieldset.grant-form') as HTMLFieldSetElement
+const formValue = () => JSON.parse(grantForm().dataset.value ?? '{}') as { child_id: number | null; services: string[]; minutes: number }
 
 function checkbox(label: string): HTMLInputElement {
   for (const l of document.querySelectorAll('fieldset.grant-form label')) {
@@ -110,8 +113,14 @@ describe('Buttons', () => {
     expect(rows()[0].textContent).toContain('YouTube 90m')
     expect(rows()[0].textContent).toContain('Ada')
     expect(rows()[0].textContent).toContain('1 h 30 min')
+    expect(screen.queryByText(/No buttons yet/)).toBeNull()
+    // The form starts as a blank "new" form.
+    expect(formHeading()).toBe('New button')
+    expect(labelInput().value).toBe('')
+    expect(formValue()).toEqual({ child_id: null, services: [], minutes: 60 })
 
-    await fireEvent.input(labelInput(), { target: { value: 'TikTok 30m' } })
+    // Surrounding whitespace is trimmed off the stored label.
+    await fireEvent.input(labelInput(), { target: { value: '  TikTok 30m  ' } })
     await fireEvent.change(childSelect(), { target: { value: '1' } })
     await fireEvent.click(checkbox('TikTok'))
     await fireEvent.input(minutesInput(), { target: { value: '30' } })
@@ -128,17 +137,54 @@ describe('Buttons', () => {
     })
     expect(s.calls.find((c) => c.method === 'PUT')?.body).not.toContain('"id"')
     expect(rows()[1].dataset.button).toBe('101')
+    // A saved form is fully reset: label, child, services and minutes.
     await waitFor(() => expect(labelInput().value).toBe(''))
+    expect(formValue()).toEqual({ child_id: null, services: [], minutes: 60 })
+    expect(checkbox('TikTok').checked).toBe(false)
+    expect(document.querySelector('[data-missing]')).toBeNull()
+  })
+
+  it('rows name the child and every service', async () => {
+    const two: Button = { id: 6, label: 'Both', child_id: 2, services: ['youtube', 'tiktok'], duration: 3600 }
+    const orphan: Button = { id: 7, label: 'Orphan', child_id: 9, services: ['gone'], duration: 600 }
+    await mount([b1, b2, two, orphan])
+    const text = (id: number) => document.querySelector(`li[data-button="${id}"] .meta`)?.textContent ?? ''
+    expect(text(3)).toBe('Ada · YouTube · 1 h 30 min')
+    expect(text(4)).toBe('Ben · Roblox · 1 h')
+    expect(text(6)).toBe('Ben · YouTube, TikTok · 1 h')
+    // Unknown ids are shown as-is rather than dropped or crashed on.
+    expect(text(7)).toBe('child 9 · gone · 10 min')
+  })
+
+  it('empty state, then the list', async () => {
+    const s = await mount([])
+    expect(screen.getByText(/No buttons yet/)).toBeTruthy()
+    expect(rows().length).toBe(0)
+
+    await fireEvent.input(labelInput(), { target: { value: 'First' } })
+    await fireEvent.change(childSelect(), { target: { value: '1' } })
+    await fireEvent.click(checkbox('YouTube'))
+    await fireEvent.click(saveButton())
+    await waitFor(() => expect(rows().length).toBe(1))
+    expect(puts(s.calls)).toHaveLength(1)
+    expect(screen.queryByText(/No buttons yet/)).toBeNull()
   })
 
   it('edit keeps position and converts units', async () => {
     const s = await mount([b1, b2, b3])
     await fireEvent.click(rowButton(4, 'Edit'))
+    expect(formHeading()).toBe('Edit button')
     expect(labelInput().value).toBe('Roblox 1h')
     expect(minutesInput().value).toBe('60')
     expect(childSelect().value).toBe('2')
     expect(checkbox('Roblox').checked).toBe(true)
     expect(screen.getByRole('button', { name: 'Cancel' })).toBeTruthy()
+
+    // Cancel is back to a blank "new" form.
+    await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+    expect(formHeading()).toBe('New button')
+    expect(labelInput().value).toBe('')
+    expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull()
 
     await fireEvent.click(rowButton(3, 'Edit'))
     expect(minutesInput().value).toBe('90')
@@ -178,11 +224,62 @@ describe('Buttons', () => {
     const alert = await screen.findByRole('alert')
     expect(alert.textContent).toBe(message)
     expect(alert.getAttribute('data-error')).toBe('unprocessable')
+    // Only once the reload has landed and the form is live again is "kept"
+    // meaningful — a reset that ran after the alert would have cleared it.
+    await waitFor(() => expect(getsOf(s.calls, '/api/v1/buttons')).toBe(2))
+    await waitFor(() => expect(saveButton().disabled).toBe(false))
     expect(labelInput().value).toBe('Draft')
     expect(minutesInput().value).toBe('25')
     expect(checkbox('YouTube').checked).toBe(true)
+    expect(formValue()).toEqual({ child_id: 1, services: ['youtube'], minutes: 25 })
+    expect(rows().length).toBe(1)
+  })
+
+  it('a PUT that never reaches the server is the network alert', async () => {
+    const s = await mount([b1], { put: () => Promise.reject(new TypeError('Failed to fetch')) })
+    await fireEvent.click(rowButton(3, 'Delete'))
+    const alert = await screen.findByRole('alert')
+    expect(alert.getAttribute('data-error')).toBe('network')
+    expect(alert.textContent).toBe("Can't reach the server — check your connection")
     await waitFor(() => expect(getsOf(s.calls, '/api/v1/buttons')).toBe(2))
     expect(rows().length).toBe(1)
+  })
+
+  it('everything is locked while a PUT is in flight', async () => {
+    let release!: (r: Response) => void
+    const s = await mount([b1, b2], { put: () => new Promise<Response>((r) => (release = r)) })
+    await fireEvent.input(labelInput(), { target: { value: 'Held' } })
+    await fireEvent.change(childSelect(), { target: { value: '1' } })
+    await fireEvent.click(checkbox('YouTube'))
+    expect(saveButton().disabled).toBe(false)
+    expect(rowButton(3, 'Edit').disabled).toBe(false)
+
+    await fireEvent.click(saveButton())
+    expect(puts(s.calls)).toHaveLength(1)
+    expect(saveButton().disabled).toBe(true)
+    expect(labelInput().disabled).toBe(true)
+    expect(grantForm().disabled).toBe(true)
+    expect(rowButton(3, 'Edit').disabled).toBe(true)
+    expect(rowButton(4, 'Delete').disabled).toBe(true)
+
+    release(json(200, { buttons: [b1, b2, { id: 102, label: 'Held', child_id: 1, services: ['youtube'], duration: 3600 }] }))
+    await waitFor(() => expect(rows().length).toBe(3))
+    expect(labelInput().disabled).toBe(false)
+    expect(grantForm().disabled).toBe(false)
+    expect(rowButton(3, 'Edit').disabled).toBe(false)
+  })
+
+  it('a failed PUT reloads the catalogue too', async () => {
+    // The reload is a fresh load: a catalogue that has gone away since the
+    // page opened is dropped, not kept stale.
+    const s = await mount([b1], { put: () => json(422, { error: 'unprocessable', message: 'nope' }) })
+    expect(document.querySelector('[data-unavailable]')).toBeNull()
+    s.state.servicesDown = true
+    await fireEvent.click(rowButton(3, 'Delete'))
+    await screen.findByRole('alert')
+    await waitFor(() => expect(getsOf(s.calls, '/api/v1/services')).toBe(2))
+    await waitFor(() => expect(document.querySelector('[data-unavailable]')).not.toBeNull())
+    expect(document.querySelector('input[type="checkbox"]')).toBeNull()
   })
 
   it('Save waits for a valid form', async () => {
