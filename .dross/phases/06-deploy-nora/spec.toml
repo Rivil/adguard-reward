@@ -58,3 +58,8 @@
 [[deferred]]
   text = "PWA served under a subpath: base_url with a path prefix behind a proxy — manifest scope/start_url and SPA fallback honour the prefix"
   why = "tailscale serve fronts the app at root on nora; subpath deployments become real with the M4 Docker/proxy release, not yet scoped"
+
+[[deferred]]
+  id = "2771100b94dbb1f4"
+  text = "docs/deploy-nora.md runbook: prerequisites (ssh alias, sudo -n, systemd >= 247, tailscale), first-run exit 3 steps, phone install, exit codes 3/4 — with a test that greps the doc for the script's exit codes"
+  why = "No criterion asks for it; the script's own stderr carries the exit-code meanings. Parked at plan time (panel t-7 borderline)"
