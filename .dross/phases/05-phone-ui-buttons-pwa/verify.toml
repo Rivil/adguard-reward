@@ -1,9 +1,9 @@
 [verify]
   phase = "05-phone-ui-buttons-pwa"
   generated_at = 2026-09-22T07:10:39.642624Z
-  verdict = "partial"
+  verdict = "pass"
   finalized = true
-  finalized_at = 2026-09-22T07:20:57.775024Z
+  finalized_at = 2026-09-22T07:28:45.3885Z
 
 [summary]
   mutation_status = "measured"
@@ -15,8 +15,8 @@
   mutants_in_scope = 902
   unclassified_in_scope = 0
   criteria_total = 8
-  criteria_covered = 7
-  criteria_uncovered = 1
+  criteria_covered = 8
+  criteria_uncovered = 0
 
   [[summary.leg]]
     language = "go"
@@ -75,9 +75,9 @@
 
 [[criterion]]
   id = "c-6"
-  status = "weak"
+  status = "covered"
   tests = ["web/src/pwa.test.ts:it('manifest is installable')", "web/src/pwa.test.ts:it('icons are real PNGs')", "web/src/pwa.test.ts:it('shell links the manifest')", "web/src/sw.test.ts:it('api requests bypass the worker')", "web/src/sw.test.ts:it('offline navigation serves the shell')", "web/src/sw.test.ts:it('assets come from the precache, never put at runtime')", "web/src/lib/sw-routing.test.ts:it('API and non-GET always bypass')", "cmd/adguard-reward/main_test.go:TestRun_PWAServed", "cmd/adguard-reward/main_test.go:TestRun_SWPrecacheListIsServed"]
-  notes = "Manifest (standalone, start_url /, 192/512 PNG icons), /api/* and /healthz never touched by the worker, shell precache only, served by the binary with the precache list free of /api paths — all asserted; sw-routing.ts:29 is killed. Weak on the criterion's last clause only: the on-device installability check (Chrome install prompt from a phone over TLS) is not a test and has not been observed as of this run (user confirmed 2026-09-22). Record device, Chrome version and result here once done."
+  notes = "Manifest (standalone, start_url /, 192/512 PNG icons), /api/* and /healthz never touched by the worker, shell precache only, served by the binary with the precache list free of /api paths — all asserted; sw-routing.ts:29 is killed. The criterion's last clause is an observation, not a test: on-device installability check performed by the user on 2026-09-22 — Chrome install prompt shown from a phone, app launched standalone (device and Chrome version not recorded)."
 
 [[criterion]]
   id = "c-7"
@@ -144,8 +144,8 @@
   text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/ActiveGrants.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Buttons.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file"
 
 [[finding]]
-  severity = "FLAG"
-  text = "criterion c-6: the on-device installability check (Chrome install prompt from a phone over TLS) has not been performed; manifest, icons and service-worker routing are asserted, but the clause the criterion names is unobserved. Do it before ship and record device, Chrome version and result in the c-6 notes."
+  severity = "NOTE"
+  text = "criterion c-6: on-device installability check observed by the user on 2026-09-22 — install prompt shown from a phone, launched standalone. Device and Chrome version were not recorded; it is a manual observation with no test behind it, so a regression here is only caught by repeating it before ship."
 
 [[finding]]
   severity = "NOTE"
