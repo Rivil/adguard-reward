@@ -1,6 +1,6 @@
 {
   "phase": "05-phone-ui-buttons-pwa",
-  "generated_at": "2026-09-21T17:11:42.813767Z",
+  "generated_at": "2026-09-22T06:42:08.539906Z",
   "languages": [
     {
       "name": "go",
@@ -21,11 +21,11 @@
       ],
       "mutation": {
         "Tool": "gremlins",
-        "Killed": 67,
-        "Survived": 6,
+        "Killed": 68,
+        "Survived": 5,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.9178082191780822,
+        "Score": 0.9315068493150684,
         "Surviving": [
           {
             "File": "cmd/adguard-reward/main.go",
@@ -37,17 +37,6 @@
             "Key": "f46f6aab3d37fc49",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
-          },
-          {
-            "File": "internal/api/buttons.go",
-            "Line": 182,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "db86c90f3cbae271",
-            "Lifecycle": "in-diff",
-            "Note": ""
           },
           {
             "File": "internal/spa/spa.go",
@@ -94,7 +83,7 @@
             "Note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
           }
         ],
-        "NotCovered": 6
+        "NotCovered": 5
       },
       "measured_on": "local",
       "whole_file": {
@@ -146,318 +135,12 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 709,
-        "Survived": 118,
-        "Timeout": 2,
+        "Killed": 793,
+        "Survived": 35,
+        "Timeout": 1,
         "Errors": 0,
-        "Score": 0.8552472858866104,
+        "Score": 0.9565741857659831,
         "Surviving": [
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 55,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "3748580c85da3e07",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 33,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "796e4f25f8b64e3c",
-            "Lifecycle": "accepted",
-            "Note": "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 37,
-            "Op": "StringLiteral",
-            "Snippet": "``",
-            "Origin": "in-hunk",
-            "Key": "8affb9b4b3f39dba",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 65,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "a852041b740e5ea2",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 65,
-            "Op": "LogicalOperator",
-            "Snippet": "err.code === 'adguard_unavailable' || err.message !== ''",
-            "Origin": "in-hunk",
-            "Key": "d22b238fe683c09e",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 65,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "a852041b740e5ea2",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 65,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "a852041b740e5ea2",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ActiveGrants.svelte",
-            "Line": 65,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "f117cfece10a79e8",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 51,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "9d3b09a97aead0f5",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 20,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "286edbfec9fcea7e",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 21,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "b0686f50f10f14de",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 39,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "04fd76d3e181c41d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 51,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "9f8c19698c217d12",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 55,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "7a0eac9cdfb56281",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 55,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "091d6896508ba05b",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 76,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "ff1f533b80a18fdb",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 76,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "83dfcb9bbc29d95a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 77,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "dc95f726efbdfc1f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 77,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "dc95f726efbdfc1f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 77,
-            "Op": "EqualityOperator",
-            "Snippet": "value.child_id !== null",
-            "Origin": "in-hunk",
-            "Key": "2cdaf20bd3122fea",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 90,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "653f4790c934f699",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 90,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "653f4790c934f699",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 90,
-            "Op": "EqualityOperator",
-            "Snippet": "value.services.length \u003e= 0",
-            "Origin": "in-hunk",
-            "Key": "fbdf7895997b8cc5",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 90,
-            "Op": "EqualityOperator",
-            "Snippet": "value.services.length \u003c= 0",
-            "Origin": "in-hunk",
-            "Key": "fbdf7895997b8cc5",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 91,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "a951bceb73dae1b6",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 62,
-            "Op": "ObjectLiteral",
-            "Snippet": "{}",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "2db746257a23958c",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 62,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "c1f04c6a08a53452",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 62,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "c1f04c6a08a53452",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 90,
-            "Op": "StringLiteral",
-            "Snippet": "``",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "a286c02a1c4b1214",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 21,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "f80851266a65b8c1",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
           {
             "File": "web/src/lib/Buttons.svelte",
             "Line": 25,
@@ -467,16 +150,6 @@
             "Key": "cac773d5866378f2",
             "Lifecycle": "accepted",
             "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 29,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "ed8c43ce1d1cdbb1",
-            "Lifecycle": "in-diff",
-            "Note": ""
           },
           {
             "File": "web/src/lib/Buttons.svelte",
@@ -490,26 +163,6 @@
           },
           {
             "File": "web/src/lib/Buttons.svelte",
-            "Line": 42,
-            "Op": "BlockStatement",
-            "Snippet": "{}",
-            "Origin": "in-hunk",
-            "Key": "bcc14a6b1ef9e01e",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 53,
-            "Op": "BooleanLiteral",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "0c341510b176f8bf",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
             "Line": 63,
             "Op": "ConditionalExpression",
             "Snippet": "true",
@@ -517,206 +170,6 @@
             "Key": "e528d9de6aadadb5",
             "Lifecycle": "accepted",
             "Note": "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 70,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "6542c01fde2802f3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 82,
-            "Op": "MethodExpression",
-            "Snippet": "label",
-            "Origin": "in-hunk",
-            "Key": "287809848651c538",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 90,
-            "Op": "OptionalChaining",
-            "Snippet": "children.find(c =\u003e c.id === id).name",
-            "Origin": "in-hunk",
-            "Key": "c2323dab75d3c54b",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 90,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "efa16ea03596635f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 94,
-            "Op": "OptionalChaining",
-            "Snippet": "services?.find(s =\u003e s.id === id).name",
-            "Origin": "in-hunk",
-            "Key": "7ddfdacbffbded51",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 94,
-            "Op": "ArrowFunction",
-            "Snippet": "() =\u003e undefined",
-            "Origin": "in-hunk",
-            "Key": "179f5d422196a6fd",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 94,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "374c491aebe39f4d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 94,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "374c491aebe39f4d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 94,
-            "Op": "EqualityOperator",
-            "Snippet": "s.id !== id",
-            "Origin": "in-hunk",
-            "Key": "6d4912d001a09a84",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 107,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "69952ac804aed182",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 138,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "d69b2a4b6f7fc627",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 146,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "26575860faaa002d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 158,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "523204279696c02f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 158,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "523204279696c02f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 158,
-            "Op": "EqualityOperator",
-            "Snippet": "editing !== null",
-            "Origin": "in-hunk",
-            "Key": "92b4c5db18a25d0d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 158,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "363cc4e8e9e0c071",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Buttons.svelte",
-            "Line": 158,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "363cc4e8e9e0c071",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 42,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "7b64266bbdcbe3bd",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/sw-routing.ts",
-            "Line": 29,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "96c129e02957e4b1",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/sw-routing.ts",
-            "Line": 29,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "cc143bf078a95015",
-            "Lifecycle": "in-diff",
-            "Note": ""
           },
           {
             "File": "web/src/lib/sw-routing.ts",
@@ -749,81 +202,14 @@
             "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
           },
           {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 165,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
+            "File": "web/src/lib/activeGrants.ts",
+            "Line": 71,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
             "Origin": "in-hunk",
-            "Key": "dfe4be2d053cac36",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 166,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "5236ccbb5b54c549",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 180,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "1761a41ba514e03f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 239,
-            "Op": "ArrowFunction",
-            "Snippet": "() =\u003e undefined",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "0c279e66b311e6ef",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 239,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "579eae5f1d3ac2ce",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 301,
-            "Op": "ArrowFunction",
-            "Snippet": "() =\u003e undefined",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "cb469cbb0827780a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 301,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "caff8be894c61145",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Key": "dc864a49300265c3",
+            "Lifecycle": "accepted",
+            "Note": "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
           },
           {
             "File": "web/src/lib/Home.svelte",
@@ -857,16 +243,6 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 116,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "21ceb9a11988d3db",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
             "Line": 124,
             "Op": "ConditionalExpression",
             "Snippet": "default:",
@@ -874,26 +250,6 @@
             "Key": "6232b0be4db10034",
             "Lifecycle": "accepted",
             "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 148,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "29d6d974df1af768",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 150,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "f15344e77f5350da",
-            "Lifecycle": "in-diff",
-            "Note": ""
           },
           {
             "File": "web/src/lib/Home.svelte",
@@ -907,111 +263,11 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 164,
-            "Op": "MethodExpression",
-            "Snippet": "o.spec.services",
-            "Origin": "in-hunk",
-            "Key": "39e2a4d0d12d6d0e",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 165,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "b1c6837482b71160",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 165,
-            "Op": "EqualityOperator",
-            "Snippet": "already.length \u003e= 0",
-            "Origin": "in-hunk",
-            "Key": "6367269b859f3c0f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 165,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "dfe4be2d053cac36",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 174,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "d92a9b4a6fc9fe18",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 174,
-            "Op": "LogicalOperator",
-            "Snippet": "blocked[id]?.view \u0026\u0026 loadingBlocked.has(id)",
-            "Origin": "in-hunk",
-            "Key": "ffd898b5fe9bad82",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 188,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "3865dbd30bdebc29",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 194,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "460e4e0d1983d03a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
             "Line": 194,
             "Op": "ConditionalExpression",
             "Snippet": "false",
             "Origin": "in-hunk",
             "Key": "460e4e0d1983d03a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 228,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "024d53b7723202b6",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 236,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "58102732b5691b7e",
             "Lifecycle": "in-diff",
             "Note": ""
           },
@@ -1037,66 +293,6 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 306,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "6c65a2996cf758c5",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 306,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "6c65a2996cf758c5",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 306,
-            "Op": "EqualityOperator",
-            "Snippet": "inflight.adhoc !== true",
-            "Origin": "in-hunk",
-            "Key": "1ed30fb4887e8a69",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 306,
-            "Op": "BooleanLiteral",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "ff7b0730720f9326",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 307,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "97ed4dddc66e58a8",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 67,
-            "Op": "BlockStatement",
-            "Snippet": "{}",
-            "Origin": "in-hunk",
-            "Key": "b240fe47b4cdd5d5",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
             "Line": 78,
             "Op": "OptionalChaining",
             "Snippet": "stopPolling()",
@@ -1106,15 +302,35 @@
             "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
           },
           {
-            "File": "web/src/lib/tap.ts",
-            "Line": 78,
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 51,
             "Op": "ArrayDeclaration",
             "Snippet": "[\"Stryker was here\"]",
             "NotCovered": true,
             "Origin": "in-hunk",
-            "Key": "3b83ff4de4ded108",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Key": "9d3b09a97aead0f5",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 20,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "286edbfec9fcea7e",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 51,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "9f8c19698c217d12",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
           },
           {
             "File": "web/src/lib/tap.ts",
@@ -1162,46 +378,6 @@
           },
           {
             "File": "web/src/lib/tap.ts",
-            "Line": 103,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "df5ec2f9c77d4392",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 103,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "df5ec2f9c77d4392",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 103,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "5f090979d9716df3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/tap.ts",
-            "Line": 103,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "5f090979d9716df3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/tap.ts",
             "Line": 125,
             "Op": "ConditionalExpression",
             "Snippet": "true",
@@ -1221,34 +397,24 @@
             "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
           },
           {
-            "File": "web/src/lib/activeGrants.ts",
-            "Line": 32,
+            "File": "web/src/lib/ActiveGrants.svelte",
+            "Line": 33,
             "Op": "ConditionalExpression",
-            "Snippet": "true",
+            "Snippet": "false",
             "Origin": "in-hunk",
-            "Key": "673714a9321f3d23",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/activeGrants.ts",
-            "Line": 32,
-            "Op": "LogicalOperator",
-            "Snippet": "err instanceof ApiError || err.status === 401",
-            "Origin": "in-hunk",
-            "Key": "03e69d5d692564d2",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/activeGrants.ts",
-            "Line": 71,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "dc864a49300265c3",
+            "Key": "796e4f25f8b64e3c",
             "Lifecycle": "accepted",
-            "Note": "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+            "Note": "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 21,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "f1b531569dc325b5",
+            "Lifecycle": "accepted",
+            "Note": "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
           },
           {
             "File": "web/src/lib/api.ts",
@@ -1321,26 +487,6 @@
             "Note": "Module-level const mutants (Stryker static=true) are attributed by the vitest runner to the single test that first imported the module, so the tests that assert the value never run against them. Killed when applied by hand (full vitest suite red for api.ts:33 PATHS.buttons, :289 GRANTS and :290 BUTTONS → '', verified 2026-09-21). Attribution ceiling, not a test gap."
           },
           {
-            "File": "web/src/lib/grants.ts",
-            "Line": 17,
-            "Op": "EqualityOperator",
-            "Snippet": "n \u003c= 10",
-            "Origin": "in-hunk",
-            "Key": "8f2ea76d739e98f8",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/grants.ts",
-            "Line": 56,
-            "Op": "MethodExpression",
-            "Snippet": "g.services.every(s =\u003e services.includes(s))",
-            "Origin": "in-hunk",
-            "Key": "a24e2a197608c434",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
             "File": "web/src/sw.ts",
             "Line": 43,
             "Op": "ConditionalExpression",
@@ -1351,7 +497,7 @@
             "Note": "The switch's default arm (bypass) only returns; rewriting it changes nothing observable."
           }
         ],
-        "NotCovered": 18
+        "NotCovered": 5
       },
       "measured_on": "local",
       "ranges": {
@@ -1363,7 +509,7 @@
           },
           {
             "start": 51,
-            "end": 305,
+            "end": 322,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1565,7 +711,7 @@
           },
           {
             "start": 99,
-            "end": 282,
+            "end": 314,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1768,41 +914,56 @@
           {
             "start": 84,
             "end": 84,
-            "construct": "hunk"
+            "construct": "VariableDeclaration formHeading"
           },
           {
             "start": 85,
-            "end": 93,
+            "end": 85,
+            "construct": "VariableDeclaration grantForm"
+          },
+          {
+            "start": 86,
+            "end": 86,
+            "construct": "VariableDeclaration formValue"
+          },
+          {
+            "start": 87,
+            "end": 87,
+            "construct": "hunk"
+          },
+          {
+            "start": 88,
+            "end": 96,
             "construct": "FunctionDeclaration checkbox"
           },
           {
-            "start": 94,
-            "end": 94,
+            "start": 97,
+            "end": 97,
             "construct": "hunk"
           },
           {
-            "start": 95,
-            "end": 101,
+            "start": 98,
+            "end": 104,
             "construct": "FunctionDeclaration mount"
           },
           {
-            "start": 102,
-            "end": 102,
-            "construct": "hunk"
-          },
-          {
-            "start": 103,
+            "start": 105,
             "end": 105,
-            "construct": "ExpressionStatement"
+            "construct": "hunk"
           },
           {
             "start": 106,
-            "end": 106,
+            "end": 108,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 109,
+            "end": 109,
             "construct": "hunk"
           },
           {
-            "start": 107,
-            "end": 222,
+            "start": 110,
+            "end": 319,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1954,7 +1115,7 @@
           },
           {
             "start": 58,
-            "end": 152,
+            "end": 193,
             "construct": "ExpressionStatement"
           }
         ],
@@ -2031,102 +1192,127 @@
           },
           {
             "start": 68,
-            "end": 89,
+            "end": 90,
             "construct": "FunctionDeclaration server"
           },
           {
             "start": 91,
             "end": 91,
-            "construct": "VariableDeclaration grantGets"
+            "construct": "hunk"
           },
           {
             "start": 92,
             "end": 92,
-            "construct": "VariableDeclaration posts"
+            "construct": "VariableDeclaration grantGets"
           },
           {
             "start": 93,
             "end": 93,
+            "construct": "VariableDeclaration getsOf"
+          },
+          {
+            "start": 94,
+            "end": 94,
+            "construct": "VariableDeclaration posts"
+          },
+          {
+            "start": 95,
+            "end": 96,
             "construct": "hunk"
           },
           {
-            "start": 100,
+            "start": 97,
+            "end": 100,
+            "construct": "VariableDeclaration migratable"
+          },
+          {
+            "start": 101,
+            "end": 101,
+            "construct": "hunk"
+          },
+          {
+            "start": 102,
             "end": 104,
-            "construct": "FunctionDeclaration tile"
-          },
-          {
-            "start": 105,
-            "end": 105,
-            "construct": "hunk"
-          },
-          {
-            "start": 106,
-            "end": 110,
-            "construct": "FunctionDeclaration details"
-          },
-          {
-            "start": 111,
-            "end": 111,
-            "construct": "hunk"
+            "construct": "FunctionDeclaration migrate"
           },
           {
             "start": 112,
-            "end": 115,
-            "construct": "FunctionDeclaration open"
+            "end": 116,
+            "construct": "FunctionDeclaration tile"
           },
           {
-            "start": 116,
+            "start": 117,
             "end": 117,
             "construct": "hunk"
           },
           {
             "start": 118,
-            "end": 120,
+            "end": 122,
+            "construct": "FunctionDeclaration details"
+          },
+          {
+            "start": 123,
+            "end": 123,
+            "construct": "hunk"
+          },
+          {
+            "start": 124,
+            "end": 127,
+            "construct": "FunctionDeclaration open"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "construct": "hunk"
+          },
+          {
+            "start": 130,
+            "end": 132,
             "construct": "FunctionDeclaration settle"
           },
           {
-            "start": 121,
-            "end": 121,
+            "start": 133,
+            "end": 133,
             "construct": "hunk"
           },
           {
-            "start": 122,
-            "end": 124,
+            "start": 134,
+            "end": 136,
             "construct": "FunctionDeclaration mount"
           },
           {
-            "start": 125,
-            "end": 125,
+            "start": 137,
+            "end": 137,
             "construct": "hunk"
           },
           {
-            "start": 126,
-            "end": 130,
+            "start": 138,
+            "end": 142,
             "construct": "FunctionDeclaration mountLoaded"
           },
           {
-            "start": 131,
-            "end": 131,
+            "start": 143,
+            "end": 143,
             "construct": "hunk"
           },
           {
-            "start": 132,
-            "end": 140,
+            "start": 144,
+            "end": 152,
             "construct": "FunctionDeclaration checkbox"
           },
           {
-            "start": 141,
-            "end": 141,
+            "start": 153,
+            "end": 153,
             "construct": "hunk"
           },
           {
-            "start": 142,
-            "end": 147,
+            "start": 154,
+            "end": 159,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 149,
-            "end": 575,
+            "start": 161,
+            "end": 778,
             "construct": "ExpressionStatement"
           }
         ],
@@ -2285,7 +1471,7 @@
           },
           {
             "start": 62,
-            "end": 178,
+            "end": 189,
             "construct": "ExpressionStatement"
           }
         ],
@@ -2648,47 +1834,47 @@
           },
           {
             "start": 45,
-            "end": 55,
+            "end": 63,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 56,
-            "end": 56,
+            "start": 64,
+            "end": 64,
             "construct": "hunk"
           },
           {
-            "start": 57,
-            "end": 65,
+            "start": 65,
+            "end": 73,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 66,
-            "end": 66,
-            "construct": "hunk"
-          },
-          {
-            "start": 67,
+            "start": 74,
             "end": 74,
-            "construct": "ExpressionStatement"
+            "construct": "hunk"
           },
           {
             "start": 75,
-            "end": 75,
-            "construct": "hunk"
-          },
-          {
-            "start": 76,
-            "end": 95,
+            "end": 82,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 96,
-            "end": 96,
+            "start": 83,
+            "end": 83,
             "construct": "hunk"
           },
           {
-            "start": 97,
-            "end": 105,
+            "start": 84,
+            "end": 111,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 112,
+            "end": 112,
+            "construct": "hunk"
+          },
+          {
+            "start": 113,
+            "end": 121,
             "construct": "ExpressionStatement"
           }
         ],
@@ -2887,37 +2073,37 @@
           },
           {
             "start": 20,
-            "end": 49,
+            "end": 51,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 50,
-            "end": 50,
+            "start": 52,
+            "end": 52,
             "construct": "hunk"
           },
           {
-            "start": 51,
-            "end": 60,
+            "start": 53,
+            "end": 62,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 61,
-            "end": 61,
+            "start": 63,
+            "end": 63,
             "construct": "hunk"
           },
           {
-            "start": 62,
-            "end": 70,
+            "start": 64,
+            "end": 72,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 71,
-            "end": 71,
+            "start": 73,
+            "end": 73,
             "construct": "hunk"
           },
           {
-            "start": 72,
-            "end": 104,
+            "start": 74,
+            "end": 106,
             "construct": "ExpressionStatement"
           }
         ],
@@ -3066,17 +2252,17 @@
           },
           {
             "start": 34,
-            "end": 118,
+            "end": 126,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 119,
-            "end": 119,
+            "start": 127,
+            "end": 127,
             "construct": "hunk"
           },
           {
-            "start": 120,
-            "end": 192,
+            "start": 128,
+            "end": 200,
             "construct": "ExpressionStatement"
           }
         ],
@@ -3659,7 +2845,10 @@
       ".dross/phases/05-phone-ui-buttons-pwa/panel/verification.md",
       ".dross/phases/05-phone-ui-buttons-pwa/plan.toml",
       ".dross/phases/05-phone-ui-buttons-pwa/spec.toml",
+      ".dross/phases/05-phone-ui-buttons-pwa/tests.json",
+      ".dross/phases/05-phone-ui-buttons-pwa/verify.toml",
       ".dross/project.toml",
+      ".dross/survivors.toml",
       ".gitignore",
       "Makefile",
       "cmd/adguard-reward/main.go",
@@ -3728,7 +2917,7 @@
       ".dross/phases/05-phone-ui-buttons-pwa/changes.json": [
         {
           "start": 1,
-          "end": 290
+          "end": 314
         }
       ],
       ".dross/phases/05-phone-ui-buttons-pwa/panel/mvp.md": [
@@ -3758,7 +2947,7 @@
       ".dross/phases/05-phone-ui-buttons-pwa/plan.toml": [
         {
           "start": 1,
-          "end": 173
+          "end": 184
         }
       ],
       ".dross/phases/05-phone-ui-buttons-pwa/spec.toml": [
@@ -3767,10 +2956,32 @@
           "end": 99
         }
       ],
+      ".dross/phases/05-phone-ui-buttons-pwa/tests.json": [
+        {
+          "start": 1,
+          "end": 4453
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/verify.toml": [
+        {
+          "start": 1,
+          "end": 504
+        }
+      ],
       ".dross/project.toml": [
         {
           "start": 3,
           "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 45,
+          "end": 60
+        },
+        {
+          "start": 753,
+          "end": 1022
         }
       ],
       ".gitignore": [
@@ -3876,7 +3087,7 @@
       "internal/api/buttons_test.go": [
         {
           "start": 1,
-          "end": 299
+          "end": 326
         }
       ],
       "internal/api/login_test.go": [
@@ -3980,13 +3191,13 @@
         },
         {
           "start": 212,
-          "end": 294
+          "end": 311
         }
       ],
       "web/src/lib/ActiveGrants.panel.test.ts": [
         {
           "start": 1,
-          "end": 282
+          "end": 314
         }
       ],
       "web/src/lib/ActiveGrants.svelte": [
@@ -4004,7 +3215,7 @@
       "web/src/lib/Buttons.test.ts": [
         {
           "start": 1,
-          "end": 222
+          "end": 319
         }
       ],
       "web/src/lib/GrantForm.svelte": [
@@ -4016,7 +3227,7 @@
       "web/src/lib/GrantForm.test.ts": [
         {
           "start": 1,
-          "end": 152
+          "end": 193
         }
       ],
       "web/src/lib/Home.svelte": [
@@ -4136,111 +3347,115 @@
         },
         {
           "start": 67,
-          "end": 74
+          "end": 75
         },
         {
-          "start": 76,
-          "end": 85
+          "start": 77,
+          "end": 86
         },
         {
-          "start": 87,
-          "end": 88
+          "start": 88,
+          "end": 103
         },
         {
-          "start": 91,
-          "end": 93
+          "start": 112,
+          "end": 153
         },
         {
-          "start": 100,
-          "end": 141
+          "start": 155,
+          "end": 155
         },
         {
-          "start": 143,
-          "end": 143
+          "start": 162,
+          "end": 174
         },
         {
-          "start": 150,
-          "end": 177
+          "start": 176,
+          "end": 197
         },
         {
-          "start": 179,
-          "end": 209
+          "start": 199,
+          "end": 204
         },
         {
-          "start": 211,
-          "end": 229
+          "start": 206,
+          "end": 236
         },
         {
-          "start": 232,
-          "end": 255
+          "start": 238,
+          "end": 256
         },
         {
-          "start": 257,
-          "end": 360
+          "start": 259,
+          "end": 282
         },
         {
-          "start": 362,
-          "end": 365
+          "start": 284,
+          "end": 383
         },
         {
-          "start": 367,
-          "end": 408
+          "start": 385,
+          "end": 436
         },
         {
-          "start": 411,
-          "end": 412
+          "start": 438,
+          "end": 453
         },
         {
-          "start": 417,
-          "end": 421
-        },
-        {
-          "start": 423,
-          "end": 437
-        },
-        {
-          "start": 439,
-          "end": 458
-        },
-        {
-          "start": 460,
-          "end": 468
-        },
-        {
-          "start": 473,
-          "end": 476
-        },
-        {
-          "start": 479,
-          "end": 487
-        },
-        {
-          "start": 490,
-          "end": 519
-        },
-        {
-          "start": 523,
-          "end": 524
-        },
-        {
-          "start": 530,
-          "end": 544
-        },
-        {
-          "start": 546,
+          "start": 456,
           "end": 546
         },
         {
-          "start": 553,
-          "end": 553
+          "start": 551,
+          "end": 555
         },
         {
-          "start": 558,
-          "end": 559
+          "start": 557,
+          "end": 571
         },
         {
-          "start": 563,
-          "end": 573
+          "start": 573,
+          "end": 625
+        },
+        {
+          "start": 627,
+          "end": 671
+        },
+        {
+          "start": 676,
+          "end": 679
+        },
+        {
+          "start": 682,
+          "end": 690
+        },
+        {
+          "start": 693,
+          "end": 722
+        },
+        {
+          "start": 726,
+          "end": 727
+        },
+        {
+          "start": 733,
+          "end": 747
+        },
+        {
+          "start": 749,
+          "end": 749
+        },
+        {
+          "start": 756,
+          "end": 756
+        },
+        {
+          "start": 761,
+          "end": 762
+        },
+        {
+          "start": 766,
+          "end": 776
         }
       ],
       "web/src/lib/Login.svelte": [
@@ -4262,7 +3477,7 @@
       "web/src/lib/activeGrants.test.ts": [
         {
           "start": 1,
-          "end": 178
+          "end": 189
         }
       ],
       "web/src/lib/activeGrants.ts": [
@@ -4354,7 +3569,7 @@
       "web/src/lib/grants.test.ts": [
         {
           "start": 1,
-          "end": 105
+          "end": 121
         }
       ],
       "web/src/lib/grants.ts": [
@@ -4366,7 +3581,7 @@
       "web/src/lib/sw-routing.test.ts": [
         {
           "start": 1,
-          "end": 104
+          "end": 106
         }
       ],
       "web/src/lib/sw-routing.ts": [
@@ -4378,7 +3593,7 @@
       "web/src/lib/tap.test.ts": [
         {
           "start": 1,
-          "end": 192
+          "end": 200
         }
       ],
       "web/src/lib/tap.ts": [
