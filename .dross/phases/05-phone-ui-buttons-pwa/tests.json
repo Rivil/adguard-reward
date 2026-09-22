@@ -1,0 +1,3673 @@
+{
+  "phase": "05-phone-ui-buttons-pwa",
+  "generated_at": "2026-09-22T07:10:39.642624Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/api/api.go",
+        "internal/api/buttons.go",
+        "internal/api/buttons_test.go",
+        "internal/api/login_test.go",
+        "internal/spa/spa.go",
+        "internal/spa/spa_test.go",
+        "internal/store/buttons.go",
+        "internal/store/buttons_test.go",
+        "web/embed.go",
+        "web/embed_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 68,
+        "Survived": 5,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9315068493150684,
+        "Surviving": [
+          {
+            "File": "cmd/adguard-reward/main.go",
+            "Line": 43,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "f46f6aab3d37fc49",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
+          },
+          {
+            "File": "internal/spa/spa.go",
+            "Line": 119,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "64ea52ccaa4f8356",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+          },
+          {
+            "File": "internal/spa/spa.go",
+            "Line": 119,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "64ea52ccaa4f8356",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+          },
+          {
+            "File": "internal/spa/spa.go",
+            "Line": 119,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "64ea52ccaa4f8356",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+          },
+          {
+            "File": "web/embed.go",
+            "Line": 20,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4c5b495c5d67f3b8",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+          }
+        ],
+        "NotCovered": 5
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main.go": "adapter-lacks-range-runner",
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/buttons.go": "adapter-lacks-range-runner",
+        "internal/api/buttons_test.go": "adapter-lacks-range-runner",
+        "internal/api/login_test.go": "adapter-lacks-range-runner",
+        "internal/spa/spa.go": "adapter-lacks-range-runner",
+        "internal/spa/spa_test.go": "adapter-lacks-range-runner",
+        "internal/store/buttons.go": "adapter-lacks-range-runner",
+        "internal/store/buttons_test.go": "adapter-lacks-range-runner",
+        "web/embed.go": "adapter-lacks-range-runner",
+        "web/embed_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/App.svelte",
+        "web/src/App.test.ts",
+        "web/src/lib/ActiveGrants.panel.test.ts",
+        "web/src/lib/ActiveGrants.svelte",
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts",
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/Login.svelte",
+        "web/src/lib/Login.test.ts",
+        "web/src/lib/activeGrants.test.ts",
+        "web/src/lib/activeGrants.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts",
+        "web/src/lib/grants.test.ts",
+        "web/src/lib/grants.ts",
+        "web/src/lib/sw-routing.test.ts",
+        "web/src/lib/sw-routing.ts",
+        "web/src/lib/tap.test.ts",
+        "web/src/lib/tap.ts",
+        "web/src/main.ts",
+        "web/src/pwa.test.ts",
+        "web/src/sw.test.ts",
+        "web/src/sw.ts",
+        "web/vite.config.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 794,
+        "Survived": 34,
+        "Timeout": 1,
+        "Errors": 0,
+        "Score": 0.9577804583835947,
+        "Surviving": [
+          {
+            "File": "web/src/lib/ActiveGrants.svelte",
+            "Line": 33,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "796e4f25f8b64e3c",
+            "Lifecycle": "accepted",
+            "Note": "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 29,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "9e7b970f78a207cf",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 30,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "332725e64d242d98",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 51,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "4a2c7171134bef4f",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 124,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "in-hunk",
+            "Key": "6232b0be4db10034",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 157,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "85c805b4f0c4fa20",
+            "Lifecycle": "accepted",
+            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 256,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].code",
+            "Origin": "in-hunk",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 256,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].text",
+            "Origin": "in-hunk",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 78,
+            "Op": "OptionalChaining",
+            "Snippet": "stopPolling()",
+            "Origin": "in-hunk",
+            "Key": "6c8255537ab76c28",
+            "Lifecycle": "accepted",
+            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 21,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "f1b531569dc325b5",
+            "Lifecycle": "accepted",
+            "Note": "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 85,
+            "Op": "OptionalChaining",
+            "Snippet": "body.error",
+            "Origin": "inherited",
+            "Key": "2bd6098940f4db18",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 86,
+            "Op": "OptionalChaining",
+            "Snippet": "body.message",
+            "Origin": "inherited",
+            "Key": "ab063f347019f075",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 87,
+            "Op": "OptionalChaining",
+            "Snippet": "body.grant_id",
+            "Origin": "in-hunk",
+            "Key": "24dff3c1899b1c9f",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 109,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4e298254432a9b95",
+            "Lifecycle": "accepted",
+            "Note": "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 33,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "791f265470427dc7",
+            "Lifecycle": "accepted",
+            "Note": "Module-level const mutants (Stryker static=true) are attributed by the vitest runner to the single test that first imported the module, so the tests that assert the value never run against them. Killed when applied by hand (full vitest suite red for api.ts:33 PATHS.buttons, :289 GRANTS and :290 BUTTONS → '', verified 2026-09-21). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 289,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "50b121555e021aa9",
+            "Lifecycle": "accepted",
+            "Note": "Module-level const mutants (Stryker static=true) are attributed by the vitest runner to the single test that first imported the module, so the tests that assert the value never run against them. Killed when applied by hand (full vitest suite red for api.ts:33 PATHS.buttons, :289 GRANTS and :290 BUTTONS → '', verified 2026-09-21). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 290,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "a1136f7a86c8a5f0",
+            "Lifecycle": "accepted",
+            "Note": "Module-level const mutants (Stryker static=true) are attributed by the vitest runner to the single test that first imported the module, so the tests that assert the value never run against them. Killed when applied by hand (full vitest suite red for api.ts:33 PATHS.buttons, :289 GRANTS and :290 BUTTONS → '', verified 2026-09-21). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/activeGrants.ts",
+            "Line": 71,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "dc864a49300265c3",
+            "Lifecycle": "accepted",
+            "Note": "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 25,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "cac773d5866378f2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 31,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "958c5408e188c7cb",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 63,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "e528d9de6aadadb5",
+            "Lifecycle": "accepted",
+            "Note": "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
+          },
+          {
+            "File": "web/src/lib/sw-routing.ts",
+            "Line": 40,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "a8c65213a13dd7f8",
+            "Lifecycle": "accepted",
+            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+          },
+          {
+            "File": "web/src/lib/sw-routing.ts",
+            "Line": 42,
+            "Op": "EqualityOperator",
+            "Snippet": "i \u003c= joined.length",
+            "Origin": "in-hunk",
+            "Key": "ba55a94c7a967b53",
+            "Lifecycle": "accepted",
+            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+          },
+          {
+            "File": "web/src/lib/sw-routing.ts",
+            "Line": 46,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "b8724ad36168226d",
+            "Lifecycle": "accepted",
+            "Note": "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "cfc9696c1e58b946",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a4cb0eb008e372b9",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a4cb0eb008e372b9",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a4cb0eb008e372b9",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 125,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "0595a148ba48c2a0",
+            "Lifecycle": "accepted",
+            "Note": "'remaining' is only read through spec.services.filter(remaining.has), so adding a 404'd target's non-spec services to it changes nothing."
+          },
+          {
+            "File": "web/src/lib/tap.ts",
+            "Line": 137,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "bba5b332cdeb5fc2",
+            "Lifecycle": "accepted",
+            "Note": "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+          },
+          {
+            "File": "web/src/sw.ts",
+            "Line": 43,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "in-hunk",
+            "Key": "3539806d54320b88",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm (bypass) only returns; rewriting it changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 51,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9d3b09a97aead0f5",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 20,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "286edbfec9fcea7e",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 51,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "9f8c19698c217d12",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          }
+        ],
+        "NotCovered": 5
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/App.test.ts": [
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 51,
+            "end": 322,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/ActiveGrants.panel.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "TSTypeAliasDeclaration Routes"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "hunk"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "VariableDeclaration T0"
+          },
+          {
+            "start": 14,
+            "end": 14,
+            "construct": "hunk"
+          },
+          {
+            "start": 15,
+            "end": 17,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 18,
+            "end": 18,
+            "construct": "hunk"
+          },
+          {
+            "start": 19,
+            "end": 32,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "hunk"
+          },
+          {
+            "start": 34,
+            "end": 43,
+            "construct": "FunctionDeclaration grant"
+          },
+          {
+            "start": 44,
+            "end": 45,
+            "construct": "hunk"
+          },
+          {
+            "start": 46,
+            "end": 53,
+            "construct": "FunctionDeclaration server"
+          },
+          {
+            "start": 54,
+            "end": 54,
+            "construct": "hunk"
+          },
+          {
+            "start": 55,
+            "end": 55,
+            "construct": "VariableDeclaration gets"
+          },
+          {
+            "start": 56,
+            "end": 56,
+            "construct": "hunk"
+          },
+          {
+            "start": 57,
+            "end": 61,
+            "construct": "FunctionDeclaration row"
+          },
+          {
+            "start": 62,
+            "end": 62,
+            "construct": "hunk"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "construct": "FunctionDeclaration countdown"
+          },
+          {
+            "start": 66,
+            "end": 66,
+            "construct": "hunk"
+          },
+          {
+            "start": 67,
+            "end": 72,
+            "construct": "FunctionDeclaration button"
+          },
+          {
+            "start": 73,
+            "end": 74,
+            "construct": "hunk"
+          },
+          {
+            "start": 75,
+            "end": 77,
+            "construct": "FunctionDeclaration settle"
+          },
+          {
+            "start": 78,
+            "end": 78,
+            "construct": "hunk"
+          },
+          {
+            "start": 79,
+            "end": 79,
+            "construct": "VariableDeclaration names"
+          },
+          {
+            "start": 80,
+            "end": 80,
+            "construct": "hunk"
+          },
+          {
+            "start": 81,
+            "end": 86,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 87,
+            "end": 87,
+            "construct": "hunk"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 93,
+            "end": 93,
+            "construct": "hunk"
+          },
+          {
+            "start": 94,
+            "end": 97,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 98,
+            "end": 98,
+            "construct": "hunk"
+          },
+          {
+            "start": 99,
+            "end": 314,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Buttons.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Routes"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 14,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 29,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "VariableDeclaration ada"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "VariableDeclaration ben"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "VariableDeclaration youtube"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "VariableDeclaration tiktok"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "VariableDeclaration roblox"
+          },
+          {
+            "start": 36,
+            "end": 36,
+            "construct": "hunk"
+          },
+          {
+            "start": 37,
+            "end": 37,
+            "construct": "VariableDeclaration b1"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "VariableDeclaration b2"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "VariableDeclaration b3"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "hunk"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "TSTypeAliasDeclaration Stored"
+          },
+          {
+            "start": 42,
+            "end": 43,
+            "construct": "hunk"
+          },
+          {
+            "start": 44,
+            "end": 64,
+            "construct": "FunctionDeclaration server"
+          },
+          {
+            "start": 65,
+            "end": 65,
+            "construct": "hunk"
+          },
+          {
+            "start": 66,
+            "end": 66,
+            "construct": "VariableDeclaration puts"
+          },
+          {
+            "start": 67,
+            "end": 67,
+            "construct": "VariableDeclaration getsOf"
+          },
+          {
+            "start": 68,
+            "end": 68,
+            "construct": "hunk"
+          },
+          {
+            "start": 69,
+            "end": 71,
+            "construct": "FunctionDeclaration rows"
+          },
+          {
+            "start": 72,
+            "end": 72,
+            "construct": "hunk"
+          },
+          {
+            "start": 73,
+            "end": 78,
+            "construct": "FunctionDeclaration rowButton"
+          },
+          {
+            "start": 79,
+            "end": 79,
+            "construct": "hunk"
+          },
+          {
+            "start": 80,
+            "end": 80,
+            "construct": "VariableDeclaration saveButton"
+          },
+          {
+            "start": 81,
+            "end": 81,
+            "construct": "VariableDeclaration labelInput"
+          },
+          {
+            "start": 82,
+            "end": 82,
+            "construct": "VariableDeclaration minutesInput"
+          },
+          {
+            "start": 83,
+            "end": 83,
+            "construct": "VariableDeclaration childSelect"
+          },
+          {
+            "start": 84,
+            "end": 84,
+            "construct": "VariableDeclaration formHeading"
+          },
+          {
+            "start": 85,
+            "end": 85,
+            "construct": "VariableDeclaration grantForm"
+          },
+          {
+            "start": 86,
+            "end": 86,
+            "construct": "VariableDeclaration formValue"
+          },
+          {
+            "start": 87,
+            "end": 87,
+            "construct": "hunk"
+          },
+          {
+            "start": 88,
+            "end": 96,
+            "construct": "FunctionDeclaration checkbox"
+          },
+          {
+            "start": 97,
+            "end": 97,
+            "construct": "hunk"
+          },
+          {
+            "start": 98,
+            "end": 104,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 105,
+            "end": 105,
+            "construct": "hunk"
+          },
+          {
+            "start": 106,
+            "end": 108,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 109,
+            "end": 109,
+            "construct": "hunk"
+          },
+          {
+            "start": 110,
+            "end": 319,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/GrantForm.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "VariableDeclaration ada"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "VariableDeclaration ben"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "VariableDeclaration youtube"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "VariableDeclaration tiktok"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "hunk"
+          },
+          {
+            "start": 13,
+            "end": 15,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 16,
+            "end": 17,
+            "construct": "hunk"
+          },
+          {
+            "start": 18,
+            "end": 20,
+            "construct": "FunctionDeclaration value"
+          },
+          {
+            "start": 21,
+            "end": 21,
+            "construct": "hunk"
+          },
+          {
+            "start": 22,
+            "end": 24,
+            "construct": "FunctionDeclaration valid"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 30,
+            "construct": "FunctionDeclaration fieldset"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "hunk"
+          },
+          {
+            "start": 32,
+            "end": 34,
+            "construct": "FunctionDeclaration select"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "hunk"
+          },
+          {
+            "start": 36,
+            "end": 38,
+            "construct": "FunctionDeclaration minutes"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "hunk"
+          },
+          {
+            "start": 40,
+            "end": 48,
+            "construct": "FunctionDeclaration checkbox"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 52,
+            "construct": "FunctionDeclaration pickChild"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 56,
+            "construct": "FunctionDeclaration typeMinutes"
+          },
+          {
+            "start": 57,
+            "end": 57,
+            "construct": "hunk"
+          },
+          {
+            "start": 58,
+            "end": 193,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Home.test.ts": [
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 22,
+            "end": 35,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "VariableDeclaration YT_ICON"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "VariableDeclaration T0"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "hunk"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "VariableDeclaration ada"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "VariableDeclaration ben"
+          },
+          {
+            "start": 43,
+            "end": 47,
+            "construct": "VariableDeclaration services"
+          },
+          {
+            "start": 48,
+            "end": 48,
+            "construct": "VariableDeclaration b1"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "VariableDeclaration b2"
+          },
+          {
+            "start": 50,
+            "end": 50,
+            "construct": "VariableDeclaration b3"
+          },
+          {
+            "start": 67,
+            "end": 67,
+            "construct": "hunk"
+          },
+          {
+            "start": 68,
+            "end": 90,
+            "construct": "FunctionDeclaration server"
+          },
+          {
+            "start": 91,
+            "end": 91,
+            "construct": "hunk"
+          },
+          {
+            "start": 92,
+            "end": 92,
+            "construct": "VariableDeclaration grantGets"
+          },
+          {
+            "start": 93,
+            "end": 93,
+            "construct": "VariableDeclaration getsOf"
+          },
+          {
+            "start": 94,
+            "end": 94,
+            "construct": "VariableDeclaration posts"
+          },
+          {
+            "start": 95,
+            "end": 96,
+            "construct": "hunk"
+          },
+          {
+            "start": 97,
+            "end": 100,
+            "construct": "VariableDeclaration migratable"
+          },
+          {
+            "start": 101,
+            "end": 101,
+            "construct": "hunk"
+          },
+          {
+            "start": 102,
+            "end": 104,
+            "construct": "FunctionDeclaration migrate"
+          },
+          {
+            "start": 112,
+            "end": 116,
+            "construct": "FunctionDeclaration tile"
+          },
+          {
+            "start": 117,
+            "end": 117,
+            "construct": "hunk"
+          },
+          {
+            "start": 118,
+            "end": 122,
+            "construct": "FunctionDeclaration details"
+          },
+          {
+            "start": 123,
+            "end": 129,
+            "construct": "hunk"
+          },
+          {
+            "start": 130,
+            "end": 133,
+            "construct": "FunctionDeclaration toggle"
+          },
+          {
+            "start": 134,
+            "end": 134,
+            "construct": "hunk"
+          },
+          {
+            "start": 135,
+            "end": 135,
+            "construct": "VariableDeclaration open"
+          },
+          {
+            "start": 136,
+            "end": 136,
+            "construct": "VariableDeclaration close"
+          },
+          {
+            "start": 137,
+            "end": 138,
+            "construct": "hunk"
+          },
+          {
+            "start": 139,
+            "end": 141,
+            "construct": "FunctionDeclaration settle"
+          },
+          {
+            "start": 142,
+            "end": 142,
+            "construct": "hunk"
+          },
+          {
+            "start": 143,
+            "end": 145,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 146,
+            "end": 146,
+            "construct": "hunk"
+          },
+          {
+            "start": 147,
+            "end": 151,
+            "construct": "FunctionDeclaration mountLoaded"
+          },
+          {
+            "start": 152,
+            "end": 152,
+            "construct": "hunk"
+          },
+          {
+            "start": 153,
+            "end": 161,
+            "construct": "FunctionDeclaration checkbox"
+          },
+          {
+            "start": 162,
+            "end": 162,
+            "construct": "hunk"
+          },
+          {
+            "start": 163,
+            "end": 168,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 170,
+            "end": 784,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Login.test.ts": [
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 44,
+            "end": 130,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/activeGrants.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 17,
+            "construct": "FunctionDeclaration grant"
+          },
+          {
+            "start": 18,
+            "end": 18,
+            "construct": "hunk"
+          },
+          {
+            "start": 19,
+            "end": 21,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 22,
+            "end": 22,
+            "construct": "hunk"
+          },
+          {
+            "start": 23,
+            "end": 23,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 24,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 36,
+            "construct": "FunctionDeclaration grantsServer"
+          },
+          {
+            "start": 37,
+            "end": 37,
+            "construct": "hunk"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "VariableDeclaration ok"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "VariableDeclaration netFail"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "VariableDeclaration unauthorized"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "hunk"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "VariableDeclaration onUnauthorized"
+          },
+          {
+            "start": 43,
+            "end": 43,
+            "construct": "VariableDeclaration stop"
+          },
+          {
+            "start": 44,
+            "end": 44,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 55,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 56,
+            "end": 57,
+            "construct": "hunk"
+          },
+          {
+            "start": 58,
+            "end": 60,
+            "construct": "FunctionDeclaration settle"
+          },
+          {
+            "start": 61,
+            "end": 61,
+            "construct": "hunk"
+          },
+          {
+            "start": 62,
+            "end": 189,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/activeGrants.ts": [
+          {
+            "start": 1,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 14,
+            "construct": "TSInterfaceDeclaration ActiveGrantsState"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 16,
+            "construct": "VariableDeclaration state"
+          },
+          {
+            "start": 17,
+            "end": 18,
+            "construct": "hunk"
+          },
+          {
+            "start": 19,
+            "end": 19,
+            "construct": "VariableDeclaration activeGrants"
+          },
+          {
+            "start": 20,
+            "end": 20,
+            "construct": "hunk"
+          },
+          {
+            "start": 21,
+            "end": 21,
+            "construct": "VariableDeclaration inFlight"
+          },
+          {
+            "start": 22,
+            "end": 23,
+            "construct": "hunk"
+          },
+          {
+            "start": 24,
+            "end": 39,
+            "construct": "FunctionDeclaration refresh"
+          },
+          {
+            "start": 40,
+            "end": 41,
+            "construct": "hunk"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "construct": "FunctionDeclaration merge"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 52,
+            "construct": "FunctionDeclaration remove"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 54,
+            "construct": "VariableDeclaration stopCurrent"
+          },
+          {
+            "start": 55,
+            "end": 60,
+            "construct": "hunk"
+          },
+          {
+            "start": 61,
+            "end": 76,
+            "construct": "FunctionDeclaration start"
+          },
+          {
+            "start": 77,
+            "end": 78,
+            "construct": "hunk"
+          },
+          {
+            "start": 79,
+            "end": 81,
+            "construct": "FunctionDeclaration snapshot"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 5,
+            "end": 34,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 259,
+            "end": 318,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 319,
+            "end": 319,
+            "construct": "hunk"
+          },
+          {
+            "start": 320,
+            "end": 410,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 11,
+            "end": 27,
+            "construct": "ClassDeclaration ApiError"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "TSTypeAliasDeclaration Route"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "VariableDeclaration PATHS"
+          },
+          {
+            "start": 73,
+            "end": 77,
+            "construct": "TSInterfaceDeclaration ErrorEnvelope"
+          },
+          {
+            "start": 79,
+            "end": 92,
+            "construct": "FunctionDeclaration readEnvelope"
+          },
+          {
+            "start": 106,
+            "end": 122,
+            "construct": "FunctionDeclaration request"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "construct": "hunk"
+          },
+          {
+            "start": 259,
+            "end": 267,
+            "construct": "TSInterfaceDeclaration Grant"
+          },
+          {
+            "start": 268,
+            "end": 268,
+            "construct": "hunk"
+          },
+          {
+            "start": 269,
+            "end": 275,
+            "construct": "TSInterfaceDeclaration GrantCreated"
+          },
+          {
+            "start": 276,
+            "end": 276,
+            "construct": "hunk"
+          },
+          {
+            "start": 277,
+            "end": 283,
+            "construct": "TSInterfaceDeclaration ButtonInput"
+          },
+          {
+            "start": 284,
+            "end": 284,
+            "construct": "hunk"
+          },
+          {
+            "start": 285,
+            "end": 287,
+            "construct": "TSInterfaceDeclaration Button"
+          },
+          {
+            "start": 288,
+            "end": 288,
+            "construct": "hunk"
+          },
+          {
+            "start": 289,
+            "end": 289,
+            "construct": "VariableDeclaration GRANTS"
+          },
+          {
+            "start": 290,
+            "end": 290,
+            "construct": "VariableDeclaration BUTTONS"
+          },
+          {
+            "start": 291,
+            "end": 291,
+            "construct": "hunk"
+          },
+          {
+            "start": 292,
+            "end": 295,
+            "construct": "FunctionDeclaration listGrants"
+          },
+          {
+            "start": 296,
+            "end": 297,
+            "construct": "hunk"
+          },
+          {
+            "start": 298,
+            "end": 300,
+            "construct": "FunctionDeclaration createGrant"
+          },
+          {
+            "start": 301,
+            "end": 301,
+            "construct": "hunk"
+          },
+          {
+            "start": 302,
+            "end": 304,
+            "construct": "FunctionDeclaration extendGrant"
+          },
+          {
+            "start": 305,
+            "end": 305,
+            "construct": "hunk"
+          },
+          {
+            "start": 306,
+            "end": 308,
+            "construct": "FunctionDeclaration endGrant"
+          },
+          {
+            "start": 309,
+            "end": 309,
+            "construct": "hunk"
+          },
+          {
+            "start": 310,
+            "end": 313,
+            "construct": "FunctionDeclaration listButtons"
+          },
+          {
+            "start": 314,
+            "end": 315,
+            "construct": "hunk"
+          },
+          {
+            "start": 316,
+            "end": 319,
+            "construct": "FunctionDeclaration saveButtons"
+          },
+          {
+            "start": 320,
+            "end": 320,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/lib/grants.test.ts": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 14,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 16,
+            "construct": "VariableDeclaration T0"
+          },
+          {
+            "start": 17,
+            "end": 17,
+            "construct": "hunk"
+          },
+          {
+            "start": 18,
+            "end": 27,
+            "construct": "FunctionDeclaration grant"
+          },
+          {
+            "start": 28,
+            "end": 28,
+            "construct": "hunk"
+          },
+          {
+            "start": 29,
+            "end": 34,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "hunk"
+          },
+          {
+            "start": 36,
+            "end": 43,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 44,
+            "end": 44,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 63,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 64,
+            "end": 64,
+            "construct": "hunk"
+          },
+          {
+            "start": 65,
+            "end": 73,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 74,
+            "end": 74,
+            "construct": "hunk"
+          },
+          {
+            "start": 75,
+            "end": 82,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 83,
+            "end": 83,
+            "construct": "hunk"
+          },
+          {
+            "start": 84,
+            "end": 111,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 112,
+            "end": 112,
+            "construct": "hunk"
+          },
+          {
+            "start": 113,
+            "end": 121,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/grants.ts": [
+          {
+            "start": 1,
+            "end": 3,
+            "construct": "hunk"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "VariableDeclaration MIN_DURATION"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "VariableDeclaration MAX_DURATION"
+          },
+          {
+            "start": 9,
+            "end": 10,
+            "construct": "hunk"
+          },
+          {
+            "start": 11,
+            "end": 14,
+            "construct": "FunctionDeclaration remainingSeconds"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 18,
+            "construct": "FunctionDeclaration pad"
+          },
+          {
+            "start": 19,
+            "end": 20,
+            "construct": "hunk"
+          },
+          {
+            "start": 21,
+            "end": 26,
+            "construct": "FunctionDeclaration formatCountdown"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "construct": "hunk"
+          },
+          {
+            "start": 29,
+            "end": 34,
+            "construct": "FunctionDeclaration formatDuration"
+          },
+          {
+            "start": 35,
+            "end": 40,
+            "construct": "hunk"
+          },
+          {
+            "start": 41,
+            "end": 44,
+            "construct": "FunctionDeclaration ownDuration"
+          },
+          {
+            "start": 45,
+            "end": 45,
+            "construct": "hunk"
+          },
+          {
+            "start": 46,
+            "end": 51,
+            "construct": "TSInterfaceDeclaration Overlap"
+          },
+          {
+            "start": 52,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 61,
+            "construct": "FunctionDeclaration overlapsFor"
+          },
+          {
+            "start": 62,
+            "end": 62,
+            "construct": "hunk"
+          },
+          {
+            "start": 63,
+            "end": 65,
+            "construct": "FunctionDeclaration minutesToSeconds"
+          },
+          {
+            "start": 66,
+            "end": 66,
+            "construct": "hunk"
+          },
+          {
+            "start": 67,
+            "end": 69,
+            "construct": "FunctionDeclaration secondsToMinutes"
+          }
+        ],
+        "web/src/lib/sw-routing.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "VariableDeclaration ORIGIN"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "VariableDeclaration webRoot"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "hunk"
+          },
+          {
+            "start": 13,
+            "end": 16,
+            "construct": "FunctionDeclaration req"
+          },
+          {
+            "start": 17,
+            "end": 17,
+            "construct": "hunk"
+          },
+          {
+            "start": 18,
+            "end": 18,
+            "construct": "VariableDeclaration precache"
+          },
+          {
+            "start": 19,
+            "end": 19,
+            "construct": "hunk"
+          },
+          {
+            "start": 20,
+            "end": 51,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 52,
+            "end": 52,
+            "construct": "hunk"
+          },
+          {
+            "start": 53,
+            "end": 62,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 63,
+            "end": 63,
+            "construct": "hunk"
+          },
+          {
+            "start": 64,
+            "end": 72,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 73,
+            "end": 73,
+            "construct": "hunk"
+          },
+          {
+            "start": 74,
+            "end": 106,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/sw-routing.ts": [
+          {
+            "start": 1,
+            "end": 5,
+            "construct": "hunk"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "VariableDeclaration PUBLIC_SHELL"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "TSTypeAliasDeclaration Decision"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 16,
+            "construct": "TSInterfaceDeclaration RequestLike"
+          },
+          {
+            "start": 17,
+            "end": 23,
+            "construct": "hunk"
+          },
+          {
+            "start": 24,
+            "end": 32,
+            "construct": "FunctionDeclaration decide"
+          },
+          {
+            "start": 33,
+            "end": 38,
+            "construct": "hunk"
+          },
+          {
+            "start": 39,
+            "end": 47,
+            "construct": "FunctionDeclaration cacheName"
+          }
+        ],
+        "web/src/lib/tap.test.ts": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "hunk"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "VariableDeclaration ENDS"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 10,
+            "construct": "FunctionDeclaration grant"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "VariableDeclaration b1"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "hunk"
+          },
+          {
+            "start": 14,
+            "end": 19,
+            "construct": "TSTypeAliasDeclaration Fake"
+          },
+          {
+            "start": 20,
+            "end": 20,
+            "construct": "hunk"
+          },
+          {
+            "start": 21,
+            "end": 29,
+            "construct": "FunctionDeclaration fake"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "VariableDeclaration created"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "VariableDeclaration conflict"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "hunk"
+          },
+          {
+            "start": 34,
+            "end": 126,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 127,
+            "end": 127,
+            "construct": "hunk"
+          },
+          {
+            "start": 128,
+            "end": 200,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/tap.ts": [
+          {
+            "start": 1,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 17,
+            "construct": "TSInterfaceDeclaration TapSpec"
+          },
+          {
+            "start": 18,
+            "end": 18,
+            "construct": "hunk"
+          },
+          {
+            "start": 19,
+            "end": 26,
+            "construct": "TSInterfaceDeclaration TapDeps"
+          },
+          {
+            "start": 27,
+            "end": 27,
+            "construct": "hunk"
+          },
+          {
+            "start": 28,
+            "end": 33,
+            "construct": "TSInterfaceDeclaration Offer"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "hunk"
+          },
+          {
+            "start": 35,
+            "end": 40,
+            "construct": "TSTypeAliasDeclaration Outcome"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "hunk"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "VariableDeclaration NETWORK_MESSAGE"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "construct": "hunk"
+          },
+          {
+            "start": 46,
+            "end": 46,
+            "construct": "VariableDeclaration inflight"
+          },
+          {
+            "start": 47,
+            "end": 48,
+            "construct": "hunk"
+          },
+          {
+            "start": 49,
+            "end": 59,
+            "construct": "FunctionDeclaration grantFrom"
+          },
+          {
+            "start": 60,
+            "end": 60,
+            "construct": "hunk"
+          },
+          {
+            "start": 61,
+            "end": 64,
+            "construct": "FunctionDeclaration errorOutcome"
+          },
+          {
+            "start": 65,
+            "end": 66,
+            "construct": "hunk"
+          },
+          {
+            "start": 67,
+            "end": 80,
+            "construct": "FunctionDeclaration create"
+          },
+          {
+            "start": 81,
+            "end": 81,
+            "construct": "hunk"
+          },
+          {
+            "start": 82,
+            "end": 90,
+            "construct": "FunctionDeclaration withKey"
+          },
+          {
+            "start": 91,
+            "end": 92,
+            "construct": "hunk"
+          },
+          {
+            "start": 93,
+            "end": 106,
+            "construct": "FunctionDeclaration runTap"
+          },
+          {
+            "start": 107,
+            "end": 113,
+            "construct": "hunk"
+          },
+          {
+            "start": 114,
+            "end": 140,
+            "construct": "FunctionDeclaration acceptOffer"
+          }
+        ],
+        "web/src/main.ts": [
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "hunk"
+          },
+          {
+            "start": 11,
+            "end": 15,
+            "construct": "IfStatement"
+          },
+          {
+            "start": 16,
+            "end": 16,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/pwa.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "VariableDeclaration root"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "VariableDeclaration read"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "TSTypeAliasDeclaration Icon"
+          },
+          {
+            "start": 13,
+            "end": 22,
+            "construct": "TSTypeAliasDeclaration Manifest"
+          },
+          {
+            "start": 23,
+            "end": 23,
+            "construct": "hunk"
+          },
+          {
+            "start": 24,
+            "end": 24,
+            "construct": "VariableDeclaration manifest"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 65,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/sw.test.ts": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "TSTypeAliasDeclaration Listener"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "VariableDeclaration ORIGIN"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 12,
+            "construct": "FunctionDeclaration pathOf"
+          },
+          {
+            "start": 13,
+            "end": 14,
+            "construct": "hunk"
+          },
+          {
+            "start": 15,
+            "end": 47,
+            "construct": "FunctionDeclaration boot"
+          },
+          {
+            "start": 48,
+            "end": 48,
+            "construct": "hunk"
+          },
+          {
+            "start": 49,
+            "end": 53,
+            "construct": "FunctionDeclaration fetchEvent"
+          },
+          {
+            "start": 54,
+            "end": 54,
+            "construct": "hunk"
+          },
+          {
+            "start": 55,
+            "end": 58,
+            "construct": "FunctionDeclaration responded"
+          },
+          {
+            "start": 59,
+            "end": 59,
+            "construct": "hunk"
+          },
+          {
+            "start": 60,
+            "end": 62,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 63,
+            "end": 63,
+            "construct": "hunk"
+          },
+          {
+            "start": 64,
+            "end": 141,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/sw.ts": [
+          {
+            "start": 1,
+            "end": 5,
+            "construct": "hunk"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "VariableDeclaration sw"
+          },
+          {
+            "start": 9,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "VariableDeclaration PRECACHE"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "VariableDeclaration PRECACHE_SET"
+          },
+          {
+            "start": 14,
+            "end": 14,
+            "construct": "VariableDeclaration CACHE"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 23,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 24,
+            "end": 24,
+            "construct": "hunk"
+          },
+          {
+            "start": 25,
+            "end": 32,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "hunk"
+          },
+          {
+            "start": 34,
+            "end": 47,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/vite.config.ts": [
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "VariableDeclaration here"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "VariableDeclaration PRECACHE_TOKEN"
+          },
+          {
+            "start": 13,
+            "end": 19,
+            "construct": "hunk"
+          },
+          {
+            "start": 20,
+            "end": 38,
+            "construct": "FunctionDeclaration swPrecache"
+          },
+          {
+            "start": 41,
+            "end": 74,
+            "construct": "ExportDefaultDeclaration"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/App.svelte": "ast-unavailable",
+        "web/src/lib/ActiveGrants.svelte": "ast-unavailable",
+        "web/src/lib/Buttons.svelte": "ast-unavailable",
+        "web/src/lib/GrantForm.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable",
+        "web/src/lib/Login.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": ".gitignore",
+      "reason": "no mutation adapter for .gitignore"
+    },
+    {
+      "file": "Makefile",
+      "reason": "no mutation adapter for "
+    },
+    {
+      "file": "internal/store/migrations/0004_buttons.sql",
+      "reason": "no mutation adapter for .sql"
+    },
+    {
+      "file": "web/.gitignore",
+      "reason": "no mutation adapter for .gitignore"
+    },
+    {
+      "file": "web/dist/.gitkeep",
+      "reason": "no mutation adapter for .gitkeep"
+    },
+    {
+      "file": "web/index.html",
+      "reason": "no mutation adapter for .html"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "web/public/icon-192.png",
+      "reason": "no mutation adapter for .png"
+    },
+    {
+      "file": "web/public/icon-512.png",
+      "reason": "no mutation adapter for .png"
+    },
+    {
+      "file": "web/public/manifest.webmanifest",
+      "reason": "no mutation adapter for .webmanifest"
+    },
+    {
+      "file": "web/tsconfig.app.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "web/tsconfig.sw.json",
+      "reason": "no mutation adapter for .json"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/api/children.go",
+      "line": 114,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d69e57f7ae237fb9",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+    },
+    {
+      "file": "internal/api/children.go",
+      "line": 115,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "6cc7c18da6e15549",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 119,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 120,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/milestones/v0.1.toml",
+      ".dross/phases/05-phone-ui-buttons-pwa/REVIEW.md",
+      ".dross/phases/05-phone-ui-buttons-pwa/changes.json",
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/mvp.md",
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/risk.md",
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/synthesis.md",
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/verification.md",
+      ".dross/phases/05-phone-ui-buttons-pwa/plan.toml",
+      ".dross/phases/05-phone-ui-buttons-pwa/spec.toml",
+      ".dross/phases/05-phone-ui-buttons-pwa/tests.json",
+      ".dross/phases/05-phone-ui-buttons-pwa/verify.toml",
+      ".dross/project.toml",
+      ".dross/survivors.toml",
+      ".gitignore",
+      "Makefile",
+      "cmd/adguard-reward/main.go",
+      "cmd/adguard-reward/main_test.go",
+      "internal/api/api.go",
+      "internal/api/buttons.go",
+      "internal/api/buttons_test.go",
+      "internal/api/login_test.go",
+      "internal/spa/spa.go",
+      "internal/spa/spa_test.go",
+      "internal/store/buttons.go",
+      "internal/store/buttons_test.go",
+      "internal/store/migrations/0004_buttons.sql",
+      "web/.gitignore",
+      "web/dist/.gitkeep",
+      "web/embed.go",
+      "web/embed_test.go",
+      "web/index.html",
+      "web/package.json",
+      "web/public/icon-192.png",
+      "web/public/icon-512.png",
+      "web/public/manifest.webmanifest",
+      "web/src/App.svelte",
+      "web/src/App.test.ts",
+      "web/src/lib/ActiveGrants.panel.test.ts",
+      "web/src/lib/ActiveGrants.svelte",
+      "web/src/lib/Buttons.svelte",
+      "web/src/lib/Buttons.test.ts",
+      "web/src/lib/GrantForm.svelte",
+      "web/src/lib/GrantForm.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Home.test.ts",
+      "web/src/lib/Login.svelte",
+      "web/src/lib/Login.test.ts",
+      "web/src/lib/activeGrants.test.ts",
+      "web/src/lib/activeGrants.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts",
+      "web/src/lib/grants.test.ts",
+      "web/src/lib/grants.ts",
+      "web/src/lib/sw-routing.test.ts",
+      "web/src/lib/sw-routing.ts",
+      "web/src/lib/tap.test.ts",
+      "web/src/lib/tap.ts",
+      "web/src/main.ts",
+      "web/src/pwa.test.ts",
+      "web/src/sw.test.ts",
+      "web/src/sw.ts",
+      "web/tsconfig.app.json",
+      "web/tsconfig.sw.json",
+      "web/vite.config.ts"
+    ],
+    "hunks": {
+      ".dross/milestones/v0.1.toml": [
+        {
+          "start": 1,
+          "end": 1
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 53
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/changes.json": [
+        {
+          "start": 1,
+          "end": 329
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 490
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 638
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 480
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 594
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/plan.toml": [
+        {
+          "start": 1,
+          "end": 195
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/spec.toml": [
+        {
+          "start": 1,
+          "end": 99
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/tests.json": [
+        {
+          "start": 1,
+          "end": 3668
+        }
+      ],
+      ".dross/phases/05-phone-ui-buttons-pwa/verify.toml": [
+        {
+          "start": 1,
+          "end": 156
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 45,
+          "end": 60
+        },
+        {
+          "start": 753,
+          "end": 1022
+        }
+      ],
+      ".gitignore": [
+        {
+          "start": 8,
+          "end": 9
+        }
+      ],
+      "Makefile": [
+        {
+          "start": 20,
+          "end": 21
+        },
+        {
+          "start": 23,
+          "end": 23
+        },
+        {
+          "start": 30,
+          "end": 30
+        },
+        {
+          "start": 45,
+          "end": 48
+        },
+        {
+          "start": 50,
+          "end": 50
+        },
+        {
+          "start": 53,
+          "end": 53
+        },
+        {
+          "start": 55,
+          "end": 56
+        }
+      ],
+      "cmd/adguard-reward/main.go": [
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 28,
+          "end": 28
+        },
+        {
+          "start": 135,
+          "end": 135
+        },
+        {
+          "start": 140,
+          "end": 142
+        },
+        {
+          "start": 146,
+          "end": 146
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 16,
+          "end": 16
+        },
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 25,
+          "end": 25
+        },
+        {
+          "start": 34,
+          "end": 34
+        },
+        {
+          "start": 1057,
+          "end": 1360
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 51,
+          "end": 57
+        },
+        {
+          "start": 69,
+          "end": 69
+        },
+        {
+          "start": 117,
+          "end": 118
+        }
+      ],
+      "internal/api/buttons.go": [
+        {
+          "start": 1,
+          "end": 187
+        }
+      ],
+      "internal/api/buttons_test.go": [
+        {
+          "start": 1,
+          "end": 326
+        }
+      ],
+      "internal/api/login_test.go": [
+        {
+          "start": 117,
+          "end": 117
+        }
+      ],
+      "internal/spa/spa.go": [
+        {
+          "start": 1,
+          "end": 138
+        }
+      ],
+      "internal/spa/spa_test.go": [
+        {
+          "start": 1,
+          "end": 215
+        }
+      ],
+      "internal/store/buttons.go": [
+        {
+          "start": 1,
+          "end": 168
+        }
+      ],
+      "internal/store/buttons_test.go": [
+        {
+          "start": 1,
+          "end": 337
+        }
+      ],
+      "internal/store/migrations/0004_buttons.sql": [
+        {
+          "start": 1,
+          "end": 20
+        }
+      ],
+      "web/.gitignore": [
+        {
+          "start": 11,
+          "end": 12
+        }
+      ],
+      "web/embed.go": [
+        {
+          "start": 1,
+          "end": 23
+        }
+      ],
+      "web/embed_test.go": [
+        {
+          "start": 1,
+          "end": 43
+        }
+      ],
+      "web/index.html": [
+        {
+          "start": 6,
+          "end": 8
+        },
+        {
+          "start": 10,
+          "end": 10
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 11,
+          "end": 11
+        }
+      ],
+      "web/public/manifest.webmanifest": [
+        {
+          "start": 1,
+          "end": 15
+        }
+      ],
+      "web/src/App.svelte": [
+        {
+          "start": 7,
+          "end": 7
+        },
+        {
+          "start": 16,
+          "end": 16
+        },
+        {
+          "start": 42,
+          "end": 43
+        }
+      ],
+      "web/src/App.test.ts": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 212,
+          "end": 311
+        }
+      ],
+      "web/src/lib/ActiveGrants.panel.test.ts": [
+        {
+          "start": 1,
+          "end": 314
+        }
+      ],
+      "web/src/lib/ActiveGrants.svelte": [
+        {
+          "start": 1,
+          "end": 171
+        }
+      ],
+      "web/src/lib/Buttons.svelte": [
+        {
+          "start": 1,
+          "end": 241
+        }
+      ],
+      "web/src/lib/Buttons.test.ts": [
+        {
+          "start": 1,
+          "end": 319
+        }
+      ],
+      "web/src/lib/GrantForm.svelte": [
+        {
+          "start": 1,
+          "end": 186
+        }
+      ],
+      "web/src/lib/GrantForm.test.ts": [
+        {
+          "start": 1,
+          "end": 193
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 2,
+          "end": 21
+        },
+        {
+          "start": 23,
+          "end": 24
+        },
+        {
+          "start": 29,
+          "end": 36
+        },
+        {
+          "start": 39,
+          "end": 54
+        },
+        {
+          "start": 57,
+          "end": 59
+        },
+        {
+          "start": 61,
+          "end": 61
+        },
+        {
+          "start": 65,
+          "end": 69
+        },
+        {
+          "start": 72,
+          "end": 79
+        },
+        {
+          "start": 93,
+          "end": 196
+        },
+        {
+          "start": 207,
+          "end": 207
+        },
+        {
+          "start": 211,
+          "end": 223
+        },
+        {
+          "start": 226,
+          "end": 228
+        },
+        {
+          "start": 231,
+          "end": 240
+        },
+        {
+          "start": 242,
+          "end": 247
+        },
+        {
+          "start": 249,
+          "end": 251
+        },
+        {
+          "start": 253,
+          "end": 253
+        },
+        {
+          "start": 255,
+          "end": 293
+        },
+        {
+          "start": 296,
+          "end": 309
+        },
+        {
+          "start": 316,
+          "end": 316
+        },
+        {
+          "start": 322,
+          "end": 322
+        },
+        {
+          "start": 324,
+          "end": 329
+        },
+        {
+          "start": 332,
+          "end": 389
+        },
+        {
+          "start": 416,
+          "end": 418
+        }
+      ],
+      "web/src/lib/Home.test.ts": [
+        {
+          "start": 3,
+          "end": 3
+        },
+        {
+          "start": 7,
+          "end": 7
+        },
+        {
+          "start": 9,
+          "end": 9
+        },
+        {
+          "start": 28,
+          "end": 28
+        },
+        {
+          "start": 38,
+          "end": 50
+        },
+        {
+          "start": 67,
+          "end": 75
+        },
+        {
+          "start": 77,
+          "end": 86
+        },
+        {
+          "start": 88,
+          "end": 103
+        },
+        {
+          "start": 112,
+          "end": 162
+        },
+        {
+          "start": 164,
+          "end": 164
+        },
+        {
+          "start": 171,
+          "end": 183
+        },
+        {
+          "start": 185,
+          "end": 206
+        },
+        {
+          "start": 208,
+          "end": 213
+        },
+        {
+          "start": 215,
+          "end": 223
+        },
+        {
+          "start": 225,
+          "end": 265
+        },
+        {
+          "start": 268,
+          "end": 291
+        },
+        {
+          "start": 293,
+          "end": 296
+        },
+        {
+          "start": 298,
+          "end": 445
+        },
+        {
+          "start": 447,
+          "end": 551
+        },
+        {
+          "start": 554,
+          "end": 555
+        },
+        {
+          "start": 560,
+          "end": 564
+        },
+        {
+          "start": 566,
+          "end": 580
+        },
+        {
+          "start": 582,
+          "end": 633
+        },
+        {
+          "start": 635,
+          "end": 677
+        },
+        {
+          "start": 682,
+          "end": 685
+        },
+        {
+          "start": 688,
+          "end": 696
+        },
+        {
+          "start": 699,
+          "end": 728
+        },
+        {
+          "start": 732,
+          "end": 733
+        },
+        {
+          "start": 739,
+          "end": 753
+        },
+        {
+          "start": 755,
+          "end": 755
+        },
+        {
+          "start": 762,
+          "end": 762
+        },
+        {
+          "start": 767,
+          "end": 768
+        },
+        {
+          "start": 772,
+          "end": 782
+        }
+      ],
+      "web/src/lib/Login.svelte": [
+        {
+          "start": 35,
+          "end": 45
+        }
+      ],
+      "web/src/lib/Login.test.ts": [
+        {
+          "start": 3,
+          "end": 4
+        },
+        {
+          "start": 45,
+          "end": 87
+        }
+      ],
+      "web/src/lib/activeGrants.test.ts": [
+        {
+          "start": 1,
+          "end": 189
+        }
+      ],
+      "web/src/lib/activeGrants.ts": [
+        {
+          "start": 1,
+          "end": 81
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 12,
+          "end": 12
+        },
+        {
+          "start": 14,
+          "end": 15
+        },
+        {
+          "start": 17,
+          "end": 17
+        },
+        {
+          "start": 20,
+          "end": 20
+        },
+        {
+          "start": 31,
+          "end": 31
+        },
+        {
+          "start": 259,
+          "end": 319
+        },
+        {
+          "start": 326,
+          "end": 392
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 16,
+          "end": 17
+        },
+        {
+          "start": 19,
+          "end": 19
+        },
+        {
+          "start": 25,
+          "end": 25
+        },
+        {
+          "start": 31,
+          "end": 31
+        },
+        {
+          "start": 33,
+          "end": 33
+        },
+        {
+          "start": 76,
+          "end": 76
+        },
+        {
+          "start": 79,
+          "end": 79
+        },
+        {
+          "start": 82,
+          "end": 82
+        },
+        {
+          "start": 87,
+          "end": 87
+        },
+        {
+          "start": 91,
+          "end": 91
+        },
+        {
+          "start": 118,
+          "end": 119
+        },
+        {
+          "start": 257,
+          "end": 320
+        }
+      ],
+      "web/src/lib/grants.test.ts": [
+        {
+          "start": 1,
+          "end": 121
+        }
+      ],
+      "web/src/lib/grants.ts": [
+        {
+          "start": 1,
+          "end": 69
+        }
+      ],
+      "web/src/lib/sw-routing.test.ts": [
+        {
+          "start": 1,
+          "end": 106
+        }
+      ],
+      "web/src/lib/sw-routing.ts": [
+        {
+          "start": 1,
+          "end": 47
+        }
+      ],
+      "web/src/lib/tap.test.ts": [
+        {
+          "start": 1,
+          "end": 200
+        }
+      ],
+      "web/src/lib/tap.ts": [
+        {
+          "start": 1,
+          "end": 140
+        }
+      ],
+      "web/src/main.ts": [
+        {
+          "start": 10,
+          "end": 16
+        }
+      ],
+      "web/src/pwa.test.ts": [
+        {
+          "start": 1,
+          "end": 65
+        }
+      ],
+      "web/src/sw.test.ts": [
+        {
+          "start": 1,
+          "end": 141
+        }
+      ],
+      "web/src/sw.ts": [
+        {
+          "start": 1,
+          "end": 47
+        }
+      ],
+      "web/tsconfig.app.json": [
+        {
+          "start": 20,
+          "end": 21
+        }
+      ],
+      "web/tsconfig.sw.json": [
+        {
+          "start": 1,
+          "end": 17
+        }
+      ],
+      "web/vite.config.ts": [
+        {
+          "start": 5,
+          "end": 5
+        },
+        {
+          "start": 8,
+          "end": 38
+        },
+        {
+          "start": 42,
+          "end": 52
+        }
+      ]
+    },
+    "base": "5799b8a833be16bd332fcc4f9141fecc535c3b0e",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/ActiveGrants.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Buttons.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Login.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local"
+}

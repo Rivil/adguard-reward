@@ -21,6 +21,16 @@ regenerate the whole document from a scan of the code and git history.
 
 <!-- entries below, alphabetical by feature -->
 
+### Active grants panel
+
+Home's first block: every active grant as a row (child, services, countdown recomputed each second from the server's `ends_at` on one shared clock) with Extend (by the grant's own span) and End controls, per-row busy/alert state; expiry asks the server once and the row leaves on the answer. The list is a polled store — one shared in-flight refresh, 15 s interval plus a `visibilitychange` catch-up — and a failed poll keeps the last list ticking under a can't-reach-server badge (a 401 still routes to login).
+
+- refresh — web/src/lib/activeGrants.ts:24
+- ActiveGrants.svelte — web/src/lib/ActiveGrants.svelte:1
+- run — web/src/lib/ActiveGrants.svelte:45
+
+_introduced 05-phone-ui-buttons-pwa · e2b9115 · 2dab1f8_
+
 ### AdGuard API client
 
 Basic-auth JSON client for AdGuard Home's `/control/*` API with a small error vocabulary (`ErrBadCredentials` for 401/403 — Login also maps 400 — `ErrRateLimited` for 429, `*StatusError` otherwise), no redirect following, bounded error-body snippets and secret-free debug logging.
@@ -46,7 +56,7 @@ _introduced 01-config-adguard-client · 5e65f87 · extended 04-grants-scheduler-
 
 Every `/api/v1` response carries `Cache-Control: no-store`, every non-GET/HEAD/OPTIONS request must carry `X-Requested-With: adguard-reward` or is refused 403 before routing, and errors share one JSON envelope `{error, message}`; anonymous requests to unknown `/api/v1` paths get 401, not 404.
 
-- API.Handler — internal/api/api.go:127
+- API.Handler — internal/api/api.go:137
 - csrf — internal/api/middleware.go:25
 - noStore — internal/api/middleware.go:16
 - writeError — internal/api/errors.go:29
@@ -55,12 +65,33 @@ _introduced 02-auth-sessions · fbbf1fc_
 
 ### App startup
 
-`--config` (default `config.yaml` beside the binary, env-only when absent) → config load → slog at the configured level → AdGuard client → startup probe (rejected credential is fatal, unreachable AdGuard is logged and served through) → SQLite store under `data_dir` → grant engine, whose startup reconcile pass runs under a 30 s bound before `net.Listen` (error logged, never fatal) → login limiter + session manager (cookie `Secure` when serving TLS or `base_url` is https) → `GET /healthz` open, `/api/v1` mounted behind the hardening chain with `Grants` in `api.Deps` → expired-session sweeper and the 60 s grant reconciler loop (`reconcileInterval`, test-overridable) beside the prober → HTTP or TLS serve with graceful shutdown; `version` is bound via `-X main.version`.
+`--config` (default `config.yaml` beside the binary, env-only when absent) → config load → slog at the configured level → AdGuard client → startup probe (rejected credential is fatal, unreachable AdGuard is logged and served through) → SQLite store under `data_dir` → grant engine, whose startup reconcile pass runs under a 30 s bound before `net.Listen` (error logged, never fatal) → login limiter + session manager (cookie `Secure` when serving TLS or `base_url` is https) → `GET /healthz` open, `/api/v1` mounted behind the hardening chain with `Grants` and `Buttons` in `api.Deps`, the embedded SPA at `/` → expired-session sweeper and the 60 s grant reconciler loop (`reconcileInterval`, test-overridable) beside the prober → HTTP or TLS serve with graceful shutdown; `version` is bound via `-X main.version`.
 
-- run — cmd/adguard-reward/main.go:57
-- reconcileInterval — cmd/adguard-reward/main.go:41
+- run — cmd/adguard-reward/main.go:59
+- reconcileInterval — cmd/adguard-reward/main.go:43
 
-_introduced 01-config-adguard-client · 3951cf9 · extended 02-auth-sessions · e58f0e9 · extended 04-grants-scheduler-reconciler · cdc438e_
+_introduced 01-config-adguard-client · 3951cf9 · extended 02-auth-sessions · e58f0e9 · extended 04-grants-scheduler-reconciler · cdc438e · extended 05-phone-ui-buttons-pwa · 2109098_
+
+### Button presets
+
+A parent's one-tap presets `{id, label, child_id, services[], duration}` stored in order (`buttons` + `button_services`, migration 0004) and replaced atomically as a whole list — `ReplaceButtons` answers a typed `ErrUnknownChild`, `ListButtons` reads one snapshot. The `/buttons` settings page lists them in array order with Edit/Delete and one label + grant-form editor; every save PUTs the whole list (minutes → seconds, ids stripped) and re-renders from the response, a failure keeps the draft. No reorder controls and no custom icon (M2 button editor).
+
+- Store.ListButtons — internal/store/buttons.go:48
+- Store.ReplaceButtons — internal/store/buttons.go:65
+- Buttons.svelte — web/src/lib/Buttons.svelte:1
+- Buttons.run — web/src/lib/Buttons.svelte:52
+
+_introduced 05-phone-ui-buttons-pwa · 2b8fa07 · efa1c46_
+
+### Buttons API
+
+`GET /api/v1/buttons` returns the stored list in order; `PUT /api/v1/buttons` replaces it whole, validating cheapest-first (label 1–64 runes, duration 1 min – 24 h, service ids against one catalogue read, then child existence) and answering 422 naming `buttons[i].<field>` with the stored list untouched. Behind the session gate; `ButtonStore` is wired through `api.Deps`.
+
+- API.handleButtonsList — internal/api/buttons.go:60
+- API.handleButtonsReplace — internal/api/buttons.go:82
+- indexOfChild — internal/api/buttons.go:180
+
+_introduced 05-phone-ui-buttons-pwa · 3ae3217_
 
 ### Children
 
@@ -104,6 +135,14 @@ When AdGuard's global blocked-services list is non-empty and a mapped client sti
 
 _introduced 03-children-and-blocked-view · 4fe1606 · 5fb4414 · bffe283_
 
+### Grant form
+
+Shared child / services / minutes fieldset used by the ad-hoc unlock on Home and the button editor: bindable `value` + `valid` (a child is required, not just services; minutes mirror the server's 1 min – 24 h bounds), services listed in tick order, a single child is preselected, rows for ids the catalogue no longer knows are kept and marked, and a null catalogue shows a note instead of an empty picker.
+
+- GrantForm.svelte — web/src/lib/GrantForm.svelte:16
+
+_introduced 05-phone-ui-buttons-pwa · 60f0d6c_
+
 ### Grant persistence
 
 `grants` + `grant_services` + `grant_clients` rows (migration 0003) with a partial index over live grants: `CreateGrant` checks (child, service) overlap and inserts in one transaction, answering `*ErrGrantOverlap` with the existing grant id; `SetGrantStatus` is a compare-and-swap and the only exit from `active`, so a timer and an explicit end cannot both revert the same grant.
@@ -122,7 +161,7 @@ One pass under the engine mutex reads AdGuard once, reverts every grant past `en
 - Engine.Reconcile — internal/grants/reconcile.go:32
 - Engine.Start — internal/grants/reconcile.go:112
 - Engine.Run — internal/grants/reconcile.go:123
-- run — cmd/adguard-reward/main.go:57
+- run — cmd/adguard-reward/main.go:59
 
 _introduced 04-grants-scheduler-reconciler · 29444c6 · cdc438e_
 
@@ -149,11 +188,12 @@ _introduced 01-config-adguard-client · 1c168a4_
 
 ### Home page
 
-Signed-in landing page listing each child with its currently blocked services (name + icon), marking a service partial when the child's devices disagree and naming the clients that differ, badging clients that still use AdGuard's global list; the view is re-fetched on every mount and an unreachable AdGuard replaces the list with an error state rather than showing stale data. Hosts the global-list migration banner.
+Signed-in landing page: the active-grant panel first, then each child's buttons in stored order (first service's AdGuard icon) — one tap creates the grant with no confirm, an inline line names any client the apply failed on, and a 409 becomes an extend-offer dialog that extends the overlapping grant by the tap's duration and creates the rest; an ad-hoc unlock form (grant form) runs through the same tap path when no button fits. Each child's currently blocked services (partial when its devices disagree, clients that differ named, global-list badge) sit under a lazily loaded disclosure that is open only while no buttons exist; an unreachable AdGuard replaces that list with an error state. Hosts the global-list migration banner.
 
-- Home.load — web/src/lib/Home.svelte:14
+- Home.load — web/src/lib/Home.svelte:55
+- Home.migrated — web/src/lib/Home.svelte:191
 
-_introduced 03-children-and-blocked-view · 88699ad_
+_introduced 03-children-and-blocked-view · 88699ad · extended 05-phone-ui-buttons-pwa · f323709_
 
 ### Login and logout
 
@@ -168,12 +208,12 @@ _introduced 02-auth-sessions · f758129_
 
 ### Login page
 
-Svelte 5 SPA shell: a username/password form showing a distinct fixed line per error code (wrong password, AdGuard unreachable, rate-limited with the Retry-After seconds, network failure); on sign-in the shell resolves `/me` and routes to the home page, and history back/forward follows the route store.
+Svelte 5 SPA shell: a username/password form showing a distinct fixed line per error code (wrong password, AdGuard unreachable, rate-limited with the Retry-After seconds, network failure), the username input opting out of phone auto-capitalise / autocorrect and the form locked while a sign-in is in flight; on sign-in the shell resolves `/me` and routes to the home page, and history back/forward follows the route store.
 
 - submit — web/src/lib/Login.svelte:11
-- refresh — web/src/App.svelte:11
+- refresh — web/src/App.svelte:12
 
-_introduced 02-auth-sessions · 9dedea1 · extended 03-children-and-blocked-view · 295189b_
+_introduced 02-auth-sessions · 9dedea1 · extended 03-children-and-blocked-view · 295189b · extended 05-phone-ui-buttons-pwa · 4caa9aa_
 
 ### Login rate limiting
 
@@ -210,6 +250,15 @@ Typed read of AdGuard's persistent clients and the global blocked-services list 
 
 _introduced 01-config-adguard-client · 1513504 · extended 04-grants-scheduler-reconciler · 3123562_
 
+### PWA shell
+
+The SPA installs to a phone's home screen: `manifest.webmanifest` (standalone display, root scope and `start_url`, 192/512 PNG icons including maskable) linked from `index.html` with theme-color and apple-touch-icon; a precache-only service worker built as a classic `/sw.js` with the emitted asset list injected at build serves the shell network-first with the cached `/` as offline fallback and `/assets` cache-first, while `/api/*`, `/healthz` and every non-GET always bypass the worker. Registered in production builds only.
+
+- manifest.webmanifest — web/public/manifest.webmanifest:1
+- decide — web/src/lib/sw-routing.ts:24
+
+_introduced 05-phone-ui-buttons-pwa · 7d1dc40 · cf5d7b7_
+
 ### Session authentication
 
 256-bit random session tokens stored only as SHA-256, carried in an `HttpOnly; SameSite=Strict; Path=/` cookie (`Secure` under TLS) with a 30-day sliding expiry; `RequireSession` refreshes a live session or clears a dead one and answers 401, and the raw token never reaches a log line.
@@ -245,22 +294,35 @@ _introduced 02-auth-sessions · 0a98a31_
 
 ### SPA API client
 
-Single typed fetch wrapper for the Svelte SPA: adds the CSRF header and same-origin cookie, routes any 401 to `/login`, maps error codes to fixed user messages (a 409 echoes the server's message naming the child or client), exposes typed functions for the children / clients / services / blocked / migration endpoints, a history-backed route store (`login | home | children`), and a per-login `migrationDismissed` store reset on login and logout.
+Single typed fetch wrapper for the Svelte SPA: adds the CSRF header and same-origin cookie, routes any 401 to `/login`, maps error codes to fixed user messages (a 409 echoes the server's message naming the child or client, and carries the overlapping `grant_id`), exposes typed functions for the children / clients / services / blocked / migration / grants / buttons endpoints, a history-backed route store (`login | home | children | buttons`), and a per-login `migrationDismissed` store reset on login and logout.
 
-- request — web/src/lib/api.ts:100
-- messageFor — web/src/lib/api.ts:263
-- navigate — web/src/lib/api.ts:47
-- migrationDismissed — web/src/lib/api.ts:131
+- request — web/src/lib/api.ts:106
+- messageFor — web/src/lib/api.ts:333
+- navigate — web/src/lib/api.ts:50
+- migrationDismissed — web/src/lib/api.ts:137
 
-_introduced 02-auth-sessions · 9dedea1 · extended 03-children-and-blocked-view · 295189b_
+_introduced 02-auth-sessions · 9dedea1 · extended 03-children-and-blocked-view · 295189b · extended 05-phone-ui-buttons-pwa · 2322e19_
+
+### SPA serving
+
+The built frontend is embedded in the Go binary (`go:embed all:dist` behind a tracked `.gitkeep`, so an unbuilt clone still compiles) and mounted at `/` beside `/healthz` and `/api/v1` — one origin, one process. The handler serves static files, falls back to `index.html` for extensionless client routes, answers a plain 404 for an extensioned miss and a JSON 404 under `/api` and `/healthz`, marks shell / `sw.js` / manifest no-cache and `/assets` immutable, and returns 503 while `dist` is unbuilt.
+
+- Handler — internal/spa/spa.go:85
+- Dist — web/embed.go:17
+- run — cmd/adguard-reward/main.go:59
+
+_introduced 05-phone-ui-buttons-pwa · 1b8647f · 4de11cf · 2109098_
 
 ### Timed grants
 
-A grant temporarily unblocks one or more catalogue services for one child: the engine owns every grant-related AdGuard write under one mutex with one `ApplyTimeout` context per operation. `Create` removes the services from each of the child's mapped clients and stores exactly that client list on the row (a client moved to another child mid-grant is still re-blocked at expiry); an in-process timer at `ends_at` re-blocks by set-union — idempotent — and CASes the grant to `expired`, while a failed AdGuard write leaves it `active` for the reconciler to retry; `Extend` reschedules the timer, `End` reverts immediately.
+A grant temporarily unblocks one or more catalogue services for one child: the engine owns every grant-related AdGuard write under one mutex with one `ApplyTimeout` context per operation. `Create` removes the services from each of the child's mapped clients and stores exactly that client list on the row (a client moved to another child mid-grant is still re-blocked at expiry); an in-process timer at `ends_at` re-blocks by set-union — idempotent — and CASes the grant to `expired`, while a failed AdGuard write leaves it `active` for the reconciler to retry; `Extend` reschedules the timer, `End` reverts immediately. On the phone, `runTap` is the one path from a tap to a grant: a single in-flight POST per key, the 201 merged into the active list as server truth, a partial apply naming the failed clients, and a 409 turned into an extend offer resolved client-side against the loaded list (`overlapsFor`) — accepting it extends the overlapping grant by the tap's duration and creates a new grant for the remaining services. Pure countdown / duration / own-span helpers mirror the server bounds.
 
 - grants.New — internal/grants/grants.go:104
 - Engine.Create — internal/grants/grants.go:141
 - Engine.Extend — internal/grants/grants.go:260
 - Engine.End — internal/grants/grants.go:282
+- runTap — web/src/lib/tap.ts:93
+- acceptOffer — web/src/lib/tap.ts:114
+- overlapsFor — web/src/lib/grants.ts:54
 
-_introduced 04-grants-scheduler-reconciler · 6064863_
+_introduced 04-grants-scheduler-reconciler · 6064863 · extended 05-phone-ui-buttons-pwa · 2322e19 · 257ccc3_

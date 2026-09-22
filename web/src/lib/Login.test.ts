@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 // Stryker disable all: test sources are not mutation targets
-import { fireEvent, render, screen } from '@testing-library/svelte'
+import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
+import { tick } from 'svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Login from './Login.svelte'
 
@@ -41,6 +42,49 @@ async function alertText(): Promise<string> {
 }
 
 describe('Login', () => {
+  it('fields start empty and idle', () => {
+    render(Login, { onSuccess: vi.fn() })
+    const username = screen.getByLabelText('Username') as HTMLInputElement
+    const password = screen.getByLabelText('Password') as HTMLInputElement
+    const button = screen.getByRole('button') as HTMLButtonElement
+    expect(username.value).toBe('')
+    expect(password.value).toBe('')
+    expect(username.disabled).toBe(false)
+    expect(password.disabled).toBe(false)
+    // Phone keyboards capitalise the first letter of a text field by default;
+    // AdGuard usernames are case-sensitive.
+    expect(username.getAttribute('autocapitalize')).toBe('none')
+    expect(button.disabled).toBe(false)
+    expect(button.textContent).toBe('Sign in')
+  })
+
+  it('locks the form while signing in', async () => {
+    let settle!: (r: Response) => void
+    const inFlight = new Promise<Response>((resolve) => {
+      settle = resolve
+    })
+    vi.stubGlobal('fetch', vi.fn(() => inFlight))
+    const onSuccess = vi.fn()
+    await signIn(onSuccess)
+    await tick()
+
+    const username = screen.getByLabelText('Username') as HTMLInputElement
+    const password = screen.getByLabelText('Password') as HTMLInputElement
+    const button = screen.getByRole('button') as HTMLButtonElement
+    expect(username.disabled).toBe(true)
+    expect(password.disabled).toBe(true)
+    expect(button.disabled).toBe(true)
+    expect(button.textContent).toBe('Signing in…')
+    expect(onSuccess).not.toHaveBeenCalled()
+
+    settle(new Response(null, { status: 204 }))
+    await waitFor(() => expect(button.disabled).toBe(false))
+    expect(username.disabled).toBe(false)
+    expect(password.disabled).toBe(false)
+    expect(button.textContent).toBe('Sign in')
+    expect(onSuccess).toHaveBeenCalledExactlyOnceWith('mum')
+  })
+
   it('shows distinct messages for wrong password, AdGuard unreachable and rate limit', async () => {
     // The server's message is deliberately unhelpful; the page shows its own line per code.
     mockFetch(json(401, { error: 'bad_credentials', message: 'nope' }))

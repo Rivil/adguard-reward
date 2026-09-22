@@ -1,6 +1,6 @@
 [project]
   name = "adguard-reward"
-  version = "0.1.4.0"
+  version = "0.1.5.0"
   created = "2026-09-19"
   description = "Self-hosted companion for AdGuard Home that lets parents temporarily unblock services for a child's devices with one tap, with the block restored server-side when time runs out."
 

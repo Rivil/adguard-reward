@@ -4,6 +4,7 @@
   import Login from './lib/Login.svelte'
   import Home from './lib/Home.svelte'
   import Children from './lib/Children.svelte'
+  import Buttons from './lib/Buttons.svelte'
 
   let username = $state<string | null>(null)
   let ready = $state(false)
@@ -12,7 +13,7 @@
     try {
       const m = await me()
       username = m.username
-      // A reload on /children stays there; only the login page bounces home.
+      // A reload on /children or /buttons stays there; only the login page bounces home.
       navigate($route === 'login' ? 'home' : $route)
     } catch {
       // A 401 already routed to login through onUnauthorized; any other
@@ -38,6 +39,8 @@
     <Home {username} onLogout={signedOut} />
   {:else if $route === 'children' && username !== null}
     <Children onBack={() => navigate('home')} />
+  {:else if $route === 'buttons' && username !== null}
+    <Buttons onBack={() => navigate('home')} />
   {:else}
     <Login onSuccess={refresh} />
   {/if}

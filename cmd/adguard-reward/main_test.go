@@ -13,13 +13,16 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
+	"image/png"
 	"io"
+	"io/fs"
 	"math/big"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -28,6 +31,7 @@ import (
 	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
 	"github.com/Rivil/adguard-reward/internal/auth"
 	"github.com/Rivil/adguard-reward/internal/store"
+	"github.com/Rivil/adguard-reward/web"
 )
 
 const (
@@ -1048,5 +1052,309 @@ func TestRun_StartupAdGuardDown(t *testing.T) {
 	}
 	if code := r.stop(t); code == 1 {
 		t.Fatalf("exit = 1; an unreachable AdGuard at boot must not be fatal:\n%s", r.stderr.String())
+	}
+}
+
+// ---- SPA, PWA and buttons over the real embed ----------------------------
+
+// requireDist fatals when web/dist is not built. A skip here would be a
+// false pass: the binary would ship a 503 shell. make test-go builds the
+// frontend first; a bare go test needs `make build-web`.
+func requireDist(t *testing.T) []byte {
+	t.Helper()
+	index, err := fs.ReadFile(web.Dist(), "index.html")
+	if err != nil {
+		t.Fatalf("web/dist not built — run make build-web (%v)", err)
+	}
+	return index
+}
+
+// get fetches a non-API path with no headers at all, like a browser navigation.
+func get(t *testing.T, c *http.Client, base, path string) (*http.Response, []byte) {
+	t.Helper()
+	req, err := http.NewRequest(http.MethodGet, base+path, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		t.Fatalf("GET %s: %v", path, err)
+	}
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return resp, body
+}
+
+var assetRef = regexp.MustCompile(`/assets/[A-Za-z0-9_.-]+\.js`)
+
+func TestRun_SPAFallback(t *testing.T) {
+	index := requireDist(t)
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+
+	for _, p := range []string{"/buttons", "/children/7"} {
+		resp, body := get(t, c, base, p)
+		if resp.StatusCode != http.StatusOK || !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
+			t.Fatalf("GET %s = %d %q, want 200 text/html", p, resp.StatusCode, resp.Header.Get("Content-Type"))
+		}
+		if !bytes.Equal(body, index) {
+			t.Fatalf("GET %s body differs from the embedded index.html", p)
+		}
+		if !bytes.Contains(body, []byte(`<div id="app">`)) || !bytes.Contains(body, []byte(`rel="manifest"`)) {
+			t.Fatalf("GET %s body lacks the shell markers: %s", p, body)
+		}
+		if cc := resp.Header.Get("Cache-Control"); cc != "no-cache" {
+			t.Fatalf("GET %s Cache-Control = %q, want no-cache", p, cc)
+		}
+	}
+
+	js := assetRef.Find(index)
+	if js == nil {
+		t.Fatalf("index.html references no /assets/*.js: %s", index)
+	}
+	resp, _ := get(t, c, base, string(js))
+	if resp.StatusCode != http.StatusOK || !strings.Contains(resp.Header.Get("Cache-Control"), "immutable") {
+		t.Fatalf("GET %s = %d %q, want 200 immutable", js, resp.StatusCode, resp.Header.Get("Cache-Control"))
+	}
+	if resp, body := get(t, c, base, "/assets/missing.js"); resp.StatusCode != http.StatusNotFound || bytes.Contains(bytes.ToLower(body), []byte("<html")) {
+		t.Fatalf("GET /assets/missing.js = %d %q, want a non-HTML 404", resp.StatusCode, body)
+	}
+
+	ck := loginOK(t, c, base)
+	resp = call(t, c, http.MethodGet, base, "/api/v1/nothing", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusNotFound {
+		t.Fatalf("GET /api/v1/nothing with cookie = %d, want 404", resp.StatusCode)
+	}
+	resp = call(t, c, http.MethodGet, base, "/api/v1/nothing", nil)
+	if resp.StatusCode != http.StatusUnauthorized {
+		t.Fatalf("GET /api/v1/nothing without cookie = %d, want 401", resp.StatusCode)
+	}
+	resp, body := get(t, c, base, "/api/v2/x")
+	if resp.StatusCode != http.StatusNotFound || resp.Header.Get("Content-Type") != "application/json" ||
+		bytes.Contains(bytes.ToLower(body), []byte("<html")) {
+		t.Fatalf("GET /api/v2/x = %d %q %q, want 404 application/json", resp.StatusCode, resp.Header.Get("Content-Type"), body)
+	}
+	healthz(t, r.addr)
+}
+
+func TestRun_PWAServed(t *testing.T) {
+	requireDist(t)
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+
+	resp, body := get(t, c, base, "/manifest.webmanifest")
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != "application/manifest+json" {
+		t.Fatalf("manifest = %d %q", resp.StatusCode, resp.Header.Get("Content-Type"))
+	}
+	var manifest struct {
+		StartURL string `json:"start_url"`
+		Scope    string `json:"scope"`
+		Display  string `json:"display"`
+	}
+	if err := json.Unmarshal(body, &manifest); err != nil {
+		t.Fatalf("manifest is not JSON: %v", err)
+	}
+	if manifest.StartURL != "/" || manifest.Scope != "/" || manifest.Display != "standalone" {
+		t.Fatalf("manifest = %+v, want start_url / scope / display standalone", manifest)
+	}
+
+	for _, ic := range []struct {
+		path string
+		size int
+	}{{"/icon-192.png", 192}, {"/icon-512.png", 512}} {
+		resp, body := get(t, c, base, ic.path)
+		if resp.StatusCode != http.StatusOK || resp.Header.Get("Content-Type") != "image/png" {
+			t.Fatalf("%s = %d %q", ic.path, resp.StatusCode, resp.Header.Get("Content-Type"))
+		}
+		cfg, err := png.DecodeConfig(bytes.NewReader(body))
+		if err != nil {
+			t.Fatalf("%s is not a PNG: %v", ic.path, err)
+		}
+		if cfg.Width != ic.size || cfg.Height != ic.size {
+			t.Fatalf("%s is %dx%d, want %dx%d", ic.path, cfg.Width, cfg.Height, ic.size, ic.size)
+		}
+	}
+
+	resp, body = get(t, c, base, "/sw.js")
+	if resp.StatusCode != http.StatusOK || !strings.Contains(resp.Header.Get("Content-Type"), "javascript") {
+		t.Fatalf("sw.js = %d %q", resp.StatusCode, resp.Header.Get("Content-Type"))
+	}
+	if cc := resp.Header.Get("Cache-Control"); cc != "no-cache" {
+		t.Fatalf("sw.js Cache-Control = %q, want no-cache", cc)
+	}
+	if bytes.Contains(body, []byte("__PRECACHE__")) {
+		t.Fatalf("sw.js still carries the precache token: %s", body)
+	}
+	// The worker's bypass rule names /api/ by design; what must never appear
+	// is an API path in the precache list itself.
+	if lit := precacheLiteral.Find(body); lit == nil || bytes.Contains(lit, []byte("/api/")) {
+		t.Fatalf("sw.js precache literal %q is missing or names an /api/ path", lit)
+	}
+}
+
+var precacheLiteral = regexp.MustCompile(`\["/"[^\]]*\]`)
+
+func TestRun_SWPrecacheListIsServed(t *testing.T) {
+	requireDist(t)
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+
+	_, sw := get(t, c, base, "/sw.js")
+	lit := precacheLiteral.Find(sw)
+	if lit == nil {
+		t.Fatalf("no precache array literal in sw.js: %s", sw)
+	}
+	var list []string
+	if err := json.Unmarshal(lit, &list); err != nil {
+		t.Fatalf("precache literal %s is not JSON: %v", lit, err)
+	}
+	hasRoot, hasAsset := false, false
+	for _, p := range list {
+		if p == "/" {
+			hasRoot = true
+		}
+		if strings.HasPrefix(p, "/assets/") {
+			hasAsset = true
+		}
+		if strings.HasPrefix(p, "/api/") {
+			t.Fatalf("precache lists an API path %q", p)
+		}
+		resp, _ := get(t, c, base, p)
+		if resp.StatusCode != http.StatusOK {
+			t.Errorf("precached %s = %d, want 200", p, resp.StatusCode)
+		}
+		if strings.HasPrefix(p, "/assets/") && !strings.Contains(resp.Header.Get("Cache-Control"), "immutable") {
+			t.Errorf("precached %s Cache-Control = %q, want immutable", p, resp.Header.Get("Cache-Control"))
+		}
+	}
+	if !hasRoot || !hasAsset {
+		t.Fatalf("precache %v lacks / or an /assets/ entry", list)
+	}
+}
+
+func TestRun_APINoStore(t *testing.T) {
+	requireDist(t)
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+	ck := loginOK(t, c, base)
+
+	resp := call(t, c, http.MethodGet, base, "/api/v1/buttons", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK || resp.Header.Get("Cache-Control") != "no-store" {
+		t.Fatalf("GET /api/v1/buttons = %d Cache-Control %q, want 200 no-store", resp.StatusCode, resp.Header.Get("Cache-Control"))
+	}
+	head := call(t, c, http.MethodHead, base, "/api/v1/buttons", nil, withCookie(ck.Value))
+	if strings.HasPrefix(head.Header.Get("Content-Type"), "text/html") {
+		t.Fatalf("HEAD /api/v1/buttons answered HTML")
+	}
+}
+
+type buttonWire struct {
+	ID       int64    `json:"id"`
+	Label    string   `json:"label"`
+	ChildID  int64    `json:"child_id"`
+	Services []string `json:"services"`
+	Duration int      `json:"duration"`
+}
+
+func putButtons(t *testing.T, c *http.Client, base, cookie string, items []map[string]any) *http.Response {
+	t.Helper()
+	return call(t, c, http.MethodPut, base, "/api/v1/buttons", map[string]any{"buttons": items}, withCookie(cookie))
+}
+
+func getButtons(t *testing.T, c *http.Client, base, cookie string) []byte {
+	t.Helper()
+	resp := call(t, c, http.MethodGet, base, "/api/v1/buttons", nil, withCookie(cookie))
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET /api/v1/buttons: %d", resp.StatusCode)
+	}
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return body
+}
+
+func TestRun_ButtonsSurviveRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	p := writeConfigIn(t, dataDir, fake.URL(), "")
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", p}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	resp := call(t, c, http.MethodPost, base, "/api/v1/children",
+		map[string]any{"name": "Ada", "clients": []string{"Kid phone"}}, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST child: %d %s", resp.StatusCode, b)
+	}
+	var child struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&child); err != nil {
+		t.Fatal(err)
+	}
+	resp = putButtons(t, c, base, ck.Value, []map[string]any{
+		{"label": "YouTube 1h", "child_id": child.ID, "services": []string{"youtube", "tiktok"}, "duration": 3600},
+		{"label": "TikTok 30m", "child_id": child.ID, "services": []string{"tiktok"}, "duration": 1800},
+	})
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("PUT buttons: %d %s", resp.StatusCode, b)
+	}
+	before := getButtons(t, c, base, ck.Value)
+	var stored struct {
+		Buttons []buttonWire `json:"buttons"`
+	}
+	if err := json.Unmarshal(before, &stored); err != nil {
+		t.Fatal(err)
+	}
+	if len(stored.Buttons) != 2 || stored.Buttons[0].Label != "YouTube 1h" ||
+		!reflect.DeepEqual(stored.Buttons[1].Services, []string{"tiktok"}) {
+		t.Fatalf("stored = %+v", stored.Buttons)
+	}
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	p2 := writeConfigIn(t, dataDir, fake.URL(), "")
+	r2 := start(t, []string{"--config", p2}, map[string]string{"ADGUARD_REWARD_LISTEN": r.addr})
+	if r2.addr != r.addr {
+		t.Fatalf("second run bound %s, want %s", r2.addr, r.addr)
+	}
+	after := getButtons(t, c, base, ck.Value)
+	if !bytes.Equal(after, before) {
+		t.Fatalf("after restart:\n%s\nbefore:\n%s", after, before)
+	}
+}
+
+func TestRun_ButtonsWired(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+	ck := loginOK(t, c, base)
+
+	resp := putButtons(t, c, base, ck.Value, []map[string]any{
+		{"label": "x", "child_id": 999, "services": []string{"youtube"}, "duration": 3600},
+	})
+	if resp.StatusCode != http.StatusUnprocessableEntity {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("PUT with child 999 = %d %s, want 422", resp.StatusCode, b)
+	}
+	if body := getButtons(t, c, base, ck.Value); strings.TrimSpace(string(body)) != `{"buttons":[]}` {
+		t.Fatalf("GET /api/v1/buttons = %s, want {\"buttons\":[]}", body)
 	}
 }

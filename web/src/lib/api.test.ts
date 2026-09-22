@@ -9,10 +9,15 @@ import {
   applyMigration,
   childBlocked,
   createChild,
+  createGrant,
   deleteChild,
+  endGrant,
+  extendGrant,
   iconUrl,
+  listButtons,
   listChildren,
   listClients,
+  listGrants,
   listServices,
   login,
   logout,
@@ -23,6 +28,7 @@ import {
   navigate,
   request,
   route,
+  saveButtons,
   setOnUnauthorized,
   updateChild,
 } from './api'
@@ -250,10 +256,138 @@ describe('children endpoints', () => {
   })
 })
 
+describe('grants and buttons endpoints', () => {
+  it('hit the exact URL, method and body', async () => {
+    const grant = {
+      id: 4,
+      child_id: 1,
+      services: ['tiktok'],
+      clients: ['Kid phone'],
+      started_at: '2026-09-21T10:00:00Z',
+      ends_at: '2026-09-21T10:30:00Z',
+    }
+    const button = { id: 9, label: 'TikTok 30', child_id: 1, services: ['tiktok'], duration: 1800 }
+    const input = { label: 'TikTok 30', child_id: 1, services: ['tiktok'], duration: 1800 }
+    const calls = mockFetch(
+      json(201, { id: 4, ends_at: grant.ends_at, applied: true, failed: [] }),
+      json(200, { id: 4, ends_at: '2026-09-21T10:40:00Z' }),
+      new Response(null, { status: 204 }),
+      json(200, { grants: [grant] }),
+      json(200, { buttons: [button] }),
+      json(200, { buttons: [button] }),
+    )
+
+    expect(await createGrant(1, ['tiktok'], 1800)).toEqual({ id: 4, ends_at: grant.ends_at, applied: true, failed: [] })
+    expect(await extendGrant(4, 600)).toEqual({ id: 4, ends_at: '2026-09-21T10:40:00Z' })
+    expect(await endGrant(4)).toBeUndefined()
+    expect(await listGrants()).toEqual([grant])
+    expect(await listButtons()).toEqual([button])
+    expect(await saveButtons([input])).toEqual([button])
+
+    const seen = calls.map((c) => [c.init.method, c.url, c.init.body ?? null])
+    expect(seen).toEqual([
+      ['POST', '/api/v1/grants', '{"child_id":1,"services":["tiktok"],"duration":1800}'],
+      ['POST', '/api/v1/grants/4/extend', '{"duration":600}'],
+      ['POST', '/api/v1/grants/4/end', null],
+      ['GET', '/api/v1/grants', null],
+      ['GET', '/api/v1/buttons', null],
+      ['PUT', '/api/v1/buttons', JSON.stringify({ buttons: [input] })],
+    ])
+    for (const c of calls) {
+      expect(header(c.init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    }
+  })
+
+  it('409 carries grantId', async () => {
+    mockFetch(json(409, { error: 'conflict', message: 'tiktok is already granted by grant 7', grant_id: 7 }))
+    const err = await fails(createGrant(1, ['tiktok'], 1800))
+    expect(err.status).toBe(409)
+    expect(err.code).toBe('conflict')
+    expect(err.grantId).toBe(7)
+    expect(err.message).toBe('tiktok is already granted by grant 7')
+
+    mockFetch(json(409, { error: 'conflict', message: 'a child named Ada already exists' }))
+    const plain = await fails(createChild('Ada', []))
+    expect(plain.code).toBe('conflict')
+    expect(plain.grantId).toBeUndefined()
+
+    mockFetch(json(409, { error: 'conflict', message: 'm', grant_id: '7' }))
+    const stringy = await fails(createGrant(1, ['tiktok'], 1800))
+    expect(stringy.grantId).toBeUndefined()
+  })
+})
+
 describe('routing', () => {
   afterEach(() => {
     history.replaceState(null, '', '/')
     route.set('home')
+  })
+
+  it('maps the buttons route both ways', () => {
+    navigate('buttons')
+    expect(location.pathname).toBe('/buttons')
+    expect(get(route)).toBe('buttons')
+
+    history.replaceState(null, '', '/buttons')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('buttons')
+
+    history.replaceState(null, '', '/x')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('home')
+
+    history.replaceState(null, '', '/')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('home')
+  })
+
+  it('maps the login route both ways', () => {
+    navigate('login')
+    expect(location.pathname).toBe('/login')
+    expect(get(route)).toBe('login')
+
+    history.replaceState(null, '', '/login')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('login')
+
+    navigate('home')
+    expect(location.pathname).toBe('/')
+    expect(get(route)).toBe('home')
+  })
+
+  it('navigate to the current path pushes nothing', () => {
+    history.replaceState(null, '', '/')
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      navigate('home')
+      expect(push).toHaveBeenCalledTimes(0)
+
+      navigate('buttons')
+      expect(push).toHaveBeenCalledTimes(1)
+      expect(push.mock.calls[0][2]).toBe('/buttons')
+      expect(location.pathname).toBe('/buttons')
+
+      navigate('buttons')
+      expect(push).toHaveBeenCalledTimes(1)
+    } finally {
+      push.mockRestore()
+    }
+  })
+
+  it('route reflects the URL at load', async () => {
+    const cases: Array<[string, string]> = [
+      ['/', 'home'],
+      ['/login', 'login'],
+      ['/children', 'children'],
+      ['/buttons', 'buttons'],
+      ['/nope', 'home'],
+    ]
+    for (const [path, want] of cases) {
+      history.replaceState(null, '', path)
+      vi.resetModules()
+      const m = await import('./api')
+      expect(get(m.route), path).toBe(want)
+    }
   })
 
   it('maps the children route both ways', () => {
