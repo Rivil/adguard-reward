@@ -1,4 +1,4 @@
-task_seq = 17
+task_seq = 18
 
 [phase]
   id = "05-phone-ui-buttons-pwa"
@@ -182,3 +182,14 @@ task_seq = 17
   depends_on = ["t-16"]
   test_contract = ["if any of the 73 BLOCKING survivor keys in verify.toml is applied by hand, at least one vitest/go test fails", "if the assertions are removed, the full vitest suite and go test ./internal/api still pass (the gap is real and the fix is test-only)"]
   status = "done"
+
+[[task]]
+  id = "t-18"
+  wave = 7
+  title = "Test hardening: kill the Home.svelte:194 migrated() survivor"
+  files = ["web/src/lib/Home.test.ts"]
+  description = "Test-only amendment after verify fail (9f1515f). The Stryker mutant Home.svelte:194 ConditionalExpression survives because jsdom queues a native toggle task when open(d1) sets d.open = true; that task fires after migrate() has cleared blocked, so toggled() refetches child 1 and the loop is never needed. Flush the pending toggle after each open() before the pre-migrate count assertions so the only post-migrate refetch path is the loop in migrated(). Confirm by applying the mutant by hand: the test must fail on the mutant and pass on real code; record both observations in the commit body."
+  covers = ["c-2"]
+  depends_on = ["t-17"]
+  test_contract = ["if migrated() skips its open-disclosure loop (Home.svelte:194 if (open) → if (false)), Home.test.ts it('migrating reloads open disclosures and the catalogue') fails"]
+  status = "in_progress"

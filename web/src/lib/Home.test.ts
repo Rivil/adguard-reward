@@ -121,10 +121,19 @@ function details(selector: string): HTMLDetailsElement {
   return el as HTMLDetailsElement
 }
 
-async function open(d: HTMLDetailsElement) {
-  d.open = true
-  await fireEvent(d, new Event('toggle'))
+/**
+ * Flip a disclosure the way a tap does: jsdom queues the toggle event as a
+ * macrotask when `open` changes, so wait one tick for it to land. Firing a
+ * synthetic toggle instead would leave that native one pending, to fire in
+ * a later test against a detached instance.
+ */
+async function toggle(d: HTMLDetailsElement, open: boolean) {
+  d.open = open
+  await new Promise((r) => setTimeout(r, 0))
 }
+
+const open = (d: HTMLDetailsElement) => toggle(d, true)
+const close = (d: HTMLDetailsElement) => toggle(d, false)
 
 /** Let fetch promise chains finish under fake timers. */
 async function settle() {
@@ -619,8 +628,7 @@ describe('Home', () => {
     // Opening fetches; re-opening while that fetch is still out does not.
     await open(d1)
     expect(blockedCalls(1)).toBe(1)
-    d1.open = false
-    await fireEvent(d1, new Event('toggle'))
+    await close(d1)
     await open(d1)
     expect(blockedCalls(1)).toBe(1)
 
@@ -628,8 +636,7 @@ describe('Home', () => {
     await waitFor(() => expect(d1.querySelectorAll('li').length).toBe(2))
 
     // Once loaded, the view is kept across close/open.
-    d1.open = false
-    await fireEvent(d1, new Event('toggle'))
+    await close(d1)
     await open(d1)
     expect(blockedCalls(1)).toBe(1)
     expect(d1.querySelectorAll('li').length).toBe(2)
@@ -652,8 +659,7 @@ describe('Home', () => {
     // Ben's was opened, then closed again: closed disclosures are not re-fetched.
     await open(d2)
     await waitFor(() => expect(d2.querySelectorAll('li').length).toBe(2))
-    d2.open = false
-    await fireEvent(d2, new Event('toggle'))
+    await close(d2)
     expect(blockedCalls(1)).toBe(1)
     expect(blockedCalls(2)).toBe(1)
 
