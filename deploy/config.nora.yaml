@@ -1,0 +1,36 @@
+# adguard-reward on nora, behind `tailscale serve`.
+#
+# Installed to /etc/adguard-reward/config.yaml (root:root 0644) by
+# install-nora.sh, which replaces TAILNET with the MagicDNS suffix it reads
+# from `tailscale status --json`. It holds no secrets: the AdGuard password is
+# delivered by the unit's LoadCredential= and read from the path below.
+#
+# tailscale serve terminates HTTPS on 443 with the auto-renewed tailnet
+# certificate and proxies to the loopback listener, so the binary itself never
+# sees a certificate and tls.cert/tls.key stay unset.
+listen: "127.0.0.1:8080"
+
+# The origin the phone actually visits. https:// is what makes the browser
+# treat this as a secure context — no secure context, no PWA install prompt,
+# and the session cookie ships without Secure.
+base_url: "https://nora.TAILNET.ts.net"
+
+# The only proxy in front of us is tailscale serve, on the loopback address.
+# Without this the login rate limiter would see every request as 127.0.0.1 and
+# one phone's bad passwords would lock out the whole household.
+trusted_proxies: ["127.0.0.1"]
+
+adguard:
+  # AdGuard Home as seen from nora itself.
+  url: "http://127.0.0.1:80"
+  username: "CHANGE-ME"
+  # Written by the unit's LoadCredential=adguard_password:… — systemd's
+  # per-service credential tmpfs, not a path to edit by hand. The source file
+  # is /etc/adguard-reward/adguard_password (root:root 0600).
+  password_file: /run/credentials/adguard-reward.service/adguard_password
+
+# No data_dir: the unit's StateDirectory=adguard-reward sets $STATE_DIRECTORY
+# and the binary stores its database there. Setting a value here would win over
+# it, and a relative one would be unwritable under ProtectSystem=strict.
+
+log_level: "info"
