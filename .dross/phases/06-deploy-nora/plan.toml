@@ -74,7 +74,7 @@ task_seq = 8
   covers = ["c-4", "c-5", "c-7"]
   depends_on = ["t-5", "t-8"]
   test_contract = ["if the deploy was not observed green in-session, c-4 fails: verify notes record the observed `make deploy-nora` exit 0 and the /healthz version string equal to `git describe --tags --always --dirty` of the deployed commit, with date — never recorded from memory (global rule 1)", "if the install prompt record is missing, c-5 fails: verify notes record date, phone model/OS, \"https://nora.<tailnet>.ts.net/ showed the install prompt\" and \"launched standalone (no browser chrome)\"", "if the real-use record is missing or latency exceeds 5 s, c-7 fails: verify notes record date, child's device name as known to AdGuard, service tapped, grant length, seconds from tap to the service resolving on the device (<= 5), and \"block returned at expiry without intervention\" with the expiry time", "if a secret value lands in verify.toml, the commit body or the conversation, r-03 and the global secret rules fail: the credential is written by the user on nora, never by the agent; proven by a `grep -q` boolean against a sentinel, never by printing"]
-  status = "pending"
+  status = "in_progress"
 
 [[task]]
   id = "t-8"
