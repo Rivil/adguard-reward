@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strconv"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -71,9 +72,12 @@ type Server struct {
 	updateFault map[string]int             // client name -> forced status on /control/clients/update
 	clientsDoc  map[string]json.RawMessage // top-level of clients.json
 	clients     []map[string]json.RawMessage
-	dirty       bool // clients modified since the fixture was loaded
+	dirty       bool                       // clients modified since the fixture was loaded
+	dhcpDoc     map[string]json.RawMessage // top-level of dhcp_status.json
+	dhcpDirty   bool                       // leases replaced since the fixture was loaded
 	requests    []Request
 	lastUpdate  []byte
+	added       [][]byte // raw bodies of accepted POST /control/clients/add
 	inFlight    int
 	maxInFlight int
 }
@@ -90,16 +94,22 @@ func New(t testing.TB, opts Options) *Server {
 		updateFault: map[string]int{},
 	}
 	s.loadClients()
+	s.dhcpDoc = decodeDoc("dhcp_status.json")
 	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(s.Close)
 	return s
 }
 
-func (s *Server) loadClients() {
+func decodeDoc(name string) map[string]json.RawMessage {
 	var doc map[string]json.RawMessage
-	if err := json.Unmarshal(Fixture("clients.json"), &doc); err != nil {
-		panic("adguardtest: clients.json: " + err.Error())
+	if err := json.Unmarshal(Fixture(name), &doc); err != nil {
+		panic("adguardtest: " + name + ": " + err.Error())
 	}
+	return doc
+}
+
+func (s *Server) loadClients() {
+	doc := decodeDoc("clients.json")
 	var list []map[string]json.RawMessage
 	if err := json.Unmarshal(doc["clients"], &list); err != nil {
 		panic("adguardtest: clients.json clients: " + err.Error())
@@ -219,6 +229,94 @@ func (s *Server) RemoveClient(name string) {
 	s.dirty = true
 }
 
+// AutoClient is one runtime client as GET /control/clients lists it under
+// auto_clients. Source is AdGuard's label: "ARP", "rDNS", "DHCP", "WHOIS",
+// "etc/hosts".
+type AutoClient struct {
+	Name   string
+	IP     string
+	Source string
+}
+
+// SetAutoClients replaces the auto_clients served by GET /control/clients.
+// A nil or empty list serves "auto_clients": [], never null. Persistent
+// clients are untouched.
+func (s *Server) SetAutoClients(list []AutoClient) {
+	type wire struct {
+		Name      string            `json:"name"`
+		IP        string            `json:"ip"`
+		Source    string            `json:"source"`
+		WhoisInfo map[string]string `json:"whois_info"`
+	}
+	out := make([]wire, 0, len(list))
+	for _, a := range list {
+		out = append(out, wire{Name: a.Name, IP: a.IP, Source: a.Source, WhoisInfo: map[string]string{}})
+	}
+	b := mustJSON(out)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.clientsDoc["auto_clients"] = b
+	s.dirty = true
+}
+
+// Lease is one DHCP lease as GET /control/dhcp/status lists it.
+type Lease struct {
+	MAC      string
+	IP       string
+	Hostname string
+}
+
+// SetLeases replaces the dynamic leases and static_leases served by GET
+// /control/dhcp/status. nil serves []. Dynamic leases carry a fixed
+// expires timestamp; static ones carry none, as in AdGuard.
+func (s *Server) SetLeases(dynamic, static []Lease) {
+	type dyn struct {
+		MAC      string `json:"mac"`
+		IP       string `json:"ip"`
+		Hostname string `json:"hostname"`
+		Expires  string `json:"expires"`
+	}
+	type stat struct {
+		MAC      string `json:"mac"`
+		IP       string `json:"ip"`
+		Hostname string `json:"hostname"`
+	}
+	d := make([]dyn, 0, len(dynamic))
+	for _, l := range dynamic {
+		d = append(d, dyn{MAC: l.MAC, IP: l.IP, Hostname: l.Hostname, Expires: "2026-11-02T00:00:00Z"})
+	}
+	st := make([]stat, 0, len(static))
+	for _, l := range static {
+		st = append(st, stat(l))
+	}
+	db, sb := mustJSON(d), mustJSON(st)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.dhcpDoc["leases"] = db
+	s.dhcpDoc["static_leases"] = sb
+	s.dhcpDirty = true
+}
+
+// AddedClients returns the raw body of every accepted POST
+// /control/clients/add, in arrival order. Rejected adds are not listed.
+func (s *Server) AddedClients() [][]byte {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([][]byte, len(s.added))
+	for i, b := range s.added {
+		out[i] = bytes.Clone(b)
+	}
+	return out
+}
+
+func mustJSON(v any) json.RawMessage {
+	b, err := json.Marshal(v)
+	if err != nil {
+		panic("adguardtest: encode: " + err.Error())
+	}
+	return b
+}
+
 // CountRequests returns how many recorded requests match method and path
 // exactly.
 func (s *Server) CountRequests(method, path string) int {
@@ -251,9 +349,9 @@ func (s *Server) LastUpdate() []byte {
 }
 
 // MaxInFlightUpdates reports the highest number of concurrent requests seen
-// on the read-modify-write pair (GET /control/clients and POST
-// /control/clients/update). A client that serialises its writes never
-// exceeds 1.
+// on the read-modify-write set (GET /control/clients, POST
+// /control/clients/update and POST /control/clients/add). A client that
+// serialises its writes never exceeds 1.
 func (s *Server) MaxInFlightUpdates() int {
 	s.mu.Lock()
 	defer s.mu.Unlock()
@@ -278,7 +376,8 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.requests = append(s.requests, Request{Method: r.Method, Path: r.URL.Path, HasAuth: hasAuth, Body: body})
 	delay := s.hang[r.URL.Path]
 	f, isForced := s.forced[r.URL.Path]
-	rmw := r.URL.Path == "/control/clients" || r.URL.Path == "/control/clients/update"
+	rmw := r.URL.Path == "/control/clients" || r.URL.Path == "/control/clients/update" ||
+		r.URL.Path == "/control/clients/add"
 	if rmw {
 		s.inFlight++
 		if s.inFlight > s.maxInFlight {
@@ -335,8 +434,12 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, Fixture("blocked_services_get.json"))
 	case "GET /control/blocked_services/all":
 		writeJSON(w, Fixture("blocked_services_all.json"))
+	case "GET /control/dhcp/status":
+		writeJSON(w, s.dhcpJSON())
 	case "POST /control/clients/update":
 		s.handleUpdate(w, body)
+	case "POST /control/clients/add":
+		s.handleAdd(w, body)
 	default:
 		http.NotFound(w, r)
 	}
@@ -391,10 +494,74 @@ func (s *Server) handleUpdate(w http.ResponseWriter, body []byte) {
 		http.Error(w, "client not found: "+in.Name, http.StatusBadRequest)
 		return
 	}
+	var newName string
+	if json.Unmarshal(data["name"], &newName) == nil && newName != in.Name && s.indexOf(newName) >= 0 {
+		http.Error(w, fmt.Sprintf("another client uses the same name %q", newName), http.StatusBadRequest)
+		return
+	}
 	s.clients[i] = data
 	s.dirty = true
 	s.lastUpdate = bytes.Clone(body)
 	w.WriteHeader(http.StatusOK)
+}
+
+// handleAdd stores a new persistent client the way AdGuard's
+// /control/clients/add does: the body is the client object itself. A blank
+// name, no ids, a name another client has, or an id another client holds
+// answers 400 and stores nothing.
+func (s *Server) handleAdd(w http.ResponseWriter, body []byte) {
+	var data map[string]json.RawMessage
+	if err := json.Unmarshal(body, &data); err != nil || data == nil {
+		http.Error(w, "invalid client: bad json", http.StatusBadRequest)
+		return
+	}
+	var name string
+	var ids []string
+	_ = json.Unmarshal(data["name"], &name)
+	_ = json.Unmarshal(data["ids"], &ids)
+	if name == "" {
+		http.Error(w, "invalid client: empty name", http.StatusBadRequest)
+		return
+	}
+	if len(ids) == 0 {
+		http.Error(w, "invalid client: no ids", http.StatusBadRequest)
+		return
+	}
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.indexOf(name) >= 0 {
+		http.Error(w, fmt.Sprintf("another client uses the same name %q", name), http.StatusBadRequest)
+		return
+	}
+	for _, c := range s.clients {
+		var owner string
+		var held []string
+		_ = json.Unmarshal(c["name"], &owner)
+		_ = json.Unmarshal(c["ids"], &held)
+		for _, h := range held {
+			for _, id := range ids {
+				if strings.EqualFold(h, id) {
+					http.Error(w, fmt.Sprintf("another client %q uses the same id %q", owner, id), http.StatusBadRequest)
+					return
+				}
+			}
+		}
+	}
+	s.clients = append(s.clients, data)
+	s.dirty = true
+	s.added = append(s.added, bytes.Clone(body))
+	w.WriteHeader(http.StatusOK)
+}
+
+// dhcpJSON serves dhcp_status.json verbatim until SetLeases changed it.
+func (s *Server) dhcpJSON() []byte {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if !s.dhcpDirty {
+		return Fixture("dhcp_status.json")
+	}
+	return mustJSON(s.dhcpDoc)
 }
 
 // clientsJSON serves the fixture bytes verbatim until something changed,

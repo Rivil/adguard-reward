@@ -1,0 +1,36 @@
+{
+  "enabled": true,
+  "interface_name": "eth0",
+  "v4": {
+    "gateway_ip": "192.168.1.1",
+    "subnet_mask": "255.255.255.0",
+    "range_start": "192.168.1.100",
+    "range_end": "192.168.1.200",
+    "lease_duration": 86400
+  },
+  "v6": {
+    "range_start": "",
+    "lease_duration": 86400
+  },
+  "leases": [
+    {
+      "mac": "aa:bb:cc:dd:ee:09",
+      "ip": "192.168.1.9",
+      "hostname": "printer",
+      "expires": "2026-11-02T00:00:00Z"
+    },
+    {
+      "mac": "aa:bb:cc:dd:ee:02",
+      "ip": "192.168.1.51",
+      "hostname": "kid-tablet",
+      "expires": "2026-11-02T00:00:00Z"
+    }
+  ],
+  "static_leases": [
+    {
+      "mac": "aa:bb:cc:dd:ee:20",
+      "ip": "192.168.1.20",
+      "hostname": "alpha"
+    }
+  ]
+}
