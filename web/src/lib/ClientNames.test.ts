@@ -112,6 +112,39 @@ describe('ClientNames', () => {
     expect(onRenamed).not.toHaveBeenCalled()
   })
 
+  it('a changed name enables Save; the disabled prop locks the row', async () => {
+    mockFetch({})
+    const { rerender } = render(ClientNames, { clients: [client('Kid phone')], onRenamed: vi.fn() })
+    expect(input('Kid phone').disabled).toBe(false)
+    await fireEvent.input(input('Kid phone'), { target: { value: 'TV' } })
+    expect(save('Kid phone').disabled).toBe(false)
+    await rerender({ disabled: true })
+    expect(input('Kid phone').disabled).toBe(true)
+    expect(save('Kid phone').disabled).toBe(true)
+  })
+
+  it('a network failure shows the offline line and the row can retry', async () => {
+    let fail = true
+    const calls = mockFetch({
+      'POST /api/v1/clients/rename': () => {
+        if (fail) throw new TypeError('Failed to fetch')
+        return json(200, client('TV'))
+      },
+    })
+    const onRenamed = vi.fn()
+    render(ClientNames, { clients: [client('Kid phone')], onRenamed })
+    await fireEvent.input(input('Kid phone'), { target: { value: 'TV' } })
+    await fireEvent.submit(row('Kid phone'))
+    expect((await screen.findByRole('alert')).textContent).toContain("Can't reach the server")
+    expect(save('Kid phone').disabled).toBe(false)
+    expect(input('Kid phone').disabled).toBe(false)
+
+    fail = false
+    await fireEvent.submit(row('Kid phone'))
+    await waitFor(() => expect(onRenamed).toHaveBeenCalledTimes(1))
+    expect(calls).toHaveLength(2)
+  })
+
   it('trims the new name and locks while a rename is out', async () => {
     let release!: () => void
     const held = new Promise<void>((r) => (release = r))
@@ -126,6 +159,7 @@ describe('ClientNames', () => {
     await fireEvent.input(input('Kid phone'), { target: { value: '  TV ' } })
     await fireEvent.submit(row('Kid phone'))
     await fireEvent.submit(row('Kid phone'))
+    expect(save('Kid phone').disabled).toBe(true)
     expect(save('Den').disabled).toBe(true)
     expect(input('Den').disabled).toBe(true)
     release()

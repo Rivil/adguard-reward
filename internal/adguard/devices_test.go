@@ -100,6 +100,24 @@ func TestUnlabelled_Order(t *testing.T) {
 	}
 }
 
+// An address AdGuard reports that does not parse sorts after every parseable
+// one sharing its hostname, and such addresses order among themselves by text.
+func TestUnlabelled_UnparseableIPOrder(t *testing.T) {
+	a := []AutoClient{
+		{IP: "zz-host", Hostname: "tv"},
+		{IP: "10.0.0.5", Hostname: "tv"},
+		{IP: "aa-host", Hostname: "tv"},
+		{IP: "10.0.0.4", Hostname: "tv"},
+	}
+	b := []AutoClient{a[3], a[2], a[1], a[0]}
+	want := []string{"10.0.0.4", "10.0.0.5", "aa-host", "zz-host"}
+	for _, in := range [][]AutoClient{a, b} {
+		if got := ips(Unlabelled(nil, in, nil)); !reflect.DeepEqual(got, want) {
+			t.Errorf("order = %v, want %v", got, want)
+		}
+	}
+}
+
 func TestUnlabelled_SuggestedIDs(t *testing.T) {
 	auto := []AutoClient{{IP: "192.168.1.9", Hostname: "printer"}, {IP: "192.168.1.30", Hostname: "tv"}}
 	leases := []Lease{{MAC: "AA:BB:CC:DD:EE:09", IP: "192.168.1.9"}}

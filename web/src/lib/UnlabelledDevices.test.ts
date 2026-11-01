@@ -147,6 +147,61 @@ describe('UnlabelledDevices', () => {
     expect((await screen.findByRole('alert')).textContent).toContain("Can't reach the server")
   })
 
+  it('a whitespace-only name blocks submit', async () => {
+    mockFetch(() => json(201, created))
+    render(UnlabelledDevices, { devices: [printer], children: kids, onCreated: vi.fn() })
+    await fireEvent.input(field(row(printer.ip), 'Device name'), { target: { value: '   ' } })
+    expect(save(row(printer.ip)).disabled).toBe(true)
+    await fireEvent.submit(row(printer.ip))
+    expect(vi.mocked(fetch)).not.toHaveBeenCalled()
+  })
+
+  it('fields are editable when idle and locked while a create is out', async () => {
+    let release!: () => void
+    const held = new Promise<void>((r) => (release = r))
+    mockFetch(async () => {
+      await held
+      return json(201, created)
+    })
+    const onCreated = vi.fn()
+    render(UnlabelledDevices, { devices: [printer, alpha], children: kids, onCreated })
+    for (const label of ['Device name', 'Device ids', 'Child']) {
+      expect(field(row(alpha.ip), label).disabled, label).toBe(false)
+    }
+    await fireEvent.submit(row(printer.ip))
+    for (const label of ['Device name', 'Device ids', 'Child']) {
+      expect(field(row(alpha.ip), label).disabled, label).toBe(true)
+    }
+    release()
+    await waitFor(() => expect(onCreated).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(field(row(alpha.ip), 'Device name').disabled).toBe(false))
+  })
+
+  it('the disabled prop locks every field', () => {
+    mockFetch(() => json(201, created))
+    render(UnlabelledDevices, { devices: [printer], children: kids, disabled: true, onCreated: vi.fn() })
+    for (const label of ['Device name', 'Device ids', 'Child']) {
+      expect(field(row(printer.ip), label).disabled, label).toBe(true)
+    }
+    expect(save(row(printer.ip)).disabled).toBe(true)
+  })
+
+  it('the child picker starts on No child and keeps the pick when the row returns', async () => {
+    mockFetch(() => json(201, created))
+    const { rerender } = render(UnlabelledDevices, { devices: [printer], children: kids, onCreated: vi.fn() })
+    const picker = () => field(row(printer.ip), 'Child') as unknown as HTMLSelectElement
+    expect(picker().value).toBe('')
+    expect(picker().options[0].selected).toBe(true)
+
+    await fireEvent.change(picker(), { target: { value: '1' } })
+    expect(picker().value).toBe('1')
+
+    await rerender({ devices: [] })
+    await rerender({ devices: [printer] })
+    expect(picker().value).toBe('1')
+    expect(picker().options[0].selected).toBe(false)
+  })
+
   it('shows the connect-to-network sentence only when empty', () => {
     mockFetch(() => json(201, created))
     const { unmount } = render(UnlabelledDevices, { devices: [], children: kids, onCreated: vi.fn() })
