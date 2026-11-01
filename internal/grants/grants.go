@@ -54,6 +54,9 @@ type Store interface {
 	GetGrant(ctx context.Context, id int64) (store.Grant, error)
 	ExtendGrant(ctx context.Context, id int64, newEndsAt time.Time) (store.Grant, error)
 	SetGrantStatus(ctx context.Context, id int64, from, to string, at time.Time) (bool, error)
+	GetChild(ctx context.Context, id int64) (store.Child, error)
+	AddChildClient(ctx context.Context, childID int64, name string) error
+	RenameClient(ctx context.Context, oldName, newName string) error
 }
 
 // AdGuard is the client subset the engine writes through; *adguard.Client
@@ -62,6 +65,9 @@ type AdGuard interface {
 	Clients(ctx context.Context) (adguard.ClientsResult, error)
 	RemoveBlockedServices(ctx context.Context, clientName string, ids []string) error
 	AddBlockedServices(ctx context.Context, clientName string, ids []string) error
+	AddClient(ctx context.Context, nc adguard.NewClient) error
+	AdoptBlockedServices(ctx context.Context, clientName string, ids []string) error
+	RenameClient(ctx context.Context, oldName, newName string) error
 }
 
 // Timer is what AfterFunc returns; *time.Timer satisfies it.
