@@ -5,17 +5,23 @@
     createChild,
     deleteChild,
     listChildren,
-    listClients,
+    listDevices,
     messageFor,
     updateChild,
     type Child,
     type ClientView,
+    type UnlabelledDevice,
   } from './api'
+  import UnlabelledDevices from './UnlabelledDevices.svelte'
 
   let { onBack }: { onBack: () => void } = $props()
 
   let children = $state<Child[]>([])
   let clients = $state<ClientView[]>([])
+  let unlabelled = $state<UnlabelledDevice[]>([])
+  // False until one load succeeds, so a failed first load never claims
+  // there are no unlabelled devices.
+  let loaded = $state(false)
   // Pending edits per child; rebuilt from the server on every load so the
   // page never shows optimistic state.
   let drafts = $state<Record<number, { name: string; clients: string[] }>>({})
@@ -24,12 +30,14 @@
   let error = $state<{ code: string; text: string } | null>(null)
 
   async function load() {
-    const [c, cl] = await Promise.all([listChildren(), listClients()])
+    const [c, dev] = await Promise.all([listChildren(), listDevices()])
     const next: typeof drafts = {}
     for (const child of c) next[child.id] = { name: child.name, clients: [...child.clients] }
     drafts = next
     children = c
-    clients = cl
+    clients = dev.clients
+    unlabelled = dev.unlabelled
+    loaded = true
   }
 
   onMount(() => {
@@ -154,6 +162,10 @@
     </label>
     <button type="submit" disabled={pending}>Add child</button>
   </form>
+
+  {#if loaded}
+    <UnlabelledDevices devices={unlabelled} {children} disabled={pending} onCreated={() => run(load)} />
+  {/if}
 </main>
 
 <style>

@@ -301,3 +301,95 @@ describe('Children', () => {
     expect(onBack).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('Children unlabelled devices', () => {
+  const tv = { ip: '192.168.1.30', hostname: 'TV', source: 'rDNS', suggested_ids: ['192.168.1.30'] }
+
+  function devicesServer(unlabelled: (typeof tv)[]) {
+    const state = { children: [ada, ben], clients: [client('Kid phone', { id: 1, name: 'Ada' })], unlabelled }
+    const routes: Routes = {
+      '/api/v1/children': () => json(200, { children: state.children }),
+      'GET /api/v1/clients': () => json(200, { clients: state.clients, unlabelled: state.unlabelled }),
+    }
+    return { state, routes }
+  }
+
+  function deviceRow(ip: string): HTMLFormElement | null {
+    return document.querySelector(`form[data-device="${ip}"]`)
+  }
+
+  it('creating a device refreshes without a page reload', async () => {
+    const { state, routes } = devicesServer([tv])
+    const reload = vi.fn()
+    vi.stubGlobal('location', { ...window.location, reload })
+    const calls = mockFetch({
+      ...routes,
+      'POST /api/v1/clients': () => {
+        state.clients = [...state.clients, client('TV')]
+        state.unlabelled = []
+        return json(201, client('TV'))
+      },
+    })
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ada')
+    const gets = () => calls.filter((c) => c.method === 'GET' && c.url === '/api/v1/clients').length
+    expect(gets()).toBe(1)
+
+    await fireEvent.submit(deviceRow(tv.ip)!)
+    await waitFor(() => expect(gets()).toBe(2))
+    await waitFor(() => expect(deviceRow(tv.ip)).toBeNull())
+    for (const id of [1, 2]) expect(checkbox(form(id), 'TV').checked).toBe(false)
+    expect(reload).not.toHaveBeenCalled()
+  })
+
+  it('creating with a child checks it under that child', async () => {
+    const { state, routes } = devicesServer([tv])
+    const calls = mockFetch({
+      ...routes,
+      'POST /api/v1/clients': () => {
+        state.clients = [...state.clients, client('TV', { id: 1, name: 'Ada' })]
+        state.children = [{ ...ada, clients: ['Kid phone', 'TV'] }, ben]
+        state.unlabelled = []
+        return json(201, client('TV', { id: 1, name: 'Ada' }))
+      },
+    })
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ada')
+    const row = deviceRow(tv.ip)!
+    await fireEvent.change(row.querySelector('[aria-label="Child"]')!, { target: { value: '1' } })
+    await fireEvent.submit(row)
+    await waitFor(() => expect(deviceRow(tv.ip)).toBeNull())
+    const post = calls.find((c) => c.method === 'POST')!
+    expect(JSON.parse(post.body!)).toEqual({ name: 'TV', ids: ['192.168.1.30'], child_id: 1 })
+    expect(checkbox(form(1), 'TV').checked).toBe(true)
+    expect(checkbox(form(2), 'TV').disabled).toBe(true)
+  })
+
+  it('empty state: sentence when none, hidden with one, absent on a 502', async () => {
+    mockFetch(devicesServer([]).routes)
+    const first = render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ada')
+    expect(
+      screen.getByText(/must connect to the network and appear in AdGuard Home before it can be named/),
+    ).toBeTruthy()
+    first.unmount()
+    vi.unstubAllGlobals()
+
+    mockFetch(devicesServer([tv]).routes)
+    const second = render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ada')
+    expect(deviceRow(tv.ip)).not.toBeNull()
+    expect(screen.queryByText(/must connect to the network/)).toBeNull()
+    second.unmount()
+    vi.unstubAllGlobals()
+
+    mockFetch({
+      '/api/v1/children': () => json(200, { children: [ada, ben] }),
+      'GET /api/v1/clients': () => json(502, { error: 'adguard_unavailable', message: 'down' }),
+    })
+    render(Children, { onBack: vi.fn() })
+    const alert = await screen.findByRole('alert')
+    expect(alert.getAttribute('data-error')).toBe('adguard_unavailable')
+    expect(screen.queryByText(/must connect to the network/)).toBeNull()
+  })
+})
