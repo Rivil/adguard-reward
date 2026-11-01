@@ -58,6 +58,10 @@
   name = "svelte-lazy-derived-branch"
   reason = "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -> ['Stryker was here'] and services === null -> false applied, 2026-09-22)."
 
+[[category]]
+  name = "gremlins-switch-case-covered"
+  reason = "Case body executes under go test -coverprofile (count >= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -245,15 +249,6 @@
   text = "{\"log_level\", EnvPrefix + \"LOG_LEVEL\", func(c *Config, v string) { c.LogLevel = v }},"
   line = 87
   category = "string-concat-initializer"
-  accepted_in = "01-config-adguard-client"
-
-[[accepted]]
-  key = "4742d4bfe47ddb54"
-  file = "internal/adguard/adguardtest/server.go"
-  op = "ARITHMETIC_BASE"
-  text = "panic(\"adguardtest: clients.json: \" + err.Error())"
-  line = 99
-  category = "string-concat-panic"
   accepted_in = "01-config-adguard-client"
 
 [[accepted]]
@@ -1056,3 +1051,102 @@
   line = 60
   accepted_in = "06-deploy-nora"
   reason = "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
+
+[[accepted]]
+  key = "52cb11cea95d948c"
+  file = "internal/store/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case newOwner != nil && (oldOwner == nil || newOwner.ChildID != oldOwner.ChildID):"
+  line = 42
+  category = "gremlins-switch-case-covered"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "6bf93880bcde1ac8"
+  file = "internal/store/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case newOwner != nil:"
+  line = 45
+  category = "gremlins-switch-case-covered"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "f62be8d2dba8bc1c"
+  file = "internal/store/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case oldOwner != nil:"
+  line = 50
+  category = "gremlins-switch-case-covered"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "ec84ab086867857b"
+  file = "internal/grants/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil, errors.Is(err, adguard.ErrClientNotFound):"
+  line = 105
+  category = "gremlins-switch-case-covered"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "b6d0a47a51b5e218"
+  file = "internal/adguard/devices.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case xerr == nil && yerr == nil:"
+  line = 154
+  category = "gremlins-switch-case-covered"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "96ff237bdd4c77ba"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: \" + name + \": \" + err.Error())"
+  line = 106
+  category = "string-concat-panic"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "2c52925716d27eaf"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: encode: \" + err.Error())"
+  line = 315
+  category = "string-concat-panic"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "86752b45cbacdad7"
+  file = "web/src/lib/Children.svelte"
+  op = "ArrayDeclaration"
+  text = "let unlabelled = $state<UnlabelledDevice[]>([])"
+  line = 22
+  category = "svelte-preload-state"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "e8e6bf58e067f055"
+  file = "web/src/lib/UnlabelledDevices.svelte"
+  op = "StringLiteral"
+  text = "const childOf = (d: UnlabelledDevice) => edits[d.ip]?.child ?? ''"
+  line = 27
+  accepted_in = "auto-client-labelling"
+  reason = "Equivalent: a non-empty default child makes save() send Number('<non-numeric>') = NaN, which JSON.stringify encodes as null — the same child_id: null as the '' default; with no option marked selected the browser shows the first option ('No child') either way."
+
+[[accepted]]
+  key = "902c12737cbb6e59"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const CLIENTS = '/api/v1/clients'"
+  line = 234
+  accepted_in = "auto-client-labelling"
+  reason = "Module-level const CLIENTS is evaluated once at import, so Stryker's per-test mutant switching cannot activate the mutant; the exact URLs are asserted by api.test.ts (createClient/listDevices toBe '/api/v1/clients', renameClient toBe '/api/v1/clients/rename')."
+
+[[accepted]]
+  key = "7ed5ca61843a9f7d"
+  file = "web/src/lib/ClientNames.svelte"
+  op = "BooleanLiteral"
+  text = "disabled = false,"
+  line = 6
+  accepted_in = "auto-client-labelling"
+  reason = "Dead default: the only caller (Children.svelte:169) always passes disabled={pending}, so the 'disabled = false' prop default is never read in the app."

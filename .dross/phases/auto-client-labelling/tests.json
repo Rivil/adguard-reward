@@ -1,0 +1,1843 @@
+{
+  "phase": "auto-client-labelling",
+  "generated_at": "2026-11-01T18:15:01.61011Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go",
+        "internal/adguard/clients.go",
+        "internal/adguard/clients_test.go",
+        "internal/adguard/clients_write.go",
+        "internal/adguard/clients_write_test.go",
+        "internal/adguard/devices.go",
+        "internal/adguard/devices_test.go",
+        "internal/api/api.go",
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/clients.go",
+        "internal/api/clients_test.go",
+        "internal/api/rename.go",
+        "internal/api/rename_test.go",
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go",
+        "internal/grants/grants.go",
+        "internal/grants/rename.go",
+        "internal/grants/rename_test.go",
+        "internal/store/clients.go",
+        "internal/store/clients_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 323,
+        "Survived": 36,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.8997214484679665,
+        "Surviving": [
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 106,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 106,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 106,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 190,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 209,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "71be988b0a00e5a4",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 226,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ecfa87bc8060128",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 315,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "2c52925716d27eaf",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 577,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 586,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 154,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "b6d0a47a51b5e218",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 154,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "b6d0a47a51b5e218",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 156,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "e36715b66a65a1bc",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 157,
+            "Op": "INVERT_NEGATIVES",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "efd3a8225bf49e4c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 157,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "5f9f5cc4b5907c65",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 158,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "602256014df6b282",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 106,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 106,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 106,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 190,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 209,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "71be988b0a00e5a4",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 226,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ecfa87bc8060128",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 315,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "2c52925716d27eaf",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 577,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 586,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/api/children.go",
+            "Line": 116,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "d69e57f7ae237fb9",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+          },
+          {
+            "File": "internal/api/children.go",
+            "Line": 117,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "6cc7c18da6e15549",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 47,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "07257c7ebd994d79",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on the string concatenation in ErrRevertFailed.Error(): string - string does not compile (not viable). The type itself is exercised via errors.As in TestGrants_EndRevertFails / TestEngine_EndRevertFailure; only the Error() text is never read."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 205,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "149b5b8d30816792",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (case err == nil -\u003e err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 105,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "ec84ab086867857b",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/store/clients.go",
+            "Line": 42,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "52cb11cea95d948c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/store/clients.go",
+            "Line": 42,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "52cb11cea95d948c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/store/clients.go",
+            "Line": 42,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "52cb11cea95d948c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/store/clients.go",
+            "Line": 45,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6bf93880bcde1ac8",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/store/clients.go",
+            "Line": 50,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f62be8d2dba8bc1c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          }
+        ],
+        "NotCovered": 36
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "internal/adguard/adguardtest/server.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients_write.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients_write_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/devices.go": "adapter-lacks-range-runner",
+        "internal/adguard/devices_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/children.go": "adapter-lacks-range-runner",
+        "internal/api/children_test.go": "adapter-lacks-range-runner",
+        "internal/api/clients.go": "adapter-lacks-range-runner",
+        "internal/api/clients_test.go": "adapter-lacks-range-runner",
+        "internal/api/rename.go": "adapter-lacks-range-runner",
+        "internal/api/rename_test.go": "adapter-lacks-range-runner",
+        "internal/grants/clients.go": "adapter-lacks-range-runner",
+        "internal/grants/clients_test.go": "adapter-lacks-range-runner",
+        "internal/grants/grants.go": "adapter-lacks-range-runner",
+        "internal/grants/rename.go": "adapter-lacks-range-runner",
+        "internal/grants/rename_test.go": "adapter-lacks-range-runner",
+        "internal/store/clients.go": "adapter-lacks-range-runner",
+        "internal/store/clients_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/lib/Children.svelte",
+        "web/src/lib/Children.test.ts",
+        "web/src/lib/ClientNames.svelte",
+        "web/src/lib/ClientNames.test.ts",
+        "web/src/lib/UnlabelledDevices.svelte",
+        "web/src/lib/UnlabelledDevices.test.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 188,
+        "Survived": 33,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.8506787330316742,
+        "Surviving": [
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 21,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "efe4eae9dcf17bf2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 22,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "86752b45cbacdad7",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 30,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "fd2e2d4d8db99396",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 59,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "6485f7e42f3edd6a",
+            "Lifecycle": "accepted",
+            "Note": "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 77,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "23b258f0df7fd7fe",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 77,
+            "Op": "LogicalOperator",
+            "Snippet": "checked || !d.clients.includes(name)",
+            "Origin": "inherited",
+            "Key": "5ad3db1cdd919929",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 27,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "e8e6bf58e067f055",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 41,
+            "Op": "MethodExpression",
+            "Snippet": "nameOf(d)",
+            "Origin": "in-hunk",
+            "Key": "8b439cb41aab0150",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 80,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "b3457e9cefdafa41",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 80,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "b3457e9cefdafa41",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 80,
+            "Op": "LogicalOperator",
+            "Snippet": "disabled \u0026\u0026 pending",
+            "Origin": "in-hunk",
+            "Key": "2e326d01416b249a",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 88,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "572aea260e0ceaf4",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 88,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "572aea260e0ceaf4",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 88,
+            "Op": "LogicalOperator",
+            "Snippet": "disabled \u0026\u0026 pending",
+            "Origin": "in-hunk",
+            "Key": "411c79a6092b8c02",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 93,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "56088af23afccb6f",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 93,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "56088af23afccb6f",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 93,
+            "Op": "LogicalOperator",
+            "Snippet": "disabled \u0026\u0026 pending",
+            "Origin": "in-hunk",
+            "Key": "e2da6db1378b21d2",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 95,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "3ee630b90804020d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 95,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "3ee630b90804020d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 95,
+            "Op": "EqualityOperator",
+            "Snippet": "childOf(d) !== ''",
+            "Origin": "in-hunk",
+            "Key": "d817109ad53c77a4",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 95,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "c8895e1cbdf85dad",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 97,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "dd9352c203090405",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 97,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "dd9352c203090405",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 97,
+            "Op": "EqualityOperator",
+            "Snippet": "childOf(d) !== String(c.id)",
+            "Origin": "in-hunk",
+            "Key": "379bb3cdaf5d882d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 234,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "902c12737cbb6e59",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 34,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9271ee6eb8992cfd",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 6,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "7ed5ca61843a9f7d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 35,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "6aa3da495f13080c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 36,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "3923318e19b8e422",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 52,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "661bf045236a235a",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 58,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "3b46992ef76d299f",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 58,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "3b46992ef76d299f",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 58,
+            "Op": "LogicalOperator",
+            "Snippet": "disabled \u0026\u0026 pending",
+            "Origin": "in-hunk",
+            "Key": "a1e6434546fc9335",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          }
+        ],
+        "NotCovered": 1
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/lib/Children.test.ts": [
+          {
+            "start": 304,
+            "end": 304,
+            "construct": "hunk"
+          },
+          {
+            "start": 305,
+            "end": 395,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/ClientNames.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Routes"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 14,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 29,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "construct": "FunctionDeclaration client"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "hunk"
+          },
+          {
+            "start": 35,
+            "end": 39,
+            "construct": "FunctionDeclaration row"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "hunk"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "VariableDeclaration input"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "VariableDeclaration save"
+          },
+          {
+            "start": 43,
+            "end": 43,
+            "construct": "hunk"
+          },
+          {
+            "start": 44,
+            "end": 46,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 47,
+            "end": 47,
+            "construct": "hunk"
+          },
+          {
+            "start": 48,
+            "end": 136,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/UnlabelledDevices.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 12,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "hunk"
+          },
+          {
+            "start": 14,
+            "end": 24,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 31,
+            "construct": "VariableDeclaration printer"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "VariableDeclaration blank"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "VariableDeclaration alpha"
+          },
+          {
+            "start": 34,
+            "end": 37,
+            "construct": "VariableDeclaration kids"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "VariableDeclaration created"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "hunk"
+          },
+          {
+            "start": 40,
+            "end": 44,
+            "construct": "FunctionDeclaration row"
+          },
+          {
+            "start": 45,
+            "end": 45,
+            "construct": "hunk"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "construct": "FunctionDeclaration field"
+          },
+          {
+            "start": 51,
+            "end": 51,
+            "construct": "hunk"
+          },
+          {
+            "start": 52,
+            "end": 54,
+            "construct": "FunctionDeclaration save"
+          },
+          {
+            "start": 55,
+            "end": 55,
+            "construct": "hunk"
+          },
+          {
+            "start": 56,
+            "end": 58,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 59,
+            "end": 59,
+            "construct": "hunk"
+          },
+          {
+            "start": 60,
+            "end": 158,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 5,
+            "end": 37,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 456,
+            "end": 456,
+            "construct": "hunk"
+          },
+          {
+            "start": 457,
+            "end": 509,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 234,
+            "end": 234,
+            "construct": "VariableDeclaration CLIENTS"
+          },
+          {
+            "start": 235,
+            "end": 235,
+            "construct": "hunk"
+          },
+          {
+            "start": 236,
+            "end": 239,
+            "construct": "FunctionDeclaration listClients"
+          },
+          {
+            "start": 241,
+            "end": 241,
+            "construct": "hunk"
+          },
+          {
+            "start": 242,
+            "end": 250,
+            "construct": "TSInterfaceDeclaration UnlabelledDevice"
+          },
+          {
+            "start": 251,
+            "end": 251,
+            "construct": "hunk"
+          },
+          {
+            "start": 252,
+            "end": 255,
+            "construct": "TSInterfaceDeclaration Devices"
+          },
+          {
+            "start": 256,
+            "end": 257,
+            "construct": "hunk"
+          },
+          {
+            "start": 258,
+            "end": 261,
+            "construct": "FunctionDeclaration listDevices"
+          },
+          {
+            "start": 262,
+            "end": 266,
+            "construct": "hunk"
+          },
+          {
+            "start": 267,
+            "end": 269,
+            "construct": "FunctionDeclaration createClient"
+          },
+          {
+            "start": 270,
+            "end": 271,
+            "construct": "hunk"
+          },
+          {
+            "start": 272,
+            "end": 274,
+            "construct": "FunctionDeclaration renameClient"
+          },
+          {
+            "start": 275,
+            "end": 275,
+            "construct": "hunk"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/lib/Children.svelte": "ast-unavailable",
+        "web/src/lib/ClientNames.svelte": "ast-unavailable",
+        "web/src/lib/UnlabelledDevices.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/adguard/adguardtest/testdata/clients.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "internal/adguard/adguardtest/testdata/dhcp_status.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_BOUNDARY",
+      "language": "go",
+      "key": "51a958b88e117c6a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9430031ee34baa69",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_BOUNDARY",
+      "language": "go",
+      "key": "51a958b88e117c6a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 181,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9430031ee34baa69",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 183,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "68505a7be9631dc8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 183,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "68505a7be9631dc8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/client.go",
+      "line": 185,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "cfecbf0de85b0129",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 119,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 120,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/03-children-and-blocked-view/spec.toml",
+      ".dross/phases/auto-client-labelling/REVIEW.md",
+      ".dross/phases/auto-client-labelling/changes.json",
+      ".dross/phases/auto-client-labelling/panel/mvp.md",
+      ".dross/phases/auto-client-labelling/panel/risk.md",
+      ".dross/phases/auto-client-labelling/panel/synthesis.md",
+      ".dross/phases/auto-client-labelling/panel/verification.md",
+      ".dross/phases/auto-client-labelling/plan.toml",
+      ".dross/phases/auto-client-labelling/spec.toml",
+      ".dross/project.toml",
+      "internal/adguard/adguardtest/server.go",
+      "internal/adguard/adguardtest/server_test.go",
+      "internal/adguard/adguardtest/testdata/clients.json",
+      "internal/adguard/adguardtest/testdata/dhcp_status.json",
+      "internal/adguard/clients.go",
+      "internal/adguard/clients_test.go",
+      "internal/adguard/clients_write.go",
+      "internal/adguard/clients_write_test.go",
+      "internal/adguard/devices.go",
+      "internal/adguard/devices_test.go",
+      "internal/api/api.go",
+      "internal/api/children.go",
+      "internal/api/children_test.go",
+      "internal/api/clients.go",
+      "internal/api/clients_test.go",
+      "internal/api/rename.go",
+      "internal/api/rename_test.go",
+      "internal/grants/clients.go",
+      "internal/grants/clients_test.go",
+      "internal/grants/grants.go",
+      "internal/grants/rename.go",
+      "internal/grants/rename_test.go",
+      "internal/store/clients.go",
+      "internal/store/clients_test.go",
+      "web/package.json",
+      "web/src/lib/Children.svelte",
+      "web/src/lib/Children.test.ts",
+      "web/src/lib/ClientNames.svelte",
+      "web/src/lib/ClientNames.test.ts",
+      "web/src/lib/UnlabelledDevices.svelte",
+      "web/src/lib/UnlabelledDevices.test.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts"
+    ],
+    "hunks": {
+      ".dross/phases/03-children-and-blocked-view/spec.toml": [
+        {
+          "start": 69,
+          "end": 69
+        }
+      ],
+      ".dross/phases/auto-client-labelling/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 24
+        }
+      ],
+      ".dross/phases/auto-client-labelling/changes.json": [
+        {
+          "start": 1,
+          "end": 551
+        }
+      ],
+      ".dross/phases/auto-client-labelling/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 143
+        }
+      ],
+      ".dross/phases/auto-client-labelling/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 281
+        }
+      ],
+      ".dross/phases/auto-client-labelling/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 415
+        }
+      ],
+      ".dross/phases/auto-client-labelling/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 421
+        }
+      ],
+      ".dross/phases/auto-client-labelling/plan.toml": [
+        {
+          "start": 1,
+          "end": 254
+        }
+      ],
+      ".dross/phases/auto-client-labelling/spec.toml": [
+        {
+          "start": 1,
+          "end": 57
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      "internal/adguard/adguardtest/server.go": [
+        {
+          "start": 23,
+          "end": 23
+        },
+        {
+          "start": 75,
+          "end": 77
+        },
+        {
+          "start": 80,
+          "end": 80
+        },
+        {
+          "start": 97,
+          "end": 97
+        },
+        {
+          "start": 103,
+          "end": 103
+        },
+        {
+          "start": 105,
+          "end": 106
+        },
+        {
+          "start": 108,
+          "end": 112
+        },
+        {
+          "start": 232,
+          "end": 319
+        },
+        {
+          "start": 352,
+          "end": 354
+        },
+        {
+          "start": 379,
+          "end": 380
+        },
+        {
+          "start": 437,
+          "end": 438
+        },
+        {
+          "start": 441,
+          "end": 442
+        },
+        {
+          "start": 497,
+          "end": 501
+        },
+        {
+          "start": 508,
+          "end": 566
+        }
+      ],
+      "internal/adguard/adguardtest/server_test.go": [
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 10,
+          "end": 10
+        },
+        {
+          "start": 371,
+          "end": 605
+        }
+      ],
+      "internal/adguard/adguardtest/testdata/clients.json": [
+        {
+          "start": 98,
+          "end": 129
+        }
+      ],
+      "internal/adguard/adguardtest/testdata/dhcp_status.json": [
+        {
+          "start": 1,
+          "end": 36
+        }
+      ],
+      "internal/adguard/clients.go": [
+        {
+          "start": 28,
+          "end": 40
+        },
+        {
+          "start": 43,
+          "end": 43
+        },
+        {
+          "start": 50,
+          "end": 50
+        },
+        {
+          "start": 62,
+          "end": 62
+        },
+        {
+          "start": 70,
+          "end": 76
+        },
+        {
+          "start": 78,
+          "end": 83
+        },
+        {
+          "start": 86,
+          "end": 90
+        },
+        {
+          "start": 92,
+          "end": 101
+        }
+      ],
+      "internal/adguard/clients_test.go": [
+        {
+          "start": 512,
+          "end": 544
+        }
+      ],
+      "internal/adguard/clients_write.go": [
+        {
+          "start": 1,
+          "end": 188
+        }
+      ],
+      "internal/adguard/clients_write_test.go": [
+        {
+          "start": 1,
+          "end": 247
+        }
+      ],
+      "internal/adguard/devices.go": [
+        {
+          "start": 1,
+          "end": 162
+        }
+      ],
+      "internal/adguard/devices_test.go": [
+        {
+          "start": 1,
+          "end": 167
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 28,
+          "end": 28
+        },
+        {
+          "start": 42,
+          "end": 45
+        },
+        {
+          "start": 51,
+          "end": 53
+        },
+        {
+          "start": 115,
+          "end": 116
+        }
+      ],
+      "internal/api/children.go": [
+        {
+          "start": 9,
+          "end": 9
+        },
+        {
+          "start": 14,
+          "end": 14
+        },
+        {
+          "start": 168,
+          "end": 176
+        },
+        {
+          "start": 186,
+          "end": 213
+        },
+        {
+          "start": 222,
+          "end": 272
+        }
+      ],
+      "internal/api/children_test.go": [
+        {
+          "start": 9,
+          "end": 9
+        },
+        {
+          "start": 265,
+          "end": 267
+        },
+        {
+          "start": 282,
+          "end": 474
+        }
+      ],
+      "internal/api/clients.go": [
+        {
+          "start": 4,
+          "end": 8
+        },
+        {
+          "start": 10,
+          "end": 11
+        },
+        {
+          "start": 17,
+          "end": 19
+        },
+        {
+          "start": 37,
+          "end": 46
+        },
+        {
+          "start": 72,
+          "end": 76
+        },
+        {
+          "start": 88,
+          "end": 92
+        },
+        {
+          "start": 105,
+          "end": 113
+        },
+        {
+          "start": 115,
+          "end": 249
+        }
+      ],
+      "internal/api/clients_test.go": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 11,
+          "end": 13
+        },
+        {
+          "start": 17,
+          "end": 18
+        },
+        {
+          "start": 145,
+          "end": 437
+        }
+      ],
+      "internal/api/rename.go": [
+        {
+          "start": 1,
+          "end": 120
+        }
+      ],
+      "internal/api/rename_test.go": [
+        {
+          "start": 1,
+          "end": 151
+        }
+      ],
+      "internal/grants/clients.go": [
+        {
+          "start": 1,
+          "end": 162
+        }
+      ],
+      "internal/grants/clients_test.go": [
+        {
+          "start": 1,
+          "end": 301
+        }
+      ],
+      "internal/grants/grants.go": [
+        {
+          "start": 57,
+          "end": 60
+        },
+        {
+          "start": 69,
+          "end": 71
+        }
+      ],
+      "internal/grants/rename.go": [
+        {
+          "start": 1,
+          "end": 76
+        }
+      ],
+      "internal/grants/rename_test.go": [
+        {
+          "start": 1,
+          "end": 257
+        }
+      ],
+      "internal/store/clients.go": [
+        {
+          "start": 1,
+          "end": 123
+        }
+      ],
+      "internal/store/clients_test.go": [
+        {
+          "start": 1,
+          "end": 223
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        }
+      ],
+      "web/src/lib/Children.svelte": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 13,
+          "end": 13
+        },
+        {
+          "start": 15,
+          "end": 16
+        },
+        {
+          "start": 22,
+          "end": 25
+        },
+        {
+          "start": 34,
+          "end": 34
+        },
+        {
+          "start": 39,
+          "end": 41
+        },
+        {
+          "start": 166,
+          "end": 170
+        }
+      ],
+      "web/src/lib/Children.test.ts": [
+        {
+          "start": 304,
+          "end": 395
+        }
+      ],
+      "web/src/lib/ClientNames.svelte": [
+        {
+          "start": 1,
+          "end": 91
+        }
+      ],
+      "web/src/lib/ClientNames.test.ts": [
+        {
+          "start": 1,
+          "end": 136
+        }
+      ],
+      "web/src/lib/UnlabelledDevices.svelte": [
+        {
+          "start": 1,
+          "end": 135
+        }
+      ],
+      "web/src/lib/UnlabelledDevices.test.ts": [
+        {
+          "start": 1,
+          "end": 158
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 12,
+          "end": 12
+        },
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 31,
+          "end": 31
+        },
+        {
+          "start": 456,
+          "end": 509
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 234,
+          "end": 235
+        },
+        {
+          "start": 237,
+          "end": 237
+        },
+        {
+          "start": 241,
+          "end": 275
+        }
+      ]
+    },
+    "base": "b7e1f3f73b708611758ae7b1bb3b90d7460e7c87",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/lib/Children.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/ClientNames.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/UnlabelledDevices.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local",
+  "measured_commit": "20a97b86fddd89e0559ef994a39f502a7d800f10",
+  "measured_tree": "184b6450a40cde8a4f98226bf9434446fa432536"
+}

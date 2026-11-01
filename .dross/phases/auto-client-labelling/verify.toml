@@ -1,0 +1,318 @@
+[verify]
+  phase = "auto-client-labelling"
+  generated_at = 2026-11-01T18:15:01.61011Z
+  verdict = "fail"
+  finalized = true
+  finalized_at = 2026-11-01T18:56:01.000892Z
+  measured_commit = "20a97b86fddd89e0559ef994a39f502a7d800f10"
+  measured_tree = "184b6450a40cde8a4f98226bf9434446fa432536"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.8810344827586207
+  mutants_killed = 511
+  mutants_survived = 69
+  mutants_not_covered = 37
+  mutants_no_block = 0
+  mutants_test_gap = 37
+  mutants_in_scope = 580
+  unclassified_in_scope = 48
+  criteria_total = 7
+  criteria_covered = 6
+  criteria_uncovered = 1
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 323
+    survived = 36
+    timeout = 0
+    in_scope = 359
+    score = 0.8997214484679665
+    file_count = 22
+    measured_on = "local"
+    whole_file = ["internal/adguard/adguardtest/server.go — adapter-lacks-range-runner", "internal/adguard/adguardtest/server_test.go — adapter-lacks-range-runner", "internal/adguard/clients.go — adapter-lacks-range-runner", "internal/adguard/clients_test.go — adapter-lacks-range-runner", "internal/adguard/clients_write.go — adapter-lacks-range-runner", "internal/adguard/clients_write_test.go — adapter-lacks-range-runner", "internal/adguard/devices.go — adapter-lacks-range-runner", "internal/adguard/devices_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/children.go — adapter-lacks-range-runner", "internal/api/children_test.go — adapter-lacks-range-runner", "internal/api/clients.go — adapter-lacks-range-runner", "internal/api/clients_test.go — adapter-lacks-range-runner", "internal/api/rename.go — adapter-lacks-range-runner", "internal/api/rename_test.go — adapter-lacks-range-runner", "internal/grants/clients.go — adapter-lacks-range-runner", "internal/grants/clients_test.go — adapter-lacks-range-runner", "internal/grants/grants.go — adapter-lacks-range-runner", "internal/grants/rename.go — adapter-lacks-range-runner", "internal/grants/rename_test.go — adapter-lacks-range-runner", "internal/store/clients.go — adapter-lacks-range-runner", "internal/store/clients_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 188
+    survived = 33
+    timeout = 0
+    in_scope = 221
+    score = 0.8506787330316742
+    file_count = 8
+    measured_on = "local"
+    ranges = ["web/src/lib/Children.test.ts:304-304 (hunk)", "web/src/lib/Children.test.ts:305-395 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:1-2 (hunk)", "web/src/lib/ClientNames.test.ts:10-10 (TSTypeAliasDeclaration Routes)", "web/src/lib/ClientNames.test.ts:11-11 (hunk)", "web/src/lib/ClientNames.test.ts:12-14 (FunctionDeclaration json)", "web/src/lib/ClientNames.test.ts:15-15 (hunk)", "web/src/lib/ClientNames.test.ts:16-29 (FunctionDeclaration mockFetch)", "web/src/lib/ClientNames.test.ts:3-3 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:30-30 (hunk)", "web/src/lib/ClientNames.test.ts:31-33 (FunctionDeclaration client)", "web/src/lib/ClientNames.test.ts:34-34 (hunk)", "web/src/lib/ClientNames.test.ts:35-39 (FunctionDeclaration row)", "web/src/lib/ClientNames.test.ts:4-4 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:40-40 (hunk)", "web/src/lib/ClientNames.test.ts:41-41 (VariableDeclaration input)", "web/src/lib/ClientNames.test.ts:42-42 (VariableDeclaration save)", "web/src/lib/ClientNames.test.ts:43-43 (hunk)", "web/src/lib/ClientNames.test.ts:44-46 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:47-47 (hunk)", "web/src/lib/ClientNames.test.ts:48-136 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:5-5 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:6-6 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:7-7 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:8-8 (hunk)", "web/src/lib/ClientNames.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/UnlabelledDevices.test.ts:1-2 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:10-12 (FunctionDeclaration json)", "web/src/lib/UnlabelledDevices.test.ts:13-13 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:14-24 (FunctionDeclaration mockFetch)", "web/src/lib/UnlabelledDevices.test.ts:25-25 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:26-31 (VariableDeclaration printer)", "web/src/lib/UnlabelledDevices.test.ts:3-3 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:32-32 (VariableDeclaration blank)", "web/src/lib/UnlabelledDevices.test.ts:33-33 (VariableDeclaration alpha)", "web/src/lib/UnlabelledDevices.test.ts:34-37 (VariableDeclaration kids)", "web/src/lib/UnlabelledDevices.test.ts:38-38 (VariableDeclaration created)", "web/src/lib/UnlabelledDevices.test.ts:39-39 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:4-4 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:40-44 (FunctionDeclaration row)", "web/src/lib/UnlabelledDevices.test.ts:45-45 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:46-50 (FunctionDeclaration field)", "web/src/lib/UnlabelledDevices.test.ts:5-5 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:51-51 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:52-54 (FunctionDeclaration save)", "web/src/lib/UnlabelledDevices.test.ts:55-55 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:56-58 (ExpressionStatement)", "web/src/lib/UnlabelledDevices.test.ts:59-59 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:6-6 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:60-158 (ExpressionStatement)", "web/src/lib/UnlabelledDevices.test.ts:7-7 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:8-8 (TSTypeAliasDeclaration Call)", "web/src/lib/UnlabelledDevices.test.ts:9-9 (hunk)", "web/src/lib/api.test.ts:456-456 (hunk)", "web/src/lib/api.test.ts:457-509 (ExpressionStatement)", "web/src/lib/api.test.ts:5-37 (ImportDeclaration)", "web/src/lib/api.ts:234-234 (VariableDeclaration CLIENTS)", "web/src/lib/api.ts:235-235 (hunk)", "web/src/lib/api.ts:236-239 (FunctionDeclaration listClients)", "web/src/lib/api.ts:241-241 (hunk)", "web/src/lib/api.ts:242-250 (TSInterfaceDeclaration UnlabelledDevice)", "web/src/lib/api.ts:251-251 (hunk)", "web/src/lib/api.ts:252-255 (TSInterfaceDeclaration Devices)", "web/src/lib/api.ts:256-257 (hunk)", "web/src/lib/api.ts:258-261 (FunctionDeclaration listDevices)", "web/src/lib/api.ts:262-266 (hunk)", "web/src/lib/api.ts:267-269 (FunctionDeclaration createClient)", "web/src/lib/api.ts:270-271 (hunk)", "web/src/lib/api.ts:272-274 (FunctionDeclaration renameClient)", "web/src/lib/api.ts:275-275 (hunk)"]
+    whole_file = ["web/src/lib/Children.svelte — ast-unavailable", "web/src/lib/ClientNames.svelte — ast-unavailable", "web/src/lib/UnlabelledDevices.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/api/clients_test.go:TestClients_Unlabelled", "internal/adguard/devices_test.go:TestUnlabelled_ExcludesKnownIP", "internal/adguard/devices_test.go:TestUnlabelled_AllSources"]
+  notes = "Asserts printer listed with ip/hostname/source ARP, Kid phone's IP omitted, two GETs = two /control/clients reads with a row added between them appearing. devices.go:156-158 survivors are IP-order fallback for unparseable IPs, not listing membership — FLAGged, not a downgrade."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/api/clients_test.go:TestCreateClient_BadInput", "internal/api/clients_test.go:TestCreateClient_Conflict", "internal/api/clients_test.go:TestCreateClient_Timeout", "internal/api/clients_test.go:TestCreateClient_ReadUnavailable", "internal/adguard/clients_write_test.go:TestAddClient_Body"]
+  notes = "Blank name -> 400 with zero AdGuard requests; duplicate name / taken id -> 409 with zero adds; hung add and read 500 -> 502 adguard_unavailable; add body carries name+ids."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/api/clients_test.go:TestCreateClient_WithChild", "web/src/lib/Children.test.ts:creating with a child checks it under that child"]
+  notes = "One POST with child_id -> 201, child lists TV, fake's TV off the global list with Ada's baseline; UI sends child_id and checks TV under Ada."
+
+[[criterion]]
+  id = "c-4"
+  status = "weak"
+  tests = ["web/src/lib/Children.test.ts:creating a device refreshes without a page reload", "web/src/lib/Children.test.ts:creating with a child checks it under that child", "web/src/lib/UnlabelledDevices.test.ts"]
+  notes = "Create-and-appear-without-reload is asserted, but 17 in-hunk survivors in UnlabelledDevices.svelte escape: whitespace-only name passes ready() (:41), inputs/select not locked while pending (:80,:88,:93), child picker selected state (:95,:97)."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["web/src/lib/Children.test.ts:empty state: sentence when none, hidden with one, absent on a 502", "web/src/lib/UnlabelledDevices.test.ts:shows the connect-to-network sentence only when empty"]
+  notes = "Sentence present with zero devices, absent with one, absent when the load 502s."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/api/rename_test.go:TestRename_UpdatesMappingAndGrants", "internal/grants/rename_test.go:TestRename_GrantExpiryReverts", "internal/grants/rename_test.go:TestRename_EndReverts", "internal/store/clients_test.go:TestRenameClient_Mapping"]
+  notes = "Rename updates child mapping and active grant clients; expiry and End re-block the renamed device and never name the old one. ClientNames.svelte UI survivors FLAGged separately (lock/error state, not the rename effect)."
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  tests = ["internal/api/children_test.go:TestChildUpdate_AddBaseline", "internal/api/children_test.go:TestChildUpdate_AddInherited", "internal/api/children_test.go:TestChildUpdate_FullSwap", "internal/api/children_test.go:TestChildUpdate_KeepsOwn", "internal/api/children_test.go:TestChildUpdate_RemoveOnly", "internal/grants/clients_test.go:TestCreateClient_FirstDevice"]
+  notes = "Sibling + grant baseline, global-sibling inheritance with flag cleared, global-list fallback with no remaining sibling, existing own blocks kept, remove-only PUT makes zero AdGuard requests."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:106 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:106 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:106 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:315 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/devices.go:154 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/devices.go:154 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/devices.go:156 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/devices.go:157 (INVERT_NEGATIVES)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/devices.go:157 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/devices.go:158 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:106 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:106 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:106 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/adguard/adguardtest/server.go:315 (ARITHMETIC_BASE)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/grants/clients.go:105 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/store/clients.go:42 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/store/clients.go:42 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/store/clients.go:42 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/store/clients.go:45 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "gremlins mutant survived: internal/store/clients.go:50 (CONDITIONALS_NEGATION)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Children.svelte:22 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:27 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:41 (MethodExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:80 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:80 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:80 (LogicalOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:88 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:88 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:88 (LogicalOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:93 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:93 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:93 (LogicalOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:95 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:95 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:95 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:95 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:97 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:97 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/UnlabelledDevices.svelte:97 (EqualityOperator)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/api.ts:234 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:34 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:6 (BooleanLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:35 (BlockStatement)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:36 (BooleanLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:52 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:58 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:58 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/ClientNames.svelte:58 (LogicalOperator)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/clients.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/dhcp_status.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/Children.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/ClientNames.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/UnlabelledDevices.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stale acceptance: internal/adguard/adguardtest/server.go (4742d4bfe47ddb54) — mutant no longer produced — it suppresses nothing and no run can revive it; retire it: dross survivor retire 4742d4bfe47ddb54"
+
+[[finding]]
+  severity = "FLAG"
+  text = "c-4 weak: 17 in-hunk survivors in web/src/lib/UnlabelledDevices.svelte — :41 (whitespace-only name passes ready()), :80/:88/:93 (disabled || pending lock on inputs and select), :95/:97 (child picker selected state)"
+
+[[finding]]
+  severity = "FLAG"
+  text = "internal/adguard/devices.go:156-158 compareIP fallback for mixed parseable/unparseable IPs never executes (4 mutants; go cover count 0 for 156.19-161.26)"
+
+[[finding]]
+  severity = "FLAG"
+  text = "web/src/lib/ClientNames.svelte: 7 survivors — :34 network-error message, :35/:36 pending never reset after failure, :52 input disabled while pending, :58 Save pending lock"
+
+[[finding]]
+  severity = "NOTE"
+  text = "Post-run drain: 20 survivors accepted (gremlins-switch-case-covered: store/clients.go:42,45,50, grants/clients.go:105, devices.go:154; string-concat-panic: adguardtest/server.go:106,315; svelte-preload-state: Children.svelte:22; equivalent/static/dead-default: UnlabelledDevices.svelte:27, api.ts:234, ClientNames.svelte:6) and stale acceptance 4742d4bfe47ddb54 retired. unclassified_in_scope (48) is as measured; 28 remain live, to be killed by a /dross-quick tests-only task and a re-run of /dross-verify."
