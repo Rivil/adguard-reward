@@ -1020,3 +1020,39 @@
   line = 51
   category = "svelte-lazy-derived-branch"
   accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "511b6f39daef4909"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = "services === null"
+  line = 58
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: shown is a lazy $derived read only inside the template's services!==null branch; the null guard exists for the type checker and is never evaluated with a null catalogue"
+
+[[accepted]]
+  key = "8b4f0513f10ed864"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ArrayDeclaration"
+  text = "? []"
+  line = 59
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: the [] arm is only reachable with a null catalogue, where nothing reads shown (lazy $derived, template null branch never renders the list)"
+
+[[accepted]]
+  key = "46f8922b47508734"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = ": needle === ''"
+  line = 60
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: with an empty needle the filter path returns every service because x.includes('') is always true; the early return is an optimisation"
+
+[[accepted]]
+  key = "969ac8ba8b79e0da"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "StringLiteral"
+  text = ": needle === ''"
+  line = 60
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
