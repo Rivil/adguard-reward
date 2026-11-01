@@ -1,0 +1,57 @@
+[phase]
+  id = "auto-client-labelling"
+  title = "Auto-client labelling"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "GET /api/v1/clients also lists unlabelled devices: AdGuard auto_clients (ip, hostname, source) whose IP is not already an id of a persistent client; read live on every request"
+
+[[criteria]]
+  id = "c-2"
+  text = "POST /api/v1/clients creates an AdGuard persistent client {name, ids} via /control/clients/add; empty name returns 400, a duplicate name 409, AdGuard unreachable 502"
+
+[[criteria]]
+  id = "c-3"
+  text = "The same POST can assign the new client to a child, so naming a device and mapping it to a child is one action"
+
+[[criteria]]
+  id = "c-4"
+  text = "The children settings page shows an 'Unlabelled devices' list; naming one (optionally picking a child) creates it, and it then appears among the client checkboxes without a reload"
+  deferred = ["ba3c095bee91191e"]
+
+[[criteria]]
+  id = "c-5"
+  text = "When there are no unlabelled devices, the settings page says plainly that a device must connect to the network and appear in AdGuard before it can be named"
+
+[[criteria]]
+  id = "c-6"
+  text = "Renaming a persistent client from the app updates the child mapping and the client names stored on active grants, so a running grant still reverts on that device"
+
+[[criteria]]
+  id = "c-7"
+  text = "Assigning an existing client to a child (PUT /api/v1/children/{id}) adds the child's baseline (siblings' blocked services + services under the child's active grants) to that client's own list and sets use_global_blocked_services=false; nothing it already blocks is removed; unassigning writes nothing to AdGuard"
+
+[[decisions]]
+  key = "new_client_ids"
+  choice = "A client created from an unlabelled device gets its IP plus the MAC from AdGuard's DHCP lease table when AdGuard leased that IP; the ids field is editable before save"
+  why = "An IP-only client is orphaned by the next DHCP lease change; a MAC survives it"
+  locked = true
+
+[[decisions]]
+  key = "new_client_blocked_set"
+  choice = "A new client assigned to a child gets its own list = union of the siblings' blocked services + every service under the child's active grants, with use_global_blocked_services=false; an unassigned new client gets AdGuard's defaults"
+  why = "A grant's revert only touches the clients stored at creation, so a device added mid-grant must not inherit the temporary unblock or it stays open after expiry"
+  locked = true
+
+[[decisions]]
+  key = "unlabelled_listing"
+  choice = "Every auto_client not covered by a persistent client is listed, whatever its source, sorted by hostname; the name field is prefilled with the hostname"
+  why = "Filtering by source would hide devices AdGuard only knows by ARP/rDNS; hostname prefill saves typing on a phone"
+  locked = true
+
+[[decisions]]
+  key = "rename_scope"
+  choice = "Rename works on any persistent client the app lists, not only ones assigned to a child or created by the app"
+  why = "Children reference clients by name, so the app must own the rename path for any client it may map"
+  locked = true

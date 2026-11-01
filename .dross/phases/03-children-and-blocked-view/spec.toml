@@ -66,6 +66,7 @@
   locked = true
 
 [[deferred]]
+  id = "ba3c095bee91191e"
   text = "Create and label AdGuard persistent clients from auto_clients inside the app so a parent never opens AdGuard for a new phone"
   why = "M2 auto-client labelling per PLAN.md; this phase only reads the client list"
   target = "auto-client-labelling"

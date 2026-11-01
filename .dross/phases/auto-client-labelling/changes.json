@@ -1,0 +1,6 @@
+{
+  "phase": "auto-client-labelling",
+  "base": "milestone/v0.1",
+  "base_commit": "b7e1f3f73b708611758ae7b1bb3b90d7460e7c87",
+  "tasks": {}
+}
