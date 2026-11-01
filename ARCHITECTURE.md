@@ -43,14 +43,15 @@ _introduced 01-config-adguard-client · 84c1bc9_
 
 ### AdGuard test double
 
-In-process fake of `/control/*` for tests: enforces basic auth, answers login, serves v0.107.x fixtures for clients / blocked services / status, echoes `clients/update` into the next read, records every request, and exposes SetStatus / Hang / SetAuth / MutateClient / SetUpdateStatus failure knobs plus BlockedServices / RemoveClient / CountRequests observers for grant tests.
+In-process fake of `/control/*` for tests: enforces basic auth, answers login, serves v0.107.x fixtures for clients / auto_clients / blocked services / status / DHCP leases, echoes `clients/update` into the next read, serves `clients/add` with duplicate name / id rejection and a rename-collision 400, records every request, and exposes SetStatus / Hang / SetAuth / MutateClient / SetUpdateStatus plus auto_clients / lease failure knobs and BlockedServices / RemoveClient / CountRequests observers for grant tests.
 
-- adguardtest.New — internal/adguard/adguardtest/server.go:82
-- Server.BlockedServices — internal/adguard/adguardtest/server.go:189
-- Server.RemoveClient — internal/adguard/adguardtest/server.go:211
-- Server.CountRequests — internal/adguard/adguardtest/server.go:224
+- adguardtest.New — internal/adguard/adguardtest/server.go:86
+- Server.BlockedServices — internal/adguard/adguardtest/server.go:199
+- Server.RemoveClient — internal/adguard/adguardtest/server.go:221
+- Server.CountRequests — internal/adguard/adguardtest/server.go:322
+- Server.handleAdd — internal/adguard/adguardtest/server.go:512
 
-_introduced 01-config-adguard-client · 5e65f87 · extended 04-grants-scheduler-reconciler · 3123562_
+_introduced 01-config-adguard-client · 5e65f87 · extended 04-grants-scheduler-reconciler · 3123562 · extended auto-client-labelling · cfa6c17_
 
 ### API request hardening
 
@@ -104,23 +105,34 @@ _introduced 05-phone-ui-buttons-pwa · 3ae3217_
 
 ### Children
 
-`/api/v1/children` CRUD over `{id, name, clients[]}` rows in SQLite (`children` + `child_clients`, migration 0002): names unique case-insensitively, an AdGuard client name owned by at most one child, both enforced in one transaction that answers 409 `conflict` naming the owning child (and client); clients are trimmed / de-duplicated / sorted, listing is a single LEFT JOIN query, and nothing is ever auto-pruned when AdGuard forgets a client.
+`/api/v1/children` CRUD over `{id, name, clients[]}` rows in SQLite (`children` + `child_clients`, migration 0002): names unique case-insensitively, an AdGuard client name owned by at most one child, both enforced in one transaction that answers 409 `conflict` naming the owning child (and client); clients are trimmed / de-duplicated / sorted, listing is a single LEFT JOIN query, and nothing is ever auto-pruned when AdGuard forgets a client. A client added through `PUT /children/{id}` first gets the child's baseline merged into its own AdGuard list (siblings' effective services, or the global list for a child's first client, ∪ services under the child's active grants; `use_global_blocked_services` cleared, nothing removed), with 404 / 409 decided before any AdGuard call; removing a client never touches AdGuard.
 
 - Store.ListChildren — internal/store/children.go:90
 - Store.CreateChild — internal/store/children.go:134
 - Store.UpdateChild — internal/store/children.go:165
-- API.handleChildCreate — internal/api/children.go:136
-- API.handleChildUpdate — internal/api/children.go:166
+- API.handleChildCreate — internal/api/children.go:138
+- API.handleChildUpdate — internal/api/children.go:177
 
-_introduced 03-children-and-blocked-view · 422a0f9 · 0333f40_
+_introduced 03-children-and-blocked-view · 422a0f9 · 0333f40 · extended auto-client-labelling · 5dbce8d_
 
 ### Children settings page
 
-`/children` route where a parent creates, renames and deletes children and assigns AdGuard clients by checkbox: a client owned by another child is disabled and labelled with that child's name, a client AdGuard no longer knows is struck through with a remove control, every mutation re-renders from the server's response, and the route survives a reload.
+`/children` route where a parent creates, renames and deletes children and assigns AdGuard clients by checkbox: a client owned by another child is disabled and labelled with that child's name, a client AdGuard no longer knows is struck through with a remove control, every mutation re-renders from the server's response, and the route survives a reload. It also hosts the unlabelled-devices list (device labelling) and inline rename of any listed client (client rename).
 
-- Children.load — web/src/lib/Children.svelte:26
+- Children.load — web/src/lib/Children.svelte:33
 
-_introduced 03-children-and-blocked-view · ed235b1 · 275c341 · 63d8347_
+_introduced 03-children-and-blocked-view · ed235b1 · 275c341 · 63d8347 · extended auto-client-labelling · 70bfe89 · 5ab554d_
+
+### Client rename
+
+Any persistent client the app lists can be renamed from the children page: `POST /api/v1/clients/rename` runs under the engine mutex — 409 on a stale foreign mapping first, then the AdGuard rename, then one store transaction that renames the child mapping and the client names stored on active grants (so a running grant still reverts on that device), renaming back in AdGuard if the store write fails; not-found / taken / rejected / down map to 404 / 409 / 400 / 502. The inline row reloads every draft from the server on success.
+
+- API.handleClientRename — internal/api/rename.go:56
+- Engine.RenameClient — internal/grants/rename.go:25
+- Store.RenameClient — internal/store/clients.go:28
+- ClientNames — web/src/lib/ClientNames.svelte:23
+
+_introduced auto-client-labelling · 62deec9 · 13cb959 · aaa9e85 · 5ab554d_
 
 ### Configuration loading
 
@@ -131,6 +143,18 @@ YAML file plus `ADGUARD_REWARD_*` env overrides (defaults < file < env; a blank 
 - config.Secret — internal/config/secret.go:14
 
 _introduced 01-config-adguard-client · f7db57d · extended 02-auth-sessions · a7b630a · extended 06-deploy-nora · a724814_
+
+### Device labelling
+
+A device AdGuard sees but no persistent client covers (by IP, CIDR or a MAC AdGuard's DHCP leased that IP to) is listed as unlabelled on `GET /api/v1/clients`, whatever its source, sorted by hostname with `[ip]` or `[ip, mac]` suggested ids. `POST /api/v1/clients` creates it as a named AdGuard client (locked add with name and canonical-id pre-checks, an AdGuard 400 surfaced as `InputRejectedError`; 400 / 409 / 502 to the caller) and can assign it to a child in the same action, giving it that child's baseline (siblings' effective list or the global list ∪ active-grant services) so a device added mid-grant never inherits the temporary unblock. The children page prefills name and ids and reloads without a page refresh.
+
+- Unlabelled — internal/adguard/devices.go:60
+- Client.AddClient — internal/adguard/clients_write.go:55
+- Engine.CreateClient — internal/grants/clients.go:39
+- API.handleClientCreate — internal/api/clients.go:179
+- UnlabelledDevices — web/src/lib/UnlabelledDevices.svelte:44
+
+_introduced auto-client-labelling · f82ad7b · ef70342 · 18ec874 · 9605869 · 70bfe89_
 
 ### Global-list migration
 
@@ -251,14 +275,14 @@ _introduced 02-auth-sessions · 6835089_
 
 ### Per-child blocked view
 
-`GET /api/v1/clients` (persistent clients plus the child each is assigned to), `GET /api/v1/services` (the runtime catalogue) and `GET /api/v1/children/{id}/blocked` all read AdGuard live on every request; the blocked view folds each mapped client's effective set (its own list, or the global list when `use_global_blocked_services` is set) into one state per catalogue service — blocked when every present client blocks it, unblocked when none does, partial otherwise with the differing clients named — reports a client AdGuard no longer knows as `missing`, and answers 502 for any AdGuard failure.
+`GET /api/v1/clients` (persistent clients plus the child each is assigned to, and the unlabelled devices — see device labelling), `GET /api/v1/services` (the runtime catalogue) and `GET /api/v1/children/{id}/blocked` all read AdGuard live on every request; the blocked view folds each mapped client's effective set (its own list, or the global list when `use_global_blocked_services` is set) into one state per catalogue service — blocked when every present client blocks it, unblocked when none does, partial otherwise with the differing clients named — reports a client AdGuard no longer knows as `missing`, and answers 502 for any AdGuard failure.
 
 - blocked.Compute — internal/blocked/blocked.go:59
-- API.handleClients — internal/api/clients.go:54
-- API.handleServices — internal/api/clients.go:84
+- API.handleClients — internal/api/clients.go:77
+- API.handleServices — internal/api/clients.go:254
 - API.handleBlocked — internal/api/blocked.go:24
 
-_introduced 03-children-and-blocked-view · 3a50df3 · 1ec458d_
+_introduced 03-children-and-blocked-view · 3a50df3 · 1ec458d · extended auto-client-labelling · 9605869_
 
 ### Per-client blocked services
 
@@ -317,14 +341,15 @@ _introduced 02-auth-sessions · 0a98a31_
 
 ### SPA API client
 
-Single typed fetch wrapper for the Svelte SPA: adds the CSRF header and same-origin cookie, routes any 401 to `/login`, maps error codes to fixed user messages (a 409 echoes the server's message naming the child or client, and carries the overlapping `grant_id`), exposes typed functions for the children / clients / services / blocked / migration / grants / buttons endpoints, a history-backed route store (`login | home | children | buttons`), and a per-login `migrationDismissed` store reset on login and logout.
+Single typed fetch wrapper for the Svelte SPA: adds the CSRF header and same-origin cookie, routes any 401 to `/login`, maps error codes to fixed user messages (a 409 echoes the server's message naming the child or client, and carries the overlapping `grant_id`), exposes typed functions for the children / clients (incl. unlabelled devices, create with optional child, rename) / services / blocked / migration / grants / buttons endpoints, a history-backed route store (`login | home | children | buttons`), and a per-login `migrationDismissed` store reset on login and logout.
 
 - request — web/src/lib/api.ts:106
 - messageFor — web/src/lib/api.ts:333
 - navigate — web/src/lib/api.ts:50
 - migrationDismissed — web/src/lib/api.ts:137
+- listDevices — web/src/lib/api.ts:258
 
-_introduced 02-auth-sessions · 9dedea1 · extended 03-children-and-blocked-view · 295189b · extended 05-phone-ui-buttons-pwa · 2322e19_
+_introduced 02-auth-sessions · 9dedea1 · extended 03-children-and-blocked-view · 295189b · extended 05-phone-ui-buttons-pwa · 2322e19 · extended auto-client-labelling · 48c0c29_
 
 ### SPA serving
 
