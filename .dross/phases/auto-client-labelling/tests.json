@@ -1,6 +1,6 @@
 {
   "phase": "auto-client-labelling",
-  "generated_at": "2026-11-01T18:15:01.61011Z",
+  "generated_at": "2026-11-01T19:32:18.551821Z",
   "languages": [
     {
       "name": "go",
@@ -31,12 +31,56 @@
       ],
       "mutation": {
         "Tool": "gremlins",
-        "Killed": 323,
-        "Survived": 36,
+        "Killed": 325,
+        "Survived": 34,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.8997214484679665,
+        "Score": 0.9052924791086351,
         "Surviving": [
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 154,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "b6d0a47a51b5e218",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 154,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "b6d0a47a51b5e218",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 156,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "e36715b66a65a1bc",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand: flipping to 'xerr != nil' fails TestUnlabelled_UnparseableIPOrder (checked 2026-11-01, sibling :157 mutants killed by gremlins in the same run). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/devices.go",
+            "Line": 158,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "602256014df6b282",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand: flipping to 'yerr != nil' fails TestUnlabelled_UnparseableIPOrder (aa-host/zz-host order inverts; checked 2026-11-01). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
           {
             "File": "internal/adguard/adguardtest/server.go",
             "Line": 106,
@@ -45,8 +89,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "96ff237bdd4c77ba",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -67,8 +111,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "96ff237bdd4c77ba",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -78,8 +122,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "96ff237bdd4c77ba",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -122,8 +166,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "2c52925716d27eaf",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -148,70 +192,15 @@
             "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
-            "File": "internal/adguard/devices.go",
-            "Line": 154,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "b6d0a47a51b5e218",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/adguard/devices.go",
-            "Line": 154,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "b6d0a47a51b5e218",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/adguard/devices.go",
-            "Line": 156,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "e36715b66a65a1bc",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/adguard/devices.go",
-            "Line": 157,
-            "Op": "INVERT_NEGATIVES",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "efd3a8225bf49e4c",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/adguard/devices.go",
-            "Line": 157,
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 106,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "in-hunk",
-            "Key": "5f9f5cc4b5907c65",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/adguard/devices.go",
-            "Line": 158,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "602256014df6b282",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -221,8 +210,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "96ff237bdd4c77ba",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -243,19 +232,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "96ff237bdd4c77ba",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/adguard/adguardtest/server.go",
-            "Line": 106,
-            "Op": "ARITHMETIC_BASE",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "96ff237bdd4c77ba",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -298,8 +276,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "2c52925716d27eaf",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -346,6 +324,17 @@
             "Note": "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
           },
           {
+            "File": "internal/grants/clients.go",
+            "Line": 105,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "ec84ab086867857b",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
             "File": "internal/grants/grants.go",
             "Line": 47,
             "Op": "ARITHMETIC_BASE",
@@ -368,15 +357,15 @@
             "Note": "Killed when applied by hand (case err == nil -\u003e err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
           },
           {
-            "File": "internal/grants/clients.go",
-            "Line": 105,
+            "File": "internal/store/clients.go",
+            "Line": 42,
             "Op": "CONDITIONALS_NEGATION",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "in-hunk",
-            "Key": "ec84ab086867857b",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Key": "52cb11cea95d948c",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/store/clients.go",
@@ -386,8 +375,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "52cb11cea95d948c",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/store/clients.go",
@@ -397,19 +386,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "52cb11cea95d948c",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/store/clients.go",
-            "Line": 42,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "52cb11cea95d948c",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/store/clients.go",
@@ -419,8 +397,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "6bf93880bcde1ac8",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/store/clients.go",
@@ -430,11 +408,11 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "f62be8d2dba8bc1c",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
           }
         ],
-        "NotCovered": 36
+        "NotCovered": 34
       },
       "measured_on": "local",
       "whole_file": {
@@ -477,12 +455,52 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 188,
-        "Survived": 33,
+        "Killed": 211,
+        "Survived": 10,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.8506787330316742,
+        "Score": 0.9547511312217195,
         "Surviving": [
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 27,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "e8e6bf58e067f055",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a non-empty default child makes save() send Number('\u003cnon-numeric\u003e') = NaN, which JSON.stringify encodes as null — the same child_id: null as the '' default; with no option marked selected the browser shows the first option ('No child') either way."
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 95,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "3ee630b90804020d",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: 'No child' is the select's first option, so when its selected is false and no child matches, the browser's selectedness fallback selects it anyway; when a child matches, that option's selected=true wins regardless. No observable DOM or request difference (scoped stryker 2026-11-01: :95 true and !== are killed by the picker test, this one cannot be)."
+          },
+          {
+            "File": "web/src/lib/UnlabelledDevices.svelte",
+            "Line": 95,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "c8895e1cbdf85dad",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent to the :95 ConditionalExpression false mutant: comparing childOf(d) to a non-existent value is always false, and 'No child' as the first option is the select's fallback selection either way."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 234,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "902c12737cbb6e59",
+            "Lifecycle": "accepted",
+            "Note": "Module-level const CLIENTS is evaluated once at import, so Stryker's per-test mutant switching cannot activate the mutant; the exact URLs are asserted by api.test.ts (createClient/listDevices toBe '/api/v1/clients', renameClient toBe '/api/v1/clients/rename')."
+          },
           {
             "File": "web/src/lib/Children.svelte",
             "Line": 21,
@@ -500,8 +518,8 @@
             "Snippet": "[\"Stryker was here\"]",
             "Origin": "in-hunk",
             "Key": "86752b45cbacdad7",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
           },
           {
             "File": "web/src/lib/Children.svelte",
@@ -542,280 +560,9 @@
             "Key": "5ad3db1cdd919929",
             "Lifecycle": "accepted",
             "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 27,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "e8e6bf58e067f055",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 41,
-            "Op": "MethodExpression",
-            "Snippet": "nameOf(d)",
-            "Origin": "in-hunk",
-            "Key": "8b439cb41aab0150",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 80,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "b3457e9cefdafa41",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 80,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "b3457e9cefdafa41",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 80,
-            "Op": "LogicalOperator",
-            "Snippet": "disabled \u0026\u0026 pending",
-            "Origin": "in-hunk",
-            "Key": "2e326d01416b249a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 88,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "572aea260e0ceaf4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 88,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "572aea260e0ceaf4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 88,
-            "Op": "LogicalOperator",
-            "Snippet": "disabled \u0026\u0026 pending",
-            "Origin": "in-hunk",
-            "Key": "411c79a6092b8c02",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 93,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "56088af23afccb6f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 93,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "56088af23afccb6f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 93,
-            "Op": "LogicalOperator",
-            "Snippet": "disabled \u0026\u0026 pending",
-            "Origin": "in-hunk",
-            "Key": "e2da6db1378b21d2",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 95,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "3ee630b90804020d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 95,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "3ee630b90804020d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 95,
-            "Op": "EqualityOperator",
-            "Snippet": "childOf(d) !== ''",
-            "Origin": "in-hunk",
-            "Key": "d817109ad53c77a4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 95,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "c8895e1cbdf85dad",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 97,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "dd9352c203090405",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 97,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "dd9352c203090405",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/UnlabelledDevices.svelte",
-            "Line": 97,
-            "Op": "EqualityOperator",
-            "Snippet": "childOf(d) !== String(c.id)",
-            "Origin": "in-hunk",
-            "Key": "379bb3cdaf5d882d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/api.ts",
-            "Line": 234,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "902c12737cbb6e59",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 34,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "9271ee6eb8992cfd",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 6,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "7ed5ca61843a9f7d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 35,
-            "Op": "BlockStatement",
-            "Snippet": "{}",
-            "Origin": "in-hunk",
-            "Key": "6aa3da495f13080c",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 36,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "3923318e19b8e422",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 52,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "661bf045236a235a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 58,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "3b46992ef76d299f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 58,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "3b46992ef76d299f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/ClientNames.svelte",
-            "Line": 58,
-            "Op": "LogicalOperator",
-            "Snippet": "disabled \u0026\u0026 pending",
-            "Origin": "in-hunk",
-            "Key": "a1e6434546fc9335",
-            "Lifecycle": "in-diff",
-            "Note": ""
           }
         ],
-        "NotCovered": 1
+        "NotCovered": 0
       },
       "measured_on": "local",
       "ranges": {
@@ -949,7 +696,7 @@
           },
           {
             "start": 48,
-            "end": 136,
+            "end": 170,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1086,7 +833,7 @@
           },
           {
             "start": 60,
-            "end": 158,
+            "end": 213,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1266,15 +1013,6 @@
       "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
     },
     {
-      "file": "internal/api/login.go",
-      "line": 79,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "1fa25d4f40ebe7f5",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
-    },
-    {
       "file": "internal/api/grants.go",
       "line": 119,
       "op": "ARITHMETIC_BASE",
@@ -1291,6 +1029,15 @@
       "key": "3d175e3325616cdf",
       "lifecycle": "accepted",
       "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
     },
     {
       "file": "internal/store/migrate.go",
@@ -1322,7 +1069,10 @@
       ".dross/phases/auto-client-labelling/panel/verification.md",
       ".dross/phases/auto-client-labelling/plan.toml",
       ".dross/phases/auto-client-labelling/spec.toml",
+      ".dross/phases/auto-client-labelling/tests.json",
+      ".dross/phases/auto-client-labelling/verify.toml",
       ".dross/project.toml",
+      ".dross/survivors.toml",
       "internal/adguard/adguardtest/server.go",
       "internal/adguard/adguardtest/server_test.go",
       "internal/adguard/adguardtest/testdata/clients.json",
@@ -1373,7 +1123,7 @@
       ".dross/phases/auto-client-labelling/changes.json": [
         {
           "start": 1,
-          "end": 551
+          "end": 561
         }
       ],
       ".dross/phases/auto-client-labelling/panel/mvp.md": [
@@ -1412,10 +1162,32 @@
           "end": 57
         }
       ],
+      ".dross/phases/auto-client-labelling/tests.json": [
+        {
+          "start": 1,
+          "end": 1843
+        }
+      ],
+      ".dross/phases/auto-client-labelling/verify.toml": [
+        {
+          "start": 1,
+          "end": 318
+        }
+      ],
       ".dross/project.toml": [
         {
           "start": 3,
           "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 61,
+          "end": 64
+        },
+        {
+          "start": 1054,
+          "end": 1188
         }
       ],
       "internal/adguard/adguardtest/server.go": [
@@ -1563,7 +1335,7 @@
       "internal/adguard/devices_test.go": [
         {
           "start": 1,
-          "end": 167
+          "end": 185
         }
       ],
       "internal/api/api.go": [
@@ -1781,7 +1553,7 @@
       "web/src/lib/ClientNames.test.ts": [
         {
           "start": 1,
-          "end": 136
+          "end": 170
         }
       ],
       "web/src/lib/UnlabelledDevices.svelte": [
@@ -1793,7 +1565,7 @@
       "web/src/lib/UnlabelledDevices.test.ts": [
         {
           "start": 1,
-          "end": 158
+          "end": 213
         }
       ],
       "web/src/lib/api.test.ts": [
@@ -1838,6 +1610,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "20a97b86fddd89e0559ef994a39f502a7d800f10",
-  "measured_tree": "184b6450a40cde8a4f98226bf9434446fa432536"
+  "measured_commit": "6706ebb9ab795509fd6ad7f5dcf1b7eff6709ab8",
+  "measured_tree": "e5b57b8269d6c1ec538a1eda5e7d3bfcf648acc8"
 }
