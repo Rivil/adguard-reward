@@ -3,6 +3,15 @@
   "base": "milestone/v0.1",
   "base_commit": "612dcf6d23a0bd61f1ed3425166bd47ee15b764f",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts"
+      ],
+      "commit": "0a55c1f",
+      "completed_at": "2026-11-01T08:36:38.038275Z",
+      "notes": "quick: search box on the grant-form service list"
+    },
     "t-1": {
       "files": [
         "internal/config/config.go",
