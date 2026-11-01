@@ -25,6 +25,7 @@ type AdGuard interface {
 	Clients(ctx context.Context) (adguard.ClientsResult, error)
 	Services(ctx context.Context) ([]adguard.Service, error)
 	MigrateFromGlobal(ctx context.Context, clientName string, ids []string) error
+	Leases(ctx context.Context) ([]adguard.Lease, error)
 }
 
 // ChildStore is the slice of *store.Store the children handlers need. It
@@ -38,14 +39,17 @@ type ChildStore interface {
 	DeleteChild(ctx context.Context, id int64) (bool, error)
 }
 
-// Grants is the slice of *grants.Engine the grant handlers need. It speaks
-// store.Grant and the engine's sentinels (ErrGrantNotFound,
-// *ErrRevertFailed) plus the store's *ErrGrantOverlap.
+// Grants is the slice of *grants.Engine the grant and client-write handlers
+// need. It speaks store.Grant and the engine's sentinels (ErrGrantNotFound,
+// *ErrRevertFailed, *ErrAdoptFailed) plus the store's *ErrGrantOverlap and
+// the AdGuard client's write errors.
 type Grants interface {
 	Create(ctx context.Context, childID int64, services, clients []string, d time.Duration) (grants.Result, error)
 	List(ctx context.Context) ([]store.Grant, error)
 	Extend(ctx context.Context, id int64, d time.Duration) (store.Grant, error)
 	End(ctx context.Context, id int64) error
+	CreateClient(ctx context.Context, name string, ids []string, childID *int64) error
+	AdoptClients(ctx context.Context, childID int64, siblings, added []string) error
 }
 
 // ButtonStore is the slice of *store.Store the buttons handlers need. It
@@ -107,6 +111,7 @@ func (a *API) routes() {
 	a.mux.Handle("DELETE /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildDelete)))
 	a.mux.Handle("GET /api/v1/children/{id}/blocked", a.requireSession(http.HandlerFunc(a.handleBlocked)))
 	a.mux.Handle("GET /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClients)))
+	a.mux.Handle("POST /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClientCreate)))
 	a.mux.Handle("GET /api/v1/services", a.requireSession(http.HandlerFunc(a.handleServices)))
 	a.mux.Handle("GET /api/v1/migration", a.requireSession(http.HandlerFunc(a.handleMigrationOffer)))
 	a.mux.Handle("POST /api/v1/migration", a.requireSession(http.HandlerFunc(a.handleMigrationApply)))
