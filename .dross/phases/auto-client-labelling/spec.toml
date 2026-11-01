@@ -30,7 +30,7 @@
 
 [[criteria]]
   id = "c-7"
-  text = "Assigning an existing client to a child (PUT /api/v1/children/{id}) adds the child's baseline (siblings' blocked services + services under the child's active grants) to that client's own list and sets use_global_blocked_services=false; nothing it already blocks is removed; unassigning writes nothing to AdGuard"
+  text = "Assigning an existing client to a child (PUT /api/v1/children/{id}) adds the child's baseline (siblings' effective blocked services, or AdGuard's global list when the child has no other clients, + services under the child's active grants) to that client's own list and sets use_global_blocked_services=false; nothing it already blocks is removed; unassigning writes nothing to AdGuard"
 
 [[decisions]]
   key = "new_client_ids"
@@ -40,8 +40,8 @@
 
 [[decisions]]
   key = "new_client_blocked_set"
-  choice = "A new client assigned to a child gets its own list = union of the siblings' blocked services + every service under the child's active grants, with use_global_blocked_services=false; an unassigned new client gets AdGuard's defaults"
-  why = "A grant's revert only touches the clients stored at creation, so a device added mid-grant must not inherit the temporary unblock or it stays open after expiry"
+  choice = "A new client assigned to a child gets its own list = union of the siblings' effective blocked services (AdGuard's global list when the child has no other clients) + every service under the child's active grants, with use_global_blocked_services=false; an unassigned new client gets AdGuard's defaults"
+  why = "A grant's revert only touches the clients stored at creation, so a device added mid-grant must not inherit the temporary unblock or it stays open after expiry. Revised at plan time (2026-11-01): without the global-list fallback a child's first device got an empty own list with the global list off — blocking nothing, less than an unassigned device"
   locked = true
 
 [[decisions]]

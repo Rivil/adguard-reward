@@ -1,0 +1,267 @@
+task_seq = 12
+
+[phase]
+  id = "auto-client-labelling"
+
+# Pinned wire contract (shared by t-3, t-6, t-8, t-10, t-11, t-12 — the UI never waits on the backend):
+#   GET  /api/v1/clients        -> {clients: clientView[], unlabelled: [{ip, hostname, source, suggested_ids: string[]}]}
+#                                  unlabelled sorted by hostname (case-insensitive, blank last, IP tie-break);
+#                                  suggested_ids = [ip] or [ip, mac] when a DHCP lease maps the ip
+#   POST /api/v1/clients        {name, ids, child_id: number|null|absent} -> 201 clientView
+#                                  400 empty name / empty ids / AdGuard rejected input (AdGuard's message passed through),
+#                                  404 unknown child_id, 409 name or id exists in AdGuard or name owned by another
+#                                  child's stale mapping, 502 AdGuard unreachable/timeout/5xx
+#   POST /api/v1/clients/rename {from, to} -> 200 clientView
+#                                  400 empty/oversized to, 404 unknown from, 409 to taken, 502 AdGuard down
+#   PUT  /api/v1/children/{id}  unchanged shape; added clients get the child baseline
+# Baseline (spec new_client_blocked_set, revised 2026-11-01) = ∪ effective blocked sets of siblings that stay with
+# the child (old ∩ new on PUT), or AdGuard's global list when there are none, ∪ services under the child's active grants.
+# Panel audit trail: panel/{risk,mvp,verification,synthesis}.md
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Extend fake AdGuard: add, DHCP, rename"
+  files = ["internal/adguard/adguardtest/server.go", "internal/adguard/adguardtest/server_test.go", "internal/adguard/adguardtest/testdata/clients.json", "internal/adguard/adguardtest/testdata/dhcp_status.json"]
+  description = """
+Serve POST /control/clients/add (400 on duplicate name or an id another client holds), GET /control/dhcp/status from a
+new fixture (leases + static_leases), and a 400 when clients/update renames onto an existing name. Extend auto_clients:
+192.168.1.50 (Kid phone's id), an IP leased to aa:bb:cc:dd:ee:02 (Kid tablet's MAC), a blank-hostname row, mixed-case
+ARP/rDNS/DHCP/WHOIS rows. Add SetAutoClients/SetLeases knobs, an AddedClients() observer, and count
+/control/clients/add in the in-flight rmw set.
+"""
+  covers = ["c-1", "c-2", "c-6"]
+  test_contract = ["if add skips the duplicate-name check, TestFake_AddDuplicateName fails: add {name:\"Kid phone\"} must answer 400 and the next GET /control/clients lists exactly one \"Kid phone\"", "if add skips the id-ownership check, TestFake_AddDuplicateID fails: add with ids [\"192.168.1.50\"] must answer 400 and the client count is unchanged", "if clients/update allows renaming onto an existing name, TestFake_RenameCollision fails: {name:\"Kid tablet\", data:{name:\"Kid phone\"}} must answer 400 with both clients unchanged", "if add does not persist or the re-encode drops the top-level doc, TestFake_AddPersists fails: after adding \"Printer\", GET /control/clients lists it and auto_clients is still present", "if SetAutoClients(nil) serialises null, TestFake_AutoClientsEmpty fails: the response must contain \"auto_clients\": []", "if the DHCP route is wired wrong, TestFake_DHCPStatus fails: GET /control/dhcp/status returns the fixture leases; SetStatus(\"/control/dhcp/status\", 501) fails only that read while GET /control/clients still answers 200", "if /control/clients/add is not counted as an in-flight update, TestFake_AddCountsInFlight fails: two overlapping add requests must raise MaxInFlightUpdates() to 2 (keeps t-5 serialisation contract non-vacuous)", "if the fixture extension alters persistent clients, TestClients_Fixture (internal/adguard/clients_test.go) fails unchanged: still exactly 3 persistent clients, Kid phone ids [aa:bb:cc:dd:ee:01, 192.168.1.50] and blocked [youtube, tiktok], Kid tablet use_global=true, global [tiktok, roblox]; new rows go only into auto_clients and dhcp_status.json"]
+  status = "pending"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Store: atomic client rename + targeted assign"
+  files = ["internal/store/clients.go", "internal/store/clients_test.go"]
+  description = "RenameClient(old, new) in one tx: renames the child_clients row and grant_clients rows of status='active' grants (deduped when that grant already holds new); *ErrClientTaken when another child holds new; when the same child already holds new (a stale self-mapping) the old row is deleted and the existing row kept; unmapped old is a no-op. AddChildClient(childID, name) is a single INSERT with the existing ownership-conflict check (never a list replace); the child already holding name is a no-op (insert-or-ignore)."
+  covers = ["c-3", "c-6"]
+  test_contract = ["if the child_clients UPDATE is dropped, TestRenameClient_Mapping fails: rename \"Kid phone\"->\"Ada phone\" with an active grant on it must leave ListChildren and ListActiveGrants showing \"Ada phone\" and neither showing \"Kid phone\"", "if the status='active' filter is removed, TestRenameClient_ExpiredUntouched fails: an expired grant's grant_clients must keep \"Kid phone\"", "if dedupe is missing, TestRenameClient_Dedupe fails: an active grant holding stale \"Old tab\" and \"Kid phone\" renamed Kid phone->\"Old tab\" must leave one \"Old tab\" row and raise no PK error", "if the conflict is not rolled back, TestRenameClient_Taken fails: renaming onto \"Old tab\" held by child B returns *ErrClientTaken naming B and both tables are byte-identical to before", "if an unmapped rename errors or writes, TestRenameClient_Unmapped fails: RenameClient on a name nobody owns returns nil and ListChildren is unchanged", "if AddChildClient replaces instead of inserting, TestAddChildClient_Appends fails: AddChildClient(ada, \"New tv\") while Ada holds [\"Kid phone\"] must leave [\"Kid phone\", \"New tv\"]", "if AddChildClient skips its checks, TestAddChildClient_Errors fails: a client Ben owns -> *ErrClientTaken; unknown child -> ErrChildNotFound", "if a stale self-mapping hits the child_clients PK, TestRenameClient_SelfStale fails: Ada holds [\"Kid phone\", \"TV\"] (TV unknown to AdGuard); RenameClient(\"Kid phone\",\"TV\") returns nil and Ada holds exactly [\"TV\"], with active grant_clients renamed and deduped", "if AddChildClient is not idempotent for the same child, TestAddChildClient_SelfStale fails: AddChildClient(ada, \"TV\") while Ada already holds \"TV\" returns nil and Ada still holds one \"TV\" row"]
+  status = "pending"
+
+[[task]]
+  id = "t-3"
+  wave = 1
+  title = "SPA api client: devices, create, rename"
+  files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts"]
+  description = """
+Per the pinned wire contract: UnlabelledDevice {ip, hostname, source, suggested_ids}; listDevices() -> {clients,
+unlabelled}; createClient(name, ids, childId|null) sends child_id null for no child; renameClient(from, to) ->
+POST /api/v1/clients/rename. listClients() keeps its array return (only Children.svelte calls it).
+"""
+  covers = ["c-4", "c-6"]
+  test_contract = [
+    "if the create body shape drifts, api.test createClient fails: createClient(\"TV\", [\"192.168.1.9\"], null) must send exactly {\"name\":\"TV\",\"ids\":[\"192.168.1.9\"],\"child_id\":null} with the CSRF header, and childId 1 sends child_id 1",
+    "if a missing key is not defaulted, api.test listDevices fails: a response without `unlabelled` must yield unlabelled: [] with no TypeError",
+    "if the server message is swallowed, api.test createClient 409 fails: a 409 must surface the server's message via messageFor, not the generic conflict text",
+    "if rename puts the name in the path, api.test renameClient fails: renameClient(\"a/b%c\",\"x\") must send {from,to} in the body to exactly /api/v1/clients/rename",
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-4"
+  wave = 2
+  depends_on = ["t-1"]
+  title = "Read auto_clients, leases, compute unlabelled set"
+  files = ["internal/adguard/clients.go", "internal/adguard/clients_test.go", "internal/adguard/devices.go", "internal/adguard/devices_test.go"]
+  description = """
+Clients() also returns AutoClients from the same /control/clients read. Leases(ctx) reads /control/dhcp/status (dynamic
++ static). Pure Unlabelled(persistent, auto, leases) returns uncovered devices — covered = canonical-IP match, CIDR
+containment, or leased MAC that is a persistent id — sorted by lowercased hostname (blank last, IP tie-break), each
+with suggested_ids = [ip] or [ip, mac].
+"""
+  covers = ["c-1"]
+  test_contract = [
+    "if the IP coverage check breaks, TestUnlabelled_ExcludesKnownIP fails: auto_client 192.168.1.50 (Kid phone's id) must be excluded",
+    "if IPs are compared as strings, TestUnlabelled_IPv6Canonical fails: id \"2001:db8::0:1\" must cover auto IP \"2001:db8::1\"",
+    "if CIDR ids are ignored, TestUnlabelled_CIDR fails: persistent id \"192.168.1.0/28\" must cover 192.168.1.9",
+    "if leased MACs are ignored, TestUnlabelled_LeasedMAC fails: an auto IP leased to aa:bb:cc:dd:ee:02 (Kid tablet's MAC id) must be excluded",
+    "if a source filter is added, TestUnlabelled_AllSources fails: ARP, rDNS, DHCP and WHOIS rows must all be listed",
+    "if the sort is case-sensitive or unstable, TestUnlabelled_Order fails: order must be alpha, printer, Zed-TV, then the blank hostname across two shuffled inputs",
+    "if suggested_ids is wrong, TestUnlabelled_SuggestedIDs fails: a leased device has [ip, mac], an unleased one [ip]",
+    "if Clients() makes a second read, TestClients_SingleRead fails: CountRequests(\"/control/clients\") == 1",
+    "if null auto_clients leaks through, TestClients_AutoClientsNull fails: null or missing -> AutoClients is [] not nil",
+    "if static leases are skipped, TestLeases_Static fails: a static_leases entry is mapped as well as a dynamic one",
+    "if the lease read error is swallowed, TestLeases_Error fails: /control/dhcp/status forced 500 -> *StatusError returned",
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-5"
+  wave = 2
+  depends_on = ["t-1"]
+  title = "AdGuard writes: add, rename, adopt baseline"
+  files = ["internal/adguard/clients_write.go", "internal/adguard/clients_write_test.go"]
+  description = """
+All three run under the rmw mutex with a fresh read. AddClient(NewClient{Name, IDs, Blocked *[]string}) pre-checks name
+(ErrClientExists) and ids (*ErrIDTaken) before posting, and always sends use_global_settings=true plus explicit
+use_global_blocked_services. RenameClient(old, new) via updateClient. AdoptBlockedServices(name, ids) writes effective
+set ∪ ids with the flag false and skips the write when nothing changes. An AdGuard 400 on add surfaces as a distinct
+input-rejected error carrying AdGuard's message.
+"""
+  covers = ["c-2", "c-6", "c-7"]
+  test_contract = [
+    "if the add body flags drift, TestAddClient_Body fails: Blocked=nil sends use_global_settings=true and use_global_blocked_services=true; Blocked=&[\"tiktok\"] sends use_global_settings=true, use_global_blocked_services=false, blocked_services sorted and never null",
+    "if the name pre-check is skipped, TestAddClient_DuplicateName fails: duplicate name -> ErrClientExists with zero POST /control/clients/add",
+    "if the id pre-check is skipped, TestAddClient_IDTaken fails: id \"192.168.1.50\" -> *ErrIDTaken{Owner:\"Kid phone\"} with zero adds",
+    "if an AdGuard 400 is mapped as unavailable, TestAddClient_Rejected fails: fake 400 on add -> the input-rejected error type with AdGuard's message, not *StatusError-as-unavailable",
+    "if rename loses unknown fields, TestRenameClient_PreservesRaw fails: RenameClient(\"Kid phone\",\"Ada phone\") update body has name \"Kid phone\", data.name \"Ada phone\", data.future_field == 42, every other raw field byte-identical; next Clients() lists \"Ada phone\" not \"Kid phone\"",
+    "if rename skips its checks, TestRenameClient_Errors fails: rename to an existing name -> ErrClientExists with 0 updates; unknown old -> ErrClientNotFound",
+    "if the inherited branch is dropped, TestAdopt_InheritsGlobal fails: Adopt on Kid tablet (use_global=true, global [tiktok, roblox]) with [\"youtube\"] must write [roblox, tiktok, youtube] with the flag false",
+    "if union becomes replace or no-op writes happen, TestAdopt_Superset fails: Adopt on Kid phone with [\"tiktok\"] (already blocked, flag false) -> 0 update POSTs and youtube kept",
+    "if the rmw mutex is bypassed, TestWrites_Serialised fails: concurrent AddClient + AddBlockedServices -> MaxInFlightUpdates() == 1",
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-6"
+  wave = 2
+  depends_on = ["t-3"]
+  title = "Unlabelled devices list on children page"
+  files = ["web/src/lib/UnlabelledDevices.svelte", "web/src/lib/UnlabelledDevices.test.ts", "web/src/lib/Children.svelte", "web/src/lib/Children.test.ts"]
+  description = """
+Children.load uses listDevices. UnlabelledDevices renders rows in server order: name prefilled from hostname, editable ids
+(joined \", \"), optional child picker (default \"No child\"), Save. Save -> createClient -> onCreated -> Children.load.
+Empty list shows the connect-to-network sentence.
+"""
+  covers = ["c-4", "c-5"]
+  test_contract = [
+    "if the prefill breaks, UnlabelledDevices.test prefill fails: device \"printer\" renders name \"printer\" and ids \"192.168.1.70, aa:bb:cc:dd:ee:70\"; a blank hostname renders empty and blocks submit",
+    "if the UI re-sorts, UnlabelledDevices.test order fails: rows render in the array order given",
+    "if edited ids are ignored, UnlabelledDevices.test editIds fails: dropping the MAC POSTs ids [\"192.168.1.70\"] only",
+    "if onCreated->load is unwired, Children.test createRefresh fails: after a 201, GET /api/v1/clients is called again, a \"TV\" checkbox appears in every child form, the device leaves the unlabelled list, and window.location.reload is never called",
+    "if the child pick is dropped, Children.test createWithChild fails: picking Ada POSTs child_id 1 and Ada's \"TV\" checkbox renders checked",
+    "if there is no pending lock, UnlabelledDevices.test doubleSubmit fails: two rapid submits issue one POST",
+    "if errors clear the form, UnlabelledDevices.test conflict fails: a 409 shows the server's message in role=alert and the typed name and ids remain",
+    "if the empty state is wrong, Children.test emptyState fails: unlabelled [] shows \"…must connect to the network and appear in AdGuard Home before it can be named\"; one row hides it; a 502 on GET /clients shows the alert and not the sentence",
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-7"
+  wave = 3
+  depends_on = ["t-2", "t-5"]
+  title = "Engine: baseline under mutex, create + adopt"
+  files = ["internal/grants/clients.go", "internal/grants/clients_test.go", "internal/grants/grants.go"]
+  description = """
+Extend engine Store/AdGuard interfaces (GetChild, AddChildClient, RenameClient; AddClient, AdoptBlockedServices,
+RenameClient). Under e.mu with one applyContext: baseline = ∪ effective sets of staying siblings (AdGuard's global list
+when there are none) ∪ services of the child's active grants. CreateClient puts the baseline in the add body, then
+AddChildClient. AdoptClients(childID, siblings, added) adopts per name, skipping ErrClientNotFound.
+"""
+  covers = ["c-3", "c-7"]
+  test_contract = [
+    "if grant services are left out of the baseline, TestCreateClient_Baseline fails: Ada has an active youtube grant (Kid phone now [tiktok]); CreateClient(TV, Ada) must give the fake's TV [tiktok, youtube] with the flag false",
+    "if a new device inherits the temporary unblock, TestCreateClient_SurvivesExpiry fails: after the clock passes ends_at, TV is still [tiktok, youtube], no update POST names \"TV\", and the grant is expired with stored clients unchanged",
+    "if other children's grants leak in, TestCreateClient_OtherChildGrant fails: Ben's active [tiktok] grant must not enter Ada's baseline",
+    "if a use_global sibling is read as its own list, TestBaseline_GlobalSibling fails: a sibling with use_global=true contributes the global list",
+    "if the first-device fallback is missing, TestCreateClient_FirstDevice fails: a child with no other clients and no grants -> the new client's own list equals the global list [roblox, tiktok] with use_global_blocked_services=false (an empty list fails)",
+    "if an unassigned create gets a baseline, TestCreateClient_NoChild fails: no child -> the fake's client has use_global_blocked_services=true",
+    "if adopt drops inherited blocks, TestAdoptClients_Inherited fails: AdoptClients(Ada, [\"Kid phone\"], [\"Kid tablet\"]) -> Kid tablet [roblox, tiktok, youtube] with the flag false",
+    "if unknown clients error, TestAdoptClients_Ghost fails: added [\"Ghost\"] -> nil error and 0 update POSTs",
+    "if empty adopt still talks to AdGuard, TestAdoptClients_Empty fails: AdoptClients(ada, _, nil) issues zero AdGuard requests",
+    "if create escapes e.mu, TestCreateClient_Race fails under -race over 50 iterations: concurrent Create(grant for Ada) and CreateClient(TV, Ada) -> after End TV blocks the granted service every time and MaxInFlightUpdates() stays 1",
+    "if a store failure is masked, TestCreateClient_StoreFails fails: AddChildClient error after the add -> client exists in AdGuard with the baseline list, error returned, mapping unchanged",
+    "if a failed read still adds, TestCreateClient_ReadFails fails: AdGuard Clients() error -> no add POST, error returned",
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-8"
+  wave = 3
+  depends_on = ["t-6"]
+  title = "Rename a device from the app"
+  files = ["web/src/lib/ClientNames.svelte", "web/src/lib/ClientNames.test.ts", "web/src/lib/Children.svelte", "web/src/lib/Children.test.ts"]
+  description = """
+A \"Devices\" list of every persistent client with inline rename (input + Save). Success -> onRenamed -> Children.load so
+drafts rebuild from the server.
+"""
+  covers = ["c-6"]
+  test_contract = [
+    "if the rename request or reload breaks, ClientNames.test rename fails: \"Kid phone\"->\"Ada phone\" sends POST /api/v1/clients/rename {from:\"Kid phone\", to:\"Ada phone\"}; after reload Ada's \"Ada phone\" checkbox is checked and no [data-missing] element renders",
+    "if rename is gated on assignment (rename_scope), ClientNames.test unassigned fails: an unassigned client (child null) also offers rename",
+    "if Save is not guarded, ClientNames.test guard fails: blank or unchanged name disables Save and no fetch is made",
+    "if errors clear the input, ClientNames.test conflict fails: a 409 keeps the typed name, shows the server's message, and the list still shows \"Kid phone\"",
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-9"
+  wave = 4
+  depends_on = ["t-7"]
+  title = "Engine: rename under mutex with compensation"
+  files = ["internal/grants/rename.go", "internal/grants/rename_test.go"]
+  description = """
+Engine.RenameClient(old, new) under e.mu: pre-check stale store mapping (409 before any write), AdGuard RenameClient,
+then Store.RenameClient. On store failure, rename back in AdGuard and return an error naming both. Same name is a no-op.
+"""
+  covers = ["c-6"]
+  test_contract = ["if the store rename is skipped, TestRename_GrantExpiryReverts fails: youtube grant on Ada over \"Kid phone\" -> rename to \"Ada phone\" -> clock past ends_at -> fake's \"Ada phone\" blocks youtube, no clients/update body names \"Kid phone\", grant expired", "if End uses stale names, TestRename_EndReverts fails: same set-up with End -> BlockedServices(\"Ada phone\") contains youtube", "if rename escapes e.mu, TestRename_TimerSerialised fails: a timer expiry fired while RenameClient holds the mutex (fake AfterFunc + Hang) runs after it, re-blocks \"Ada phone\", and never logs \"client gone\"", "if compensation is missing, TestRename_StoreFailCompensates fails: injected Store.RenameClient error -> AdGuard ends with \"Kid phone\" again (second clients/update observed) and the error is returned", "if the stale-mapping pre-check is missing, TestRename_StaleConflict fails: \"Ghost\" owned by Bob -> *store.ErrClientTaken with zero clients/update POSTs", "if same-name rename writes, TestRename_Noop fails: rename X->X issues zero requests", "if the self-stale case is treated as a conflict, TestRename_SelfStale fails: Ada holds stale \"TV\" (unknown to AdGuard) plus \"Kid phone\"; rename Kid phone->TV -> nil error, exactly one clients/update (no compensating rename back), Ada holds [\"TV\"]"]
+  status = "pending"
+
+[[task]]
+  id = "t-10"
+  wave = 4
+  depends_on = ["t-4", "t-7"]
+  title = "API: unlabelled listing + POST /api/v1/clients"
+  files = ["internal/api/clients.go", "internal/api/clients_test.go", "internal/api/api.go"]
+  description = """
+GET /clients adds `unlabelled` (one /control/clients read + lease read; lease failure degrades to IP-only, logged). POST
+/clients {name, ids, child_id?}: bounded body, DisallowUnknownFields, name trimmed 1–256 bytes, ids trimmed/deduped/
+non-empty, child_id null or absent = no child; child 404 and stale-ownership 409 checked before any AdGuard write.
+AdGuard/Grants interfaces gain Leases, CreateClient, AdoptClients; route registered.
+"""
+  covers = ["c-1", "c-2", "c-3"]
+  test_contract = ["if listing is cached or filtered wrong, TestClients_Unlabelled fails: GET lists printer with source \"ARP\" and omits 192.168.1.50; two GETs make two /control/clients reads; a row added via SetAutoClients between them appears in the second", "if a lease failure is fatal, TestClients_LeaseDegrade fails: /control/dhcp/status forced 500 -> GET still 200 with printer suggested_ids == [\"192.168.1.9\"]", "if AdGuard-down is mapped wrong, TestClients_Unavailable fails: /control/clients forced 500 -> 502 adguard_unavailable", "if the trim or empty-ids check is dropped, TestCreateClient_BadInput fails: name \"  \" -> 400 with zero AdGuard requests after login; ids [] -> 400", "if duplicates reach AdGuard, TestCreateClient_Conflict fails: \"Kid phone\" -> 409; ids [\"192.168.1.50\"] -> 409 naming \"Kid phone\"; zero adds in both", "if the timeout is missing, TestCreateClient_Timeout fails: Hang on /control/clients/add past ApplyTimeout -> 502, not a hang", "if pre-checks run after the write, TestCreateClient_ChildChecks fails: child_id 999 -> 404 with zero adds; \"Ghost\" (stale, Bob) with child_id Ada -> 409 with zero adds", "if create+assign is not one action, TestCreateClient_WithChild fails: {name:\"TV\", ids, child_id: Ada} -> 201; GET /children/{Ada} shows TV; GET /clients lists TV with child Ada and not as unlabelled; fake's TV has use_global_blocked_services=false", "if no-child create assigns anyway, TestCreateClient_NoChild fails: no child_id (and child_id null) -> 201 and no child lists it", "if an AdGuard 400 maps to 502, TestCreateClient_AdGuardRejects fails: AdGuard 400 on add -> 400 bad_request carrying AdGuard's message", "if the route skips the csrf chain, TestCreateClient_CSRF fails: no X-Requested-With -> 403", "if the create-path pre-read error maps to 500, TestCreateClient_ReadUnavailable fails: /control/clients forced 500 -> POST /clients returns 502 adguard_unavailable with zero /control/clients/add", "if a stale self-mapping breaks create, TestCreateClient_SelfStale fails: Ada holds stale \"TV\"; POST {name:\"TV\", ids, child_id: Ada} -> 201, fake has TV, Ada holds one \"TV\" (not a 500 with an orphaned AdGuard client)"]
+  status = "pending"
+
+[[task]]
+  id = "t-11"
+  wave = 5
+  depends_on = ["t-10"]
+  title = "PUT children applies baseline to added clients"
+  files = ["internal/api/children.go", "internal/api/children_test.go"]
+  description = """
+handleChildUpdate: decode, GetChild (404), pre-check name and owners via ListChildren (409) before any AdGuard write.
+added = new ∖ old, siblings = old ∩ new. When added is non-empty, Grants.AdoptClients runs before UpdateChild; AdGuard
+failure -> 502 naming the client, store untouched. Removals never call AdGuard.
+"""
+  covers = ["c-7"]
+  test_contract = [
+    "if adopt is not called, TestChildUpdate_AddBaseline fails: Ada has Kid phone and an active youtube grant; PUT adds \"Old laptop\" -> 200 and fake's Old laptop is [tiktok, youtube] with the flag false",
+    "if inherited blocks are lost, TestChildUpdate_AddInherited fails: PUT adds Kid tablet (inherits [tiktok, roblox]) -> own list [roblox, tiktok, youtube] with the flag false",
+    "if existing blocks are removed, TestChildUpdate_KeepsOwn fails: a client with pre-existing own \"steam\" (seeded via MutateClient) keeps steam",
+    "if the first-device fallback or sibling set is wrong, TestChildUpdate_FullSwap fails: a PUT replacing all of Ada's clients gives the added client the global list ∪ Ada's active grant services (removed clients do not contribute)",
+    "if the diff is backwards, TestChildUpdate_RemoveOnly fails: a PUT that only drops Kid phone -> 0 POST /control/clients/update",
+    "if a no-add PUT needs AdGuard, TestChildUpdate_RenameOnlyOffline fails: rename-only PUT with SetAuth(false) -> 200",
+    "if conflicts are checked after writing, TestChildUpdate_Conflicts fails: adding a client Ben owns -> 409 and 0 update POSTs; renaming Ada to \"ben\" while adding a client -> 409 and 0 update POSTs",
+    "if the store is written before AdGuard, TestChildUpdate_AdGuardFails fails: SetUpdateStatus(\"Old laptop\", 500) -> 502 naming Old laptop and GET /children/{Ada} still shows the old set",
+    "if Ghost behaviour regresses, TestChildUpdate_Ghost fails: adding \"Ghost\" (unknown to AdGuard) -> 200, stored, 0 update POSTs",
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-12"
+  wave = 5
+  depends_on = ["t-9", "t-10"]
+  title = "API: POST /api/v1/clients/rename"
+  files = ["internal/api/rename.go", "internal/api/rename_test.go", "internal/api/api.go"]
+  description = """
+Body {from, to}: bounded, trimmed, 1–256 bytes. Grants interface gains RenameClient. ErrClientNotFound -> 404,
+ErrClientExists or *ErrClientTaken -> 409, other AdGuard errors -> 502. Route registered behind the csrf chain.
+"""
+  covers = ["c-6"]
+  test_contract = [
+    "if the store is not updated, TestRename_UpdatesMappingAndGrants fails: \"Kid phone\"->\"Ada phone\" -> 200; GET /children shows \"Ada phone\" and GET /grants shows the active grant's clients as [\"Ada phone\"]",
+    "if rename is gated on assignment, TestRename_Unassigned fails: renaming the unassigned \"Old laptop\" -> 200",
+    "if names travel in the path, TestRename_SpecialChars fails: a name containing \"/\" and \"%\" round-trips",
+    "if validation or error mapping breaks, TestRename_Errors fails: to \"\" -> 400 with zero AdGuard requests; unknown from -> 404; to \"Kid tablet\" -> 409",
+    "if AdGuard-down leaves partial state, TestRename_Unavailable fails: AdGuard unreachable -> 502 and the store mapping is unchanged",
+    "if the route skips the csrf chain, TestRename_CSRF fails: no X-Requested-With -> 403",
+  ]
+  status = "pending"
