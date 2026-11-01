@@ -3,6 +3,16 @@
   "base": "milestone/v0.1",
   "base_commit": "b7e1f3f73b708611758ae7b1bb3b90d7460e7c87",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "internal/adguard/devices_test.go",
+        "web/src/lib/ClientNames.test.ts",
+        "web/src/lib/UnlabelledDevices.test.ts"
+      ],
+      "commit": "a930eba",
+      "completed_at": "2026-11-01T19:15:58.650772Z",
+      "notes": "quick: tests-only — kill the 28 live survivors from the auto-client-labelling verify"
+    },
     "t-1": {
       "files": [
         "internal/adguard/adguardtest/server.go",
