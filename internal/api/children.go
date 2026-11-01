@@ -6,10 +6,12 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 	"unicode/utf8"
 
+	"github.com/Rivil/adguard-reward/internal/grants"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
 
@@ -163,6 +165,15 @@ func (a *API) handleChildGet(w http.ResponseWriter, r *http.Request) {
 // handleChildUpdate is PUT /api/v1/children/{id}: a full replace of name
 // and client set, atomic in the store. The name conflict is 409 for a
 // different child's name; an unchanged name is not a conflict.
+//
+// Every client the PUT adds gets the child's baseline in AdGuard before the
+// store is written (c-7): what the clients staying with the child
+// effectively block — AdGuard's global list when none stay — plus the
+// services under the child's active grants, added to the client's own list
+// with use_global_blocked_services cleared. Nothing it blocks is removed.
+// The 404 and every 409 are decided before AdGuard is touched; an AdGuard
+// failure is 502 naming the client and leaves the store as it was. A PUT
+// that adds nothing — a rename or removals only — never calls AdGuard.
 func (a *API) handleChildUpdate(w http.ResponseWriter, r *http.Request) {
 	id, ok := childID(w, r)
 	if !ok {
@@ -172,12 +183,91 @@ func (a *API) handleChildUpdate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	cur, err := a.deps.Children.GetChild(r.Context(), id)
+	if err != nil {
+		a.writeStoreError(w, "update child", in.Name, err)
+		return
+	}
+	children, err := a.deps.Children.ListChildren(r.Context())
+	if err != nil {
+		a.writeStoreError(w, "update child", in.Name, err)
+		return
+	}
+	if err := updateConflict(children, id, in); err != nil {
+		a.writeStoreError(w, "update child", in.Name, err)
+		return
+	}
+	var added, siblings []string
+	for _, c := range in.Clients {
+		if slices.Contains(cur.Clients, c) {
+			siblings = append(siblings, c)
+		} else {
+			added = append(added, c)
+		}
+	}
+	if len(added) > 0 {
+		if err := a.deps.Grants.AdoptClients(r.Context(), id, siblings, added); err != nil {
+			a.writeAdoptError(w, err)
+			return
+		}
+	}
 	c, err := a.deps.Children.UpdateChild(r.Context(), id, in.Name, in.Clients)
 	if err != nil {
 		a.writeStoreError(w, "update child", in.Name, err)
 		return
 	}
 	writeJSON(w, http.StatusOK, viewOf(c))
+}
+
+// updateConflict mirrors the store's PUT conflict rules so they are
+// answered before any AdGuard write: another child with the name (compared
+// as the column's COLLATE NOCASE does — ASCII case-folded) is
+// store.ErrNameTaken, another child holding one of the clients is
+// *store.ErrClientTaken. The store re-checks inside its transaction.
+func updateConflict(children []store.Child, selfID int64, in childRequest) error {
+	for _, c := range children {
+		if c.ID == selfID {
+			continue
+		}
+		if asciiFold(c.Name) == asciiFold(in.Name) {
+			return store.ErrNameTaken
+		}
+		for _, name := range in.Clients {
+			if slices.Contains(c.Clients, name) {
+				return &store.ErrClientTaken{Client: name, ChildID: c.ID, ChildName: c.Name}
+			}
+		}
+	}
+	return nil
+}
+
+// asciiFold lower-cases ASCII letters only, as SQLite's NOCASE does.
+func asciiFold(s string) string {
+	b := []byte(s)
+	for i, c := range b {
+		if 'A' <= c && c <= 'Z' {
+			b[i] = c + ('a' - 'A')
+		}
+	}
+	return string(b)
+}
+
+// writeAdoptError answers a failed baseline write: 502 naming the client
+// for *grants.ErrAdoptFailed, 502 for an AdGuard read failure, 500 for
+// anything else (a store read inside the engine).
+func (a *API) writeAdoptError(w http.ResponseWriter, err error) {
+	var af *grants.ErrAdoptFailed
+	switch {
+	case errors.As(err, &af):
+		a.log.Warn("update child: adguard baseline write failed", "client", af.Client, "err", err)
+		writeError(w, http.StatusBadGateway, CodeAdGuardUnavailable,
+			fmt.Sprintf("could not apply the child's blocked services to %s in AdGuard Home — nothing was saved; try again shortly", af.Client))
+	case adguardDown(err):
+		a.writeAdGuardError(w, "update child", err)
+	default:
+		a.log.Error("update child: baseline failed", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal", "could not update child")
+	}
 }
 
 // handleChildDelete is DELETE /api/v1/children/{id}.

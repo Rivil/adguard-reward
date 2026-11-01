@@ -9,6 +9,7 @@ import {
   applyMigration,
   childBlocked,
   createChild,
+  createClient,
   createGrant,
   deleteChild,
   endGrant,
@@ -17,6 +18,7 @@ import {
   listButtons,
   listChildren,
   listClients,
+  listDevices,
   listGrants,
   listServices,
   login,
@@ -26,6 +28,7 @@ import {
   migrationDismissed,
   migrationOffer,
   navigate,
+  renameClient,
   request,
   route,
   saveButtons,
@@ -448,5 +451,59 @@ describe('migrationDismissed', () => {
     mockFetch(new Response(null, { status: 204 }))
     await logout()
     expect(get(migrationDismissed)).toBe(false)
+  })
+})
+
+describe('device endpoints', () => {
+  const view = { name: 'TV', ids: ['192.168.1.9'], use_global_blocked_services: false, child: null }
+
+  it('createClient sends name, ids and child_id null with the CSRF header', async () => {
+    const calls = mockFetch(json(201, view), json(201, { ...view, child: { id: 1, name: 'Ada' } }))
+    expect(await createClient('TV', ['192.168.1.9'], null)).toEqual(view)
+    expect(calls[0].url).toBe('/api/v1/clients')
+    expect(calls[0].init.method).toBe('POST')
+    expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    expect(header(calls[0].init, 'Content-Type')).toBe('application/json')
+    expect(calls[0].init.body).toBe('{"name":"TV","ids":["192.168.1.9"],"child_id":null}')
+
+    await createClient('TV', ['192.168.1.9'], 1)
+    expect(JSON.parse(calls[1].init.body as string)).toEqual({ name: 'TV', ids: ['192.168.1.9'], child_id: 1 })
+  })
+
+  it('createClient 409 surfaces the server message', async () => {
+    mockFetch(json(409, { error: 'conflict', message: 'a client named "TV" already exists' }))
+    const e = await fails(createClient('TV', ['192.168.1.9'], null))
+    expect(e.status).toBe(409)
+    expect(messageFor(e)).toBe('a client named "TV" already exists')
+  })
+
+  it('listDevices returns clients and unlabelled from one GET', async () => {
+    const dev = { ip: '192.168.1.70', hostname: 'printer', source: 'ARP', suggested_ids: ['192.168.1.70'] }
+    const calls = mockFetch(json(200, { clients: [view], unlabelled: [dev] }))
+    expect(await listDevices()).toEqual({ clients: [view], unlabelled: [dev] })
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).toBe('/api/v1/clients')
+    expect(calls[0].init.method).toBe('GET')
+    expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
+  })
+
+  it('listDevices defaults a missing key to []', async () => {
+    mockFetch(json(200, { clients: [view] }), json(200, {}))
+    expect(await listDevices()).toEqual({ clients: [view], unlabelled: [] })
+    expect(await listDevices()).toEqual({ clients: [], unlabelled: [] })
+  })
+
+  it('listClients still returns the array', async () => {
+    mockFetch(json(200, { clients: [view], unlabelled: [] }))
+    expect(await listClients()).toEqual([view])
+  })
+
+  it('renameClient sends from and to in the body to the fixed path', async () => {
+    const calls = mockFetch(json(200, { ...view, name: 'x' }))
+    expect(await renameClient('a/b%c', 'x')).toEqual({ ...view, name: 'x' })
+    expect(calls[0].url).toBe('/api/v1/clients/rename')
+    expect(calls[0].init.method).toBe('POST')
+    expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    expect(JSON.parse(calls[0].init.body as string)).toEqual({ from: 'a/b%c', to: 'x' })
   })
 })

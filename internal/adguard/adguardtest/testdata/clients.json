@@ -95,6 +95,38 @@
       "ip": "192.168.1.9",
       "source": "ARP",
       "whois_info": {}
+    },
+    {
+      "name": "kid-phone",
+      "ip": "192.168.1.50",
+      "source": "DHCP",
+      "whois_info": {}
+    },
+    {
+      "name": "kid-tablet",
+      "ip": "192.168.1.51",
+      "source": "DHCP",
+      "whois_info": {}
+    },
+    {
+      "name": "Zed-TV",
+      "ip": "192.168.1.30",
+      "source": "rDNS",
+      "whois_info": {}
+    },
+    {
+      "name": "alpha",
+      "ip": "192.168.1.20",
+      "source": "DHCP",
+      "whois_info": {}
+    },
+    {
+      "name": "",
+      "ip": "192.168.1.40",
+      "source": "WHOIS",
+      "whois_info": {
+        "country": "GB"
+      }
     }
   ],
   "supported_tags": ["device_phone", "device_tablet", "device_pc", "user_child", "user_admin"]

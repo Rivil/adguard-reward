@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 )
@@ -261,7 +262,9 @@ func TestChildren_NoAdGuard(t *testing.T) {
 	if w, list := h.listChildren(cookie); w.Code != http.StatusOK || len(list.Children) != 1 {
 		t.Fatalf("list: %d %+v", w.Code, list)
 	}
-	if w := h.do(http.MethodPut, childPath(ada.ID), map[string]any{"name": "Ada M", "clients": []string{"Kid tablet"}}, withCookie(cookie)); w.Code != http.StatusOK {
+	// A PUT that adds no client never needs AdGuard; one that does is
+	// covered by TestChildUpdate_*.
+	if w := h.do(http.MethodPut, childPath(ada.ID), map[string]any{"name": "Ada M", "clients": []string{}}, withCookie(cookie)); w.Code != http.StatusOK {
 		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
 	}
 	if w := h.do(http.MethodGet, childPath(ada.ID), nil, withCookie(cookie)); w.Code != http.StatusOK {
@@ -274,5 +277,198 @@ func TestChildren_NoAdGuard(t *testing.T) {
 		if r.Path != "/control/login" {
 			t.Errorf("CRUD hit AdGuard: %s %s", r.Method, r.Path)
 		}
+	}
+}
+
+func (h *harness) putChild(cookie string, id int64, name string, clients ...string) *httptest.ResponseRecorder {
+	h.t.Helper()
+	if clients == nil {
+		clients = []string{}
+	}
+	return h.do(http.MethodPut, childPath(id), map[string]any{"name": name, "clients": clients}, withCookie(cookie))
+}
+
+// wantOwn checks the fake's own list for name (sorted) and that it is off
+// the global list.
+func (h *harness) wantOwn(cookie, name string, want ...string) {
+	h.t.Helper()
+	got := slices.Clone(h.blocked(name))
+	slices.Sort(got)
+	if !reflect.DeepEqual(got, want) {
+		h.t.Errorf("%s blocks %v, want %v", name, got, want)
+	}
+	_, body := h.getClients(cookie)
+	if c := findClient(body.Clients, name); c == nil || c.UseGlobalBlockedServices {
+		h.t.Errorf("%s = %+v, want use_global_blocked_services false", name, c)
+	}
+}
+
+func (h *harness) childClients(cookie string, id int64) []string {
+	h.t.Helper()
+	return h.decodeChild(h.do(http.MethodGet, childPath(id), nil, withCookie(cookie))).Clients
+}
+
+func ownList(h *harness, name string, ids ...string) {
+	list, _ := json.Marshal(ids)
+	h.fake.MutateClient(name, func(m map[string]json.RawMessage) {
+		m["use_global_blocked_services"] = json.RawMessage("false")
+		m["blocked_services"] = list
+	})
+}
+
+func TestChildUpdate_AddBaseline(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	h.grantOK(cookie, ada.ID, []string{"youtube"}, 1800)
+
+	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Old laptop"); w.Code != http.StatusOK {
+		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
+	}
+	h.wantOwn(cookie, "Old laptop", "tiktok", "youtube")
+	if got := h.childClients(cookie, ada.ID); !reflect.DeepEqual(got, []string{"Kid phone", "Old laptop"}) {
+		t.Errorf("Ada clients = %v", got)
+	}
+}
+
+func TestChildUpdate_AddInherited(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+
+	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Kid tablet"); w.Code != http.StatusOK {
+		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
+	}
+	h.wantOwn(cookie, "Kid tablet", "roblox", "tiktok", "youtube")
+}
+
+func TestChildUpdate_KeepsOwn(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ownList(h, "Old laptop", "steam")
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+
+	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Old laptop"); w.Code != http.StatusOK {
+		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
+	}
+	h.wantOwn(cookie, "Old laptop", "steam", "tiktok", "youtube")
+}
+
+func TestChildUpdate_FullSwap(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ownList(h, "Kid phone", "steam", "youtube")
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	h.grantOK(cookie, ada.ID, []string{"youtube"}, 1800)
+
+	// Kid phone leaves, so its steam is not part of the baseline: no
+	// sibling stays, the global list stands in.
+	if w := h.putChild(cookie, ada.ID, "Ada", "Old laptop"); w.Code != http.StatusOK {
+		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
+	}
+	h.wantOwn(cookie, "Old laptop", "roblox", "tiktok", "youtube")
+}
+
+func TestChildUpdate_RemoveOnly(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone", "Old laptop")
+
+	if w := h.putChild(cookie, ada.ID, "Ada", "Old laptop"); w.Code != http.StatusOK {
+		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
+	}
+	if n := h.updatePosts(); n != 0 {
+		t.Errorf("remove-only PUT made %d update POSTs, want 0", n)
+	}
+	for _, r := range h.fake.Requests() {
+		if r.Path != "/control/login" {
+			t.Errorf("remove-only PUT hit AdGuard: %s %s", r.Method, r.Path)
+		}
+	}
+}
+
+func TestChildUpdate_RenameOnlyOffline(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	h.fake.SetAuth(false)
+
+	w := h.putChild(cookie, ada.ID, "Ada M", "Kid phone")
+	if w.Code != http.StatusOK || h.decodeChild(w).Name != "Ada M" {
+		t.Errorf("rename-only PUT with AdGuard refusing: %d %s, want 200", w.Code, w.Body.String())
+	}
+}
+
+func TestChildUpdate_Conflicts(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	h.createOK(cookie, "Ben", "Old laptop")
+	before := len(h.fake.Requests())
+
+	w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Old laptop")
+	if e := decodeErr(t, w); w.Code != http.StatusConflict || !strings.Contains(e.Message, "Ben") {
+		t.Errorf("adding Ben's client: %d %s, want 409 naming Ben", w.Code, w.Body.String())
+	}
+	w = h.putChild(cookie, ada.ID, "ben", "Kid phone", "Kid tablet")
+	if w.Code != http.StatusConflict || decodeErr(t, w).Error != CodeConflict {
+		t.Errorf("renaming Ada to ben while adding: %d %s, want 409", w.Code, w.Body.String())
+	}
+	if n := len(h.fake.Requests()) - before; n != 0 {
+		t.Errorf("conflicting PUTs made %d AdGuard requests, want 0", n)
+	}
+	if got := h.childClients(cookie, ada.ID); !reflect.DeepEqual(got, []string{"Kid phone"}) {
+		t.Errorf("Ada clients = %v, want unchanged [Kid phone]", got)
+	}
+}
+
+func TestChildUpdate_AdGuardFails(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	h.fake.SetUpdateStatus("Old laptop", 500)
+
+	w := h.putChild(cookie, ada.ID, "Ada M", "Kid phone", "Old laptop")
+	e := decodeErr(t, w)
+	if w.Code != http.StatusBadGateway || e.Error != CodeAdGuardUnavailable || !strings.Contains(e.Message, "Old laptop") {
+		t.Errorf("%d %s, want 502 naming Old laptop", w.Code, w.Body.String())
+	}
+	got := h.decodeChild(h.do(http.MethodGet, childPath(ada.ID), nil, withCookie(cookie)))
+	if got.Name != "Ada" || !reflect.DeepEqual(got.Clients, []string{"Kid phone"}) {
+		t.Errorf("child after failed PUT = %+v, want Ada [Kid phone] unchanged", got)
+	}
+
+	h.fake.SetUpdateStatus("Old laptop", 0)
+	h.fake.SetStatus("/control/clients", 500)
+	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Old laptop"); w.Code != http.StatusBadGateway {
+		t.Errorf("AdGuard read down: %d %s, want 502", w.Code, w.Body.String())
+	}
+}
+
+func TestChildUpdate_Ghost(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+
+	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Ghost"); w.Code != http.StatusOK {
+		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
+	}
+	if got := h.childClients(cookie, ada.ID); !reflect.DeepEqual(got, []string{"Ghost", "Kid phone"}) {
+		t.Errorf("Ada clients = %v, want [Ghost Kid phone]", got)
+	}
+	if n := h.updatePosts(); n != 0 {
+		t.Errorf("update POSTs = %d, want 0", n)
+	}
+}
+
+func TestChildUpdate_UnknownChild(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	before := len(h.fake.Requests())
+	if w := h.putChild(cookie, 999, "Zed", "Kid tablet"); w.Code != http.StatusNotFound {
+		t.Errorf("PUT 999: %d, want 404", w.Code)
+	}
+	if n := len(h.fake.Requests()) - before; n != 0 {
+		t.Errorf("unknown child made %d AdGuard requests, want 0", n)
 	}
 }

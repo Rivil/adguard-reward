@@ -1,11 +1,21 @@
 package api
 
 import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+	"io"
 	"net/http"
+	"net/url"
+	"strings"
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
+
+// maxClientBody bounds a POST /clients body: a name and a few ids.
+const maxClientBody = 16 << 10
 
 const adguardDownMsg = "AdGuard Home is unreachable — try again shortly"
 
@@ -22,6 +32,16 @@ type clientView struct {
 	IDs                      []string  `json:"ids"`
 	UseGlobalBlockedServices bool      `json:"use_global_blocked_services"`
 	Child                    *childRef `json:"child"`
+}
+
+// unlabelledView is one row of GET /api/v1/clients' unlabelled list: an
+// AdGuard auto client no persistent client covers. suggested_ids is never
+// null.
+type unlabelledView struct {
+	IP           string   `json:"ip"`
+	Hostname     string   `json:"hostname"`
+	Source       string   `json:"source"`
+	SuggestedIDs []string `json:"suggested_ids"`
 }
 
 type serviceView struct {
@@ -49,8 +69,11 @@ func ownerIndex(children []store.Child) map[string]childRef {
 	return owner
 }
 
-// handleClients is GET /api/v1/clients. Every call reads AdGuard; nothing
-// is memoised.
+// handleClients is GET /api/v1/clients: the persistent clients with their
+// child, plus every auto client none of them covers (locked:
+// unlabelled_listing). Every call reads AdGuard — one /control/clients
+// read and one lease read; nothing is memoised. A failed lease read only
+// costs the MAC suggestions: devices are still listed, IP-only.
 func (a *API) handleClients(w http.ResponseWriter, r *http.Request) {
 	res, err := a.deps.AdGuard.Clients(r.Context())
 	if err != nil {
@@ -61,6 +84,11 @@ func (a *API) handleClients(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		a.writeStoreError(w, "list children", "", err)
 		return
+	}
+	leases, err := a.deps.AdGuard.Leases(r.Context())
+	if err != nil {
+		a.log.Warn("list clients: dhcp leases unavailable, suggesting ip only", "err", err)
+		leases = nil
 	}
 	owner := ownerIndex(children)
 	out := make([]clientView, 0, len(res.Persistent))
@@ -74,9 +102,151 @@ func (a *API) handleClients(w http.ResponseWriter, r *http.Request) {
 		}
 		out = append(out, v)
 	}
+	devices := adguard.Unlabelled(res.Persistent, res.AutoClients, leases)
+	unlabelled := make([]unlabelledView, 0, len(devices))
+	for _, d := range devices {
+		ids := d.SuggestedIDs
+		if ids == nil {
+			ids = []string{}
+		}
+		unlabelled = append(unlabelled, unlabelledView{IP: d.IP, Hostname: d.Hostname, Source: d.Source, SuggestedIDs: ids})
+	}
 	writeJSON(w, http.StatusOK, struct {
-		Clients []clientView `json:"clients"`
-	}{out})
+		Clients    []clientView     `json:"clients"`
+		Unlabelled []unlabelledView `json:"unlabelled"`
+	}{out, unlabelled})
+}
+
+type createClientRequest struct {
+	Name    string   `json:"name"`
+	IDs     []string `json:"ids"`
+	ChildID *int64   `json:"child_id"`
+}
+
+// decodeCreateClient reads a POST /clients body: bounded, no unknown fields,
+// one object. The name is trimmed and must be 1..256 bytes; ids are trimmed,
+// empties dropped, deduped, each at most 256 bytes, and at least one must
+// remain. child_id null or absent means no child. A false return means the
+// error was written.
+func decodeCreateClient(w http.ResponseWriter, r *http.Request) (createClientRequest, bool) {
+	var in createClientRequest
+	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxClientBody))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, CodeBadRequest, "expected JSON {name, ids, child_id}")
+		return in, false
+	}
+	if dec.More() {
+		writeError(w, http.StatusBadRequest, CodeBadRequest, "expected a single JSON object")
+		return in, false
+	}
+	if _, err := io.Copy(io.Discard, r.Body); err != nil {
+		writeError(w, http.StatusBadRequest, CodeBadRequest, "request body too large")
+		return in, false
+	}
+	in.Name = strings.TrimSpace(in.Name)
+	if in.Name == "" || len(in.Name) > maxClientName {
+		writeError(w, http.StatusBadRequest, CodeBadRequest, fmt.Sprintf("name must be 1 to %d bytes", maxClientName))
+		return in, false
+	}
+	ids := make([]string, 0, len(in.IDs))
+	seen := map[string]bool{}
+	for _, id := range in.IDs {
+		id = strings.TrimSpace(id)
+		if id == "" || seen[id] {
+			continue
+		}
+		if len(id) > maxClientName {
+			writeError(w, http.StatusBadRequest, CodeBadRequest, fmt.Sprintf("id longer than %d bytes", maxClientName))
+			return in, false
+		}
+		seen[id] = true
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		writeError(w, http.StatusBadRequest, CodeBadRequest, "at least one id (IP, CIDR or MAC) is required")
+		return in, false
+	}
+	in.IDs = ids
+	return in, true
+}
+
+// handleClientCreate is POST /api/v1/clients: create an AdGuard persistent
+// client and, with child_id, assign it to that child in the same action.
+// An unknown child (404) and a name another child's mapping already holds
+// (409) are refused before AdGuard is written; the same child holding the
+// name — a stale self-mapping — is allowed and collapses in the store.
+func (a *API) handleClientCreate(w http.ResponseWriter, r *http.Request) {
+	in, ok := decodeCreateClient(w, r)
+	if !ok {
+		return
+	}
+	var child *childRef
+	if in.ChildID != nil {
+		c, err := a.deps.Children.GetChild(r.Context(), *in.ChildID)
+		if err != nil {
+			a.writeStoreError(w, "get child", "", err)
+			return
+		}
+		child = &childRef{ID: c.ID, Name: c.Name}
+	}
+	children, err := a.deps.Children.ListChildren(r.Context())
+	if err != nil {
+		a.writeStoreError(w, "list children", "", err)
+		return
+	}
+	if ref, held := ownerIndex(children)[in.Name]; held && (child == nil || ref.ID != child.ID) {
+		writeError(w, http.StatusConflict, CodeConflict,
+			fmt.Sprintf("client %s is already assigned to %s", in.Name, ref.Name))
+		return
+	}
+	if err := a.deps.Grants.CreateClient(r.Context(), in.Name, in.IDs, in.ChildID); err != nil {
+		a.writeCreateClientError(w, in.Name, err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, clientView{
+		Name:                     in.Name,
+		IDs:                      in.IDs,
+		UseGlobalBlockedServices: child == nil,
+		Child:                    child,
+	})
+}
+
+// writeCreateClientError maps a CreateClient failure: AdGuard's own
+// refusals are 409 (name or id taken) or 400 (input rejected, AdGuard's
+// message passed through); store conflicts and an unknown child go through
+// writeStoreError; AdGuard down, slow or refusing the service credential is
+// 502; anything else is 500.
+func (a *API) writeCreateClientError(w http.ResponseWriter, name string, err error) {
+	var idTaken *adguard.ErrIDTaken
+	var rejected *adguard.InputRejectedError
+	var clientTaken *store.ErrClientTaken
+	switch {
+	case errors.Is(err, adguard.ErrClientExists):
+		writeError(w, http.StatusConflict, CodeConflict, fmt.Sprintf("a client named %s already exists in AdGuard Home", name))
+	case errors.As(err, &idTaken):
+		writeError(w, http.StatusConflict, CodeConflict,
+			fmt.Sprintf("%s is already used by client %s", idTaken.ID, idTaken.Owner))
+	case errors.As(err, &rejected):
+		writeError(w, http.StatusBadRequest, CodeBadRequest, "AdGuard Home refused the client: "+rejected.Message)
+	case errors.Is(err, store.ErrChildNotFound), errors.As(err, &clientTaken):
+		a.writeStoreError(w, "create client", "", err)
+	case adguardDown(err):
+		a.writeAdGuardError(w, "create client", err)
+	default:
+		a.log.Error("create client failed", "client", name, "err", err)
+		writeError(w, http.StatusInternalServerError, "internal", "could not create client")
+	}
+}
+
+// adguardDown reports whether err is AdGuard failing rather than the
+// store: a non-2xx answer, the service credential refused, a transport
+// error or the apply deadline.
+func adguardDown(err error) bool {
+	var status *adguard.StatusError
+	var transport *url.Error
+	return errors.As(err, &status) || errors.As(err, &transport) ||
+		errors.Is(err, adguard.ErrBadCredentials) || errors.Is(err, context.DeadlineExceeded)
 }
 
 // handleServices is GET /api/v1/services: the catalogue as AdGuard serves

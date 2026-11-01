@@ -3,9 +3,11 @@ package adguardtest
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
@@ -364,5 +366,240 @@ func TestFake_GrantHelpers(t *testing.T) {
 	}
 	if n := s.CountRequests("POST", "/control/clients"); n != 0 {
 		t.Errorf("CountRequests must match path exactly (no prefix match), got %d", n)
+	}
+}
+
+// persistentNames decodes GET /control/clients and returns every persistent
+// client name, in served order.
+func persistentNames(t *testing.T, s *Server) []string {
+	t.Helper()
+	_, b := do(t, s, "GET", "/control/clients", "", true)
+	var doc struct {
+		Clients []struct {
+			Name string `json:"name"`
+		} `json:"clients"`
+	}
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatalf("decode clients %s: %v", b, err)
+	}
+	out := make([]string, 0, len(doc.Clients))
+	for _, c := range doc.Clients {
+		out = append(out, c.Name)
+	}
+	return out
+}
+
+func count(names []string, want string) int {
+	n := 0
+	for _, x := range names {
+		if x == want {
+			n++
+		}
+	}
+	return n
+}
+
+func TestFake_AddDuplicateName(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	resp, b := do(t, s, "POST", "/control/clients/add", `{"name":"Kid phone","ids":["192.168.1.99"]}`, true)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("duplicate name: status %d body %s, want 400", resp.StatusCode, b)
+	}
+	if n := count(persistentNames(t, s), "Kid phone"); n != 1 {
+		t.Errorf("GET lists %d \"Kid phone\", want exactly 1", n)
+	}
+	if len(s.AddedClients()) != 0 {
+		t.Error("a rejected add must not be observed as added")
+	}
+}
+
+func TestFake_AddDuplicateID(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	before := len(persistentNames(t, s))
+	resp, b := do(t, s, "POST", "/control/clients/add", `{"name":"Spare","ids":["192.168.1.50"]}`, true)
+	if resp.StatusCode != http.StatusBadRequest || !strings.Contains(string(b), "Kid phone") {
+		t.Errorf("id held by Kid phone: status %d body %s, want 400 naming Kid phone", resp.StatusCode, b)
+	}
+	if after := len(persistentNames(t, s)); after != before {
+		t.Errorf("client count %d -> %d, want unchanged", before, after)
+	}
+	resp, _ = do(t, s, "POST", "/control/clients/add", `{"name":"Spare","ids":["AA:BB:CC:DD:EE:02"]}`, true)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("MAC held by Kid tablet (other case): status %d, want 400", resp.StatusCode)
+	}
+	for _, body := range []string{`{"name":"","ids":["1.2.3.4"]}`, `{"name":"X","ids":[]}`, `not json`} {
+		if resp, _ := do(t, s, "POST", "/control/clients/add", body, true); resp.StatusCode != http.StatusBadRequest {
+			t.Errorf("add %s: status %d, want 400", body, resp.StatusCode)
+		}
+	}
+}
+
+func TestFake_RenameCollision(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	phone, _ := s.BlockedServices("Kid phone")
+	tablet, _ := s.BlockedServices("Kid tablet")
+	resp, _ := do(t, s, "POST", "/control/clients/update", `{"name":"Kid tablet","data":{"name":"Kid phone","ids":["x"]}}`, true)
+	if resp.StatusCode != http.StatusBadRequest {
+		t.Errorf("rename onto an existing name: status %d, want 400", resp.StatusCode)
+	}
+	names := persistentNames(t, s)
+	if count(names, "Kid phone") != 1 || count(names, "Kid tablet") != 1 {
+		t.Errorf("after a rejected rename, clients = %v; want one Kid phone and one Kid tablet", names)
+	}
+	if got, _ := s.BlockedServices("Kid phone"); strings.Join(got, ",") != strings.Join(phone, ",") {
+		t.Errorf("Kid phone blocked = %v, want unchanged %v", got, phone)
+	}
+	if got, _ := s.BlockedServices("Kid tablet"); strings.Join(got, ",") != strings.Join(tablet, ",") {
+		t.Errorf("Kid tablet blocked = %v, want unchanged %v", got, tablet)
+	}
+	if s.LastUpdate() != nil {
+		t.Error("a rejected rename must not be stored as the last update")
+	}
+
+	resp, _ = do(t, s, "POST", "/control/clients/update", `{"name":"Kid tablet","data":{"name":"Ada tablet","ids":["aa:bb:cc:dd:ee:02"]}}`, true)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("rename onto a free name: status %d, want 200", resp.StatusCode)
+	}
+	names = persistentNames(t, s)
+	if count(names, "Ada tablet") != 1 || count(names, "Kid tablet") != 0 {
+		t.Errorf("after a rename, clients = %v; want Ada tablet and no Kid tablet", names)
+	}
+}
+
+func TestFake_AddPersists(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	add := `{"name":"Printer","ids":["192.168.1.9","aa:bb:cc:dd:ee:09"],"use_global_settings":true,"use_global_blocked_services":true,"blocked_services":[]}`
+	resp, b := do(t, s, "POST", "/control/clients/add", add, true)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("add: status %d body %s", resp.StatusCode, b)
+	}
+	got := s.AddedClients()
+	if len(got) != 1 || string(got[0]) != add {
+		t.Errorf("AddedClients() = %q, want the one raw body", got)
+	}
+
+	_, b = do(t, s, "GET", "/control/clients", "", true)
+	var doc struct {
+		Clients     []map[string]json.RawMessage `json:"clients"`
+		AutoClients []map[string]json.RawMessage `json:"auto_clients"`
+		Tags        []string                     `json:"supported_tags"`
+	}
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Clients) != 4 || string(doc.Clients[3]["name"]) != `"Printer"` {
+		t.Errorf("clients after add = %d, last %s; want 4 ending with Printer", len(doc.Clients), doc.Clients[len(doc.Clients)-1]["name"])
+	}
+	if len(doc.AutoClients) == 0 || len(doc.Tags) == 0 {
+		t.Errorf("re-encoded doc dropped top-level keys: auto_clients %d, supported_tags %d", len(doc.AutoClients), len(doc.Tags))
+	}
+	if blocked, ok := s.BlockedServices("Printer"); !ok || len(blocked) != 0 {
+		t.Errorf("BlockedServices(Printer) = %v, %v; want [] true", blocked, ok)
+	}
+}
+
+func TestFake_AutoClientsEmpty(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	s.SetAutoClients(nil)
+	_, b := do(t, s, "GET", "/control/clients", "", true)
+	if !strings.Contains(string(b), `"auto_clients":[]`) {
+		t.Errorf("SetAutoClients(nil) must serve \"auto_clients\": [], got %s", b)
+	}
+	if n := len(persistentNames(t, s)); n != 3 {
+		t.Errorf("SetAutoClients touched persistent clients: %d, want 3", n)
+	}
+
+	s.SetAutoClients([]AutoClient{{Name: "Den TV", IP: "192.168.1.88", Source: "rDNS"}})
+	_, b = do(t, s, "GET", "/control/clients", "", true)
+	var doc struct {
+		AutoClients []struct {
+			Name, IP, Source string
+		} `json:"auto_clients"`
+	}
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.AutoClients) != 1 || doc.AutoClients[0].Name != "Den TV" || doc.AutoClients[0].IP != "192.168.1.88" || doc.AutoClients[0].Source != "rDNS" {
+		t.Errorf("auto_clients = %+v, want the one Den TV row", doc.AutoClients)
+	}
+}
+
+type dhcpDoc struct {
+	Leases []struct {
+		MAC, IP, Hostname, Expires string
+	} `json:"leases"`
+	StaticLeases []struct {
+		MAC, IP, Hostname string
+	} `json:"static_leases"`
+}
+
+func TestFake_DHCPStatus(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	resp, b := do(t, s, "GET", "/control/dhcp/status", "", true)
+	if resp.StatusCode != http.StatusOK || !bytes.Equal(b, Fixture("dhcp_status.json")) {
+		t.Fatalf("dhcp status: %d, body is fixture: %v", resp.StatusCode, bytes.Equal(b, Fixture("dhcp_status.json")))
+	}
+	var doc dhcpDoc
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Leases) != 2 || doc.Leases[1].MAC != "aa:bb:cc:dd:ee:02" || doc.Leases[1].IP != "192.168.1.51" {
+		t.Errorf("leases = %+v, want printer and the Kid tablet MAC on 192.168.1.51", doc.Leases)
+	}
+	if len(doc.StaticLeases) != 1 || doc.StaticLeases[0].IP != "192.168.1.20" {
+		t.Errorf("static_leases = %+v, want alpha on 192.168.1.20", doc.StaticLeases)
+	}
+
+	s.SetStatus("/control/dhcp/status", 501)
+	if resp, _ := do(t, s, "GET", "/control/dhcp/status", "", true); resp.StatusCode != 501 {
+		t.Errorf("forced dhcp: status %d, want 501", resp.StatusCode)
+	}
+	if resp, _ := do(t, s, "GET", "/control/clients", "", true); resp.StatusCode != 200 {
+		t.Errorf("clients while dhcp forced: status %d, want 200", resp.StatusCode)
+	}
+	s.SetResponse("/control/dhcp/status", 0, nil)
+
+	s.SetLeases([]Lease{{MAC: "aa:bb:cc:dd:ee:70", IP: "192.168.1.70", Hostname: "tv"}}, nil)
+	_, b = do(t, s, "GET", "/control/dhcp/status", "", true)
+	doc = dhcpDoc{}
+	if err := json.Unmarshal(b, &doc); err != nil {
+		t.Fatal(err)
+	}
+	if len(doc.Leases) != 1 || doc.Leases[0].IP != "192.168.1.70" || doc.Leases[0].Expires == "" {
+		t.Errorf("SetLeases dynamic = %+v, want one tv lease with expires", doc.Leases)
+	}
+	if doc.StaticLeases == nil || len(doc.StaticLeases) != 0 || !strings.Contains(string(b), `"static_leases":[]`) {
+		t.Errorf("SetLeases(_, nil) must serve static_leases [], got %s", b)
+	}
+	if !strings.Contains(string(b), `"interface_name"`) {
+		t.Error("SetLeases dropped other top-level keys")
+	}
+}
+
+func TestFake_AddCountsInFlight(t *testing.T) {
+	s := New(t, Options{User: user, Pass: pass})
+	s.Hang("/control/clients/add", 300*time.Millisecond)
+	var wg sync.WaitGroup
+	for i, name := range []string{"One", "Two"} {
+		wg.Add(1)
+		go func(i int, name string) {
+			defer wg.Done()
+			body := fmt.Sprintf(`{"name":%q,"ids":["10.0.0.%d"]}`, name, i+1)
+			req, _ := http.NewRequest("POST", s.URL()+"/control/clients/add", strings.NewReader(body))
+			req.SetBasicAuth(user, pass)
+			resp, err := http.DefaultClient.Do(req)
+			if err != nil {
+				t.Error(err)
+				return
+			}
+			_ = resp.Body.Close()
+		}(i, name)
+	}
+	wg.Wait()
+	if got := s.MaxInFlightUpdates(); got != 2 {
+		t.Errorf("MaxInFlightUpdates = %d after two overlapping adds, want 2", got)
+	}
+	if n := len(s.AddedClients()); n != 2 {
+		t.Errorf("AddedClients = %d, want 2", n)
 	}
 }

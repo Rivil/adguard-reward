@@ -1,0 +1,24 @@
+# Plan Review — auto-client-labelling
+
+Reviewed: 2026-11-01
+Plan: 12 tasks across 5 waves (7 done; t-7 re-planned after a reviewer failure and back to pending; t-9, t-10, t-11 and t-12 pending)
+
+## BLOCKING
+(none)
+
+## FLAG
+- [scope] Carried over from the previous review and still open. project.toml `goals.non_goals[0]` says the app "touches only per-client blocked_services, a clearly-marked managed region of user_rules, and reads the query log". This phase creates and renames AdGuard persistent clients (t-5, t-7, t-9) and reads `/control/dhcp/status` (t-4). The plan follows the spec, so this is drift between the project and the spec, not a defect in the plan.
+  Suggestion: reword the non_goal in project.toml before `/dross-ship`, so the PR does not contradict the project's stated boundary.
+
+## NOTE
+- [strength] The t-7 re-plan fixes the defect the reviewer found, and the code confirms it. `adguard.Client.AddClient` pre-reads through `readClients` (`internal/adguard/clients_write.go:70`), which issues only `GET /control/clients`. `Clients()` also issues `GET /control/blocked_services/get` and fails as a whole if either call fails (`internal/adguard/clients.go:50-63`). `adguardtest.Server.SetStatus` is keyed per path. So forcing `/control/blocked_services/get` to 500 makes the engine's baseline read fail while AddClient's own pre-read still succeeds. A CreateClient that ignored the read error would now POST `/control/clients/add`, and `TestCreateClient_ReadFails` would catch it.
+- [strength] `TestCreateClient_Serialised` replaces the old `-race` x50 `TestCreateClient_Race`. That test's `MaxInFlightUpdates() == 1` assertion was already guaranteed by the adguard client's own `rmw` mutex, so it said nothing about `e.mu`. The new test holds `e.eng.mu` directly; the field exists in `internal/grants/grants.go:98` and `env.eng` in `grants_test.go:133`. It then asserts zero fake requests and that CreateClient has not returned. The test is deterministic, so a mutant that skips the lock or takes a different one fails it reliably.
+- [strength] Every FLAG from the previous review has been addressed. The same-child stale-mapping PK case is specified and tested in t-2 (`TestRenameClient_SelfStale`, `TestAddChildClient_SelfStale`), t-9 (`TestRename_SelfStale`) and t-10 (`TestCreateClient_SelfStale`). The POST-path 502 has its own test (`TestCreateClient_ReadUnavailable`). t-1's vague "existing suites fail" line is now the concrete `TestClients_Fixture`. t-8 lists `Children.test.ts`. The revised `new_client_blocked_set` is committed in spec.toml, and `git diff HEAD` on spec.toml is empty.
+- [test-contract] `TestCreateClient_Serialised` only proves that `e.mu` is taken before the first AdGuard request. It does not prove the lock is held through `AddClient` and `AddChildClient`, so a mutant that locks only the baseline read would pass. I traced the interleavings with grant Create, End and expiry. In each one the new client keeps the granted service blocked: the baseline either already contains it as a sibling's blocked service or adds it as a grant service. So the gap is benign and needs no plan change.
+- [test-contract] `TestCreateClient_ReadFails` does not name the child. Only an assigned create (for example `CreateClient(TV, Ada)`) needs a baseline read. An unassigned create may legitimately skip the read and POST the add. The phrase "failed baseline read" implies an assigned create. The writer should still use one, or the test fails against correct code.
+- [test-contract] `TestCreateClient_StoreFails` deliberately leaves the AdGuard client in place after `AddChildClient` fails. The client has its own baseline list and the flag false, and there is no compensating delete. That errs toward more blocking and the device can be re-assigned through PUT children, so it is safe. Unlike t-9's rename, nothing compensates here. Record it as a known residual case.
+- [antipattern] `listClients()` in `web/src/lib/api.ts:236` now has no production caller; `Children.load` uses `listDevices()` since t-6. t-3 kept it on the assumption that Children.svelte still called it. It is dead code and can be removed in a quick task.
+- [coverage] All 7 criteria are still covered: c-1 (t-1, t-4, t-10), c-2 (t-1, t-5, t-10), c-3 (t-2, t-7, t-10), c-4 (t-3, t-6), c-5 (t-6), c-6 (t-1, t-2, t-3, t-5, t-8, t-9, t-12), c-7 (t-5, t-7, t-11). The re-plan changed nothing in t-7's `covers`, files, description or `depends_on`, so the wave order and the pending dependants (t-9 and t-10 on t-7) are unaffected. No locked decision is contradicted, and no project rule (r-01 to r-04) is violated.
+
+## Summary
+The re-planned t-7 contract is correct against the actual code, and every previous review finding is resolved apart from the project-level non_goal wording, so the plan can proceed to re-execute t-7.
