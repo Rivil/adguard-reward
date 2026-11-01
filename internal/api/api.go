@@ -50,6 +50,7 @@ type Grants interface {
 	End(ctx context.Context, id int64) error
 	CreateClient(ctx context.Context, name string, ids []string, childID *int64) error
 	AdoptClients(ctx context.Context, childID int64, siblings, added []string) error
+	RenameClient(ctx context.Context, oldName, newName string) error
 }
 
 // ButtonStore is the slice of *store.Store the buttons handlers need. It
@@ -112,6 +113,7 @@ func (a *API) routes() {
 	a.mux.Handle("GET /api/v1/children/{id}/blocked", a.requireSession(http.HandlerFunc(a.handleBlocked)))
 	a.mux.Handle("GET /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClients)))
 	a.mux.Handle("POST /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClientCreate)))
+	a.mux.Handle("POST /api/v1/clients/rename", a.requireSession(http.HandlerFunc(a.handleClientRename)))
 	a.mux.Handle("GET /api/v1/services", a.requireSession(http.HandlerFunc(a.handleServices)))
 	a.mux.Handle("GET /api/v1/migration", a.requireSession(http.HandlerFunc(a.handleMigrationOffer)))
 	a.mux.Handle("POST /api/v1/migration", a.requireSession(http.HandlerFunc(a.handleMigrationApply)))
