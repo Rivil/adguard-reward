@@ -2,5 +2,362 @@
   "phase": "auto-client-labelling",
   "base": "milestone/v0.1",
   "base_commit": "b7e1f3f73b708611758ae7b1bb3b90d7460e7c87",
-  "tasks": {}
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go",
+        "internal/adguard/adguardtest/testdata/clients.json",
+        "internal/adguard/adguardtest/testdata/dhcp_status.json"
+      ],
+      "commit": "cfa6c17",
+      "completed_at": "2026-11-01T13:51:28.156014Z",
+      "landmarks": [
+        {
+          "feature": "fake AdGuard Home for tests",
+          "symbol": "Server.handleAdd",
+          "loc": "internal/adguard/adguardtest/server.go:512",
+          "what": "fake serves clients/add with duplicate name/id rejection, DHCP status leases, rename-collision 400, auto_clients/lease knobs"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/store/clients.go",
+        "internal/store/clients_test.go"
+      ],
+      "commit": "62deec9",
+      "completed_at": "2026-11-01T13:53:53.859177Z",
+      "landmarks": [
+        {
+          "feature": "client rename",
+          "symbol": "Store.RenameClient",
+          "loc": "internal/store/clients.go:28",
+          "what": "one-tx rename of a client's child mapping and active grants' stored clients, with stale-self dedupe and cross-child conflict"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts"
+      ],
+      "commit": "48c0c29",
+      "completed_at": "2026-11-01T13:55:02.531872Z",
+      "landmarks": [
+        {
+          "feature": "device labelling UI",
+          "symbol": "listDevices",
+          "loc": "web/src/lib/api.ts:258",
+          "what": "SPA client for unlabelled devices, client create (optional child) and rename"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/adguard/clients.go",
+        "internal/adguard/clients_test.go",
+        "internal/adguard/devices.go",
+        "internal/adguard/devices_test.go"
+      ],
+      "commit": "f82ad7b",
+      "completed_at": "2026-11-01T13:57:21.635178Z",
+      "landmarks": [
+        {
+          "feature": "unlabelled device discovery",
+          "symbol": "Unlabelled",
+          "loc": "internal/adguard/devices.go:60",
+          "what": "auto_clients not covered by a persistent IP, CIDR or leased MAC, sorted by hostname with [ip] or [ip, mac] suggested ids"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/adguard/clients_write.go",
+        "internal/adguard/clients_write_test.go"
+      ],
+      "commit": "ef70342",
+      "completed_at": "2026-11-01T14:00:06.108618Z",
+      "landmarks": [
+        {
+          "feature": "AdGuard client writes",
+          "symbol": "Client.AddClient",
+          "loc": "internal/adguard/clients_write.go:55",
+          "what": "locked add/rename/adopt of persistent clients with name and canonical-id pre-checks and 400 surfaced as InputRejectedError"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "web/src/lib/UnlabelledDevices.svelte",
+        "web/src/lib/UnlabelledDevices.test.ts",
+        "web/src/lib/Children.svelte",
+        "web/src/lib/Children.test.ts"
+      ],
+      "commit": "70bfe89",
+      "completed_at": "2026-11-01T14:02:36.890572Z",
+      "landmarks": [
+        {
+          "feature": "device labelling UI",
+          "symbol": "UnlabelledDevices",
+          "loc": "web/src/lib/UnlabelledDevices.svelte:44",
+          "what": "children page lists unlabelled devices with prefilled name/ids and optional child; save creates the client and reloads without a page refresh"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "web/src/lib/ClientNames.svelte",
+        "web/src/lib/ClientNames.test.ts",
+        "web/src/lib/Children.svelte"
+      ],
+      "commit": "5ab554d",
+      "completed_at": "2026-11-01T14:09:43.497611Z",
+      "landmarks": [
+        {
+          "feature": "device labelling UI",
+          "symbol": "ClientNames",
+          "loc": "web/src/lib/ClientNames.svelte:23",
+          "what": "inline rename of any persistent client from the children page, reloading drafts from the server on success"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "handleAdd matches ids case-insensitively (strings.EqualFold) but matches names exactly, both on add and on the rename-collision check; this is consistent with indexOf but means a case-variant name ('kid phone') is accepted",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestFake_AddCountsInFlight relies on a 300ms Hang to make the two adds overlap; it is deterministic enough because both requests sit in the delay with inFlight already incremented",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-6",
+          "text": "RenameClient with an unmapped oldName skips child_clients but still runs the grant_clients dedupe DELETE and UPDATE, so active grants holding oldName get renamed. The task record says an unmapped old is a no-op. That only holds for child_clients, and the doc comment only says child_clients is left alone. The behaviour is arguably correct for c-6, but it is undocumented and untested: TestRenameClient_Unmapped creates no grants, so its dumpClientTables check cannot see grant_clients being written.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "AddChildClient trims and rejects blank names, but RenameClient takes oldName/newName as given (no trim, no empty check). A blank or whitespace-padded newName would be written as-is.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Reusing *ErrClientTaken as clientOwner's return type keeps the conflict path short. The Taken test checks that both tables are byte-identical after a rejected rename, including when oldName is unmapped.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "listDevices defaults both keys with ?? [], while listClients still returns res.clients unguarded; it can return undefined if the server leaves out clients, but that is existing behaviour and outside this task's claim",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-1",
+          "text": "An auto IP with an IPv6 zone (e.g. fe80::1%eth0) never matches a persistent id written without the zone, because netip keeps the zone in Addr equality, so such a device would be listed as unlabelled even though a persistent client names it. This is a rare path.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "A MAC-only persistent client covers an auto IP only when AdGuard's own DHCP server leased that IP. On networks using an external DHCP server those devices will appear as unlabelled. This matches the task description but is worth knowing for UX.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestUnlabelled_Fixture runs Clients, Leases and Unlabelled together against the fake server, beyond what the contract asks, and TestUnlabelled_LeasedMAC uses a dash-separated uppercase MAC, which also exercises MAC canonicalisation.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRenameClient_PreservesRaw compares the other raw fields by their decoded values (asAny + DeepEqual), not byte for byte as the test_contract says. The implementation copies the raw bytes unchanged, so behaviour is right, but the test would not catch something that rewrites the bytes without changing the values, such as re-encoding.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "When a client uses the global list, AdoptBlockedServices replaces any stale per-client blocked_services with global plus ids. That matches 'effective set' because AdGuard ignores the per-client list while use_global_blocked_services is true.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Only AddClient and RenameClient map AdGuard 400s to InputRejectedError. AdoptBlockedServices still returns a raw *StatusError on 400, which is consistent with the other updateClient writers.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "onCreated is wired as () =\u003e run(load); because run defaults reloadOnError=true, a failed post-create load immediately calls load a second time. It's harmless, but run(load, false) would be clearer.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "UnlabelledDevices clears edits[d.ip] before awaiting onCreated. If the refresh then fails, the still-listed row goes back to its hostname prefill. That's acceptable because the create already succeeded, and a retry would get a 409.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Pre-existing Children tests serve GET /api/v1/clients without an unlabelled key. listDevices defaults that to [], so those pages now show the empty-state sentence. This is consistent with the new behaviour.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "exhausted",
+      "rounds": 2,
+      "cause": "still blocked after the one fix round",
+      "findings": [
+        {
+          "round": 1,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-3",
+          "text": "test_contract 'if a failed read still adds, TestCreateClient_ReadFails fails' is not met: the test forces /control/clients to 500, but adguard.Client.AddClient reads /control/clients again before posting, so a CreateClient that ignored the baseline read error and called AddClient would still make no add POST and return an error. The test passes on the fault it is meant to catch. Force /control/blocked_services/get to 500 instead, so Clients() fails while AddClient's own read succeeds.",
+          "resolution": "unresolved — task failed"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "In TestCreateClient_Race, the 'TV blocks youtube after End' check holds in any order, because the grant row is stored before the unblock and ListActiveGrants feeds the baseline. Only the MaxInFlightUpdates==1 check can catch CreateClient escaping e.mu, and it depends on timing (1ms hangs over 50 runs).",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "AdoptClients does not check that childID exists. Its tests pass id 1 with no child row, so an unknown child just gets the global/sibling baseline. That is fine as long as the caller (the PUT handler) has already checked the child.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "RenameClient is added to both the engine's Store and AdGuard interfaces but nothing in this diff uses it yet; the task description says only to extend the interfaces.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-3",
+          "text": "test_contract says TestCreateClient_Race fails if CreateClient escapes e.mu, but it cannot: Engine.Create saves the grant before unblocking, so an unlocked CreateClient gets youtube either from Kid phone's list (read before the unblock) or from ListActiveGrants (read after); CreateClient sends no /control/clients/update, so MaxInFlightUpdates stays 1 regardless, and there is no shared engine state for -race to flag. The race that needs the lock is a revert (End/expiry) between the baseline read and the add; the test must drive that interleaving.",
+          "resolution": "unresolved — task failed"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "AdoptClients pre-filters added names against the Clients() read, so the errors.Is(err, adguard.ErrClientNotFound) skip in the adopt loop is never exercised: TestAdoptClients_Ghost passes with or without that branch. Only a client removed between the read and AdoptBlockedServices would reach it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "AdoptClients does not check that childID exists; an unknown id just finds no grants and uses the siblings/global baseline. Presumably the PUT handler validates the child first.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Interface additions (Store.GetChild/AddChildClient/RenameClient, AdGuard.AddClient/AdoptBlockedServices/RenameClient) match existing *store.Store and *adguard.Client methods; the RenameClient pair has no engine caller yet (presumably a sibling task).",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "While a rename request is in flight, only ClientNames' own `pending` is set; Children's `pending` stays false until onRenamed runs. A child's Save or Delete can therefore run alongside the rename, for example an updateChild that sends the old client name while the server is renaming it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "A successful rename reloads the page through Children.load, which rebuilds every child's drafts from the server, so unsaved checkbox or name edits on child forms are discarded. This is intended by the task description.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The extra test 'trims the new name and locks while a rename is out' covers trimming, rejecting a second submit, and disabling the other rows while a rename is pending.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
 }
