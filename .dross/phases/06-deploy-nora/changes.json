@@ -100,6 +100,21 @@
         }
       ]
     },
+    "t-7": {
+      "files": [
+        "Makefile"
+      ],
+      "commit": "0e42bdc",
+      "completed_at": "2026-11-01T08:34:52.344956Z",
+      "landmarks": [
+        {
+          "feature": "nora deployment",
+          "symbol": "deploy-nora",
+          "loc": "Makefile:50",
+          "what": "live deploy to nora observed green; healthz version matches git describe; grants revert server-side in production"
+        }
+      ]
+    },
     "t-8": {
       "files": [
         "Makefile",
