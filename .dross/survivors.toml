@@ -1150,3 +1150,39 @@
   line = 6
   accepted_in = "auto-client-labelling"
   reason = "Dead default: the only caller (Children.svelte:169) always passes disabled={pending}, so the 'disabled = false' prop default is never read in the app."
+
+[[accepted]]
+  key = "e36715b66a65a1bc"
+  file = "internal/adguard/devices.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case xerr == nil:"
+  line = 156
+  accepted_in = "auto-client-labelling"
+  reason = "Killed when applied by hand: flipping to 'xerr != nil' fails TestUnlabelled_UnparseableIPOrder (checked 2026-11-01, sibling :157 mutants killed by gremlins in the same run). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "602256014df6b282"
+  file = "internal/adguard/devices.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case yerr == nil:"
+  line = 158
+  accepted_in = "auto-client-labelling"
+  reason = "Killed when applied by hand: flipping to 'yerr != nil' fails TestUnlabelled_UnparseableIPOrder (aa-host/zz-host order inverts; checked 2026-11-01). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "3ee630b90804020d"
+  file = "web/src/lib/UnlabelledDevices.svelte"
+  op = "ConditionalExpression"
+  text = "<option value=\"\" selected={childOf(d) === ''}>No child</option>"
+  line = 95
+  accepted_in = "auto-client-labelling"
+  reason = "Equivalent: 'No child' is the select's first option, so when its selected is false and no child matches, the browser's selectedness fallback selects it anyway; when a child matches, that option's selected=true wins regardless. No observable DOM or request difference (scoped stryker 2026-11-01: :95 true and !== are killed by the picker test, this one cannot be)."
+
+[[accepted]]
+  key = "c8895e1cbdf85dad"
+  file = "web/src/lib/UnlabelledDevices.svelte"
+  op = "StringLiteral"
+  text = "<option value=\"\" selected={childOf(d) === ''}>No child</option>"
+  line = 95
+  accepted_in = "auto-client-labelling"
+  reason = "Equivalent to the :95 ConditionalExpression false mutant: comparing childOf(d) to a non-existent value is always false, and 'No child' as the first option is the select's fallback selection either way."
