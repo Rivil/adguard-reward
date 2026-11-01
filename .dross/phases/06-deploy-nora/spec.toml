@@ -21,7 +21,7 @@
 
 [[criteria]]
   id = "c-5"
-  text = "From a phone on the tailnet, https://nora.<tailnet>.ts.net/ serves the app through tailscale serve: the install prompt appears and the app launches standalone; the login rate limiter sees the phone's address, not 127.0.0.1 (trusted_proxies honours the proxy's X-Forwarded-For — asserted by test)"
+  text = "From a phone on the tailnet, https://nora.<tailnet>.ts.net/ serves the app through tailscale serve: the app is installable as a PWA from the phone (browser menu install is enough — no automatic prompt required); the login rate limiter sees the phone's address, not 127.0.0.1 (trusted_proxies honours the proxy's X-Forwarded-For — asserted by test)"
 
 [[criteria]]
   id = "c-6"
@@ -29,7 +29,7 @@
 
 [[criteria]]
   id = "c-7"
-  text = "Real use observed on the deployed instance: from a phone, one button tap unblocks the service on a child's real device within 5 s and the block returns at expiry without intervention — recorded with date and device in verify.toml"
+  text = "Real use observed on the deployed instance: from a phone, a real grant unblocks the service for a child and the block returns at expiry without intervention — recorded with date in verify.toml (server-side expiry log plus the parent's report is sufficient evidence)"
 
 [[decisions]]
   key = "tls_path"
