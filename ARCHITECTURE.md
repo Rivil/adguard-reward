@@ -72,6 +72,15 @@ _introduced 02-auth-sessions · fbbf1fc_
 
 _introduced 01-config-adguard-client · 3951cf9 · extended 02-auth-sessions · e58f0e9 · extended 04-grants-scheduler-reconciler · cdc438e · extended 05-phone-ui-buttons-pwa · 2109098_
 
+### Build and release
+
+`make build` produces the single static binary (`CGO_ENABLED=0`, SPA embedded); `make build-linux` cross-builds it for linux/amd64 with the `git describe` version stamped via `-X main.version` (reported by `/healthz`), split into `build-web` + `build-linux-bin` so the build test can compile without racing the embed.
+
+- build-linux — Makefile:39
+- build-linux-bin — Makefile:44
+
+_introduced 06-deploy-nora · 2bb312a_
+
 ### Button presets
 
 A parent's one-tap presets `{id, label, child_id, services[], duration}` stored in order (`buttons` + `button_services`, migration 0004) and replaced atomically as a whole list — `ReplaceButtons` answers a typed `ErrUnknownChild`, `ListButtons` reads one snapshot. The `/buttons` settings page lists them in array order with Edit/Delete and one label + grant-form editor; every save PUTs the whole list (minutes → seconds, ids stripped) and re-renders from the response, a failure keeps the draft. No reorder controls and no custom icon (M2 button editor).
@@ -115,12 +124,13 @@ _introduced 03-children-and-blocked-view · ed235b1 · 275c341 · 63d8347_
 
 ### Configuration loading
 
-YAML file plus `ADGUARD_REWARD_*` env overrides (defaults < file < env; a blank env var overrides to empty) with `password_file` / `api_key_file` indirection, validation that names the dotted key (`tls.cert` / `tls.key` both-or-neither, `trusted_proxies` as CIDRs), and a `Secret` type that redacts under fmt, JSON and slog.
+YAML file plus `ADGUARD_REWARD_*` env overrides (defaults < file < env; a blank env var overrides to empty) with `password_file` / `api_key_file` indirection, validation that names the dotted key (`tls.cert` / `tls.key` both-or-neither, `trusted_proxies` as CIDRs), an unset `data_dir` falling back to systemd's `$STATE_DIRECTORY` (first `:`-entry) and then `./data`, and a `Secret` type that redacts under fmt, JSON and slog.
 
-- config.Load — internal/config/config.go:112
+- config.Load — internal/config/config.go:119
+- resolveDataDir — internal/config/config.go:168
 - config.Secret — internal/config/secret.go:14
 
-_introduced 01-config-adguard-client · f7db57d · extended 02-auth-sessions · a7b630a_
+_introduced 01-config-adguard-client · f7db57d · extended 02-auth-sessions · a7b630a · extended 06-deploy-nora · a724814_
 
 ### Global-list migration
 
@@ -156,14 +166,15 @@ _introduced 04-grants-scheduler-reconciler · 13dc7bb_
 
 ### Grant reconciliation
 
-One pass under the engine mutex reads AdGuard once, reverts every grant past `ends_at` the timer missed, removes any granted service id that has reappeared in a covered client's `blocked_services` (a parent re-blocked it in AdGuard's UI), and re-arms missing expiry timers; a pass with nothing to do issues no writes. `Start` runs the pass before the HTTP listener accepts, `Run` loops it on an injectable interval (60 s in production).
+One pass under the engine mutex reads AdGuard once, reverts every grant past `ends_at` the timer missed, removes any granted service id that has reappeared in a covered client's `blocked_services` (a parent re-blocked it in AdGuard's UI), and re-arms missing expiry timers; a pass with nothing to do issues no writes. `Start` runs the pass before the HTTP listener accepts, `Run` loops it on an injectable interval (60 s in production) and logs a failed pass as an error, a pass that reverted or repaired as info, and a no-op pass not at all.
 
 - Engine.Reconcile — internal/grants/reconcile.go:32
 - Engine.Start — internal/grants/reconcile.go:112
 - Engine.Run — internal/grants/reconcile.go:123
+- TestReconcile_RunLogs — internal/grants/reconcile_test.go:356
 - run — cmd/adguard-reward/main.go:59
 
-_introduced 04-grants-scheduler-reconciler · 29444c6 · cdc438e_
+_introduced 04-grants-scheduler-reconciler · 29444c6 · cdc438e · extended 06-deploy-nora · 43e3917_
 
 ### Grants API
 
@@ -194,6 +205,18 @@ Signed-in landing page: the active-grant panel first, then each child's buttons 
 - Home.migrated — web/src/lib/Home.svelte:191
 
 _introduced 03-children-and-blocked-view · 88699ad · extended 05-phone-ui-buttons-pwa · f323709_
+
+### Host deployment
+
+`make deploy-nora` builds linux/amd64, refuses a non-x86_64 host, stages binary + systemd unit + secret-free config template over ssh and runs the root installer: first run scaffolds config and credential and exits 3 without starting the service, then it installs under `DynamicUser` + `StateDirectory` with the AdGuard password via `LoadCredential`, puts `tailscale serve` on 443 in front of the loopback listener, and gates on `/healthz` reporting the just-built version (exit 4 on mismatch).
+
+- deploy-nora — Makefile:50
+- adguard-reward.service — deploy/adguard-reward.service:13
+- config.nora.yaml — deploy/config.nora.yaml:1
+- install-nora.sh — deploy/install-nora.sh:146
+- TestRun_NoraConfig — cmd/adguard-reward/main_test.go:1367
+
+_introduced 06-deploy-nora · 4207265 · 915daf4 · 15f4409_
 
 ### Login and logout
 
