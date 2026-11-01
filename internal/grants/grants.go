@@ -55,6 +55,7 @@ type Store interface {
 	ExtendGrant(ctx context.Context, id int64, newEndsAt time.Time) (store.Grant, error)
 	SetGrantStatus(ctx context.Context, id int64, from, to string, at time.Time) (bool, error)
 	GetChild(ctx context.Context, id int64) (store.Child, error)
+	ListChildren(ctx context.Context) ([]store.Child, error)
 	AddChildClient(ctx context.Context, childID int64, name string) error
 	RenameClient(ctx context.Context, oldName, newName string) error
 }
