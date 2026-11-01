@@ -156,7 +156,7 @@ AddChildClient. AdoptClients(childID, siblings, added) adopts per name, skipping
 """
   covers = ["c-3", "c-7"]
   test_contract = ["if grant services are left out of the baseline, TestCreateClient_Baseline fails: Ada has an active youtube grant (Kid phone now [tiktok]); CreateClient(TV, Ada) must give the fake's TV [tiktok, youtube] with the flag false", "if a new device inherits the temporary unblock, TestCreateClient_SurvivesExpiry fails: after the clock passes ends_at, TV is still [tiktok, youtube], no update POST names \"TV\", and the grant is expired with stored clients unchanged", "if other children's grants leak in, TestCreateClient_OtherChildGrant fails: Ben's active [tiktok] grant must not enter Ada's baseline", "if a use_global sibling is read as its own list, TestBaseline_GlobalSibling fails: a sibling with use_global=true contributes the global list", "if the first-device fallback is missing, TestCreateClient_FirstDevice fails: a child with no other clients and no grants -> the new client's own list equals the global list [roblox, tiktok] with use_global_blocked_services=false (an empty list fails)", "if an unassigned create gets a baseline, TestCreateClient_NoChild fails: no child -> the fake's client has use_global_blocked_services=true", "if adopt drops inherited blocks, TestAdoptClients_Inherited fails: AdoptClients(Ada, [\"Kid phone\"], [\"Kid tablet\"]) -> Kid tablet [roblox, tiktok, youtube] with the flag false", "if unknown clients error, TestAdoptClients_Ghost fails: added [\"Ghost\"] -> nil error and 0 update POSTs", "if empty adopt still talks to AdGuard, TestAdoptClients_Empty fails: AdoptClients(ada, _, nil) issues zero AdGuard requests", "if CreateClient escapes e.mu, TestCreateClient_Serialised fails: with the test holding e.eng.mu, CreateClient(TV, Ada) started in a goroutine issues zero fake requests (Requests() length unchanged) and has not returned after 100ms; after Unlock it returns nil and the fake's TV holds the baseline [tiktok, youtube]", "if a store failure is masked, TestCreateClient_StoreFails fails: AddChildClient error after the add -> client exists in AdGuard with the baseline list, error returned, mapping unchanged", "if a failed baseline read still adds, TestCreateClient_ReadFails fails: /control/blocked_services/get forced 500 (so AdGuard Clients() errors while AddClient's own /control/clients pre-read would still succeed) -> no /control/clients/add POST, error returned"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-8"
@@ -189,7 +189,7 @@ then Store.RenameClient. On store failure, rename back in AdGuard and return an 
 """
   covers = ["c-6"]
   test_contract = ["if the store rename is skipped, TestRename_GrantExpiryReverts fails: youtube grant on Ada over \"Kid phone\" -> rename to \"Ada phone\" -> clock past ends_at -> fake's \"Ada phone\" blocks youtube, no clients/update body names \"Kid phone\", grant expired", "if End uses stale names, TestRename_EndReverts fails: same set-up with End -> BlockedServices(\"Ada phone\") contains youtube", "if rename escapes e.mu, TestRename_TimerSerialised fails: a timer expiry fired while RenameClient holds the mutex (fake AfterFunc + Hang) runs after it, re-blocks \"Ada phone\", and never logs \"client gone\"", "if compensation is missing, TestRename_StoreFailCompensates fails: injected Store.RenameClient error -> AdGuard ends with \"Kid phone\" again (second clients/update observed) and the error is returned", "if the stale-mapping pre-check is missing, TestRename_StaleConflict fails: \"Ghost\" owned by Bob -> *store.ErrClientTaken with zero clients/update POSTs", "if same-name rename writes, TestRename_Noop fails: rename X->X issues zero requests", "if the self-stale case is treated as a conflict, TestRename_SelfStale fails: Ada holds stale \"TV\" (unknown to AdGuard) plus \"Kid phone\"; rename Kid phone->TV -> nil error, exactly one clients/update (no compensating rename back), Ada holds [\"TV\"]"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-10"
@@ -205,7 +205,7 @@ AdGuard/Grants interfaces gain Leases, CreateClient, AdoptClients; route registe
 """
   covers = ["c-1", "c-2", "c-3"]
   test_contract = ["if listing is cached or filtered wrong, TestClients_Unlabelled fails: GET lists printer with source \"ARP\" and omits 192.168.1.50; two GETs make two /control/clients reads; a row added via SetAutoClients between them appears in the second", "if a lease failure is fatal, TestClients_LeaseDegrade fails: /control/dhcp/status forced 500 -> GET still 200 with printer suggested_ids == [\"192.168.1.9\"]", "if AdGuard-down is mapped wrong, TestClients_Unavailable fails: /control/clients forced 500 -> 502 adguard_unavailable", "if the trim or empty-ids check is dropped, TestCreateClient_BadInput fails: name \"  \" -> 400 with zero AdGuard requests after login; ids [] -> 400", "if duplicates reach AdGuard, TestCreateClient_Conflict fails: \"Kid phone\" -> 409; ids [\"192.168.1.50\"] -> 409 naming \"Kid phone\"; zero adds in both", "if the timeout is missing, TestCreateClient_Timeout fails: Hang on /control/clients/add past ApplyTimeout -> 502, not a hang", "if pre-checks run after the write, TestCreateClient_ChildChecks fails: child_id 999 -> 404 with zero adds; \"Ghost\" (stale, Bob) with child_id Ada -> 409 with zero adds", "if create+assign is not one action, TestCreateClient_WithChild fails: {name:\"TV\", ids, child_id: Ada} -> 201; GET /children/{Ada} shows TV; GET /clients lists TV with child Ada and not as unlabelled; fake's TV has use_global_blocked_services=false", "if no-child create assigns anyway, TestCreateClient_NoChild fails: no child_id (and child_id null) -> 201 and no child lists it", "if an AdGuard 400 maps to 502, TestCreateClient_AdGuardRejects fails: AdGuard 400 on add -> 400 bad_request carrying AdGuard's message", "if the route skips the csrf chain, TestCreateClient_CSRF fails: no X-Requested-With -> 403", "if the create-path pre-read error maps to 500, TestCreateClient_ReadUnavailable fails: /control/clients forced 500 -> POST /clients returns 502 adguard_unavailable with zero /control/clients/add", "if a stale self-mapping breaks create, TestCreateClient_SelfStale fails: Ada holds stale \"TV\"; POST {name:\"TV\", ids, child_id: Ada} -> 201, fake has TV, Ada holds one \"TV\" (not a 500 with an orphaned AdGuard client)"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-11"
@@ -230,7 +230,7 @@ failure -> 502 naming the client, store untouched. Removals never call AdGuard.
     "if the store is written before AdGuard, TestChildUpdate_AdGuardFails fails: SetUpdateStatus(\"Old laptop\", 500) -> 502 naming Old laptop and GET /children/{Ada} still shows the old set",
     "if Ghost behaviour regresses, TestChildUpdate_Ghost fails: adding \"Ghost\" (unknown to AdGuard) -> 200, stored, 0 update POSTs",
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-12"
@@ -251,4 +251,4 @@ ErrClientExists or *ErrClientTaken -> 409, other AdGuard errors -> 502. Route re
     "if AdGuard-down leaves partial state, TestRename_Unavailable fails: AdGuard unreachable -> 502 and the store mapping is unchanged",
     "if the route skips the csrf chain, TestRename_CSRF fails: no X-Requested-With -> 403",
   ]
-  status = "pending"
+  status = "done"
