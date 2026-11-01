@@ -93,11 +93,18 @@ var envTable = []envEntry{
 	{"log_level", EnvPrefix + "LOG_LEVEL", func(c *Config, v string) { c.LogLevel = v }},
 }
 
+// defaultDataDir is where the database lands when neither the configuration
+// nor systemd names a directory.
+const defaultDataDir = "./data"
+
 // Defaults returns the configuration before any file or env is applied.
+//
+// DataDir is deliberately empty: it is resolved at the end of Load, because an
+// eager "./data" here would be indistinguishable from an explicit one and
+// would beat systemd's $STATE_DIRECTORY.
 func Defaults() *Config {
 	return &Config{
 		Listen:   ":8080",
-		DataDir:  "./data",
 		LogLevel: "info",
 	}
 }
@@ -134,6 +141,8 @@ func Load(path string, explicit bool, lookupEnv func(string) (string, bool)) (*C
 		}
 	}
 
+	cfg.DataDir = resolveDataDir(cfg.DataDir, lookupEnv)
+
 	if err := resolveSecretFile(baseDir, "adguard.password", "adguard.password_file",
 		cfg.AdGuard.PasswordFile, &cfg.AdGuard.Password); err != nil {
 		return nil, err
@@ -147,6 +156,25 @@ func Load(path string, explicit bool, lookupEnv func(string) (string, bool)) (*C
 		return nil, err
 	}
 	return cfg, nil
+}
+
+// resolveDataDir applies the data_dir fallback chain, in order: an explicit
+// value (YAML or ADGUARD_REWARD_DATA_DIR) wins; else systemd's
+// $STATE_DIRECTORY, a ":"-separated list whose first entry is this unit's own
+// state directory; else ./data. An empty string from any source means unset.
+//
+// STATE_DIRECTORY is the platform's variable, not one of ours, so it stays out
+// of envTable: it is a fallback beneath the config, never an override above it.
+func resolveDataDir(explicit string, lookupEnv func(string) (string, bool)) string {
+	if explicit != "" {
+		return explicit
+	}
+	if v, ok := lookupEnv("STATE_DIRECTORY"); ok {
+		if first, _, _ := strings.Cut(v, ":"); first != "" {
+			return first
+		}
+	}
+	return defaultDataDir
 }
 
 // splitList parses a comma-separated env value: entries are trimmed and

@@ -175,6 +175,110 @@ describe('GrantForm', () => {
     for (const b of boxes) expect(b.disabled).toBe(true)
   })
 
+  describe('search', () => {
+    // id deliberately differs from name so id-matching is distinguishable.
+    const roblox: Service = { id: 'rbx', name: 'Roblox', icon: 'PHN2Zy8+' }
+
+    function search(): HTMLInputElement {
+      return screen.getByLabelText('Search services') as HTMLInputElement
+    }
+
+    async function typeSearch(v: string) {
+      await fireEvent.input(search(), { target: { value: v } })
+    }
+
+    /** Names of the visible service rows, in render order. */
+    function rows(): string[] {
+      return [...document.querySelectorAll('ul.services li label')].map((l) => l.textContent!.replace(/\s+/g, ' ').trim())
+    }
+
+    it('filters by name, case-insensitively, ignoring surrounding space', async () => {
+      mount({ services: [youtube, tiktok, roblox] })
+      expect(rows()).toEqual(['YouTube', 'TikTok', 'Roblox'])
+      await typeSearch('  TUBE ')
+      expect(rows()).toEqual(['YouTube'])
+      await typeSearch('o')
+      expect(rows()).toEqual(['YouTube', 'TikTok', 'Roblox'])
+    })
+
+    it('filters by id', async () => {
+      mount({ services: [youtube, tiktok, roblox] })
+      await typeSearch('RBX')
+      expect(rows()).toEqual(['Roblox'])
+    })
+
+    it('never hides a ticked service, and never changes the value', async () => {
+      mount({ services: [youtube, tiktok, roblox] })
+      await fireEvent.click(checkbox('TikTok'))
+      await typeSearch('roblox')
+      expect(rows()).toEqual(['TikTok', 'Roblox'])
+      expect(checkbox('TikTok').checked).toBe(true)
+      expect(value().services).toEqual(['tiktok'])
+
+      // Ticking from a filtered list works; unticking a pinned row drops it from view.
+      await fireEvent.click(checkbox('Roblox'))
+      expect(value().services).toEqual(['tiktok', 'rbx'])
+      await fireEvent.click(checkbox('TikTok'))
+      expect(value().services).toEqual(['rbx'])
+      expect(rows()).toEqual(['Roblox'])
+    })
+
+    it('clear button appears with a query and resets the list', async () => {
+      mount({ services: [youtube, tiktok, roblox] })
+      expect(screen.queryByLabelText('Clear search')).toBeNull()
+      await typeSearch('tik')
+      expect(rows()).toEqual(['TikTok'])
+      await fireEvent.click(screen.getByLabelText('Clear search'))
+      expect(search().value).toBe('')
+      expect(rows()).toEqual(['YouTube', 'TikTok', 'Roblox'])
+      expect(screen.queryByLabelText('Clear search')).toBeNull()
+    })
+
+    it('says when nothing matches, and only then', async () => {
+      mount({ services: [youtube, tiktok] })
+      expect(document.querySelector('[data-no-match]')).toBeNull()
+      await typeSearch('  zzz ')
+      expect(rows()).toEqual([])
+      expect(document.querySelector('[data-no-match]')?.textContent).toContain('“zzz”')
+      await typeSearch('you')
+      expect(document.querySelector('[data-no-match]')).toBeNull()
+    })
+
+    it('no-match hint stays quiet for an empty catalogue or while an unknown id is listed', async () => {
+      const empty = mount({ services: [] })
+      expect(document.querySelector('[data-no-match]')).toBeNull()
+      empty.unmount()
+
+      mount({ services: [youtube], value: { child_id: 1, services: ['gone'], minutes: 30 } })
+      await typeSearch('zzz')
+      expect(rows()).toEqual(['gone not in AdGuard Home'])
+      expect(document.querySelector('[data-no-match]')).toBeNull()
+    })
+
+    it('Enter in the search box does not submit the surrounding form', async () => {
+      mount()
+      const ev = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true })
+      search().dispatchEvent(ev)
+      expect(ev.defaultPrevented).toBe(true)
+      const other = new KeyboardEvent('keydown', { key: 'a', bubbles: true, cancelable: true })
+      search().dispatchEvent(other)
+      expect(other.defaultPrevented).toBe(false)
+    })
+
+    it('follows disabled, and is absent without a catalogue', async () => {
+      const live = mount()
+      expect(search().disabled).toBe(false)
+      live.unmount()
+
+      const off = mount({ disabled: true })
+      expect(search().disabled).toBe(true)
+      off.unmount()
+
+      mount({ services: null })
+      expect(screen.queryByLabelText('Search services')).toBeNull()
+    })
+  })
+
   it('null catalogue', () => {
     const stored = mount({ services: null, value: { child_id: 1, services: ['youtube', 'tiktok'], minutes: 60 } })
     expect(document.querySelector('[data-unavailable]')).not.toBeNull()

@@ -74,6 +74,43 @@ func TestLoad_Defaults(t *testing.T) {
 	}
 }
 
+// TestLoad_StateDirectory pins the data_dir fallback chain: explicit beats
+// systemd's $STATE_DIRECTORY, which beats ./data. Under the unit the process
+// has no writable cwd, so a regression here crash-loops the service rather
+// than failing visibly.
+func TestLoad_StateDirectory(t *testing.T) {
+	dir := t.TempDir()
+	noKey := writeFile(t, dir, "config.yaml", minimalYAML)
+	withKey := writeFile(t, dir, "explicit.yaml", minimalYAML+"data_dir: \"/var/lib/reward\"\n")
+
+	cases := []struct {
+		name string
+		path string
+		env  map[string]string
+		want string
+	}{
+		{"systemd", noKey, map[string]string{"STATE_DIRECTORY": "/var/lib/x"}, "/var/lib/x"},
+		{"explicit", withKey, map[string]string{"STATE_DIRECTORY": "/other"}, "/var/lib/reward"},
+		{"env", noKey, map[string]string{"ADGUARD_REWARD_DATA_DIR": "/e", "STATE_DIRECTORY": "/s"}, "/e"},
+		// Set-but-empty is "unset", not a value: it must not win over systemd.
+		{"env/blank", noKey, map[string]string{"ADGUARD_REWARD_DATA_DIR": "", "STATE_DIRECTORY": "/s"}, "/s"},
+		// StateDirectory= may name several dirs; the unit's own is the first.
+		{"list", noKey, map[string]string{"STATE_DIRECTORY": "/a:/b"}, "/a"},
+		{"list/blank", noKey, map[string]string{"STATE_DIRECTORY": ""}, "./data"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, err := Load(tc.path, true, env(tc.env))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.DataDir != tc.want {
+				t.Fatalf("data_dir = %q, want %q (env %v)", cfg.DataDir, tc.want, tc.env)
+			}
+		})
+	}
+}
+
 func TestLoad_MissingRequired(t *testing.T) {
 	for _, key := range []string{"adguard.url", "adguard.username", "adguard.password"} {
 		t.Run(key, func(t *testing.T) {
@@ -154,6 +191,14 @@ func TestEnvTable(t *testing.T) {
 	for key := range got {
 		if !leaves[key] {
 			t.Errorf("envTable row %q names no config leaf", key)
+		}
+	}
+
+	// STATE_DIRECTORY is systemd's own variable and only a fallback beneath
+	// data_dir — promoting it to a row would make it beat the config file.
+	for _, e := range envTable {
+		if !strings.HasPrefix(e.env, EnvPrefix) {
+			t.Errorf("envTable row %q names %q; overrides must be %s*, and STATE_DIRECTORY is a fallback, not a key", e.key, e.env, EnvPrefix)
 		}
 	}
 
@@ -463,5 +508,19 @@ func TestExampleConfigLoads(t *testing.T) {
 	}
 	if n := cfg.TrustedProxyNets(); len(n) != 0 {
 		t.Fatalf("example trusted_proxies = %v, want empty", n)
+	}
+	if cfg.DataDir != "./data" {
+		t.Fatalf("example data_dir = %q, want ./data", cfg.DataDir)
+	}
+
+	// The shipped file must carry no literal data_dir, or systemd's
+	// StateDirectory can never reach the binary.
+	cfg, err = Load("../../deploy/config.example.yaml", true,
+		env(mergeMaps(requiredEnv, map[string]string{"STATE_DIRECTORY": "/s"})))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.DataDir != "/s" {
+		t.Fatalf("example data_dir with STATE_DIRECTORY = %q, want /s (a literal data_dir key beats it)", cfg.DataDir)
 	}
 }

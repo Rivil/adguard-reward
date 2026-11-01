@@ -50,6 +50,21 @@
   // dropped behind the parent's back.
   const unknown = $derived(services === null ? [] : value.services.filter((id) => !services.some((s) => s.id === id)))
 
+  // Search narrows the checklist only; it never touches the bound value.
+  let query = $state('')
+  const needle = $derived(query.trim().toLowerCase())
+  // Ticked rows always stay visible, so a filter can't hide what a save keeps.
+  const shown = $derived(
+    services === null
+      ? []
+      : needle === ''
+        ? services
+        : services.filter(
+            (s) =>
+              value.services.includes(s.id) || s.name.toLowerCase().includes(needle) || s.id.toLowerCase().includes(needle),
+          ),
+  )
+
   function pickChild(e: Event & { currentTarget: HTMLSelectElement }) {
     const raw = e.currentTarget.value
     value = { ...value, child_id: raw === '' ? null : Number(raw) }
@@ -91,8 +106,17 @@
         <p class="hint">Keeps: {value.services.join(', ')}</p>
       {/if}
     {:else}
+      <div class="search">
+        <input type="search" name="service-search" aria-label="Search services" placeholder="Search services…" autocomplete="off" bind:value={query} onkeydown={(e) => e.key === 'Enter' && e.preventDefault()} {disabled} />
+        {#if query !== ''}
+          <button type="button" aria-label="Clear search" onclick={() => (query = '')} {disabled}>✕</button>
+        {/if}
+      </div>
+      {#if needle !== '' && shown.length === 0 && unknown.length === 0}
+        <p class="hint" data-no-match>No services match “{query.trim()}”</p>
+      {/if}
       <ul class="services">
-        {#each services as s (s.id)}
+        {#each shown as s (s.id)}
           <li>
             <label>
               <input
@@ -159,6 +183,21 @@
   input[type='number'] {
     font: inherit;
     padding: 0.5rem;
+    min-height: 2.75rem;
+  }
+  .search {
+    display: flex;
+    gap: 0.25rem;
+  }
+  .search input {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    padding: 0.5rem;
+    min-height: 2.75rem;
+  }
+  .search button {
+    min-width: 2.75rem;
     min-height: 2.75rem;
   }
   .services {

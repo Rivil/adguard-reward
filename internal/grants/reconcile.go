@@ -129,10 +129,14 @@ func (e *Engine) Run(ctx context.Context, interval time.Duration) {
 			return
 		case <-t.C:
 			st, err := e.Reconcile(ctx)
-			switch {
-			case err != nil && ctx.Err() == nil:
+			// if/else rather than a two-arm switch: Go's coverage profile
+			// starts a block *after* a `case` colon, so a switch condition
+			// sits outside every block and a mutation tester can never reach
+			// it. These two conditions decide which line a pass emits, and
+			// the log is the only place that decision is observable.
+			if err != nil && ctx.Err() == nil {
 				e.log.Error("reconcile failed", "err", err)
-			case st.Reverted > 0 || st.Repaired > 0:
+			} else if st.Reverted > 0 || st.Repaired > 0 {
 				e.log.Info("reconcile", "grants", st.Grants, "reverted", st.Reverted, "repaired", st.Repaired)
 			}
 		}
