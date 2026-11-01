@@ -13,6 +13,7 @@
     type UnlabelledDevice,
   } from './api'
   import UnlabelledDevices from './UnlabelledDevices.svelte'
+  import ClientNames from './ClientNames.svelte'
 
   let { onBack }: { onBack: () => void } = $props()
 
@@ -165,6 +166,7 @@
 
   {#if loaded}
     <UnlabelledDevices devices={unlabelled} {children} disabled={pending} onCreated={() => run(load)} />
+    <ClientNames {clients} disabled={pending} onRenamed={() => run(load)} />
   {/if}
 </main>
 
