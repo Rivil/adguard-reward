@@ -25,18 +25,29 @@ type PersistentClient struct {
 	raw map[string]json.RawMessage
 }
 
-// ClientsResult is what Clients returns: the persistent clients plus the
-// global blocked-services list they inherit when use_global_blocked_services
-// is set.
+// AutoClient is a runtime client AdGuard discovered by itself (ARP, rDNS,
+// DHCP, WHOIS, etc/hosts) — a device it has seen, not one a parent named.
+// Hostname is AdGuard's "name" for it and may be blank.
+type AutoClient struct {
+	IP       string
+	Hostname string
+	Source   string
+}
+
+// ClientsResult is what Clients returns: the persistent clients, the auto
+// clients from the same /control/clients read, and the global
+// blocked-services list persistent clients inherit when
+// use_global_blocked_services is set. AutoClients is never nil.
 type ClientsResult struct {
 	Persistent            []PersistentClient
+	AutoClients           []AutoClient
 	GlobalBlockedServices []string
 }
 
 // Clients reads GET /control/clients and GET /control/blocked_services/get.
 // If either call fails the error is returned with no partial result.
 func (c *Client) Clients(ctx context.Context) (ClientsResult, error) {
-	persistent, err := c.readClients(ctx)
+	persistent, auto, err := c.readDoc(ctx)
 	if err != nil {
 		return ClientsResult{}, err
 	}
@@ -48,6 +59,7 @@ func (c *Client) Clients(ctx context.Context) (ClientsResult, error) {
 	}
 	return ClientsResult{
 		Persistent:            persistent,
+		AutoClients:           auto,
 		GlobalBlockedServices: nonNil(global.IDs),
 	}, nil
 }
@@ -55,14 +67,38 @@ func (c *Client) Clients(ctx context.Context) (ClientsResult, error) {
 // readClients fetches and decodes the persistent clients, keeping each raw
 // object for a later write. auto_clients are ignored.
 func (c *Client) readClients(ctx context.Context) ([]PersistentClient, error) {
+	persistent, _, err := c.readDoc(ctx)
+	return persistent, err
+}
+
+// readDoc is one GET /control/clients decoded into persistent clients (raw
+// objects kept) and auto clients. A null or missing auto_clients is [].
+func (c *Client) readDoc(ctx context.Context) ([]PersistentClient, []AutoClient, error) {
 	var doc struct {
-		Clients []map[string]json.RawMessage `json:"clients"`
+		Clients     []map[string]json.RawMessage `json:"clients"`
+		AutoClients []struct {
+			Name   string `json:"name"`
+			IP     string `json:"ip"`
+			Source string `json:"source"`
+		} `json:"auto_clients"`
 	}
 	if err := c.do(ctx, http.MethodGet, "/control/clients", nil, &doc); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	out := make([]PersistentClient, 0, len(doc.Clients))
-	for _, raw := range doc.Clients {
+	auto := make([]AutoClient, 0, len(doc.AutoClients))
+	for _, a := range doc.AutoClients {
+		auto = append(auto, AutoClient{IP: a.IP, Hostname: a.Name, Source: a.Source})
+	}
+	persistent, err := decodePersistent(doc.Clients)
+	if err != nil {
+		return nil, nil, err
+	}
+	return persistent, auto, nil
+}
+
+func decodePersistent(list []map[string]json.RawMessage) ([]PersistentClient, error) {
+	out := make([]PersistentClient, 0, len(list))
+	for _, raw := range list {
 		pc := PersistentClient{raw: raw}
 		if err := decodeField(raw, "name", &pc.Name); err != nil {
 			return nil, err

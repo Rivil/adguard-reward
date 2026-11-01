@@ -509,3 +509,36 @@ func TestRemoveAdd_NotFound(t *testing.T) {
 		t.Errorf("unknown client produced %d update POSTs, want 0", n)
 	}
 }
+
+func TestClients_SingleRead(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	res, err := c.Clients(context.Background())
+	if err != nil {
+		t.Fatal(err)
+	}
+	if n := s.CountRequests("GET", "/control/clients"); n != 1 {
+		t.Errorf("GET /control/clients count = %d, want 1", n)
+	}
+	if len(res.AutoClients) != 6 {
+		t.Fatalf("AutoClients = %d, want the 6 fixture rows", len(res.AutoClients))
+	}
+	if got := res.AutoClients[0]; got != (AutoClient{IP: "192.168.1.9", Hostname: "printer", Source: "ARP"}) {
+		t.Errorf("AutoClients[0] = %+v, want printer/192.168.1.9/ARP", got)
+	}
+}
+
+func TestClients_AutoClientsNull(t *testing.T) {
+	s := newFake(t)
+	c := newClient(t, s)
+	for _, body := range []string{`{"clients":[],"auto_clients":null}`, `{"clients":[]}`} {
+		s.SetResponse("/control/clients", 200, []byte(body))
+		res, err := c.Clients(context.Background())
+		if err != nil {
+			t.Fatal(err)
+		}
+		if res.AutoClients == nil || len(res.AutoClients) != 0 {
+			t.Errorf("%s: AutoClients = %#v, want [] not nil", body, res.AutoClients)
+		}
+	}
+}
