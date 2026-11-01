@@ -231,9 +231,46 @@ export function deleteChild(id: number): Promise<void> {
   return request<void>('DELETE', `${CHILDREN}/${id}`)
 }
 
+const CLIENTS = '/api/v1/clients'
+
 export async function listClients(): Promise<ClientView[]> {
-  const res = await request<{ clients: ClientView[] }>('GET', '/api/v1/clients')
+  const res = await request<{ clients: ClientView[] }>('GET', CLIENTS)
   return res.clients
+}
+
+/** A device AdGuard has seen that no persistent client covers yet. */
+export interface UnlabelledDevice {
+  ip: string
+  /** Blank when AdGuard knows the device by address only. */
+  hostname: string
+  /** AdGuard's label for where it learnt the device: ARP, rDNS, DHCP, WHOIS… */
+  source: string
+  /** [ip], or [ip, mac] when AdGuard's DHCP server leased that ip. */
+  suggested_ids: string[]
+}
+
+export interface Devices {
+  clients: ClientView[]
+  unlabelled: UnlabelledDevice[]
+}
+
+/** Persistent clients plus the unlabelled devices, from one GET. */
+export async function listDevices(): Promise<Devices> {
+  const res = await request<Partial<Devices>>('GET', CLIENTS)
+  return { clients: res.clients ?? [], unlabelled: res.unlabelled ?? [] }
+}
+
+/**
+ * Create an AdGuard persistent client, optionally assigned to a child in the
+ * same call. childId null sends child_id: null — no child.
+ */
+export function createClient(name: string, ids: string[], childId: number | null): Promise<ClientView> {
+  return request<ClientView>('POST', CLIENTS, { name, ids, child_id: childId })
+}
+
+/** Rename a persistent client. Both names travel in the body, never the path. */
+export function renameClient(from: string, to: string): Promise<ClientView> {
+  return request<ClientView>('POST', `${CLIENTS}/rename`, { from, to })
 }
 
 export async function listServices(): Promise<Service[]> {
