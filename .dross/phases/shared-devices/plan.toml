@@ -32,7 +32,7 @@ task_seq = 17
   description = "New migration 0005: create-copy-drop-rename rebuild to PRIMARY KEY (client_name, child_id), keeping FK ON DELETE CASCADE, the child_id index and an index on client_name, copying every row. checkConflicts keeps only the name check, so Create/UpdateChild accept a client another child holds. UpdateChild and DeleteChild touch only their own child_id rows. POST /children has no API-level client pre-check, so the \"taken client\" POST case of TestChildren_Conflicts flips here."
   covers = ["c-1", "c-7"]
   test_contract = ["if the rebuild drops rows, TestMigrate_0005PreservesClients fails: a DB at 0004 with Ada->[Kid phone], Ben->[Kid tablet] holds exactly those rows after Open, and 0005 applies after 0004_buttons.sql", "if the FK/cascade or child_id index is lost, TestSchema_ChildClientsCascade fails: DELETE FROM children leaves no orphan child_clients rows and the index exists", "if the composite key is missing, TestSchema_ChildClientsPK fails: a raw duplicate INSERT (Kid phone, 1) errors with a constraint violation", "if the client check survives in UpdateChild, TestUpdateChild_SharedClient fails: Ada holds Kid phone; UpdateChild(Ben, \"Ben\", [Kid phone]) returns nil and ListChildren shows Kid phone under Ada and Ben", "if the client check survives in CreateChild, TestCreateChild_SharedClient fails: CreateChild(\"Cleo\", [Kid phone]) while Ada holds it returns Cleo with [Kid phone]", "if UpdateChild deletes by client_name, TestUpdateChild_RemoveKeepsOtherOwner fails: Ben saved without Kid phone leaves Ada holding it", "if cascade is by client, TestDeleteChild_KeepsOtherOwner fails: DeleteChild(Ben) leaves Ada holding Kid phone and no row for Ben", "if the name check is lost, the existing ErrNameTaken cases in children_test.go fail unchanged", "if POST /children still conflicts on a held client, TestChildren_CreateShared (internal/api/children_test.go) fails: POST /children {Cy, [Kid phone]} while Ada holds it -> 201 and GET /children lists Kid phone under Ada and Cy; the \"taken client\" POST case is removed from TestChildren_Conflicts, whose name-taken and PUT-name cases stay unchanged"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-2"
@@ -54,7 +54,7 @@ clients, never on current ownership.
     '''if ownership is consulted, TestRevertPlan_StoredClients fails: the plan uses g.Clients verbatim, including a client no child now owns''',
     '''if heldOpen unions across clients or forgets exclude, TestHeldOpen fails: returns only services of grants whose Clients contain the client, minus `exclude`, sorted, [] not nil''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-3"
@@ -77,7 +77,7 @@ pinned rule (another child's active grant, present mapped client, client does no
     '''if SharedWith includes self or can be nil, TestCompute_SharedWith fails: Kid phone owned by Ada and Ben -> Ben's Kid phone SharedWith [Ada]; an unshared client SharedWith [] (not nil)''',
     '''if UnblockedBy can be nil, TestCompute_UnblockedByNeverNil fails: no grants -> every UnblockedBy marshals as []''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-4"
@@ -87,7 +87,7 @@ pinned rule (another child's active grant, present mapped client, client does no
   description = "Per the pinned contract: ChildRef, SharedRef; Grant.shared and GrantCreated.shared; BlockedClient.shared_with;\nServiceState.unblocked_by; ClientView gains children: ChildRef[] (`child` kept until t-16). Every new array defaults to []\nwhen absent. grants.ts: pure sharedDevices(childId, children): SharedRef[] and sharedText(refs: SharedRef[]) — one typed\npath (others: ChildRef[]) and the single wording used by hint, notice and active-grant row."
   covers = ["c-2", "c-5", "c-6", "c-8"]
   test_contract = ["if defaults are missing, api.test listGrants/createGrant/childBlocked fail: a row, 201, service or client without shared / unblocked_by / shared_with yields [] with no TypeError", "if children is not defaulted, api.test listDevices fails: a client row without children yields children: []", "if self is not excluded, grants.test sharedDevices fails: Ada [Kid phone, Kid tablet], Ben [Kid phone] -> for Ada exactly [{client:\"Kid phone\", others:[{id:2,name:\"Ben\"}]}]; for Ben [{client:\"Kid phone\", others:[{id:1,name:\"Ada\"}]}]; an unshared child -> []", "if ordering drifts, grants.test sharedDevicesOrder fails: rows client ASC, others in children-array (id) order across two shuffled inputs", "if wording forks or the helper reads strings, grants.test sharedText fails: [{client:\"Kid phone\", others:[{id:2,name:\"Ben\"},{id:3,name:\"Cleo\"}]}] -> \"Kid phone (shared with Ben, Cleo)\" and [] -> \"\""]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-5"

@@ -2,5 +2,184 @@
   "phase": "shared-devices",
   "base": "milestone/v0.1",
   "base_commit": "f0388a308965b20329855e466e98a50b63a87053",
-  "tasks": {}
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/store/migrations/0005_shared_clients.sql",
+        "internal/store/children.go",
+        "internal/store/children_test.go",
+        "internal/store/store_test.go",
+        "internal/api/children_test.go"
+      ],
+      "commit": "39b1bb3",
+      "completed_at": "2026-11-02T08:07:15.344221Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "checkConflicts",
+          "loc": "internal/store/children.go:214",
+          "what": "child_clients keyed (client_name, child_id) via migration 0005 so a client can have several owners; only child names conflict"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/grants/shared.go",
+        "internal/grants/shared_test.go"
+      ],
+      "commit": "de17a66",
+      "completed_at": "2026-11-02T08:08:38.736443Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "revertPlan",
+          "loc": "internal/grants/shared.go:20",
+          "what": "per-client re-block set: a grant's services minus those another active grant covers on its stored clients"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go"
+      ],
+      "commit": "cc98788",
+      "completed_at": "2026-11-02T08:10:44.545303Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "unblockedBy",
+          "loc": "internal/blocked/blocked.go:213",
+          "what": "blocked fold annotates each client with its other owners and each open service with the other children's active grants covering it there"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/grants.ts",
+        "web/src/lib/grants.test.ts",
+        "web/src/lib/activeGrants.test.ts"
+      ],
+      "commit": "4798977",
+      "completed_at": "2026-11-02T08:14:53.405194Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "sharedDevices",
+          "loc": "web/src/lib/grants.ts:76",
+          "what": "SPA wire types for shared/shared_with/unblocked_by/children (defaulted to []) plus the one shared-device wording helper"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-7",
+          "text": "internal/store/clients.go clientOwner still assumes a client has one owner (QueryRow, arbitrary row). Now that 0005 allows several owners, RenameClient's 'same owner' branch runs DELETE FROM child_clients WHERE client_name = oldName, which drops the old name for every owner, not just that child; AddChildClient can return *ErrClientTaken for a child that already holds a shared client. Presumably a sibling task's job (c-7 rename), but these paths are now reachable with shared data.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "PUT /children/{id} still runs updateConflict in internal/api/children.go, which returns *store.ErrClientTaken for a client another child holds, so the API-level PUT half of c-1 still returns 409. This task's record claims only the store-level UpdateChild and the POST path, so this is left to a sibling task.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 'index on client_name' is the composite primary key's autoindex, which leads with client_name, rather than a separate index; TestSchema_ChildClientsPK pins that column order.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestChildren_UpdateRollsBack now fails on the name check, which happens before any write, so it shows a rejected update leaves the child unchanged rather than exercising a mid-transaction rollback. The old client-check version had the same limitation.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "TestRevertPlan_StoredClients is close to vacuous: revertPlan takes no ownership input, so the function signature already enforces grant_coverage_basis. The test only confirms g.Clients is used as given, which is fine but adds little protection.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "heldOpen uses exclude=0 to mean 'count every grant', which relies on grant ids starting at 1. This is documented in a comment and is safe as long as that holds.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestCompute_UnblockedByOrder goes beyond the contract and pins the (client, grant id) sort order across several clients and grants",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "ChildRef and Unblock have JSON tags while ClientState and ServiceState still have none; the casing that reaches the API will depend on how the handler serializes these types",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "The new array fields (ClientView.children, Grant.shared, GrantCreated.shared, BlockedClient.shared_with, ServiceState.unblocked_by) are declared optional, even though every fetcher fills them. Code that reads them later will need `?? []` or `!`, which weakens the 'never undefined' guarantee at the type level. Separate wire types from the returned types, or make the fields required, so they are typed as always present.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "web/src/lib/activeGrants.test.ts is changed (adds `shared: []` to its grant fixture) but is not in the task's file list. The change is harmless; the field is optional, so the edit is not even needed for type-checking.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-8",
+          "text": "sharedDevices sorts client names with the default Array.prototype.sort (UTF-16 code-unit order). That matches a byte-order sort on the server for ASCII names but may differ for non-ASCII names; acceptable for a 'client ASC' contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
 }
