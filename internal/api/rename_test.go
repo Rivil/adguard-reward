@@ -1,13 +1,20 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
+	"io"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"slices"
 	"strings"
 	"testing"
+
+	"github.com/Rivil/adguard-reward/internal/adguard"
+	"github.com/Rivil/adguard-reward/internal/store"
 )
 
 func (h *harness) postRename(cookie, from, to string, opts ...reqOpt) *httptest.ResponseRecorder {
@@ -30,7 +37,7 @@ func TestRename_UpdatesMappingAndGrants(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &v); err != nil {
 		t.Fatal(err)
 	}
-	if v.Name != "Ada phone" || v.Child == nil || v.Child.ID != ada.ID ||
+	if v.Name != "Ada phone" || !reflect.DeepEqual(v.Children, []childRef{{ada.ID, "Ada"}}) ||
 		!reflect.DeepEqual(v.IDs, []string{"aa:bb:cc:dd:ee:01", "192.168.1.50"}) {
 		t.Errorf("200 body = %+v, want Ada phone with Kid phone's ids, child Ada", v)
 	}
@@ -51,7 +58,7 @@ func TestRename_Unassigned(t *testing.T) {
 		t.Fatalf("%d %s, want 200", w.Code, w.Body.String())
 	}
 	_, body := h.getClients(cookie)
-	if c := findClient(body.Clients, "Den laptop"); c == nil || c.Child != nil {
+	if c := findClient(body.Clients, "Den laptop"); c == nil || len(c.Children) != 0 {
 		t.Errorf("Den laptop = %+v, want listed and unassigned", c)
 	}
 }
@@ -147,5 +154,64 @@ func TestRename_AdGuardRejects(t *testing.T) {
 	e := decodeErr(t, w)
 	if w.Code != http.StatusBadRequest || e.Error != CodeBadRequest || !strings.Contains(e.Message, "invalid client name") {
 		t.Errorf("%d %s, want 400 bad_request carrying AdGuard's message", w.Code, w.Body.String())
+	}
+}
+
+func TestRename_SharedView(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ben := h.createOK(cookie, "Ben", "Kid phone")
+
+	w := h.postRename(cookie, "Kid phone", "Family TV")
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s, want 200", w.Code, w.Body.String())
+	}
+	var v clientView
+	if err := json.Unmarshal(w.Body.Bytes(), &v); err != nil {
+		t.Fatal(err)
+	}
+	if want := []childRef{{ada.ID, "Ada"}, {ben.ID, "Ben"}}; v.Name != "Family TV" || !reflect.DeepEqual(v.Children, want) {
+		t.Errorf("200 body = %+v, want Family TV held by %v", v, want)
+	}
+}
+
+// failingChildren's owners read fails; nothing else is reachable from the
+// rename handler.
+type failingChildren struct{ ChildStore }
+
+func (failingChildren) ListChildren(context.Context) ([]store.Child, error) {
+	return nil, errors.New("database is locked")
+}
+
+type renameOK struct{ Grants }
+
+func (renameOK) RenameClient(context.Context, string, string) error { return nil }
+
+type clientsOnly struct{ AdGuard }
+
+func (clientsOnly) Clients(context.Context) (adguard.ClientsResult, error) {
+	return adguard.ClientsResult{Persistent: []adguard.PersistentClient{{Name: "Family TV", IDs: []string{"192.168.1.50"}}}}, nil
+}
+
+func TestRename_OwnersReadFails(t *testing.T) {
+	a := New(Deps{
+		AdGuard:  clientsOnly{},
+		Log:      slog.New(slog.NewTextHandler(io.Discard, nil)),
+		Children: failingChildren{},
+		Grants:   renameOK{},
+	})
+	r := httptest.NewRequest(http.MethodPost, "/api/v1/clients/rename", strings.NewReader(`{"from":"Kid phone","to":"Family TV"}`))
+	w := httptest.NewRecorder()
+	a.handleClientRename(w, r)
+
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s, want 200", w.Code, w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), `"children":[]`) {
+		t.Errorf("body = %s, want \"children\":[]", w.Body.String())
+	}
+	if !strings.Contains(w.Body.String(), `"ids":["192.168.1.50"]`) {
+		t.Errorf("body = %s, want the AdGuard read-back ids", w.Body.String())
 	}
 }

@@ -83,18 +83,18 @@ func TestClients_ChildAssignment(t *testing.T) {
 		t.Fatalf("%d %s", w.Code, w.Body.String())
 	}
 	kid := findClient(body.Clients, "Kid phone")
-	if kid == nil || kid.Child == nil || kid.Child.ID != ada.ID || kid.Child.Name != "Ada" {
-		t.Errorf("Kid phone = %+v, want child {%d Ada}", kid, ada.ID)
+	if kid == nil || !reflect.DeepEqual(kid.Children, []childRef{{ada.ID, "Ada"}}) {
+		t.Errorf("Kid phone = %+v, want children [{%d Ada}]", kid, ada.ID)
 	}
 	if !reflect.DeepEqual(kid.IDs, []string{"aa:bb:cc:dd:ee:01", "192.168.1.50"}) {
 		t.Errorf("Kid phone ids = %v", kid.IDs)
 	}
 	tab := findClient(body.Clients, "Kid tablet")
-	if tab == nil || tab.Child != nil {
-		t.Errorf("Kid tablet = %+v, want child null", tab)
+	if tab == nil || tab.Children == nil || len(tab.Children) != 0 {
+		t.Errorf("Kid tablet = %+v, want children []", tab)
 	}
-	if !strings.Contains(w.Body.String(), `"child":null`) {
-		t.Errorf("raw body lacks \"child\":null: %s", w.Body.String())
+	if !strings.Contains(w.Body.String(), `"children":[]`) {
+		t.Errorf("raw body lacks \"children\":[]: %s", w.Body.String())
 	}
 	for _, c := range body.Clients {
 		if c.UseGlobalBlockedServices != (c.Name == "Kid tablet") {
@@ -329,7 +329,7 @@ func TestCreateClient_WithChild(t *testing.T) {
 	if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil {
 		t.Fatal(err)
 	}
-	if created.Name != "TV" || created.Child == nil || created.Child.ID != ada.ID || created.UseGlobalBlockedServices {
+	if created.Name != "TV" || !reflect.DeepEqual(created.Children, []childRef{{ada.ID, "Ada"}}) || created.UseGlobalBlockedServices {
 		t.Errorf("201 body = %+v, want TV for Ada with use_global false", created)
 	}
 
@@ -339,7 +339,7 @@ func TestCreateClient_WithChild(t *testing.T) {
 	}
 	_, body := h.getClients(cookie)
 	tv := findClient(body.Clients, "TV")
-	if tv == nil || tv.Child == nil || tv.Child.ID != ada.ID {
+	if tv == nil || !reflect.DeepEqual(tv.Children, []childRef{{ada.ID, "Ada"}}) {
 		t.Errorf("GET /clients TV = %+v, want child Ada", tv)
 	}
 	if tv != nil && tv.UseGlobalBlockedServices {
@@ -372,7 +372,7 @@ func TestCreateClient_NoChild(t *testing.T) {
 	}
 	_, body := h.getClients(cookie)
 	for _, name := range []string{"TV", "Den"} {
-		if c := findClient(body.Clients, name); c == nil || c.Child != nil || !c.UseGlobalBlockedServices {
+		if c := findClient(body.Clients, name); c == nil || len(c.Children) != 0 || !c.UseGlobalBlockedServices {
 			t.Errorf("%s = %+v, want unassigned on the global list", name, c)
 		}
 	}
@@ -433,5 +433,99 @@ func TestCreateClient_SelfStale(t *testing.T) {
 	gw := h.do(http.MethodGet, "/api/v1/children/"+itoa(ada.ID), nil, withCookie(cookie))
 	if c := h.decodeChild(gw); !reflect.DeepEqual(c.Clients, []string{"Kid phone", "TV"}) {
 		t.Errorf("Ada clients = %v, want [Kid phone TV] with one TV", c.Clients)
+	}
+}
+
+func TestClients_SharedOwners(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ben := h.createOK(cookie, "Ben", "Kid phone")
+
+	w, body := h.getClients(cookie)
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	kid := findClient(body.Clients, "Kid phone")
+	want := []childRef{{ada.ID, "Ada"}, {ben.ID, "Ben"}}
+	if kid == nil || !reflect.DeepEqual(kid.Children, want) {
+		t.Errorf("Kid phone = %+v, want children %v", kid, want)
+	}
+	if strings.Contains(w.Body.String(), `"child":`) {
+		t.Errorf("body still carries a \"child\" key: %s", w.Body.String())
+	}
+}
+
+func TestClients_UnassignedEmpty(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.createOK(cookie, "Ada", "Kid phone")
+
+	w, _ := h.getClients(cookie)
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s", w.Code, w.Body.String())
+	}
+	var raw struct {
+		Clients []map[string]json.RawMessage `json:"clients"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, c := range raw.Clients {
+		if string(c["name"]) != `"Old laptop"` {
+			continue
+		}
+		found = true
+		if got := string(c["children"]); got != "[]" {
+			t.Errorf("Old laptop children = %s, want []", got)
+		}
+	}
+	if !found {
+		t.Fatalf("Old laptop not listed: %s", w.Body.String())
+	}
+}
+
+func TestClientCreate_StaleForeign(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ben := h.createOK(cookie, "Ben", "TV") // stale: AdGuard has no TV yet
+
+	w := h.postClient(cookie, withChild(tvBody, ada.ID))
+	if e := decodeErr(t, w); w.Code != http.StatusConflict || !strings.Contains(e.Message, "Ben") {
+		t.Errorf("TV for Ada: %d %s, want 409 naming Ben", w.Code, w.Body.String())
+	}
+	if n := h.adds(); n != 0 {
+		t.Fatalf("refused create made %d adds, want 0", n)
+	}
+
+	w = h.postClient(cookie, withChild(tvBody, ben.ID))
+	if w.Code != http.StatusCreated {
+		t.Fatalf("TV for Ben: %d %s, want 201", w.Code, w.Body.String())
+	}
+	var created clientView
+	if err := json.Unmarshal(w.Body.Bytes(), &created); err != nil {
+		t.Fatal(err)
+	}
+	if want := []childRef{{ben.ID, "Ben"}}; !reflect.DeepEqual(created.Children, want) {
+		t.Errorf("201 children = %v, want %v", created.Children, want)
+	}
+}
+
+// A stale name both children hold is refused for either of them: any
+// holder other than child_id conflicts, not just the last one listed.
+func TestClientCreate_StaleShared(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.createOK(cookie, "Ada", "TV")
+	ben := h.createOK(cookie, "Ben", "TV")
+
+	w := h.postClient(cookie, withChild(tvBody, ben.ID))
+	if e := decodeErr(t, w); w.Code != http.StatusConflict || !strings.Contains(e.Message, "Ada") {
+		t.Errorf("TV for Ben while Ada also holds it: %d %s, want 409 naming Ada", w.Code, w.Body.String())
+	}
+	if n := h.adds(); n != 0 {
+		t.Errorf("refused create made %d adds, want 0", n)
 	}
 }

@@ -65,15 +65,14 @@ func (a *API) handleClientRename(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, a.renamedView(r, in.To))
 }
 
-// renamedView reads the renamed client back for the response. The rename
-// has already happened, so a failed read is logged and answered with what
-// is known — the name and its child — rather than an error.
+// renamedView reads the renamed client back for the response, with every
+// child holding it. The rename has already happened, so a failed read is
+// logged and answered with what is known rather than an error; children
+// starts as [] so a failed owners read still marshals an empty list.
 func (a *API) renamedView(r *http.Request, name string) clientView {
-	v := clientView{Name: name, IDs: []string{}}
+	v := clientView{Name: name, IDs: []string{}, Children: []childRef{}}
 	if children, err := a.deps.Children.ListChildren(r.Context()); err == nil {
-		if ref, ok := ownerIndex(children)[name]; ok {
-			v.Child = &ref
-		}
+		v.Children = holders(ownerIndex(children), name)
 	} else {
 		a.log.Warn("rename client: child read-back failed", "err", err)
 	}
