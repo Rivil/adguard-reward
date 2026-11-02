@@ -3,6 +3,14 @@
   "base": "milestone/v0.1",
   "base_commit": "f0388a308965b20329855e466e98a50b63a87053",
   "tasks": {
+    "quick-2": {
+      "files": [
+        "internal/api/children_test.go"
+      ],
+      "commit": "c8c1120",
+      "completed_at": "2026-11-02T09:36:43.247131Z",
+      "notes": "quick: test writeAdoptError 500 on store read failure in adopt (kills children.go:286-287 survivors)"
+    },
     "t-1": {
       "files": [
         "internal/store/migrations/0005_shared_clients.sql",
