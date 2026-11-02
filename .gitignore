@@ -5,7 +5,8 @@ bin/
 
 # Frontend
 web/node_modules/
-web/dist/
+web/dist/*
+!web/dist/.gitkeep
 web/.vite/
 
 # Runtime state — never commit real config or the database
@@ -16,6 +17,7 @@ config.yaml
 
 # dross machine-local state
 .dross/state.json
+.dross/local.toml
 
 # OS / editor
 .DS_Store
@@ -24,3 +26,11 @@ config.yaml
 
 # Stray root build output (`go build ./...`)
 /adguard-reward
+
+# mutation-tool raw reports (dross verify regenerates these)
+reports/
+
+# dross handoff — local working memory, not tracked
+.dross/handoff.md
+# stryker sandbox (dross verify, web/)
+.stryker-tmp/

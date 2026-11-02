@@ -1,0 +1,75 @@
+[phase]
+  id = "06-deploy-nora"
+  title = "Deploy on nora: systemd unit, static build, tailnet HTTPS"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "deploy/adguard-reward.service runs the binary with DynamicUser=yes, StateDirectory=adguard-reward, ExecStart --config /etc/adguard-reward/config.yaml, LoadCredential for the AdGuard password, and hardening (NoNewPrivileges, ProtectSystem=strict, PrivateTmp); a Go test parses the unit and asserts those keys"
+
+[[criteria]]
+  id = "c-2"
+  text = "make build-linux produces a statically linked linux/amd64 binary (CGO_ENABLED=0) with the git-describe version stamped via -X main.version and reported by /healthz"
+
+[[criteria]]
+  id = "c-3"
+  text = "When data_dir is unset and systemd sets $STATE_DIRECTORY, the binary stores its database there; with neither set it keeps the ./data default — both asserted by test"
+
+[[criteria]]
+  id = "c-4"
+  text = "make deploy-nora builds, copies the binary to nora over ssh, installs the unit and (first run only) the example config and credential file, restarts the service, and fails unless /healthz on nora answers 200 reporting the just-built version"
+
+[[criteria]]
+  id = "c-5"
+  text = "From a phone on the tailnet, https://nora.<tailnet>.ts.net/ serves the app through tailscale serve: the app is installable as a PWA from the phone (browser menu install is enough — no automatic prompt required); the login rate limiter sees the phone's address, not 127.0.0.1 (trusted_proxies honours the proxy's X-Forwarded-For — asserted by test)"
+
+[[criteria]]
+  id = "c-6"
+  text = "The 3 gremlins survivors routed here from phase 04 (internal/grants/reconcile.go:133 CONDITIONALS_NEGATION, :135 CONDITIONALS_BOUNDARY, :135 CONDITIONALS_NEGATION) are killed — the verify mutation run reports none of them surviving"
+
+[[criteria]]
+  id = "c-7"
+  text = "Real use observed on the deployed instance: from a phone, a real grant unblocks the service for a child and the block returns at expiry without intervention — recorded with date in verify.toml (server-side expiry log plus the parent's report is sufficient evidence)"
+
+[[decisions]]
+  key = "tls_path"
+  choice = "The binary listens plain HTTP on 127.0.0.1:8080; tailscale serve terminates HTTPS on 443 with the auto-renewed tailnet cert and proxies to it. config: base_url https://nora.<tailnet>.ts.net, trusted_proxies [127.0.0.1]. The app never sees a cert on nora"
+  why = "Secure context for PWA install with zero cert rotation in-app; the tailnet already reaches nora from the phone; the app's own ServeTLS stays available for other deployments"
+  locked = true
+
+[[decisions]]
+  key = "nora_target"
+  choice = "nora is linux/amd64, AdGuard Home listens at http://127.0.0.1:80 from nora's point of view, and deploy goes over ssh to host alias nora with sudo"
+  why = "Confirmed by the user; fixes the build target and the deploy transport so the plan does not hedge across arches"
+  locked = true
+
+[[decisions]]
+  key = "secret_placement"
+  choice = "config.yaml lives at /etc/adguard-reward/config.yaml (root:root 0644) and carries no secrets; the AdGuard password lives in /etc/adguard-reward/adguard_password (root:root 0600) and reaches the process via LoadCredential=adguard_password:… with password_file: /run/credentials/adguard-reward.service/adguard_password"
+  why = "DynamicUser has no stable uid to chown a secret to; LoadCredential is systemd's answer and keeps rule r-03 (no secrets in config) intact"
+  locked = true
+
+[[decisions]]
+  key = "real_use_evidence"
+  choice = "c-5's install prompt and c-7's tap-to-revert are manual observations recorded in verify.toml (date, device, result), not tests; the testable clauses beside them are what the suite asserts"
+  why = "The milestone criterion is 'the household uses it for real'; no test on this machine can observe nora or a phone, and pretending otherwise would be theatre"
+  locked = true
+
+[[deferred]]
+  text = "PWA served under a subpath: base_url with a path prefix behind a proxy — manifest scope/start_url and SPA fallback honour the prefix"
+  why = "tailscale serve fronts the app at root on nora; subpath deployments become real with the M4 Docker/proxy release, not yet scoped"
+
+[[deferred]]
+  id = "2771100b94dbb1f4"
+  text = "docs/deploy-nora.md runbook: prerequisites (ssh alias, sudo -n, systemd >= 247, tailscale), first-run exit 3 steps, phone install, exit codes 3/4 — with a test that greps the doc for the script's exit codes"
+  why = "No criterion asks for it; the script's own stderr carries the exit-code meanings. Parked at plan time (panel t-7 borderline)"
+
+[[deferred]]
+  id = "2e10a2ae9544902d"
+  text = "gremlins derives its per-mutant timeout from the coverage run, so on a warm Go build cache (coverage ~0.4s instead of ~4.4s) every mutant reports TIMED OUT and efficacy reads 0.00% — a meaningless result that looks like a catastrophic regression. Pin a timeout floor/coefficient in the gremlins adapter, or cold the cache before the coverage pass."
+  why = "Observed 2026-09-22 during 06-deploy-nora t-2: three consecutive runs reported 0.00% efficacy / 38 TIMED OUT purely from cache warmth; the same tree with --timeout-coefficient 40 reported 91.89%. A verify run that hits this silently mismeasures the whole package."
+
+[[deferred]]
+  id = "4e9db81d03ae5f8c"
+  text = "Six accepted survivors are accepted only because gremlins cannot reach a switch-case condition (internal/adguard/client.go:181 x2, :183, :185; internal/config/config.go:112; internal/health/health.go:83 — all reasoned 'attribution ceiling, not a test gap'). Rewriting each two-arm switch as if/else-if puts the condition inside a coverage block and converts them from accepted debt into measured, killed mutants."
+  why = "Proven on internal/grants/reconcile.go during 06-deploy-nora t-2: the identical restructure took that package from 28 killed / 10 not-covered / 75.61% mutator coverage to 34 killed / 4 not-covered / 90.24%. The acceptances are honest but they hide real assertions nobody has written."

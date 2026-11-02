@@ -1,0 +1,137 @@
+[verify]
+  phase = "06-deploy-nora"
+  generated_at = 2026-11-01T08:40:19.852762Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-11-01T08:43:50.783875Z
+  measured_commit = "7f17a4bc7315d383305292b7e7a8a5827600d57f"
+  measured_tree = "611d43ee23d572215430be69947ee179a373bf02"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.873015873015873
+  mutants_killed = 165
+  mutants_survived = 24
+  mutants_not_covered = 19
+  mutants_no_block = 0
+  mutants_test_gap = 19
+  mutants_in_scope = 189
+  unclassified_in_scope = 0
+  criteria_total = 7
+  criteria_covered = 7
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 46
+    survived = 17
+    timeout = 0
+    in_scope = 63
+    score = 0.7301587301587301
+    file_count = 7
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/build_test.go — adapter-lacks-range-runner", "cmd/adguard-reward/deploy_test.go — adapter-lacks-range-runner", "cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/config/config.go — adapter-lacks-range-runner", "internal/config/config_test.go — adapter-lacks-range-runner", "internal/grants/reconcile.go — adapter-lacks-range-runner", "internal/grants/reconcile_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 119
+    survived = 7
+    timeout = 0
+    in_scope = 126
+    score = 0.9444444444444444
+    file_count = 2
+    measured_on = "local"
+    ranges = ["web/src/lib/GrantForm.test.ts:58-297 (ExpressionStatement)"]
+    whole_file = ["web/src/lib/GrantForm.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["cmd/adguard-reward/deploy_test.go:TestServiceUnit"]
+  notes = "parses the unit; asserts DynamicUser, StateDirectory, ExecStart --config path, LoadCredential, NoNewPrivileges, ProtectSystem=strict, PrivateTmp"
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["cmd/adguard-reward/build_test.go:TestBuildLinux", "cmd/adguard-reward/build_test.go:TestMakeBuildLinuxRecipe", "cmd/adguard-reward/build_test.go:TestMakefileVersion", "cmd/adguard-reward/main_test.go:TestRun_Healthz"]
+  notes = "static ELF linux/amd64, CGO_ENABLED=0, -X main.version from git describe, /healthz reports it"
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/config/config_test.go:TestLoad_StateDirectory"]
+  notes = "systemd/explicit/env/list/blank cases incl. ./data default; accepted config.go survivors are envTable closures, not this surface"
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["cmd/adguard-reward/deploy_test.go:TestInstallNora_HealthGate", "cmd/adguard-reward/deploy_test.go:TestInstallNora_FirstRun", "cmd/adguard-reward/deploy_test.go:TestInstallNora_SecondRunPreservesEdits", "cmd/adguard-reward/deploy_test.go:TestMakeDeployNoraChain"]
+  notes = "plus observed 2026-11-01: make deploy-nora exit 0 at 40cc8ea; /healthz version 40cc8ea == git describe (commit 0e42bdc)"
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["cmd/adguard-reward/main_test.go:TestRun_NoraConfig", "cmd/adguard-reward/deploy_test.go:TestNoraConfigClientIP"]
+  notes = "X-Forwarded-For clause covered by test. Manual (reworded 2026-11-01): parent reports PWA installed on their phone via the Chrome menu, 2026-11-01; no automatic prompt, which the reworded criterion does not require. Phone model not recorded."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["verify mutation run 2026-11-01: internal/grants killed=15 survived=0"]
+  notes = "reconcile.go:133/135 mutants no longer survive"
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  notes = "Manual (reworded 2026-11-01). nora journal: grants 1-4 (youtube, roblox x2, whatsapp) logged grant expired, which is written only after revert succeeds on every client, 2026-10-31T21:44Z..2026-11-01T04:15Z, no intervention. Parent reports the grants were tested on real devices."
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:59 (ArrayDeclaration) — accepted as equivalent (dross survivor accept)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:58 (ConditionalExpression) — accepted as equivalent (dross survivor accept)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:60 (ConditionalExpression) — accepted as equivalent (dross survivor accept)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "stryker mutant survived: web/src/lib/GrantForm.svelte:60 (StringLiteral) — accepted as equivalent (dross survivor accept)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped Makefile: no mutation adapter for "
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped deploy/adguard-reward.service: no mutation adapter for .service"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped deploy/config.example.yaml: no mutation adapter for .yaml"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped deploy/config.nora.yaml: no mutation adapter for .yaml"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped deploy/install-nora.sh: no mutation adapter for .sh"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "NOTE"
+  text = "c-5 and c-7 reworded 2026-11-01 at the parent's direction (single-parent tool): menu install suffices; server-side expiry log plus the parent's report suffices. Re-judged against the same measured tree; no code changed."

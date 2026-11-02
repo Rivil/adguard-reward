@@ -1,0 +1,54 @@
+[phase]
+  id = "shared-devices"
+  title = "Shared devices"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "A persistent client can be assigned to more than one child: PUT /api/v1/children/{id} with a client another child already owns succeeds (no 409) and both children list it"
+
+[[criteria]]
+  id = "c-2"
+  text = "On the children settings page a client owned by another child is enabled (not disabled) and labelled 'shared with <names>'; ticking it shares the client"
+
+[[criteria]]
+  id = "c-3"
+  text = "Sharing a client with a further child merges that child's baseline into the client's AdGuard list (set-union, nothing removed), but never re-blocks a service that another owner's active grant has unblocked on that client"
+
+[[criteria]]
+  id = "c-4"
+  text = "A grant unblocks its services on every client the child owns, shared ones included; on expiry, End, or a reconcile revert, a service is re-blocked on a shared client only when no other active grant still covers that service on that client"
+
+[[criteria]]
+  id = "c-5"
+  text = "The grant's 201 response and the phone UI (tap result and active-grant row) name every shared device the grant touches and that device's other owners"
+
+[[criteria]]
+  id = "c-6"
+  text = "Each owner's blocked view lists the shared device; a service unblocked there by another child's active grant is shown as unblocked by that grant, naming the granting child"
+
+[[criteria]]
+  id = "c-7"
+  text = "Renaming a shared client, removing it from one child, or deleting one of its owners keeps it assigned to every remaining owner; only the rename writes to AdGuard"
+
+[[criteria]]
+  id = "c-8"
+  text = "A button or grant-form selection whose child owns a shared device shows a passive hint naming it and its other owners before tapping; the tap still creates the grant with no confirmation step"
+
+[[decisions]]
+  key = "shared_device_rule"
+  choice = "Ref-counted unlock: any owner's grant unblocks the service on a shared device; it is re-blocked only when no active grant (of any owner) still covers that service on that device"
+  why = "Keeps the common reward ('Netflix on the family TV') possible without a revert from one child's grant cutting short another's"
+  locked = true
+
+[[decisions]]
+  key = "shared_notice"
+  choice = "Passive pre-tap hint on buttons and the grant form plus the post-tap notice; no confirmation dialog"
+  why = "Satisfies 'never silently unblocks for another child' while keeping a reward to one tap (core value)"
+  locked = true
+
+[[decisions]]
+  key = "grant_coverage_basis"
+  choice = "A grant covers a service on the clients stored on the grant at creation (renames followed), not on the child's current ownership; a grant whose child is later unassigned from or deleted off a shared client still holds the service open there until it expires or is ended"
+  why = "Matches how revert already targets a grant's stored clients; resolves how shared_device_rule's 'active grant (of any owner)' is read without a store lookup on every revert (plan review 2026-11-02); confirmed by the user and locked 2026-11-02"
+  locked = true

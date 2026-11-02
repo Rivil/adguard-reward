@@ -1,0 +1,526 @@
+package config
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"log/slog"
+	"os"
+	"path/filepath"
+	"reflect"
+	"strings"
+	"testing"
+)
+
+// env builds a lookupEnv over a fixed map so tests never touch the process env.
+func env(m map[string]string) func(string) (string, bool) {
+	return func(k string) (string, bool) {
+		v, ok := m[k]
+		return v, ok
+	}
+}
+
+func noEnv(string) (string, bool) { return "", false }
+
+// requiredEnv is the smallest env that passes validation on its own.
+var requiredEnv = map[string]string{
+	"ADGUARD_REWARD_ADGUARD_URL":      "http://127.0.0.1:3000",
+	"ADGUARD_REWARD_ADGUARD_USERNAME": "svc",
+	"ADGUARD_REWARD_ADGUARD_PASSWORD": "envpw",
+}
+
+func writeFile(t *testing.T, dir, name, content string) string {
+	t.Helper()
+	p := filepath.Join(dir, name)
+	if err := os.WriteFile(p, []byte(content), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	return p
+}
+
+const minimalYAML = `adguard:
+  url: "http://127.0.0.1:3000"
+  username: "svc"
+  password: "yamlpw"
+`
+
+func TestLoad_Full(t *testing.T) {
+	cfg, err := Load("testdata/full.yaml", true, noEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := &Config{
+		Listen:         "127.0.0.1:9090",
+		BaseURL:        "https://reward.example",
+		TLS:            TLS{Cert: "/etc/ssl/reward.crt", Key: "/etc/ssl/reward.key"},
+		TrustedProxies: []string{"10.0.0.0/8", "::1"},
+		AdGuard:        AdGuard{URL: "http://127.0.0.1:3000", Username: "svc", Password: "yamlpw"},
+		DataDir:        "/var/lib/reward",
+		AI:             AI{Provider: "anthropic", APIKey: "sk-yaml", BaseURL: "https://api.example", Model: "claude-sonnet-5"},
+		LogLevel:       "debug",
+	}
+	if !reflect.DeepEqual(cfg, want) {
+		t.Fatalf("Load(full.yaml) mismatch\n got: %#v\nwant: %#v", cfg, want)
+	}
+}
+
+func TestLoad_Defaults(t *testing.T) {
+	cfg, err := Load(filepath.Join(t.TempDir(), "absent.yaml"), false, env(requiredEnv))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Listen != ":8080" || cfg.DataDir != "./data" || cfg.LogLevel != "info" {
+		t.Fatalf("defaults not applied: listen=%q data_dir=%q log_level=%q", cfg.Listen, cfg.DataDir, cfg.LogLevel)
+	}
+}
+
+// TestLoad_StateDirectory pins the data_dir fallback chain: explicit beats
+// systemd's $STATE_DIRECTORY, which beats ./data. Under the unit the process
+// has no writable cwd, so a regression here crash-loops the service rather
+// than failing visibly.
+func TestLoad_StateDirectory(t *testing.T) {
+	dir := t.TempDir()
+	noKey := writeFile(t, dir, "config.yaml", minimalYAML)
+	withKey := writeFile(t, dir, "explicit.yaml", minimalYAML+"data_dir: \"/var/lib/reward\"\n")
+
+	cases := []struct {
+		name string
+		path string
+		env  map[string]string
+		want string
+	}{
+		{"systemd", noKey, map[string]string{"STATE_DIRECTORY": "/var/lib/x"}, "/var/lib/x"},
+		{"explicit", withKey, map[string]string{"STATE_DIRECTORY": "/other"}, "/var/lib/reward"},
+		{"env", noKey, map[string]string{"ADGUARD_REWARD_DATA_DIR": "/e", "STATE_DIRECTORY": "/s"}, "/e"},
+		// Set-but-empty is "unset", not a value: it must not win over systemd.
+		{"env/blank", noKey, map[string]string{"ADGUARD_REWARD_DATA_DIR": "", "STATE_DIRECTORY": "/s"}, "/s"},
+		// StateDirectory= may name several dirs; the unit's own is the first.
+		{"list", noKey, map[string]string{"STATE_DIRECTORY": "/a:/b"}, "/a"},
+		{"list/blank", noKey, map[string]string{"STATE_DIRECTORY": ""}, "./data"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			cfg, err := Load(tc.path, true, env(tc.env))
+			if err != nil {
+				t.Fatal(err)
+			}
+			if cfg.DataDir != tc.want {
+				t.Fatalf("data_dir = %q, want %q (env %v)", cfg.DataDir, tc.want, tc.env)
+			}
+		})
+	}
+}
+
+func TestLoad_MissingRequired(t *testing.T) {
+	for _, key := range []string{"adguard.url", "adguard.username", "adguard.password"} {
+		t.Run(key, func(t *testing.T) {
+			leaf := strings.TrimPrefix(key, "adguard.")
+			var b strings.Builder
+			b.WriteString("adguard:\n")
+			for _, line := range strings.Split(strings.TrimSpace(minimalYAML), "\n")[1:] {
+				if !strings.Contains(line, leaf+":") {
+					b.WriteString(line + "\n")
+				}
+			}
+			p := writeFile(t, t.TempDir(), "config.yaml", b.String())
+			_, err := Load(p, true, noEnv)
+			if err == nil || !strings.Contains(err.Error(), key) {
+				t.Fatalf("missing %s: err = %v, want error naming %q", key, err, key)
+			}
+		})
+	}
+}
+
+func TestLoad_EnvOverridesYAML(t *testing.T) {
+	p := writeFile(t, t.TempDir(), "config.yaml", minimalYAML)
+
+	cfg, err := Load(p, true, env(map[string]string{"ADGUARD_REWARD_ADGUARD_PASSWORD": "envpw"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := cfg.AdGuard.Password.Reveal(); got != "envpw" {
+		t.Fatalf("env override: password = %q, want envpw", got)
+	}
+
+	// A set-but-empty variable overrides to empty and must not fall through.
+	_, err = Load(p, true, env(map[string]string{"ADGUARD_REWARD_ADGUARD_PASSWORD": ""}))
+	if err == nil || !strings.Contains(err.Error(), "adguard.password") {
+		t.Fatalf("blank env: err = %v, want error naming adguard.password", err)
+	}
+}
+
+func TestEnvTable(t *testing.T) {
+	want := map[string]string{
+		"listen":                "ADGUARD_REWARD_LISTEN",
+		"base_url":              "ADGUARD_REWARD_BASE_URL",
+		"tls.cert":              "ADGUARD_REWARD_TLS_CERT",
+		"tls.key":               "ADGUARD_REWARD_TLS_KEY",
+		"trusted_proxies":       "ADGUARD_REWARD_TRUSTED_PROXIES",
+		"adguard.url":           "ADGUARD_REWARD_ADGUARD_URL",
+		"adguard.username":      "ADGUARD_REWARD_ADGUARD_USERNAME",
+		"adguard.password":      "ADGUARD_REWARD_ADGUARD_PASSWORD",
+		"adguard.password_file": "ADGUARD_REWARD_ADGUARD_PASSWORD_FILE",
+		"data_dir":              "ADGUARD_REWARD_DATA_DIR",
+		"ai.provider":           "ADGUARD_REWARD_AI_PROVIDER",
+		"ai.api_key":            "ADGUARD_REWARD_AI_API_KEY",
+		"ai.api_key_file":       "ADGUARD_REWARD_AI_API_KEY_FILE",
+		"ai.base_url":           "ADGUARD_REWARD_AI_BASE_URL",
+		"ai.model":              "ADGUARD_REWARD_AI_MODEL",
+		"log_level":             "ADGUARD_REWARD_LOG_LEVEL",
+	}
+	got := map[string]string{}
+	for _, e := range envTable {
+		if _, dup := got[e.key]; dup {
+			t.Errorf("envTable: duplicate row for %s", e.key)
+		}
+		got[e.key] = e.env
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("envTable names differ\n got: %v\nwant: %v", got, want)
+	}
+
+	// Every yaml-tagged leaf of Config must have a row, and every row must
+	// name a real leaf — a renamed or added key fails here.
+	leaves := map[string]bool{}
+	walkLeaves(reflect.TypeOf(Config{}), "", leaves)
+	for leaf := range leaves {
+		if _, ok := got[leaf]; !ok {
+			t.Errorf("config leaf %q has no envTable row", leaf)
+		}
+	}
+	for key := range got {
+		if !leaves[key] {
+			t.Errorf("envTable row %q names no config leaf", key)
+		}
+	}
+
+	// STATE_DIRECTORY is systemd's own variable and only a fallback beneath
+	// data_dir — promoting it to a row would make it beat the config file.
+	for _, e := range envTable {
+		if !strings.HasPrefix(e.env, EnvPrefix) {
+			t.Errorf("envTable row %q names %q; overrides must be %s*, and STATE_DIRECTORY is a fallback, not a key", e.key, e.env, EnvPrefix)
+		}
+	}
+
+	// Each setter actually writes its leaf: set every var to its own env
+	// name and read it back through the table's key.
+	all := map[string]string{}
+	for _, e := range envTable {
+		all[e.env] = "v:" + e.key
+	}
+	cfg, err := Load(filepath.Join(t.TempDir(), "absent.yaml"), false, env(mergeMaps(all, map[string]string{
+		"ADGUARD_REWARD_ADGUARD_URL":           "http://h",
+		"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": "",
+		"ADGUARD_REWARD_AI_API_KEY_FILE":       "",
+		"ADGUARD_REWARD_LOG_LEVEL":             "warn",
+		"ADGUARD_REWARD_TRUSTED_PROXIES":       "", // "v:trusted_proxies" is not a CIDR
+	})))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.Listen != "v:listen" || cfg.TLS.Key != "v:tls.key" || cfg.AI.Model != "v:ai.model" ||
+		cfg.AI.APIKey.Reveal() != "v:ai.api_key" || cfg.AdGuard.Username != "v:adguard.username" {
+		t.Errorf("setters did not land: %#v", cfg)
+	}
+}
+
+func walkLeaves(t reflect.Type, prefix string, out map[string]bool) {
+	for i := 0; i < t.NumField(); i++ {
+		f := t.Field(i)
+		tag := f.Tag.Get("yaml")
+		if tag == "" || tag == "-" {
+			continue
+		}
+		name := strings.Split(tag, ",")[0]
+		if prefix != "" {
+			name = prefix + "." + name
+		}
+		if f.Type.Kind() == reflect.Struct && f.Type != reflect.TypeOf(Secret("")) {
+			walkLeaves(f.Type, name, out)
+			continue
+		}
+		out[name] = true
+	}
+}
+
+func mergeMaps(a, b map[string]string) map[string]string {
+	out := map[string]string{}
+	for k, v := range a {
+		out[k] = v
+	}
+	for k, v := range b {
+		out[k] = v
+	}
+	return out
+}
+
+func TestLoad_SecretFile(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := writeFile(t, dir, "config.yaml", "adguard:\n  url: \"http://h\"\n  username: \"svc\"\n")
+
+	t.Run("password_file via env", func(t *testing.T) {
+		pf := writeFile(t, dir, "pw.txt", "s3cret\n")
+		cfg, err := Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": pf}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := cfg.AdGuard.Password.Reveal(); got != "s3cret" {
+			t.Fatalf("password = %q, want s3cret (trailing newline trimmed)", got)
+		}
+	})
+
+	t.Run("inner whitespace kept", func(t *testing.T) {
+		pf := writeFile(t, dir, "pw-space.txt", " a b \r\n")
+		cfg, err := Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": pf}))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := cfg.AdGuard.Password.Reveal(); got != " a b " {
+			t.Fatalf("password = %q, want %q", got, " a b ")
+		}
+	})
+
+	t.Run("empty file", func(t *testing.T) {
+		pf := writeFile(t, dir, "empty.txt", "\n")
+		_, err := Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": pf}))
+		if err == nil || !strings.Contains(err.Error(), "adguard.password_file") {
+			t.Fatalf("empty file: err = %v, want error naming adguard.password_file", err)
+		}
+	})
+
+	t.Run("unreadable file", func(t *testing.T) {
+		_, err := Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": filepath.Join(dir, "nope.txt")}))
+		if err == nil || !strings.Contains(err.Error(), "adguard.password_file") {
+			t.Fatalf("unreadable file: err = %v, want error naming adguard.password_file", err)
+		}
+	})
+
+	t.Run("api_key_file identical", func(t *testing.T) {
+		kf := writeFile(t, dir, "key.txt", "sk-file\n")
+		cfg, err := Load(cfgPath, true, env(mergeMaps(requiredEnv, map[string]string{"ADGUARD_REWARD_AI_API_KEY_FILE": kf})))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := cfg.AI.APIKey.Reveal(); got != "sk-file" {
+			t.Fatalf("api_key = %q, want sk-file", got)
+		}
+		_, err = Load(cfgPath, true, env(mergeMaps(requiredEnv, map[string]string{"ADGUARD_REWARD_AI_API_KEY_FILE": filepath.Join(dir, "nope.txt")})))
+		if err == nil || !strings.Contains(err.Error(), "ai.api_key_file") {
+			t.Fatalf("missing api_key_file: err = %v, want error naming ai.api_key_file", err)
+		}
+	})
+
+	t.Run("relative to config dir", func(t *testing.T) {
+		rel := t.TempDir() // CWD is the package dir, not this
+		writeFile(t, rel, "secret.txt", "from-config-dir\n")
+		p := writeFile(t, rel, "config.yaml", "adguard:\n  url: \"http://h\"\n  username: \"svc\"\n  password_file: secret.txt\n")
+		cfg, err := Load(p, true, noEnv)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if got := cfg.AdGuard.Password.Reveal(); got != "from-config-dir" {
+			t.Fatalf("password = %q, want from-config-dir", got)
+		}
+	})
+}
+
+func TestLoad_PasswordAndFileConflict(t *testing.T) {
+	dir := t.TempDir()
+	pf := writeFile(t, dir, "pw.txt", "x\n")
+	p := writeFile(t, dir, "config.yaml", minimalYAML)
+	_, err := Load(p, true, env(map[string]string{"ADGUARD_REWARD_ADGUARD_PASSWORD_FILE": pf}))
+	if err == nil {
+		t.Fatal("both set: want error")
+	}
+	for _, key := range []string{"adguard.password", "adguard.password_file"} {
+		if !strings.Contains(err.Error(), key) {
+			t.Errorf("both set: err %q does not name %s", err, key)
+		}
+	}
+}
+
+func TestLoad_UnknownKey(t *testing.T) {
+	dir := t.TempDir()
+	p := writeFile(t, dir, "typo.yaml", "adguard:\n  url: \"http://h\"\n  username: \"svc\"\n  passwrod: \"x\"\n")
+	_, err := Load(p, true, noEnv)
+	if err == nil || !strings.Contains(err.Error(), "passwrod") {
+		t.Fatalf("unknown key: err = %v, want error mentioning passwrod", err)
+	}
+
+	p = writeFile(t, dir, "broken.yaml", "adguard:\n  url: [\n")
+	_, err = Load(p, true, noEnv)
+	if err == nil || !strings.Contains(err.Error(), "line ") {
+		t.Fatalf("syntax error: err = %v, want error with a line number", err)
+	}
+}
+
+func TestLoad_MissingFile(t *testing.T) {
+	missing := filepath.Join(t.TempDir(), "nope", "config.yaml")
+
+	_, err := Load(missing, true, env(requiredEnv))
+	if err == nil || !strings.Contains(err.Error(), missing) {
+		t.Fatalf("explicit missing: err = %v, want error containing %q", err, missing)
+	}
+
+	cfg, err := Load(missing, false, env(requiredEnv))
+	if err != nil {
+		t.Fatalf("default missing with env: err = %v, want env-only load", err)
+	}
+	if cfg.AdGuard.Username != "svc" {
+		t.Fatalf("env-only load: username = %q", cfg.AdGuard.Username)
+	}
+}
+
+func TestLoad_BadURL(t *testing.T) {
+	for _, raw := range []string{"://bad", "127.0.0.1:80", "ftp://h", "http://u:p@h"} {
+		_, err := Load(filepath.Join(t.TempDir(), "absent.yaml"), false, env(mergeMaps(requiredEnv,
+			map[string]string{"ADGUARD_REWARD_ADGUARD_URL": raw})))
+		if err == nil || !strings.Contains(err.Error(), "adguard.url") {
+			t.Errorf("url %q: err = %v, want error naming adguard.url", raw, err)
+		}
+	}
+}
+
+func TestSecret_Redacted(t *testing.T) {
+	const pw, key = "pw-CANARY-9f3a", "sk-CANARY-77b1"
+	cfg, err := Load(filepath.Join(t.TempDir(), "absent.yaml"), false, env(mergeMaps(requiredEnv, map[string]string{
+		"ADGUARD_REWARD_ADGUARD_PASSWORD": pw,
+		"ADGUARD_REWARD_AI_API_KEY":       key,
+	})))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AdGuard.Password.Reveal() != pw || cfg.AI.APIKey.Reveal() != key {
+		t.Fatal("Reveal() must return the original")
+	}
+
+	outputs := map[string]string{}
+	for _, verb := range []string{"%v", "%+v", "%#v", "%s", "%q"} {
+		outputs["cfg "+verb] = fmt.Sprintf(verb, cfg)
+		outputs["*cfg "+verb] = fmt.Sprintf(verb, *cfg)
+		outputs["secret "+verb] = fmt.Sprintf(verb, cfg.AdGuard.Password)
+	}
+	outputs["Sprint"] = fmt.Sprint(cfg.AdGuard.Password)
+	j, err := json.Marshal(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outputs["json"] = string(j)
+
+	var text, jsonl bytes.Buffer
+	slog.New(slog.NewTextHandler(&text, &slog.HandlerOptions{Level: slog.LevelDebug})).
+		Debug("cfg", "cfg", cfg, "pw", cfg.AdGuard.Password)
+	slog.New(slog.NewJSONHandler(&jsonl, &slog.HandlerOptions{Level: slog.LevelDebug})).
+		Debug("cfg", "cfg", cfg, "pw", cfg.AdGuard.Password)
+	outputs["slog text"] = text.String()
+	outputs["slog json"] = jsonl.String()
+
+	for name, out := range outputs {
+		if strings.Contains(out, pw) || strings.Contains(out, key) {
+			t.Errorf("%s leaks a secret: %s", name, out)
+		}
+		if !strings.Contains(out, redacted) {
+			t.Errorf("%s lacks %q (positive control): %s", name, redacted, out)
+		}
+	}
+}
+
+func TestSlogLevel(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "absent.yaml")
+	cfg, err := Load(base, false, env(mergeMaps(requiredEnv, map[string]string{"ADGUARD_REWARD_LOG_LEVEL": "debug"})))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SlogLevel() != slog.LevelDebug {
+		t.Fatalf("SlogLevel() = %v, want debug", cfg.SlogLevel())
+	}
+	_, err = Load(base, false, env(mergeMaps(requiredEnv, map[string]string{"ADGUARD_REWARD_LOG_LEVEL": "bogus"})))
+	if err == nil || !strings.Contains(err.Error(), "log_level") {
+		t.Fatalf("bogus level: err = %v, want error naming log_level", err)
+	}
+}
+
+func TestLoad_TrustedProxies(t *testing.T) {
+	dir := t.TempDir()
+	cfgPath := writeFile(t, dir, "c.yaml", minimalYAML+`trusted_proxies: ["10.0.0.0/8", "::1"]
+`)
+
+	cfg, err := Load(cfgPath, true, noEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fmt.Sprint(cfg.TrustedProxyNets()); got != "[10.0.0.0/8 ::1/128]" {
+		t.Fatalf("yaml list: TrustedProxyNets = %s", got)
+	}
+
+	cfg, err = Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_TRUSTED_PROXIES": "10.0.0.1, 192.168.0.0/16"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := fmt.Sprint(cfg.TrustedProxyNets()); got != "[10.0.0.1/32 192.168.0.0/16]" {
+		t.Fatalf("env list: TrustedProxyNets = %s", got)
+	}
+
+	cfg, err = Load(cfgPath, true, env(map[string]string{"ADGUARD_REWARD_TRUSTED_PROXIES": ""}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.TrustedProxies) != 0 || len(cfg.TrustedProxyNets()) != 0 {
+		t.Fatalf("empty env did not override yaml: %v", cfg.TrustedProxies)
+	}
+}
+
+func TestLoad_TrustedProxiesInvalid(t *testing.T) {
+	for _, bad := range []string{"10.0.0.0/33", "proxy"} {
+		_, err := Load(filepath.Join(t.TempDir(), "absent.yaml"), false,
+			env(mergeMaps(requiredEnv, map[string]string{"ADGUARD_REWARD_TRUSTED_PROXIES": "10.0.0.0/8," + bad})))
+		if err == nil || !strings.Contains(err.Error(), "trusted_proxies") || !strings.Contains(err.Error(), bad) {
+			t.Errorf("entry %q: err = %v, want error naming trusted_proxies and the entry", bad, err)
+		}
+	}
+}
+
+func TestLoad_TLSPair(t *testing.T) {
+	base := filepath.Join(t.TempDir(), "absent.yaml")
+	for _, half := range []map[string]string{
+		{"ADGUARD_REWARD_TLS_CERT": "/c.pem"},
+		{"ADGUARD_REWARD_TLS_KEY": "/k.pem"},
+	} {
+		_, err := Load(base, false, env(mergeMaps(requiredEnv, half)))
+		if err == nil || !strings.Contains(err.Error(), "tls.cert") || !strings.Contains(err.Error(), "tls.key") {
+			t.Errorf("%v: err = %v, want error naming tls.cert and tls.key", half, err)
+		}
+	}
+	for _, both := range []map[string]string{
+		{"ADGUARD_REWARD_TLS_CERT": "/c.pem", "ADGUARD_REWARD_TLS_KEY": "/k.pem"},
+		{},
+	} {
+		if _, err := Load(base, false, env(mergeMaps(requiredEnv, both))); err != nil {
+			t.Errorf("%v: unexpected err %v", both, err)
+		}
+	}
+}
+
+func TestExampleConfigLoads(t *testing.T) {
+	cfg, err := Load("../../deploy/config.example.yaml", true, env(requiredEnv))
+	if err != nil {
+		t.Fatalf("example config does not load: %v", err)
+	}
+	if n := cfg.TrustedProxyNets(); len(n) != 0 {
+		t.Fatalf("example trusted_proxies = %v, want empty", n)
+	}
+	if cfg.DataDir != "./data" {
+		t.Fatalf("example data_dir = %q, want ./data", cfg.DataDir)
+	}
+
+	// The shipped file must carry no literal data_dir, or systemd's
+	// StateDirectory can never reach the binary.
+	cfg, err = Load("../../deploy/config.example.yaml", true,
+		env(mergeMaps(requiredEnv, map[string]string{"STATE_DIRECTORY": "/s"})))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.DataDir != "/s" {
+		t.Fatalf("example data_dir with STATE_DIRECTORY = %q, want /s (a literal data_dir key beats it)", cfg.DataDir)
+	}
+}

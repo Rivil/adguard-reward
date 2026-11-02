@@ -1,0 +1,37 @@
+# adguard-reward as a systemd service. Install to /etc/systemd/system/ and
+# pair with /etc/adguard-reward/config.yaml (see config.nora.yaml).
+#
+# The unit runs under DynamicUser, so it has no stable uid to own a secret
+# file with: the AdGuard password is handed over by LoadCredential instead,
+# which systemd copies into a 0400 tmpfs readable only by this service. The
+# config names it as adguard.password_file — nothing secret is in the config
+# itself.
+#
+# StateDirectory gives the service /var/lib/adguard-reward, and the binary
+# picks it up from $STATE_DIRECTORY because config.yaml sets no data_dir.
+
+[Unit]
+Description=adguard-reward — timed per-service unblocks for AdGuard Home
+Documentation=https://github.com/Rivil/adguard-reward
+After=network-online.target AdGuardHome.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+StateDirectory=adguard-reward
+LoadCredential=adguard_password:/etc/adguard-reward/adguard_password
+ExecStart=/usr/local/bin/adguard-reward --config /etc/adguard-reward/config.yaml
+Restart=on-failure
+RestartSec=5s
+
+# Hardening. ProtectSystem=strict leaves no writable path but StateDirectory
+# and PrivateTmp, which is why the data directory must come from
+# $STATE_DIRECTORY and never from a cwd-relative default.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,42 @@
+[phase]
+  id = "button-editor"
+  title = "button-editor"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "Each button on the settings page has move-up / move-down controls; saving persists the new order, and Home renders that child's buttons in the new order after a server restart"
+  deferred = ["6a1242ed19dc540c"]
+
+[[criteria]]
+  id = "c-2"
+  text = "A button has an optional icon the settings form can set or clear; GET/PUT /api/v1/buttons round-trip it and it survives a restart; PUT returns 422 on an invalid icon; Home shows the chosen icon, otherwise the first service's icon as today"
+  deferred = ["2c0089bfa8d89337"]
+
+[[criteria]]
+  id = "c-3"
+  text = "Tapping Delete on the settings page asks for an inline confirmation (no browser dialog) before the PUT; cancelling leaves the list unchanged on the server"
+
+[[decisions]]
+  key = "icon_source"
+  choice = "Icon is any service's icon from the live AdGuard catalogue (not limited to the button's own services), stored as a service id; PUT returns 422 on an id not in the catalogue"
+  why = "Matches the rest of Home visually; r-01 forbids vendored icons, so the catalogue read at runtime is the only AdGuard source"
+  locked = true
+
+[[decisions]]
+  key = "reorder_scope"
+  choice = "Settings list is grouped by child like Home; up/down swaps with the adjacent button of the same child and is disabled at the group edges"
+  why = "Home groups by child, so a flat-list move past another child's button would be a visible no-op"
+  locked = true
+
+[[decisions]]
+  key = "reorder_save"
+  choice = "Each up/down tap PUTs the whole list immediately; controls disabled while pending; a failure shows the alert and reloads from the server"
+  why = "Same behaviour as delete today; no unsaved staged state to lose on navigation"
+  locked = true
+
+[[decisions]]
+  key = "icon_fallback"
+  choice = "If a stored icon's service id is missing from the catalogue, Home falls back to the first service's icon; the icon picker is disabled while the catalogue is unreachable and a stored icon is kept as-is"
+  why = "A catalogue change or outage must not blank a button or silently drop the parent's choice"
+  locked = true

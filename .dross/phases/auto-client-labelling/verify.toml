@@ -1,0 +1,114 @@
+[verify]
+  phase = "auto-client-labelling"
+  generated_at = 2026-11-01T19:32:18.551821Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-11-01T19:38:02.604857Z
+  measured_commit = "6706ebb9ab795509fd6ad7f5dcf1b7eff6709ab8"
+  measured_tree = "e5b57b8269d6c1ec538a1eda5e7d3bfcf648acc8"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.9241379310344827
+  mutants_killed = 536
+  mutants_survived = 44
+  mutants_not_covered = 34
+  mutants_no_block = 0
+  mutants_test_gap = 34
+  mutants_in_scope = 580
+  unclassified_in_scope = 0
+  criteria_total = 7
+  criteria_covered = 7
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 325
+    survived = 34
+    timeout = 0
+    in_scope = 359
+    score = 0.9052924791086351
+    file_count = 22
+    measured_on = "local"
+    whole_file = ["internal/adguard/adguardtest/server.go — adapter-lacks-range-runner", "internal/adguard/adguardtest/server_test.go — adapter-lacks-range-runner", "internal/adguard/clients.go — adapter-lacks-range-runner", "internal/adguard/clients_test.go — adapter-lacks-range-runner", "internal/adguard/clients_write.go — adapter-lacks-range-runner", "internal/adguard/clients_write_test.go — adapter-lacks-range-runner", "internal/adguard/devices.go — adapter-lacks-range-runner", "internal/adguard/devices_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/children.go — adapter-lacks-range-runner", "internal/api/children_test.go — adapter-lacks-range-runner", "internal/api/clients.go — adapter-lacks-range-runner", "internal/api/clients_test.go — adapter-lacks-range-runner", "internal/api/rename.go — adapter-lacks-range-runner", "internal/api/rename_test.go — adapter-lacks-range-runner", "internal/grants/clients.go — adapter-lacks-range-runner", "internal/grants/clients_test.go — adapter-lacks-range-runner", "internal/grants/grants.go — adapter-lacks-range-runner", "internal/grants/rename.go — adapter-lacks-range-runner", "internal/grants/rename_test.go — adapter-lacks-range-runner", "internal/store/clients.go — adapter-lacks-range-runner", "internal/store/clients_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 211
+    survived = 10
+    timeout = 0
+    in_scope = 221
+    score = 0.9547511312217195
+    file_count = 8
+    measured_on = "local"
+    ranges = ["web/src/lib/Children.test.ts:304-304 (hunk)", "web/src/lib/Children.test.ts:305-395 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:1-2 (hunk)", "web/src/lib/ClientNames.test.ts:10-10 (TSTypeAliasDeclaration Routes)", "web/src/lib/ClientNames.test.ts:11-11 (hunk)", "web/src/lib/ClientNames.test.ts:12-14 (FunctionDeclaration json)", "web/src/lib/ClientNames.test.ts:15-15 (hunk)", "web/src/lib/ClientNames.test.ts:16-29 (FunctionDeclaration mockFetch)", "web/src/lib/ClientNames.test.ts:3-3 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:30-30 (hunk)", "web/src/lib/ClientNames.test.ts:31-33 (FunctionDeclaration client)", "web/src/lib/ClientNames.test.ts:34-34 (hunk)", "web/src/lib/ClientNames.test.ts:35-39 (FunctionDeclaration row)", "web/src/lib/ClientNames.test.ts:4-4 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:40-40 (hunk)", "web/src/lib/ClientNames.test.ts:41-41 (VariableDeclaration input)", "web/src/lib/ClientNames.test.ts:42-42 (VariableDeclaration save)", "web/src/lib/ClientNames.test.ts:43-43 (hunk)", "web/src/lib/ClientNames.test.ts:44-46 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:47-47 (hunk)", "web/src/lib/ClientNames.test.ts:48-170 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:5-5 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:6-6 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:7-7 (ImportDeclaration)", "web/src/lib/ClientNames.test.ts:8-8 (hunk)", "web/src/lib/ClientNames.test.ts:9-9 (TSTypeAliasDeclaration Call)", "web/src/lib/UnlabelledDevices.test.ts:1-2 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:10-12 (FunctionDeclaration json)", "web/src/lib/UnlabelledDevices.test.ts:13-13 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:14-24 (FunctionDeclaration mockFetch)", "web/src/lib/UnlabelledDevices.test.ts:25-25 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:26-31 (VariableDeclaration printer)", "web/src/lib/UnlabelledDevices.test.ts:3-3 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:32-32 (VariableDeclaration blank)", "web/src/lib/UnlabelledDevices.test.ts:33-33 (VariableDeclaration alpha)", "web/src/lib/UnlabelledDevices.test.ts:34-37 (VariableDeclaration kids)", "web/src/lib/UnlabelledDevices.test.ts:38-38 (VariableDeclaration created)", "web/src/lib/UnlabelledDevices.test.ts:39-39 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:4-4 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:40-44 (FunctionDeclaration row)", "web/src/lib/UnlabelledDevices.test.ts:45-45 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:46-50 (FunctionDeclaration field)", "web/src/lib/UnlabelledDevices.test.ts:5-5 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:51-51 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:52-54 (FunctionDeclaration save)", "web/src/lib/UnlabelledDevices.test.ts:55-55 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:56-58 (ExpressionStatement)", "web/src/lib/UnlabelledDevices.test.ts:59-59 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:6-6 (ImportDeclaration)", "web/src/lib/UnlabelledDevices.test.ts:60-213 (ExpressionStatement)", "web/src/lib/UnlabelledDevices.test.ts:7-7 (hunk)", "web/src/lib/UnlabelledDevices.test.ts:8-8 (TSTypeAliasDeclaration Call)", "web/src/lib/UnlabelledDevices.test.ts:9-9 (hunk)", "web/src/lib/api.test.ts:456-456 (hunk)", "web/src/lib/api.test.ts:457-509 (ExpressionStatement)", "web/src/lib/api.test.ts:5-37 (ImportDeclaration)", "web/src/lib/api.ts:234-234 (VariableDeclaration CLIENTS)", "web/src/lib/api.ts:235-235 (hunk)", "web/src/lib/api.ts:236-239 (FunctionDeclaration listClients)", "web/src/lib/api.ts:241-241 (hunk)", "web/src/lib/api.ts:242-250 (TSInterfaceDeclaration UnlabelledDevice)", "web/src/lib/api.ts:251-251 (hunk)", "web/src/lib/api.ts:252-255 (TSInterfaceDeclaration Devices)", "web/src/lib/api.ts:256-257 (hunk)", "web/src/lib/api.ts:258-261 (FunctionDeclaration listDevices)", "web/src/lib/api.ts:262-266 (hunk)", "web/src/lib/api.ts:267-269 (FunctionDeclaration createClient)", "web/src/lib/api.ts:270-271 (hunk)", "web/src/lib/api.ts:272-274 (FunctionDeclaration renameClient)", "web/src/lib/api.ts:275-275 (hunk)"]
+    whole_file = ["web/src/lib/Children.svelte — ast-unavailable", "web/src/lib/ClientNames.svelte — ast-unavailable", "web/src/lib/UnlabelledDevices.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/api/clients_test.go:TestClients_Unlabelled", "internal/adguard/devices_test.go:TestUnlabelled_ExcludesKnownIP", "internal/adguard/devices_test.go:TestUnlabelled_AllSources", "internal/adguard/devices_test.go:TestUnlabelled_UnparseableIPOrder"]
+  notes = "Printer listed with ip/hostname/source ARP, a persistent client's IP omitted, two GETs = two live /control/clients reads. compareIP fallback now exercised; :156/:158 hand-mutated and killed (gremlins case-attribution, accepted)."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/api/clients_test.go:TestCreateClient_BadInput", "internal/api/clients_test.go:TestCreateClient_Conflict", "internal/api/clients_test.go:TestCreateClient_Timeout", "internal/api/clients_test.go:TestCreateClient_ReadUnavailable", "internal/adguard/clients_write_test.go:TestAddClient_Body"]
+  notes = "Blank name -> 400 with zero AdGuard requests; duplicate name / taken id -> 409 with zero adds; hung add and read 500 -> 502; add body carries name+ids."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/api/clients_test.go:TestCreateClient_WithChild", "web/src/lib/Children.test.ts:creating with a child checks it under that child"]
+  notes = "One POST with child_id -> 201, child lists the client, baseline applied; UI sends child_id and checks it under the child."
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["web/src/lib/Children.test.ts:creating a device refreshes without a page reload", "web/src/lib/Children.test.ts:creating with a child checks it under that child", "web/src/lib/UnlabelledDevices.test.ts:a whitespace-only name blocks submit", "web/src/lib/UnlabelledDevices.test.ts:fields are editable when idle and locked while a create is out", "web/src/lib/UnlabelledDevices.test.ts:the child picker starts on No child and keeps the pick when the row returns"]
+  notes = "Create-and-appear-without-reload asserted; quick 0.1.7.1 killed the 17 UnlabelledDevices survivors that made this weak except :95 false/StringLiteral, accepted as equivalent (first option is the select's fallback)."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["web/src/lib/Children.test.ts:empty state: sentence when none, hidden with one, absent on a 502", "web/src/lib/UnlabelledDevices.test.ts:shows the connect-to-network sentence only when empty"]
+  notes = "Sentence present with zero devices, absent with one, absent when the load 502s."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/api/rename_test.go:TestRename_UpdatesMappingAndGrants", "internal/grants/rename_test.go:TestRename_GrantExpiryReverts", "internal/grants/rename_test.go:TestRename_EndReverts", "internal/store/clients_test.go:TestRenameClient_Mapping", "web/src/lib/ClientNames.test.ts:a network failure shows the offline line and the row can retry"]
+  notes = "Rename updates child mapping and active grant clients; expiry and End re-block the renamed device. ClientNames.svelte now 0 survivors (was 7)."
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  tests = ["internal/api/children_test.go:TestChildUpdate_AddBaseline", "internal/api/children_test.go:TestChildUpdate_AddInherited", "internal/api/children_test.go:TestChildUpdate_FullSwap", "internal/api/children_test.go:TestChildUpdate_KeepsOwn", "internal/api/children_test.go:TestChildUpdate_RemoveOnly", "internal/grants/clients_test.go:TestCreateClient_FirstDevice"]
+  notes = "Sibling + grant baseline, global-sibling inheritance, global-list fallback with no remaining sibling, own blocks kept, remove-only PUT writes nothing to AdGuard."
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/clients.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/dhcp_status.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/Children.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/ClientNames.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/UnlabelledDevices.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "NOTE"
+  text = "Drained before this run: 4 in-diff survivors accepted — devices.go:156/:158 CONDITIONALS_NEGATION (killed when hand-applied against TestUnlabelled_UnparseableIPOrder; gremlins never runs switch-case mutants) and UnlabelledDevices.svelte:95 ConditionalExpression/StringLiteral (equivalent: select falls back to its first option). Re-run: 0 in-diff, 38 accepted, 0 unclassified."
+
+[[finding]]
+  severity = "NOTE"
+  text = "34 of 44 survivors are NotCovered by construction (gremlins switch-case / test-fake panic paths), all accepted; efficacy over the reachable 546 is 536/546 = 0.98."

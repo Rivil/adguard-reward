@@ -1,0 +1,120 @@
+[verify]
+  phase = "shared-devices"
+  generated_at = 2026-11-02T09:52:14.040989Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-11-02T10:06:07.602166Z
+  measured_commit = "68b4cd277b3a321d767c1c5fd538d6f6c0a7dd8c"
+  measured_tree = "2f8f2a9a9033100fb8dc37fa959384d7445a2a15"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.9354144241119483
+  mutants_killed = 869
+  mutants_survived = 60
+  mutants_not_covered = 35
+  mutants_no_block = 0
+  mutants_test_gap = 35
+  mutants_in_scope = 929
+  unclassified_in_scope = 0
+  criteria_total = 8
+  criteria_covered = 8
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 252
+    survived = 9
+    timeout = 0
+    in_scope = 261
+    score = 0.9655172413793104
+    file_count = 30
+    measured_on = "local"
+    whole_file = ["internal/api/blocked.go — adapter-lacks-range-runner", "internal/api/blocked_test.go — adapter-lacks-range-runner", "internal/api/children.go — adapter-lacks-range-runner", "internal/api/children_test.go — adapter-lacks-range-runner", "internal/api/clients.go — adapter-lacks-range-runner", "internal/api/clients_test.go — adapter-lacks-range-runner", "internal/api/grants.go — adapter-lacks-range-runner", "internal/api/grants_test.go — adapter-lacks-range-runner", "internal/api/migration.go — adapter-lacks-range-runner", "internal/api/migration_test.go — adapter-lacks-range-runner", "internal/api/rename.go — adapter-lacks-range-runner", "internal/api/rename_test.go — adapter-lacks-range-runner", "internal/api/shared_test.go — adapter-lacks-range-runner", "internal/blocked/blocked.go — adapter-lacks-range-runner", "internal/blocked/blocked_test.go — adapter-lacks-range-runner", "internal/grants/clients.go — adapter-lacks-range-runner", "internal/grants/clients_test.go — adapter-lacks-range-runner", "internal/grants/grants.go — adapter-lacks-range-runner", "internal/grants/grants_test.go — adapter-lacks-range-runner", "internal/grants/reconcile.go — adapter-lacks-range-runner", "internal/grants/reconcile_test.go — adapter-lacks-range-runner", "internal/grants/rename.go — adapter-lacks-range-runner", "internal/grants/rename_test.go — adapter-lacks-range-runner", "internal/grants/shared.go — adapter-lacks-range-runner", "internal/grants/shared_test.go — adapter-lacks-range-runner", "internal/store/children.go — adapter-lacks-range-runner", "internal/store/children_test.go — adapter-lacks-range-runner", "internal/store/clients.go — adapter-lacks-range-runner", "internal/store/clients_test.go — adapter-lacks-range-runner", "internal/store/store_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 617
+    survived = 51
+    timeout = 0
+    in_scope = 668
+    score = 0.9236526946107785
+    file_count = 19
+    measured_on = "local"
+    ranges = ["web/src/lib/ActiveGrants.panel.test.ts:99-322 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:110-331 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:44-64 (FunctionDeclaration server)", "web/src/lib/Children.test.ts:34-34 (hunk)", "web/src/lib/Children.test.ts:35-37 (FunctionDeclaration client)", "web/src/lib/Children.test.ts:38-38 (hunk)", "web/src/lib/Children.test.ts:39-41 (FunctionDeclaration labelOf)", "web/src/lib/Children.test.ts:390-481 (ExpressionStatement)", "web/src/lib/Children.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Children.test.ts:84-388 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:31-33 (FunctionDeclaration client)", "web/src/lib/ClientNames.test.ts:48-180 (ExpressionStatement)", "web/src/lib/ClientNames.test.ts:7-7 (ImportDeclaration)", "web/src/lib/GrantForm.test.ts:58-94 (ExpressionStatement)", "web/src/lib/GrantForm.test.ts:95-95 (hunk)", "web/src/lib/Home.test.ts:170-961 (ExpressionStatement)", "web/src/lib/activeGrants.test.ts:8-18 (FunctionDeclaration grant)", "web/src/lib/api.test.ts:262-328 (ExpressionStatement)", "web/src/lib/api.test.ts:464-516 (ExpressionStatement)", "web/src/lib/api.test.ts:517-517 (hunk)", "web/src/lib/api.test.ts:518-584 (ExpressionStatement)", "web/src/lib/api.ts:169-175 (hunk)", "web/src/lib/api.ts:176-179 (TSInterfaceDeclaration SharedRef)", "web/src/lib/api.ts:180-180 (hunk)", "web/src/lib/api.ts:181-187 (TSInterfaceDeclaration ClientView)", "web/src/lib/api.ts:198-204 (TSInterfaceDeclaration ServiceState)", "web/src/lib/api.ts:205-205 (hunk)", "web/src/lib/api.ts:206-211 (TSInterfaceDeclaration Unblock)", "web/src/lib/api.ts:213-219 (TSInterfaceDeclaration BlockedClient)", "web/src/lib/api.ts:260-260 (hunk)", "web/src/lib/api.ts:261-263 (FunctionDeclaration clientView)", "web/src/lib/api.ts:264-264 (hunk)", "web/src/lib/api.ts:265-268 (FunctionDeclaration listClients)", "web/src/lib/api.ts:287-290 (FunctionDeclaration listDevices)", "web/src/lib/api.ts:296-298 (FunctionDeclaration createClient)", "web/src/lib/api.ts:301-303 (FunctionDeclaration renameClient)", "web/src/lib/api.ts:310-317 (FunctionDeclaration childBlocked)", "web/src/lib/api.ts:330-340 (TSInterfaceDeclaration Grant)", "web/src/lib/api.ts:342-350 (TSInterfaceDeclaration GrantCreated)", "web/src/lib/api.ts:367-370 (FunctionDeclaration listGrants)", "web/src/lib/api.ts:373-376 (FunctionDeclaration createGrant)", "web/src/lib/grants.test.ts:124-124 (hunk)", "web/src/lib/grants.test.ts:125-155 (ExpressionStatement)", "web/src/lib/grants.test.ts:156-156 (hunk)", "web/src/lib/grants.test.ts:157-181 (ExpressionStatement)", "web/src/lib/grants.test.ts:3-3 (ImportDeclaration)", "web/src/lib/grants.test.ts:4-16 (ImportDeclaration)", "web/src/lib/grants.ts:2-4 (hunk)", "web/src/lib/grants.ts:5-5 (ImportDeclaration)", "web/src/lib/grants.ts:71-75 (hunk)", "web/src/lib/grants.ts:76-88 (FunctionDeclaration sharedDevices)", "web/src/lib/grants.ts:89-94 (hunk)", "web/src/lib/grants.ts:95-97 (FunctionDeclaration sharedText)", "web/src/lib/tap.test.ts:148-229 (ExpressionStatement)", "web/src/lib/tap.test.ts:34-146 (ExpressionStatement)", "web/src/lib/tap.ts:48-48 (hunk)", "web/src/lib/tap.ts:49-60 (FunctionDeclaration grantFrom)", "web/stryker.config.mjs:4-17 (ExportDefaultDeclaration)"]
+    whole_file = ["web/src/lib/ActiveGrants.svelte — ast-unavailable", "web/src/lib/Children.svelte — ast-unavailable", "web/src/lib/ClientNames.svelte — ast-unavailable", "web/src/lib/GrantForm.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/api/children_test.go:TestChildUpdate_ShareNo409", "internal/store/children_test.go:TestUpdateChild_SharedClient", "internal/api/shared_test.go:TestShared_Lifecycle"]
+  notes = "PUT sharing an owned client: 200 and GET /children DeepEquals both owners"
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["web/src/lib/Children.test.ts:sharedEnabled", "web/src/lib/Children.test.ts:sharedThree", "web/src/lib/Children.test.ts:shareByCheckbox"]
+  notes = "checkbox enabled, exact 'shared with <names>' label excluding self, tick puts the client in the PUT body"
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/grants/clients_test.go:TestAdopt_SharedKeepsOtherGrant", "internal/grants/clients_test.go:TestAdopt_TwoAdded", "internal/api/shared_test.go:TestShared_ShareDuringGrant", "internal/adguard/clients_write_test.go:TestAdopt_Superset"]
+  notes = "exact set-union result, held service left off, re-blocked after the holding grant ends"
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["internal/api/grants_test.go:TestGrants_SharedApplied", "internal/grants/grants_test.go:TestEngine_SharedEnd", "internal/grants/grants_test.go:TestEngine_SharedExpiryKeepsOther", "internal/grants/reconcile_test.go:TestReconcile_OverdueSharedKeepsOther", "internal/grants/reconcile_test.go:TestReconcile_BothOverdueShared", "internal/grants/shared_test.go:TestRevertPlan*"]
+  notes = "apply on shared client; End/expiry/reconcile each pinned both ways (kept while covered, re-blocked after last)"
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["internal/api/grants_test.go:TestGrants_CreateShared", "internal/api/grants_test.go:TestGrants_SharedThreeOwners", "web/src/lib/Home.test.ts:sharedNotice", "web/src/lib/ActiveGrants.panel.test.ts:sharedRow", "web/src/lib/grants.test.ts:sharedText"]
+  notes = "201 shared DeepEqual incl. raw JSON; exact notice and row wording"
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/api/blocked_test.go:TestBlocked_SharedUnblockedBy", "internal/blocked/blocked_test.go:TestCompute_UnblockedByOther", "internal/blocked/blocked_test.go:TestCompute_SharedWith", "web/src/lib/Home.test.ts:unblockedBy"]
+  notes = "non-granting owner's view lists the device with shared_with and unblocked_by naming the granter; exact Home text"
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  tests = ["internal/store/clients_test.go:TestRenameClient_Shared", "internal/grants/rename_test.go:TestEngineRename_Shared", "internal/api/children_test.go:TestChildUpdate_RemoveSharedNoAdGuard", "internal/api/children_test.go:TestChildDelete_SharedNoAdGuard"]
+  notes = "rename keeps all owners with exactly one AdGuard POST; remove/delete keep the rest with 0 AdGuard requests"
+
+[[criterion]]
+  id = "c-8"
+  status = "covered"
+  tests = ["web/src/lib/Home.test.ts:sharedHint", "web/src/lib/Home.test.ts:noConfirm", "web/src/lib/GrantForm.test.ts:hintFollowsChild", "web/src/lib/GrantForm.test.ts:hintPassive", "web/src/lib/Buttons.test.ts:sharedHint"]
+  notes = "passive role=note naming device and others, 0 POSTs before tap; no confirm/dialog, one click = one POST"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0005_shared_clients.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/ActiveGrants.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Children.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/ClientNames.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "NOTE"
+  text = "12 in-diff stryker survivors accepted as equivalent or unreachable (component-side ?? [] fallbacks that api.ts already normalises; guards whose forced value yields the same output); 2 gremlins survivors at internal/api/children.go:286-287 killed by quick 0.1.8.2 (TestChildUpdate_AdoptStoreReadFails); 3 stale store/clients.go acceptances retired"
+
+[[finding]]
+  severity = "NOTE"
+  text = "Stryker concurrency lowered to 1 (quick 0.1.8.1) after the vite deps-cache ENOTEMPTY race failed the first TS leg at concurrency 2"
+
+[[finding]]
+  severity = "NOTE"
+  text = "combination gaps, not criterion surfaces: no API test grants across two shared devices (c-5); rename of a shared client under two active grants untested (c-4/c-7); expiry and reconcile ref-counting pinned at engine level only, End also over HTTP (c-4)"

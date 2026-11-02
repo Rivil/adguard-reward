@@ -1,0 +1,827 @@
+{
+  "phase": "01-config-adguard-client",
+  "generated_at": "2026-09-19T18:57:15.970723Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/server_test.go",
+        "internal/adguard/client.go",
+        "internal/adguard/client_test.go",
+        "internal/adguard/clients.go",
+        "internal/adguard/clients_test.go",
+        "internal/adguard/errors.go",
+        "internal/adguard/services.go",
+        "internal/adguard/services_test.go",
+        "internal/config/config.go",
+        "internal/config/config_test.go",
+        "internal/config/secret.go",
+        "internal/health/health.go",
+        "internal/health/health_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 156,
+        "Survived": 34,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.8210526315789474,
+        "Surviving": [
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 103,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 99,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4742d4bfe47ddb54",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 164,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 340,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 349,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 181,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "51a958b88e117c6a",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 181,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9430031ee34baa69",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 181,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "51a958b88e117c6a",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 181,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9430031ee34baa69",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 183,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "68505a7be9631dc8",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 183,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "68505a7be9631dc8",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 185,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "cfecbf0de85b0129",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 99,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4742d4bfe47ddb54",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 103,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 164,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 340,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 349,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 77,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "39b876eadce3ba8c",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 80,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "22106f6484d1faa3",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 81,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "e2d8072b3839910b",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 82,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f93194a49c469f23",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 83,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "46823b3109dcb811",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 84,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1878626a7c54b487",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 85,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "71410531871fef71",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 86,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "119e0307aa385bd7",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 87,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "429eb582b44c8bfb",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 112,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "dcd6ec3e7b4754e0",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 78,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "02445917af5ed966",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 73,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a0b1cabbc6008ae1",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 79,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "ce334f1f01f15a32",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 74,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "c2ea33c5cb61af8d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 75,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1f35bf94f5ac4cfa",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/config/config.go",
+            "Line": 76,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "c02935d03c0a4137",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+          },
+          {
+            "File": "internal/health/health.go",
+            "Line": 83,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "da5d583a0cdf6c1a",
+            "Lifecycle": "accepted",
+            "Note": "Go cover blocks for a tagless switch start after the case expression (e.g. client.go:181.55), so gremlins attributes no coverage to the condition even though every branch executes under test (cover count 1). Killable in principle but unreachable by the tool; verified with go test -coverprofile on 2026-09-19."
+          }
+        ],
+        "NotCovered": 34
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main.go": "adapter-lacks-range-runner",
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/client.go": "adapter-lacks-range-runner",
+        "internal/adguard/client_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients.go": "adapter-lacks-range-runner",
+        "internal/adguard/clients_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/errors.go": "adapter-lacks-range-runner",
+        "internal/adguard/services.go": "adapter-lacks-range-runner",
+        "internal/adguard/services_test.go": "adapter-lacks-range-runner",
+        "internal/config/config.go": "adapter-lacks-range-runner",
+        "internal/config/config_test.go": "adapter-lacks-range-runner",
+        "internal/config/secret.go": "adapter-lacks-range-runner",
+        "internal/health/health.go": "adapter-lacks-range-runner",
+        "internal/health/health_test.go": "adapter-lacks-range-runner"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": ".gitignore",
+      "reason": "no mutation adapter for .gitignore"
+    },
+    {
+      "file": "Makefile",
+      "reason": "no mutation adapter for "
+    },
+    {
+      "file": "deploy/Dockerfile",
+      "reason": "no mutation adapter for "
+    },
+    {
+      "file": "deploy/config.example.yaml",
+      "reason": "no mutation adapter for .yaml"
+    },
+    {
+      "file": "go.mod",
+      "reason": "no mutation adapter for .mod"
+    },
+    {
+      "file": "go.sum",
+      "reason": "no mutation adapter for .sum"
+    },
+    {
+      "file": "internal/adguard/adguardtest/testdata/blocked_services_all.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "internal/adguard/adguardtest/testdata/blocked_services_get.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "internal/adguard/adguardtest/testdata/clients.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "internal/adguard/adguardtest/testdata/status.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "internal/config/testdata/full.yaml",
+      "reason": "no mutation adapter for .yaml"
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/01-config-adguard-client/REVIEW.md",
+      ".dross/phases/01-config-adguard-client/changes.json",
+      ".dross/phases/01-config-adguard-client/panel/mvp.md",
+      ".dross/phases/01-config-adguard-client/panel/risk.md",
+      ".dross/phases/01-config-adguard-client/panel/synthesis.md",
+      ".dross/phases/01-config-adguard-client/panel/verification.md",
+      ".dross/phases/01-config-adguard-client/plan.toml",
+      ".dross/phases/01-config-adguard-client/spec.toml",
+      ".dross/project.toml",
+      ".gitignore",
+      "Makefile",
+      "cmd/adguard-reward/main.go",
+      "cmd/adguard-reward/main_test.go",
+      "deploy/Dockerfile",
+      "deploy/config.example.yaml",
+      "go.mod",
+      "go.sum",
+      "internal/adguard/adguardtest/server.go",
+      "internal/adguard/adguardtest/server_test.go",
+      "internal/adguard/adguardtest/testdata/blocked_services_all.json",
+      "internal/adguard/adguardtest/testdata/blocked_services_get.json",
+      "internal/adguard/adguardtest/testdata/clients.json",
+      "internal/adguard/adguardtest/testdata/status.json",
+      "internal/adguard/client.go",
+      "internal/adguard/client_test.go",
+      "internal/adguard/clients.go",
+      "internal/adguard/clients_test.go",
+      "internal/adguard/errors.go",
+      "internal/adguard/services.go",
+      "internal/adguard/services_test.go",
+      "internal/config/config.go",
+      "internal/config/config_test.go",
+      "internal/config/secret.go",
+      "internal/config/testdata/full.yaml",
+      "internal/health/health.go",
+      "internal/health/health_test.go"
+    ],
+    "hunks": {
+      ".dross/phases/01-config-adguard-client/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 41
+        }
+      ],
+      ".dross/phases/01-config-adguard-client/changes.json": [
+        {
+          "start": 1,
+          "end": 119
+        }
+      ],
+      ".dross/phases/01-config-adguard-client/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 154
+        }
+      ],
+      ".dross/phases/01-config-adguard-client/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 316
+        }
+      ],
+      ".dross/phases/01-config-adguard-client/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 432
+        }
+      ],
+      ".dross/phases/01-config-adguard-client/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 252
+        }
+      ],
+      ".dross/phases/01-config-adguard-client/plan.toml": [
+        {
+          "start": 1,
+          "end": 68
+        }
+      ],
+      ".dross/phases/01-config-adguard-client/spec.toml": [
+        {
+          "start": 1,
+          "end": 82
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      ".gitignore": [
+        {
+          "start": 19,
+          "end": 19
+        }
+      ],
+      "Makefile": [
+        {
+          "start": 6,
+          "end": 7
+        },
+        {
+          "start": 9,
+          "end": 9
+        },
+        {
+          "start": 14,
+          "end": 15
+        },
+        {
+          "start": 27,
+          "end": 32
+        }
+      ],
+      "cmd/adguard-reward/main.go": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 10,
+          "end": 10
+        },
+        {
+          "start": 14,
+          "end": 14
+        },
+        {
+          "start": 17,
+          "end": 20
+        },
+        {
+          "start": 23,
+          "end": 28
+        },
+        {
+          "start": 30,
+          "end": 33
+        },
+        {
+          "start": 35,
+          "end": 76
+        },
+        {
+          "start": 79,
+          "end": 79
+        },
+        {
+          "start": 86,
+          "end": 92
+        },
+        {
+          "start": 101,
+          "end": 105
+        },
+        {
+          "start": 107,
+          "end": 107
+        },
+        {
+          "start": 109,
+          "end": 109
+        },
+        {
+          "start": 112,
+          "end": 118
+        },
+        {
+          "start": 120,
+          "end": 120
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 4,
+          "end": 14
+        },
+        {
+          "start": 16,
+          "end": 24
+        },
+        {
+          "start": 27,
+          "end": 233
+        },
+        {
+          "start": 235,
+          "end": 236
+        },
+        {
+          "start": 239,
+          "end": 317
+        }
+      ],
+      "deploy/Dockerfile": [
+        {
+          "start": 14,
+          "end": 14
+        },
+        {
+          "start": 20,
+          "end": 20
+        },
+        {
+          "start": 26,
+          "end": 28
+        }
+      ],
+      "deploy/config.example.yaml": [
+        {
+          "start": 1,
+          "end": 12
+        }
+      ],
+      "go.mod": [
+        {
+          "start": 4,
+          "end": 5
+        }
+      ],
+      "go.sum": [
+        {
+          "start": 1,
+          "end": 4
+        }
+      ],
+      "internal/adguard/adguardtest/server.go": [
+        {
+          "start": 1,
+          "end": 357
+        }
+      ],
+      "internal/adguard/adguardtest/server_test.go": [
+        {
+          "start": 1,
+          "end": 287
+        }
+      ],
+      "internal/adguard/adguardtest/testdata/blocked_services_all.json": [
+        {
+          "start": 1,
+          "end": 30
+        }
+      ],
+      "internal/adguard/adguardtest/testdata/blocked_services_get.json": [
+        {
+          "start": 1,
+          "end": 6
+        }
+      ],
+      "internal/adguard/adguardtest/testdata/clients.json": [
+        {
+          "start": 1,
+          "end": 101
+        }
+      ],
+      "internal/adguard/adguardtest/testdata/status.json": [
+        {
+          "start": 1,
+          "end": 12
+        }
+      ],
+      "internal/adguard/client.go": [
+        {
+          "start": 1,
+          "end": 216
+        }
+      ],
+      "internal/adguard/client_test.go": [
+        {
+          "start": 1,
+          "end": 269
+        }
+      ],
+      "internal/adguard/clients.go": [
+        {
+          "start": 1,
+          "end": 153
+        }
+      ],
+      "internal/adguard/clients_test.go": [
+        {
+          "start": 1,
+          "end": 300
+        }
+      ],
+      "internal/adguard/errors.go": [
+        {
+          "start": 1,
+          "end": 30
+        }
+      ],
+      "internal/adguard/services.go": [
+        {
+          "start": 1,
+          "end": 33
+        }
+      ],
+      "internal/adguard/services_test.go": [
+        {
+          "start": 1,
+          "end": 46
+        }
+      ],
+      "internal/config/config.go": [
+        {
+          "start": 1,
+          "end": 244
+        }
+      ],
+      "internal/config/config_test.go": [
+        {
+          "start": 1,
+          "end": 393
+        }
+      ],
+      "internal/config/secret.go": [
+        {
+          "start": 1,
+          "end": 34
+        }
+      ],
+      "internal/config/testdata/full.yaml": [
+        {
+          "start": 1,
+          "end": 17
+        }
+      ],
+      "internal/health/health.go": [
+        {
+          "start": 1,
+          "end": 130
+        }
+      ],
+      "internal/health/health_test.go": [
+        {
+          "start": 1,
+          "end": 242
+        }
+      ]
+    },
+    "base": "381be5cedc7c313b5ae5c8f8da101fb2829e6732",
+    "source": "git+changes"
+  },
+  "measured_on": "local"
+}

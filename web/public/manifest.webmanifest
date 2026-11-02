@@ -1,0 +1,15 @@
+{
+  "name": "adguard-reward",
+  "short_name": "Reward",
+  "description": "One-tap timed unblocks for a child's devices on AdGuard Home",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#aa3bff",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,82 @@
+[phase]
+  id = "01-config-adguard-client"
+  title = "Config and AdGuard client"
+  milestone = "v0.1"
+
+[[criteria]]
+  id = "c-1"
+  text = "Config loads from --config YAML with ADGUARD_REWARD_* env overrides and password_file / api_key_file indirection; missing adguard.url, adguard.username or adguard.password exits non-zero with a message naming the key"
+
+[[criteria]]
+  id = "c-2"
+  text = "Startup and request logs never contain the AdGuard password or AI key; a test captures log output at debug level and asserts the secret strings are absent"
+
+[[criteria]]
+  id = "c-3"
+  text = "adguard.Client.Login(user, pass) returns a distinct ErrBadCredentials when AdGuard rejects the login, and a different wrapped transport/status error when AdGuard is unreachable or returns 5xx"
+
+[[criteria]]
+  id = "c-4"
+  text = "Client.Clients() returns persistent clients typed from GET /control/clients (name, ids, blocked_services ids, use_global_blocked_services) plus the global blocked-services list, parsed against a fixture of the AdGuard Home v0.107.x response shape"
+
+[[criteria]]
+  id = "c-5"
+  text = "Client.Services() returns the built-in service catalogue (id, name, icon) from GET /control/blocked_services/all at runtime; nothing vendored"
+
+[[criteria]]
+  id = "c-6"
+  text = "Client.SetBlockedServices(clientName, ids) writes via POST /control/clients/update as read-modify-write: the request body carries every other field of that client exactly as read and only the blocked_services array changes, asserted against a fake AdGuard that echoes the body"
+
+[[criteria]]
+  id = "c-7"
+  text = "On startup the app probes GET /control/status with the service credential and logs the outcome and AdGuard version; GET /healthz always returns 200 with JSON {status, adguard: ok|unreachable|unauthorized, adguard_version, version} reflecting the most recent probe"
+
+[[decisions]]
+  key = "startup_probe"
+  choice = "Service credential rejected (401/403) at startup exits non-zero with a clear message; AdGuard unreachable or 5xx logs an error and the app keeps serving"
+  why = "Bad config must die loudly on first boot, but a flaky or restarting AdGuard must not take the reward app down mid-grant"
+  locked = true
+
+[[decisions]]
+  key = "healthz"
+  choice = "/healthz is unauthenticated, always 200, JSON body {status, adguard, adguard_version, version}; AdGuard state is reported in the body, never via the status code"
+  why = "Liveness for systemd/Docker must stay trivially true so a healthy app is not restarted because AdGuard hiccupped; the JSON keeps AdGuard state visible to anyone curling it"
+  locked = true
+
+[[decisions]]
+  key = "env_naming"
+  choice = "Nested config keys map to env by joining with _ under the ADGUARD_REWARD_ prefix, e.g. ADGUARD_REWARD_ADGUARD_PASSWORD_FILE"
+  why = "Conventional, no collisions in the current key set, and matches the existing ADGUARD_REWARD_LISTEN precedent"
+  locked = true
+
+[[decisions]]
+  key = "config_path"
+  choice = "--config defaults to config.yaml next to the binary; a missing default file runs from env alone, a missing explicitly-passed path is an error"
+  why = "PLAN.md fixes the default location; env-only start is the container case and must not require a file, but a typo in --config must not silently fall back"
+  locked = true
+
+[[decisions]]
+  key = "adguard_auth"
+  choice = "The app's own AdGuard calls use HTTP basic auth on every request with the config service credential"
+  why = "Per PLAN.md: no cookie/session juggling, and grants revert even when no parent is logged in"
+  locked = true
+
+[[decisions]]
+  key = "adguard_api_target"
+  choice = "Types target the current AdGuard Home v0.107.x API shape only (per-client blocked_services: [ids] + blocked_services_schedule; global /control/blocked_services/get: {ids, schedule}); no support for the pre-2023 legacy endpoints"
+  why = "The legacy shape predates 2023 and supporting both doubles the fixture surface for no household benefit"
+  locked = true
+
+[[deferred]]
+  text = "Serve HTTPS when tls.cert and tls.key are set (config parses the keys now; listener not wired)"
+  why = "Only matters for PWA secure context; needs a real cert to exercise, which the deploy phase has"
+  target = "06-deploy-nora"
+
+[[deferred]]
+  text = "adguard.tls_skip_verify option for self-signed AdGuard HTTPS endpoints"
+  why = "nora is plain HTTP on localhost; belongs to the M4 open-source release, not yet scoped"
+
+[[deferred]]
+  text = "First-run offer to copy the global blocked_services list into each client with use_global_blocked_services set, after explicit confirmation"
+  why = "Needs a UI and confirmation flow; c-4 only reads the flag"
+  target = "03-children-and-blocked-view"

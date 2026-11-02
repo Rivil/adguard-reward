@@ -1,0 +1,30 @@
+{
+  "blocked_services": [
+    {
+      "icon_svg": "PHN2Zy8+",
+      "id": "youtube",
+      "name": "YouTube",
+      "rules": ["||youtube.com^", "||googlevideo.com^"],
+      "group_id": "video"
+    },
+    {
+      "icon_svg": "PHN2Zy8+",
+      "id": "tiktok",
+      "name": "TikTok",
+      "rules": ["||tiktok.com^", "||tiktokcdn.com^"],
+      "group_id": "social"
+    },
+    {
+      "icon_svg": "PHN2Zy8+",
+      "id": "roblox",
+      "name": "Roblox",
+      "rules": ["||roblox.com^", "||rbxcdn.com^"],
+      "group_id": "games"
+    }
+  ],
+  "groups": [
+    {"id": "video", "name": "Video"},
+    {"id": "social", "name": "Social"},
+    {"id": "games", "name": "Games"}
+  ]
+}

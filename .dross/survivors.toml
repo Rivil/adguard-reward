@@ -1,0 +1,1300 @@
+[[category]]
+  name = "gremlins-switch-case"
+  reason = "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "string-concat-initializer"
+  reason = "ARITHMETIC_BASE on EnvPrefix + \"NAME\" in the package-level envTable initializer: string - string does not compile (not viable) and package-level var init runs before coverage counters exist, so gremlins reports it not-covered. The env names themselves are pinned by TestEnvTable."
+
+[[category]]
+  name = "string-concat-panic"
+  reason = "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+
+[[category]]
+  name = "string-concat-panic-embed"
+  reason = "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+
+[[category]]
+  name = "stryker-node-env-guard"
+  reason = "typeof location/history guards exist only so api.ts imports under vitest's node environment; the SPA is never server-rendered, so in every real runtime the guard is constant and the mutant is equivalent"
+
+[[category]]
+  name = "optional-chain-inside-try"
+  reason = "body?.x -> body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+
+[[category]]
+  name = "stryker-self-config"
+  reason = "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+
+[[category]]
+  name = "go-string-arith"
+  reason = "ARITHMETIC_BASE on string concatenation: string - string does not compile, so the mutant is non-viable; gremlins lists it only because the branch (the store-500 path, which the api tests do not fault-inject) carries no coverage block."
+
+[[category]]
+  name = "stryker-whole-file-attribution"
+  reason = "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "svelte-preload-state"
+  reason = "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+
+[[category]]
+  name = "checkbox-dom-semantics"
+  reason = "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+
+[[category]]
+  name = "stryker-static-attribution"
+  reason = "Module-level const mutants (Stryker static=true) are attributed by the vitest runner to the single test that first imported the module, so the tests that assert the value never run against them. Killed when applied by hand (full vitest suite red for api.ts:33 PATHS.buttons, :289 GRANTS and :290 BUTTONS → '', verified 2026-09-21). Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "tap-all-targets-gone"
+  reason = "last === null means every target 404'd; each overlapsFor target shares ≥1 spec service which the 404 branch adds to remaining, and the envelope-stub path starts with remaining = all spec services, so rest is non-empty and the create branch returns first. The 'That grant has already ended' arm is unreachable while spec.services is non-empty (the form requires ≥1 and the server 422s an empty list)."
+
+[[category]]
+  name = "sw-cache-name-equality-only"
+  reason = "cacheName is only ever compared for equality (activate prunes every cache whose name !== CACHE; install opens CACHE); the join separator, an extra NaN round in the FNV loop and the 'shell-' prefix change the value but not distinctness, which sw-routing.test 'changes with the list' pins."
+
+[[category]]
+  name = "svelte-lazy-derived-branch"
+  reason = "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -> ['Stryker was here'] and services === null -> false applied, 2026-09-22)."
+
+[[category]]
+  name = "gremlins-switch-case-covered"
+  reason = "Case body executes under go test -coverprofile (count >= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "dead-array-fallback"
+  reason = "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+
+[[accepted]]
+  key = "51a958b88e117c6a"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case resp.StatusCode >= 200 && resp.StatusCode < 300:"
+  line = 181
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "9430031ee34baa69"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case resp.StatusCode >= 200 && resp.StatusCode < 300:"
+  line = 181
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "68505a7be9631dc8"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case resp.StatusCode == http.StatusUnauthorized, resp.StatusCode == http.StatusForbidden:"
+  line = 183
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "cfecbf0de85b0129"
+  file = "internal/adguard/client.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case resp.StatusCode == http.StatusTooManyRequests:"
+  line = 185
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "dcd6ec3e7b4754e0"
+  file = "internal/config/config.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 112
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "da5d583a0cdf6c1a"
+  file = "internal/health/health.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 83
+  category = "gremlins-switch-case"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "a0b1cabbc6008ae1"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"listen\", EnvPrefix + \"LISTEN\", func(c *Config, v string) { c.Listen = v }},"
+  line = 73
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "c2ea33c5cb61af8d"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"base_url\", EnvPrefix + \"BASE_URL\", func(c *Config, v string) { c.BaseURL = v }},"
+  line = 74
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "1f35bf94f5ac4cfa"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"tls.cert\", EnvPrefix + \"TLS_CERT\", func(c *Config, v string) { c.TLS.Cert = v }},"
+  line = 75
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "c02935d03c0a4137"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"tls.key\", EnvPrefix + \"TLS_KEY\", func(c *Config, v string) { c.TLS.Key = v }},"
+  line = 76
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "39b876eadce3ba8c"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.url\", EnvPrefix + \"ADGUARD_URL\", func(c *Config, v string) { c.AdGuard.URL = v }},"
+  line = 77
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "02445917af5ed966"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.username\", EnvPrefix + \"ADGUARD_USERNAME\", func(c *Config, v string) { c.AdGuard.Username = v }},"
+  line = 78
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "ce334f1f01f15a32"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.password\", EnvPrefix + \"ADGUARD_PASSWORD\", func(c *Config, v string) { c.AdGuard.Password = Secret(v) }},"
+  line = 79
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "22106f6484d1faa3"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"adguard.password_file\", EnvPrefix + \"ADGUARD_PASSWORD_FILE\", func(c *Config, v string) { c.AdGuard.PasswordFile = v }},"
+  line = 80
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "e2d8072b3839910b"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"data_dir\", EnvPrefix + \"DATA_DIR\", func(c *Config, v string) { c.DataDir = v }},"
+  line = 81
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "f93194a49c469f23"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.provider\", EnvPrefix + \"AI_PROVIDER\", func(c *Config, v string) { c.AI.Provider = v }},"
+  line = 82
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "46823b3109dcb811"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.api_key\", EnvPrefix + \"AI_API_KEY\", func(c *Config, v string) { c.AI.APIKey = Secret(v) }},"
+  line = 83
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "1878626a7c54b487"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.api_key_file\", EnvPrefix + \"AI_API_KEY_FILE\", func(c *Config, v string) { c.AI.APIKeyFile = v }},"
+  line = 84
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "71410531871fef71"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.base_url\", EnvPrefix + \"AI_BASE_URL\", func(c *Config, v string) { c.AI.BaseURL = v }},"
+  line = 85
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "119e0307aa385bd7"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"ai.model\", EnvPrefix + \"AI_MODEL\", func(c *Config, v string) { c.AI.Model = v }},"
+  line = 86
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "429eb582b44c8bfb"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"log_level\", EnvPrefix + \"LOG_LEVEL\", func(c *Config, v string) { c.LogLevel = v }},"
+  line = 87
+  category = "string-concat-initializer"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "82d078c2c4de2ddd"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: clients.json clients: \" + err.Error())"
+  line = 103
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "37d3fbc9535346b0"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: MutateClient: no client \" + name)"
+  line = 164
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "4ddb8c8c56a75fe0"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: encode clients: \" + err.Error())"
+  line = 340
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "9824007bce1a8b3d"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: encode clients doc: \" + err.Error())"
+  line = 349
+  category = "string-concat-panic"
+  accepted_in = "01-config-adguard-client"
+
+[[accepted]]
+  key = "1fa25d4f40ebe7f5"
+  file = "internal/api/login.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 79
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "793b75f25044151d"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil && ctx.Err() == nil:"
+  line = 240
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "0231579a43c2cb95"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case n > 0:"
+  line = 242
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2cf50219723c390a"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case n > 0:"
+  line = 242
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "98794572c2e565fb"
+  file = "internal/auth/middleware.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 35
+  category = "gremlins-switch-case"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "0b343badf918d34d"
+  file = "internal/config/config.go"
+  op = "ARITHMETIC_BASE"
+  text = "{\"trusted_proxies\", EnvPrefix + \"TRUSTED_PROXIES\", func(c *Config, v string) { c.TrustedProxies = splitList(v) }},"
+  line = 82
+  category = "string-concat-initializer"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "a8785d915cdc6357"
+  file = "internal/store/migrate.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"store: embedded migrations dir missing: \" + err.Error())"
+  line = 25
+  category = "string-concat-panic-embed"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "3d1decd06dce2e38"
+  file = "internal/store/migrate.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"store: list embedded migrations: \" + err.Error())"
+  line = 35
+  category = "string-concat-panic-embed"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "f1b531569dc325b5"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "this.name = 'ApiError'"
+  line = 19
+  reason = "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "43d59fe19b1fbacc"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return typeof location === 'undefined' ? '/' : location.pathname"
+  line = 35
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d27f549707e36026"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "return typeof location === 'undefined' ? '/' : location.pathname"
+  line = 35
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d335c2ed61ddcc43"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (typeof history !== 'undefined' && currentPath() !== path) {"
+  line = 44
+  category = "stryker-node-env-guard"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "94cf19252c2aef02"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "history.pushState(null, '', path)"
+  line = 45
+  reason = "history.pushState title argument is ignored by every browser per the HTML spec; no observable behaviour"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "4e298254432a9b95"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (body !== undefined) {"
+  line = 98
+  reason = "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2bd6098940f4db18"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.error === 'string') code = body.error"
+  line = 75
+  category = "optional-chain-inside-try"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "ab063f347019f075"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.message === 'string') message = body.message"
+  line = 76
+  category = "optional-chain-inside-try"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "5ce873c89415142e"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "mutate: ['src/**/*.{ts,svelte}', '!src/**/*.test.ts', '!src/vite-env.d.ts'],"
+  line = 8
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "6c0229c7a791edfa"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "export default {"
+  line = 4
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "462f570872709404"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "testRunner: 'vitest',"
+  line = 5
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "2462f1b076b4e965"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "plugins: ['@stryker-mutator/vitest-runner'],"
+  line = 6
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "25b8291a7513cacc"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "plugins: ['@stryker-mutator/vitest-runner'],"
+  line = 6
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "b0a1b69fe8d0769a"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "vitest: { configFile: 'vite.config.ts' },"
+  line = 7
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "9dada2f0e50f7800"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "vitest: { configFile: 'vite.config.ts' },"
+  line = 7
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "b5d644fad38137bd"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "mutate: ['src/**/*.{ts,svelte}', '!src/**/*.test.ts', '!src/vite-env.d.ts'],"
+  line = 8
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "fd2e398a8266c702"
+  file = "web/stryker.config.mjs"
+  op = "ArrayDeclaration"
+  text = "reporters: ['json', 'progress'],"
+  line = 9
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "4bb4543da79a4d17"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "reporters: ['json', 'progress'],"
+  line = 9
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "16a8190aa46b7ac9"
+  file = "web/stryker.config.mjs"
+  op = "ObjectLiteral"
+  text = "jsonReporter: { fileName: 'reports/mutation/mutation.json' },"
+  line = 10
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "831fcd513b94f817"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "jsonReporter: { fileName: 'reports/mutation/mutation.json' },"
+  line = 10
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "fa6e2382c0a398ac"
+  file = "web/stryker.config.mjs"
+  op = "StringLiteral"
+  text = "tempDirName: '.stryker-tmp',"
+  line = 11
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "158d7de022076122"
+  file = "web/stryker.config.mjs"
+  op = "BooleanLiteral"
+  text = "ignoreStatic: true,"
+  line = 12
+  category = "stryker-self-config"
+  accepted_in = "02-auth-sessions"
+
+[[accepted]]
+  key = "d69e57f7ae237fb9"
+  file = "internal/api/children.go"
+  op = "ARITHMETIC_BASE"
+  text = "a.log.Error(op+\" failed\", \"err\", err)"
+  line = 114
+  category = "go-string-arith"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "6cc7c18da6e15549"
+  file = "internal/api/children.go"
+  op = "ARITHMETIC_BASE"
+  text = "writeError(w, http.StatusInternalServerError, \"internal\", \"could not \"+op)"
+  line = 115
+  category = "go-string-arith"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "91ca0896550367aa"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case len(presents) > 0 && blockedOn == len(presents):"
+  line = 98
+  category = "gremlins-switch-case"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "d80e2d09b950a6b5"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case len(presents) > 0 && blockedOn == len(presents):"
+  line = 98
+  category = "gremlins-switch-case"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "55673a2b65311747"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case blockedOn == 0:"
+  line = 101
+  category = "gremlins-switch-case"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "4e3c141d619c1c5f"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (r !== 'home' && PATHS[r] === pathname) return r"
+  line = 34
+  category = "stryker-whole-file-attribution"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "8ef83e30b05b7491"
+  file = "web/src/App.svelte"
+  op = "ConditionalExpression"
+  text = "{:else if $route === 'children' && username !== null}"
+  line = 39
+  category = "stryker-whole-file-attribution"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "2e5c825a43b53d61"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (r !== 'home' && PATHS[r] === pathname) return r"
+  line = 34
+  reason = "'home' → '' in routeFor's skip-guard is equivalent: with the guard gone the loop still reaches PATHS.home ('/') and returns 'home' for '/', and every other pathname resolves exactly as before."
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "efe4eae9dcf17bf2"
+  file = "web/src/lib/Children.svelte"
+  op = "ArrayDeclaration"
+  text = "let clients = $state<ClientView[]>([])"
+  line = 18
+  category = "svelte-preload-state"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "fd2e2d4d8db99396"
+  file = "web/src/lib/Children.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 23
+  category = "svelte-preload-state"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "6485f7e42f3edd6a"
+  file = "web/src/lib/Children.svelte"
+  op = "ConditionalExpression"
+  text = "if (reloadOnError) {"
+  line = 50
+  reason = "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "23b258f0df7fd7fe"
+  file = "web/src/lib/Children.svelte"
+  op = "ConditionalExpression"
+  text = "if (checked && !d.clients.includes(name)) d.clients = [...d.clients, name]"
+  line = 68
+  category = "checkbox-dom-semantics"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "5ad3db1cdd919929"
+  file = "web/src/lib/Children.svelte"
+  op = "LogicalOperator"
+  text = "if (checked && !d.clients.includes(name)) d.clients = [...d.clients, name]"
+  line = 68
+  category = "checkbox-dom-semantics"
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "71812182bec5af4d"
+  file = "web/src/lib/MigrationBanner.svelte"
+  op = "BlockStatement"
+  text = "} catch {"
+  line = 14
+  reason = "The catch body sets offer = null, which is already its value before the await; removing it changes nothing."
+  accepted_in = "03-children-and-blocked-view"
+
+[[accepted]]
+  key = "f46f6aab3d37fc49"
+  file = "cmd/adguard-reward/main.go"
+  op = "ARITHMETIC_BASE"
+  text = "var reconcileInterval = 60 * time.Second"
+  line = 41
+  reason = "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "71be988b0a00e5a4"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: BlockedServices: \" + err.Error())"
+  line = 199
+  category = "string-concat-panic"
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "4ecfa87bc8060128"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: RemoveClient: no client \" + name)"
+  line = 216
+  reason = "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "971ea8d8d9b5ff52"
+  file = "internal/api/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "a.log.Error(op+\" failed\", \"err\", err)"
+  line = 119
+  reason = "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -> 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "3d175e3325616cdf"
+  file = "internal/api/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "writeError(w, http.StatusInternalServerError, \"internal\", \"could not \"+op)"
+  line = 120
+  reason = "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -> 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "07257c7ebd994d79"
+  file = "internal/grants/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "return \"grants: revert failed for \" + strings.Join(e.Clients, \", \")"
+  line = 47
+  reason = "ARITHMETIC_BASE on the string concatenation in ErrRevertFailed.Error(): string - string does not compile (not viable). The type itself is exercised via errors.As in TestGrants_EndRevertFails / TestEngine_EndRevertFailure; only the Error() text is never read."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "149b5b8d30816792"
+  file = "internal/grants/grants.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 198
+  reason = "Killed when applied by hand (case err == nil -> err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
+  accepted_in = "04-grants-scheduler-reconciler"
+
+[[accepted]]
+  key = "64ea52ccaa4f8356"
+  file = "internal/spa/spa.go"
+  op = "ARITHMETIC_BASE"
+  text = "http.Error(w, \"read \"+name+\": \"+err.Error(), http.StatusInternalServerError)"
+  line = 119
+  category = "go-string-arith"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "4c5b495c5d67f3b8"
+  file = "web/embed.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"web: embedded dist dir missing: \" + err.Error())"
+  line = 20
+  category = "string-concat-panic-embed"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "791f265470427dc7"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children', buttons: '/buttons' }"
+  line = 33
+  category = "stryker-static-attribution"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "50b121555e021aa9"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const GRANTS = '/api/v1/grants'"
+  line = 289
+  category = "stryker-static-attribution"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "a1136f7a86c8a5f0"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const BUTTONS = '/api/v1/buttons'"
+  line = 290
+  category = "stryker-static-attribution"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "24dff3c1899b1c9f"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "if (typeof body?.grant_id === 'number') grantId = body.grant_id"
+  line = 87
+  category = "optional-chain-inside-try"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "f80851266a65b8c1"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ArrayDeclaration"
+  text = "let children = $state<Child[]>([])"
+  line = 21
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "cac773d5866378f2"
+  file = "web/src/lib/Buttons.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 25
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "958c5408e188c7cb"
+  file = "web/src/lib/Buttons.svelte"
+  op = "BooleanLiteral"
+  text = "let valid = $state(false)"
+  line = 31
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "286edbfec9fcea7e"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "BooleanLiteral"
+  text = "valid = $bindable(false),"
+  line = 20
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "9e7b970f78a207cf"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "let children = $state<Child[]>([])"
+  line = 29
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "332725e64d242d98"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "let buttons = $state<Button[]>([])"
+  line = 30
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "4a2c7171134bef4f"
+  file = "web/src/lib/Home.svelte"
+  op = "BooleanLiteral"
+  text = "let adhocValid = $state(false)"
+  line = 51
+  category = "svelte-preload-state"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "e528d9de6aadadb5"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "if (reloadOnError) {"
+  line = 63
+  reason = "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "6c8255537ab76c28"
+  file = "web/src/lib/Home.svelte"
+  op = "OptionalChaining"
+  text = "stopPolling?.()"
+  line = 78
+  reason = "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "6232b0be4db10034"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "default:"
+  line = 124
+  reason = "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "85c805b4f0c4fa20"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "if (!o) return"
+  line = 157
+  reason = "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "97404d5a1a2ab537"
+  file = "web/src/lib/Home.svelte"
+  op = "OptionalChaining"
+  text = "<p class=\"error\" role=\"alert\" data-error={notes[child.id]?.code}>{notes[child.id]?.text}</p>"
+  line = 256
+  reason = "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "796e4f25f8b64e3c"
+  file = "web/src/lib/ActiveGrants.svelte"
+  op = "ConditionalExpression"
+  text = "for (const id of asked) if (!present.has(id)) asked.delete(id)"
+  line = 33
+  reason = "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "0595a148ba48c2a0"
+  file = "web/src/lib/tap.ts"
+  op = "ConditionalExpression"
+  text = "for (const s of target.services) if (spec.services.includes(s)) remaining.add(s)"
+  line = 125
+  reason = "'remaining' is only read through spec.services.filter(remaining.has), so adding a 404'd target's non-spec services to it changes nothing."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "cfc9696c1e58b946"
+  file = "web/src/lib/tap.ts"
+  op = "ObjectLiteral"
+  text = "if (last === null) return { kind: 'error', code: 'not_found', message: 'That grant has already ended' }"
+  line = 137
+  category = "tap-all-targets-gone"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "a4cb0eb008e372b9"
+  file = "web/src/lib/tap.ts"
+  op = "StringLiteral"
+  text = "if (last === null) return { kind: 'error', code: 'not_found', message: 'That grant has already ended' }"
+  line = 137
+  category = "tap-all-targets-gone"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "bba5b332cdeb5fc2"
+  file = "web/src/lib/tap.ts"
+  op = "ConditionalExpression"
+  text = "if (last === null) return { kind: 'error', code: 'not_found', message: 'That grant has already ended' }"
+  line = 137
+  category = "tap-all-targets-gone"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "dc864a49300265c3"
+  file = "web/src/lib/activeGrants.ts"
+  op = "ConditionalExpression"
+  text = "if (stopCurrent === stop) stopCurrent = null"
+  line = 71
+  reason = "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "a8c65213a13dd7f8"
+  file = "web/src/lib/sw-routing.ts"
+  op = "StringLiteral"
+  text = "const joined = [...precache].sort().join('\\n')"
+  line = 40
+  category = "sw-cache-name-equality-only"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "ba55a94c7a967b53"
+  file = "web/src/lib/sw-routing.ts"
+  op = "EqualityOperator"
+  text = "for (let i = 0; i < joined.length; i++) {"
+  line = 42
+  category = "sw-cache-name-equality-only"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "b8724ad36168226d"
+  file = "web/src/lib/sw-routing.ts"
+  op = "StringLiteral"
+  text = "return 'shell-' + h.toString(16).padStart(8, '0')"
+  line = 46
+  category = "sw-cache-name-equality-only"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "3539806d54320b88"
+  file = "web/src/sw.ts"
+  op = "ConditionalExpression"
+  text = "default:"
+  line = 43
+  reason = "The switch's default arm (bypass) only returns; rewriting it changes nothing observable."
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "9d3b09a97aead0f5"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ArrayDeclaration"
+  text = "const unknown = $derived(services === null ? [] : value.services.filter((id) => !services.some((s) => s.id === id)))"
+  line = 51
+  category = "svelte-lazy-derived-branch"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "9f8c19698c217d12"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = "const unknown = $derived(services === null ? [] : value.services.filter((id) => !services.some((s) => s.id === id)))"
+  line = 51
+  category = "svelte-lazy-derived-branch"
+  accepted_in = "05-phone-ui-buttons-pwa"
+
+[[accepted]]
+  key = "511b6f39daef4909"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = "services === null"
+  line = 58
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: shown is a lazy $derived read only inside the template's services!==null branch; the null guard exists for the type checker and is never evaluated with a null catalogue"
+
+[[accepted]]
+  key = "8b4f0513f10ed864"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ArrayDeclaration"
+  text = "? []"
+  line = 59
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: the [] arm is only reachable with a null catalogue, where nothing reads shown (lazy $derived, template null branch never renders the list)"
+
+[[accepted]]
+  key = "46f8922b47508734"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = ": needle === ''"
+  line = 60
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: with an empty needle the filter path returns every service because x.includes('') is always true; the early return is an optimisation"
+
+[[accepted]]
+  key = "969ac8ba8b79e0da"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "StringLiteral"
+  text = ": needle === ''"
+  line = 60
+  accepted_in = "06-deploy-nora"
+  reason = "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
+
+[[accepted]]
+  key = "ec84ab086867857b"
+  file = "internal/grants/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil, errors.Is(err, adguard.ErrClientNotFound):"
+  line = 105
+  category = "gremlins-switch-case-covered"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "b6d0a47a51b5e218"
+  file = "internal/adguard/devices.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case xerr == nil && yerr == nil:"
+  line = 154
+  category = "gremlins-switch-case-covered"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "96ff237bdd4c77ba"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: \" + name + \": \" + err.Error())"
+  line = 106
+  category = "string-concat-panic"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "2c52925716d27eaf"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: encode: \" + err.Error())"
+  line = 315
+  category = "string-concat-panic"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "86752b45cbacdad7"
+  file = "web/src/lib/Children.svelte"
+  op = "ArrayDeclaration"
+  text = "let unlabelled = $state<UnlabelledDevice[]>([])"
+  line = 22
+  category = "svelte-preload-state"
+  accepted_in = "auto-client-labelling"
+
+[[accepted]]
+  key = "e8e6bf58e067f055"
+  file = "web/src/lib/UnlabelledDevices.svelte"
+  op = "StringLiteral"
+  text = "const childOf = (d: UnlabelledDevice) => edits[d.ip]?.child ?? ''"
+  line = 27
+  accepted_in = "auto-client-labelling"
+  reason = "Equivalent: a non-empty default child makes save() send Number('<non-numeric>') = NaN, which JSON.stringify encodes as null — the same child_id: null as the '' default; with no option marked selected the browser shows the first option ('No child') either way."
+
+[[accepted]]
+  key = "902c12737cbb6e59"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const CLIENTS = '/api/v1/clients'"
+  line = 234
+  accepted_in = "auto-client-labelling"
+  reason = "Module-level const CLIENTS is evaluated once at import, so Stryker's per-test mutant switching cannot activate the mutant; the exact URLs are asserted by api.test.ts (createClient/listDevices toBe '/api/v1/clients', renameClient toBe '/api/v1/clients/rename')."
+
+[[accepted]]
+  key = "7ed5ca61843a9f7d"
+  file = "web/src/lib/ClientNames.svelte"
+  op = "BooleanLiteral"
+  text = "disabled = false,"
+  line = 6
+  accepted_in = "auto-client-labelling"
+  reason = "Dead default: the only caller (Children.svelte:169) always passes disabled={pending}, so the 'disabled = false' prop default is never read in the app."
+
+[[accepted]]
+  key = "e36715b66a65a1bc"
+  file = "internal/adguard/devices.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case xerr == nil:"
+  line = 156
+  accepted_in = "auto-client-labelling"
+  reason = "Killed when applied by hand: flipping to 'xerr != nil' fails TestUnlabelled_UnparseableIPOrder (checked 2026-11-01, sibling :157 mutants killed by gremlins in the same run). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "602256014df6b282"
+  file = "internal/adguard/devices.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case yerr == nil:"
+  line = 158
+  accepted_in = "auto-client-labelling"
+  reason = "Killed when applied by hand: flipping to 'yerr != nil' fails TestUnlabelled_UnparseableIPOrder (aa-host/zz-host order inverts; checked 2026-11-01). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "3ee630b90804020d"
+  file = "web/src/lib/UnlabelledDevices.svelte"
+  op = "ConditionalExpression"
+  text = "<option value=\"\" selected={childOf(d) === ''}>No child</option>"
+  line = 95
+  accepted_in = "auto-client-labelling"
+  reason = "Equivalent: 'No child' is the select's first option, so when its selected is false and no child matches, the browser's selectedness fallback selects it anyway; when a child matches, that option's selected=true wins regardless. No observable DOM or request difference (scoped stryker 2026-11-01: :95 true and !== are killed by the picker test, this one cannot be)."
+
+[[accepted]]
+  key = "c8895e1cbdf85dad"
+  file = "web/src/lib/UnlabelledDevices.svelte"
+  op = "StringLiteral"
+  text = "<option value=\"\" selected={childOf(d) === ''}>No child</option>"
+  line = 95
+  accepted_in = "auto-client-labelling"
+  reason = "Equivalent to the :95 ConditionalExpression false mutant: comparing childOf(d) to a non-existent value is always false, and 'No child' as the first option is the select's fallback selection either way."
+
+[[accepted]]
+  key = "a5b51c8fe20a4fcd"
+  file = "web/src/lib/Children.svelte"
+  op = "ArrayDeclaration"
+  text = "{@const others = (c.children ?? []).filter((o) => o.id !== child.id)}"
+  line = 131
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "a6d312f12b091b9b"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "if ((out.kind === 'applied' || out.kind === 'partial') && (out.grant.shared ?? []).length > 0) {"
+  line = 118
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "9382694512e2eb73"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "sharedNotes[childId] = sharedText(out.grant.shared ?? [])"
+  line = 119
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "bc76e085b2a98272"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "return v.services.filter((s) => s.state !== 'unblocked' || (s.unblocked_by ?? []).length > 0)"
+  line = 208
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "7f673034875137a4"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "const by = s.unblocked_by ?? []"
+  line = 217
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "8ef387b402aa021d"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "{(c.shared_with ?? []).length > 0 ? sharedText([{ client: c.name, others: c.shared_with ?? [] }]) : c.name}"
+  line = 306
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "cd169da8a77c2191"
+  file = "web/src/lib/ClientNames.svelte"
+  op = "OptionalChaining"
+  text = "<span class=\"current\">{c.name}{#if c.children?.length}<span class=\"owner\">{` — ${c.children.map((o) => o.name).join(', ')}`}</span>{/if}</span>"
+  line = 46
+  accepted_in = "shared-devices"
+  reason = "Equivalent: clientView (api.ts:262) always sets children to an array, so c.children?.length and c.children.length behave the same."
+
+[[accepted]]
+  key = "5c1a2fb452a2128c"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = "const shared = $derived(value.child_id === null ? [] : sharedDevices(value.child_id, children))"
+  line = 52
+  accepted_in = "shared-devices"
+  reason = "Equivalent: with the null guard forced false, sharedDevices(null, children) finds no child with id null and returns [], the same as the guarded branch."
+
+[[accepted]]
+  key = "6451ace12288b160"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "if ((out.kind === 'applied' || out.kind === 'partial') && (out.grant.shared ?? []).length > 0) {"
+  line = 118
+  accepted_in = "shared-devices"
+  reason = "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+
+[[accepted]]
+  key = "abeb67deb0f8d203"
+  file = "web/src/lib/Home.svelte"
+  op = "EqualityOperator"
+  text = "if ((out.kind === 'applied' || out.kind === 'partial') && (out.grant.shared ?? []).length > 0) {"
+  line = 118
+  accepted_in = "shared-devices"
+  reason = "Equivalent: length >= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+
+[[accepted]]
+  key = "84cebad2af320e60"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []"
+  line = 219
+  accepted_in = "shared-devices"
+  reason = "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."
+
+[[accepted]]
+  key = "c11e6591b162d114"
+  file = "web/src/lib/Buttons.svelte"
+  op = "EqualityOperator"
+  text = "else if (editing !== null && editing > i) editing -= 1"
+  line = 210
+  accepted_in = "button-editor"
+  reason = "equivalent: editing === i is handled by the preceding branch, so > and >= agree on every reachable state"
+
+[[accepted]]
+  key = "23578fa82aec08f8"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "<button type=\"button\" aria-label={`Move ${b.label} up`} onclick={() => up !== null && move(i, up)} disabled={pending || up === null}>"
+  line = 250
+  accepted_in = "button-editor"
+  reason = "equivalent: the 'up !== null &&' onclick guard is redundant with disabled={... || up === null}; a disabled button never fires click"
+
+[[accepted]]
+  key = "3d5c69513cfd827e"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "<button type=\"button\" aria-label={`Move ${b.label} down`} onclick={() => down !== null && move(i, down)} disabled={pending || down === null}>"
+  line = 253
+  accepted_in = "button-editor"
+  reason = "equivalent: the 'down !== null &&' onclick guard is redundant with disabled={... || down === null}; a disabled button never fires click"
+
+[[accepted]]
+  key = "634ff18332a41d80"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "else if (editing !== null && editing > i) editing -= 1"
+  line = 210
+  accepted_in = "button-editor"
+  reason = "equivalent: null > i is false for every row index i >= 0, so the editing !== null guard only narrows the type"

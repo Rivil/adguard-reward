@@ -1,0 +1,146 @@
+{
+  "phase": "06-deploy-nora",
+  "pr": 6,
+  "base": "milestone/v0.1",
+  "base_commit": "612dcf6d23a0bd61f1ed3425166bd47ee15b764f",
+  "status": "complete",
+  "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts"
+      ],
+      "commit": "0a55c1f",
+      "completed_at": "2026-11-01T08:36:38.038275Z",
+      "notes": "quick: search box on the grant-form service list"
+    },
+    "t-1": {
+      "files": [
+        "internal/config/config.go",
+        "internal/config/config_test.go",
+        "deploy/config.example.yaml"
+      ],
+      "commit": "a724814",
+      "completed_at": "2026-09-22T17:31:47.145667Z",
+      "landmarks": [
+        {
+          "feature": "configuration loading",
+          "symbol": "resolveDataDir",
+          "loc": "internal/config/config.go:168",
+          "what": "data_dir falls back to systemd's $STATE_DIRECTORY (first :-entry) then ./data; explicit yaml/env still wins"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go"
+      ],
+      "commit": "43e3917",
+      "completed_at": "2026-09-22T17:50:34.938639Z",
+      "landmarks": [
+        {
+          "feature": "grant reconciliation",
+          "symbol": "TestReconcile_RunLogs",
+          "loc": "internal/grants/reconcile_test.go:356",
+          "what": "Run's pass-outcome logging pinned per branch; its switch became if/else so the conditions land in a coverage block and all six mutants die"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "deploy/adguard-reward.service",
+        "deploy/config.nora.yaml",
+        "cmd/adguard-reward/deploy_test.go"
+      ],
+      "commit": "4207265",
+      "completed_at": "2026-09-22T17:53:00.790828Z",
+      "landmarks": [
+        {
+          "feature": "host deployment",
+          "symbol": "adguard-reward.service",
+          "loc": "deploy/adguard-reward.service:13",
+          "what": "systemd unit under DynamicUser+StateDirectory with the AdGuard password via LoadCredential; config.nora.yaml is the secret-free loopback template behind tailscale serve"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "Makefile",
+        "cmd/adguard-reward/build_test.go"
+      ],
+      "commit": "2bb312a",
+      "completed_at": "2026-09-22T17:55:25.540742Z",
+      "landmarks": [
+        {
+          "feature": "build and release",
+          "symbol": "build-linux",
+          "loc": "Makefile:36",
+          "what": "CGO_ENABLED=0 linux/amd64 cross-build with the git-describe version stamped via -X main.version, split from build-web so the build test never races the embed"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "9cf1de2",
+      "completed_at": "2026-09-22T17:57:19.150364Z",
+      "landmarks": [
+        {
+          "feature": "host deployment",
+          "symbol": "TestRun_NoraConfig",
+          "loc": "cmd/adguard-reward/main_test.go:1367",
+          "what": "the shipped nora template booted through run() behind a simulated tailscale serve: db in $STATE_DIRECTORY, limiter keyed on the forwarded phone address, Secure cookie from the https base_url"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "deploy/install-nora.sh",
+        "cmd/adguard-reward/deploy_test.go"
+      ],
+      "commit": "915daf4",
+      "completed_at": "2026-09-22T18:02:03.576663Z",
+      "landmarks": [
+        {
+          "feature": "host deployment",
+          "symbol": "install-nora.sh",
+          "loc": "deploy/install-nora.sh:146",
+          "what": "root installer: first-run config+credential scaffold exiting 3 before touching the service, tailscale serve on the loopback, and a /healthz poll that gates on the deployed version (exit 4 on mismatch)"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "Makefile"
+      ],
+      "commit": "0e42bdc",
+      "completed_at": "2026-11-01T08:34:52.344956Z",
+      "landmarks": [
+        {
+          "feature": "nora deployment",
+          "symbol": "deploy-nora",
+          "loc": "Makefile:50",
+          "what": "live deploy to nora observed green; healthz version matches git describe; grants revert server-side in production"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "Makefile",
+        "cmd/adguard-reward/deploy_test.go"
+      ],
+      "commit": "15f4409",
+      "completed_at": "2026-09-22T18:03:43.928762Z",
+      "landmarks": [
+        {
+          "feature": "host deployment",
+          "symbol": "deploy-nora",
+          "loc": "Makefile:50",
+          "what": "one command builds linux/amd64, guards on the host's arch, stages binary+unit+template and runs the installer over ssh with VERSION; tests pin that the built and copied paths agree"
+        }
+      ]
+    }
+  }
+}

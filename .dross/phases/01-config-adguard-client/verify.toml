@@ -1,0 +1,125 @@
+[verify]
+  phase = "01-config-adguard-client"
+  generated_at = 2026-09-19T18:57:15.970723Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-09-19T18:59:30.21401Z
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.8210526315789474
+  mutants_killed = 156
+  mutants_survived = 34
+  mutants_not_covered = 34
+  mutants_in_scope = 190
+  unclassified_in_scope = 0
+  criteria_total = 7
+  criteria_covered = 7
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 156
+    survived = 34
+    timeout = 0
+    in_scope = 190
+    score = 0.8210526315789474
+    file_count = 16
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main.go — adapter-lacks-range-runner", "cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/adguard/adguardtest/server.go — adapter-lacks-range-runner", "internal/adguard/adguardtest/server_test.go — adapter-lacks-range-runner", "internal/adguard/client.go — adapter-lacks-range-runner", "internal/adguard/client_test.go — adapter-lacks-range-runner", "internal/adguard/clients.go — adapter-lacks-range-runner", "internal/adguard/clients_test.go — adapter-lacks-range-runner", "internal/adguard/errors.go — adapter-lacks-range-runner", "internal/adguard/services.go — adapter-lacks-range-runner", "internal/adguard/services_test.go — adapter-lacks-range-runner", "internal/config/config.go — adapter-lacks-range-runner", "internal/config/config_test.go — adapter-lacks-range-runner", "internal/config/secret.go — adapter-lacks-range-runner", "internal/health/health.go — adapter-lacks-range-runner", "internal/health/health_test.go — adapter-lacks-range-runner"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/config/config_test.go:TestLoad_MissingRequired", "internal/config/config_test.go:TestLoad_EnvOverridesYAML", "internal/config/config_test.go:TestLoad_SecretFile", "internal/config/config_test.go:TestLoad_MissingFile", "cmd/adguard-reward/main_test.go:TestRun_MissingKey"]
+  notes = "MissingRequired removes each of adguard.url/username/password and asserts the error names that exact key; EnvOverridesYAML asserts env wins and blank env fails; SecretFile asserts *_file indirection incl. relative-path resolution; TestRun_MissingKey asserts exit 1 with the key on stderr end to end."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/config/config_test.go:TestSecret_Redacted", "internal/adguard/client_test.go:TestLog_NoSecrets", "cmd/adguard-reward/main_test.go:TestRun_NoSecretsInLogs"]
+  notes = "Secret_Redacted covers fmt/json/slog Text+JSON at Debug; TestLog_NoSecrets covers the per-request debug log across 200/500/401/closed-port plus Error() strings; TestRun_NoSecretsInLogs captures stderr at ADGUARD_REWARD_LOG_LEVEL=debug through startup + one /healthz with positive controls and asserts password, api key and base64(user:pass) absent."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/adguard/client_test.go:TestLogin_BadCredentials", "internal/adguard/client_test.go:TestLogin_ServerError", "internal/adguard/client_test.go:TestLogin_RateLimited"]
+  notes = "BadCredentials asserts errors.Is(ErrBadCredentials) for 403/400/401; ServerError asserts 502/503 are *StatusError with Code+Path and NOT ErrBadCredentials, and a closed server is *url.Error; RateLimited pins 429 away from ErrBadCredentials. classify() case-line survivors are the gremlins switch-case attribution ceiling (branches execute, cover count 1) — accepted."
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["internal/adguard/clients_test.go:TestClients_Fixture", "internal/adguard/clients_test.go:TestClients_Null", "internal/adguard/adguardtest/server_test.go:TestFixtures_Shape"]
+  notes = "Clients_Fixture asserts count, Kid phone Name/IDs/BlockedServices/UseGlobalBlockedServices literals and GlobalBlockedServices == blocked_services_get ids; Clients_Null covers null lists; Fixtures_Shape pins the v0.107.x response shape."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["internal/adguard/services_test.go:TestServices"]
+  notes = "Asserts 3 fixture entries with Icon == icon_svg, then serves an id no vendored catalogue could contain (zzz-not-in-any-catalogue) and asserts Services() returns exactly the served two — a vendored list would fail this; null catalogue yields empty slice."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/adguard/clients_test.go:TestSetBlockedServices_Preserves", "internal/adguard/clients_test.go:TestSetBlockedServices_Normalise", "internal/adguard/clients_test.go:TestSetBlockedServices_FreshRead", "internal/adguard/clients_test.go:TestSetBlockedServices_NotFound", "internal/adguard/clients_test.go:TestSetBlockedServices_Serialised"]
+  notes = "Preserves deep-equals every non-blocked_services field of the echoed POST /control/clients/update body against the fixture raw object (future_field, schedule, safe_search, upstreams_cache_size null) and asserts only blocked_services changed; FreshRead proves the write re-reads; NotFound proves no write on unknown name."
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  tests = ["cmd/adguard-reward/main_test.go:TestRun_StartupUnauthorized", "cmd/adguard-reward/main_test.go:TestRun_StartupUnreachable", "cmd/adguard-reward/main_test.go:TestRun_Healthz", "internal/adguard/client_test.go:TestStatus_BasicAuth", "internal/health/health_test.go:TestHandler_OK", "internal/health/health_test.go:TestHandler_Classify", "internal/health/health_test.go:TestRun_Transitions", "internal/health/health_test.go:TestRun_Ticker"]
+  notes = "End-to-end: StartupUnauthorized (401 -> exit 1, message names adguard.username + URL), StartupUnreachable (503 -> keeps serving, /healthz 200 adguard=unreachable), Healthz (exact JSON keys, adguard_version from fixture, Content-Type). Status_BasicAuth asserts the probe carries the service credential; Handler_Classify pins always-200 + ok|unreachable|unauthorized; Run_Transitions asserts the body reflects the most recent probe; Run_Ticker asserts the Info log carries the AdGuard version."
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped .gitignore: no mutation adapter for .gitignore"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped Makefile: no mutation adapter for "
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped deploy/Dockerfile: no mutation adapter for "
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped deploy/config.example.yaml: no mutation adapter for .yaml"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped go.mod: no mutation adapter for .mod"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped go.sum: no mutation adapter for .sum"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/blocked_services_all.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/blocked_services_get.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/clients.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/adguard/adguardtest/testdata/status.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/config/testdata/full.yaml: no mutation adapter for .yaml"
+
+[[finding]]
+  severity = "NOTE"
+  text = "All 34 survivors are NOT COVERED by gremlins' own attribution, not test misses: 6 are case-expression lines of tagless switches (Go cover blocks start after the case expression; verified with go test -coverprofile, every branch executed) and 28 are ARITHMETIC_BASE on string + (non-compiling) in the package-level envTable initializer and in unreachable panic messages of the adguardtest double. Efficacy over the 156 reachable mutants is 1.00. Accepted under categories gremlins-switch-case, string-concat-initializer, string-concat-panic in .dross/survivors.toml."
+
+[[finding]]
+  severity = "NOTE"
+  text = "gremlins reported internal/adguard survivors twice (34 rows, 26 unique keys) — the adguard and adguardtest packages were each run and the parent package's files appear in both reports. Dispositions are keyed, so a single accept cleared both rows; worth a dross-side dedupe."

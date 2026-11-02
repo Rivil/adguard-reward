@@ -1,0 +1,299 @@
+task_seq = 17
+
+[phase]
+  id = "shared-devices"
+
+# Pinned wire contract (backend tasks produce it; SPA tasks code against it from wave 1):
+#   childRef  = {id, name}
+#   sharedRef = {client: string, others: childRef[]}   others = current owners minus the grant's child, id ASC
+#   GET  /api/v1/clients        clientView.child -> children: childRef[] (id ASC, never null); same clientView in
+#                               POST /clients 201 and POST /clients/rename 200. `child` is added-alongside in t-4 and
+#                               removed from the SPA type only in t-16.
+#   PUT  /api/v1/children/{id}  shape unchanged; no client-ownership 409 (name-taken 409 stays)
+#   POST /api/v1/children       shape unchanged; a client another child holds is accepted
+#   POST /api/v1/grants 201     {id, ends_at, applied, failed, shared: sharedRef[]}  client ASC, never null
+#   GET  /api/v1/grants         each grant + the same shared, computed from the current mapping
+#   GET  /api/v1/children/{id}/blocked
+#                               clients[] gains shared_with: childRef[] (other owners, id ASC, never null)
+#                               services[] gains unblocked_by: [{client, grant_id, child: childRef}] — one per (present
+#                               mapped client, active grant of ANOTHER child) where the grant covers the service on that
+#                               client and the client does not effectively block it; sorted (client, grant_id); never null
+#   GET/POST /api/v1/migration  shape unchanged; a shared client appears once, child = lowest-id owner
+# Fixture convention: Ada (1), Ben (2), Cleo (3). Kid phone is the shared device (own list [youtube, tiktok]);
+# Kid tablet inherits global [tiktok, roblox] and is MutateClient'd where a test needs an own list.
+# Ref-count rule (locked shared_device_rule) is keyed on each grant's STORED clients, never on current ownership.
+# Panel audit trail: panel/{risk,mvp,verification,synthesis}.md
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Rebuild child_clients with composite key"
+  files = ["internal/store/migrations/0005_shared_clients.sql", "internal/store/children.go", "internal/store/children_test.go", "internal/store/store_test.go", "internal/api/children_test.go"]
+  description = "New migration 0005: create-copy-drop-rename rebuild to PRIMARY KEY (client_name, child_id), keeping FK ON DELETE CASCADE, the child_id index and an index on client_name, copying every row. checkConflicts keeps only the name check, so Create/UpdateChild accept a client another child holds. UpdateChild and DeleteChild touch only their own child_id rows. POST /children has no API-level client pre-check, so the \"taken client\" POST case of TestChildren_Conflicts flips here."
+  covers = ["c-1", "c-7"]
+  test_contract = ["if the rebuild drops rows, TestMigrate_0005PreservesClients fails: a DB at 0004 with Ada->[Kid phone], Ben->[Kid tablet] holds exactly those rows after Open, and 0005 applies after 0004_buttons.sql", "if the FK/cascade or child_id index is lost, TestSchema_ChildClientsCascade fails: DELETE FROM children leaves no orphan child_clients rows and the index exists", "if the composite key is missing, TestSchema_ChildClientsPK fails: a raw duplicate INSERT (Kid phone, 1) errors with a constraint violation", "if the client check survives in UpdateChild, TestUpdateChild_SharedClient fails: Ada holds Kid phone; UpdateChild(Ben, \"Ben\", [Kid phone]) returns nil and ListChildren shows Kid phone under Ada and Ben", "if the client check survives in CreateChild, TestCreateChild_SharedClient fails: CreateChild(\"Cleo\", [Kid phone]) while Ada holds it returns Cleo with [Kid phone]", "if UpdateChild deletes by client_name, TestUpdateChild_RemoveKeepsOtherOwner fails: Ben saved without Kid phone leaves Ada holding it", "if cascade is by client, TestDeleteChild_KeepsOtherOwner fails: DeleteChild(Ben) leaves Ada holding Kid phone and no row for Ben", "if the name check is lost, the existing ErrNameTaken cases in children_test.go fail unchanged", "if POST /children still conflicts on a held client, TestChildren_CreateShared (internal/api/children_test.go) fails: POST /children {Cy, [Kid phone]} while Ada holds it -> 201 and GET /children lists Kid phone under Ada and Cy; the \"taken client\" POST case is removed from TestChildren_Conflicts, whose name-taken and PUT-name cases stay unchanged"]
+  status = "done"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Pure ref-count helpers for shared clients"
+  files = ["internal/grants/shared.go", "internal/grants/shared_test.go"]
+  description = """
+New. revertPlan(g, active []store.Grant) -> map[client][]service: g.Services minus those covered by another active grant
+(id != g.ID) whose stored Clients include that client; clients left empty are omitted. heldOpen(active, exclude, client)
+-> sorted services any active grant other than `exclude` covers on that client, never nil. Keyed on stored grant
+clients, never on current ownership.
+"""
+  covers = ["c-3", "c-4"]
+  test_contract = [
+    '''if g counts itself, TestRevertPlan_SelfNotCounted fails: g alone in active -> every client gets all of g's services''',
+    '''if coverage is per-grant not per-client, TestRevertPlan_OtherClient fails: Ben's youtube grant on Kid tablet does not hold youtube open on Kid phone''',
+    '''if coverage is per-grant not per-service, TestRevertPlan_OtherService fails: G1 [youtube, tiktok] and G2 [youtube] both on Kid phone -> G1's plan for Kid phone is [tiktok]''',
+    '''if the fully-covered case still writes, TestRevertPlan_FullyHeld fails: Kid phone is absent from the map when another grant covers every one of g's services there''',
+    '''if ownership is consulted, TestRevertPlan_StoredClients fails: the plan uses g.Clients verbatim, including a client no child now owns''',
+    '''if heldOpen unions across clients or forgets exclude, TestHeldOpen fails: returns only services of grants whose Clients contain the client, minus `exclude`, sorted, [] not nil''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-3"
+  wave = 1
+  title = "Blocked fold: shared_with and unblocked_by"
+  files = ["internal/blocked/blocked.go", "internal/blocked/blocked_test.go"]
+  description = """
+Input gains Self (child id), Owners map[client][]childRef and Grants []GrantCover{ID, Child childRef, Services, Clients}.
+ClientState gains SharedWith (other owners). ServiceState gains UnblockedBy []Unblock{Client, GrantID, Child} per the
+pinned rule (another child's active grant, present mapped client, client does not effectively block the service). Pure.
+"""
+  covers = ["c-6"]
+  test_contract = [
+    '''if foreign grants are not folded, TestCompute_UnblockedByOther fails: Self=Ben, mapped [Kid phone] not blocking youtube, grant {7, Ada, [youtube], [Kid phone]} -> youtube unblocked, UnblockedBy [{Kid phone, 7, Ada}]''',
+    '''if Self is not excluded, TestCompute_OwnGrantNotNamed fails: same input with Self=Ada -> UnblockedBy []''',
+    '''if drift is ignored, TestCompute_ReblockedNotNamed fails: Kid phone blocks youtube again -> state blocked, UnblockedBy []''',
+    '''if client coverage is not checked, TestCompute_OtherClientGrant fails: Ada's grant stored on Kid tablet only while Ben maps Kid phone -> no entry''',
+    '''if partial loses the attribution, TestCompute_PartialShared fails: Ben maps [Kid phone, Old laptop (own [youtube])] -> partial, Differs [Kid phone], UnblockedBy [Kid phone by Ada]''',
+    '''if a missing client is attributed, TestCompute_MissingClient fails: a grant on a mapped client AdGuard lacks -> no entry''',
+    '''if SharedWith includes self or can be nil, TestCompute_SharedWith fails: Kid phone owned by Ada and Ben -> Ben's Kid phone SharedWith [Ada]; an unshared client SharedWith [] (not nil)''',
+    '''if UnblockedBy can be nil, TestCompute_UnblockedByNeverNil fails: no grants -> every UnblockedBy marshals as []''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-4"
+  wave = 1
+  title = "SPA wire types and shared-device helper"
+  files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts", "web/src/lib/grants.ts", "web/src/lib/grants.test.ts"]
+  description = "Per the pinned contract: ChildRef, SharedRef; Grant.shared and GrantCreated.shared; BlockedClient.shared_with;\nServiceState.unblocked_by; ClientView gains children: ChildRef[] (`child` kept until t-16). Every new array defaults to []\nwhen absent. grants.ts: pure sharedDevices(childId, children): SharedRef[] and sharedText(refs: SharedRef[]) — one typed\npath (others: ChildRef[]) and the single wording used by hint, notice and active-grant row."
+  covers = ["c-2", "c-5", "c-6", "c-8"]
+  test_contract = ["if defaults are missing, api.test listGrants/createGrant/childBlocked fail: a row, 201, service or client without shared / unblocked_by / shared_with yields [] with no TypeError", "if children is not defaulted, api.test listDevices fails: a client row without children yields children: []", "if self is not excluded, grants.test sharedDevices fails: Ada [Kid phone, Kid tablet], Ben [Kid phone] -> for Ada exactly [{client:\"Kid phone\", others:[{id:2,name:\"Ben\"}]}]; for Ben [{client:\"Kid phone\", others:[{id:1,name:\"Ada\"}]}]; an unshared child -> []", "if ordering drifts, grants.test sharedDevicesOrder fails: rows client ASC, others in children-array (id) order across two shuffled inputs", "if wording forks or the helper reads strings, grants.test sharedText fails: [{client:\"Kid phone\", others:[{id:2,name:\"Ben\"},{id:3,name:\"Cleo\"}]}] -> \"Kid phone (shared with Ben, Cleo)\" and [] -> \"\""]
+  status = "done"
+
+[[task]]
+  id = "t-5"
+  wave = 2
+  title = "Ref-counted revert in End, expiry, reconcile"
+  files = ["internal/grants/grants.go", "internal/grants/grants_test.go", "internal/grants/reconcile.go", "internal/grants/reconcile_test.go"]
+  description = """
+revert re-reads ListActiveGrants under the mutex on every call and writes AddBlockedServices(client, revertPlan[client])
+only. A failed read fails every client: the grant stays active and is retried, never re-blocked blind. Reconcile's overdue
+loop goes through the same revert, so each expiry sees the statuses the previous one committed.
+"""
+  covers = ["c-4"]
+  test_contract = ["if revert is not ref-counted, TestEngine_SharedExpiryKeepsOther fails: G1 (Ada, youtube, [Kid phone, Old laptop]) and G2 (Ben, youtube, [Kid phone]); advance past G1 -> Old laptop blocks youtube, Kid phone does not, G1 expired; advance past G2 -> Kid phone blocks youtube", "if End bypasses it, TestEngine_SharedEnd fails: End(G1) with G2 active -> nil, G1 ended, Kid phone still lacks youtube; End(G2) then re-blocks it", "if a different service is spared, TestEngine_EndSharedOtherService fails: Ada's grant is tiktok, Ben's is youtube, both on Kid phone; ending Ben's re-blocks youtube", "if reconcile uses its snapshot, TestReconcile_BothOverdueShared fails: G1 and G2 both past ends_at, no timer fired -> one Reconcile expires both, Reverted == 2, Kid phone blocks youtube", "if reconcile ignores a live owner, TestReconcile_OverdueSharedKeepsOther fails: an overdue Ben grant reverted while Ada's live grant covers Kid phone leaves youtube open there, Reverted == 1", "if timers race, TestExpire_SharedTimersSerial fails: both expiry callbacks fired concurrently -> youtube blocked on Kid phone and MaxInFlightUpdates() == 1", "if expired/ended grants count as cover, TestEngine_ExpiredGrantNoCover fails: an ended G0 on Kid phone does not keep youtube open when G1 expires", "if a fully covered client still gets a POST, TestEngine_CoveredNoWrite fails: G1 on [Kid phone] only with G2 active -> G1's expiry issues 0 /control/clients/update", "if the read fails open, TestEnd_ActiveReadFails fails: ListActiveGrants error -> *ErrRevertFailed, zero AdGuard update POSTs, grant still active", "if ownership is used, TestExpire_ClientUnassigned fails: Kid phone removed from Ada after her grant; expiry still re-blocks it", "if the unshared path regresses, the existing TestEngine_TimerReverts and TestReconcile_DriftRepaired fail unchanged", "if Writes still counts every stored client, TestReconcile_WritesCountsActual fails: G1 overdue on [Kid phone, Old laptop] while G2 covers youtube on Kid phone -> one Reconcile reports Writes == 1 (Old laptop only)", "if revert filters holders by current ownership, TestExpire_HolderUnassigned fails: G_Ada and G_Ben both youtube on [Kid phone]; Kid phone removed from Ada (case 2: Ada deleted); advance past G_Ben -> Kid phone still lacks youtube; advance past G_Ada -> Kid phone blocks youtube"]
+  depends_on = ["t-2"]
+  status = "done"
+
+[[task]]
+  id = "t-6"
+  wave = 2
+  title = "Shared-aware baseline for adopt and create"
+  files = ["internal/grants/clients.go", "internal/grants/clients_test.go"]
+  description = """
+baselineFrom also unions the services of any active grant whose clients include a sibling. AdoptClients writes, per added
+client, baseline minus heldOpen(active, 0, client): set-union, nothing removed, no write when nothing changes.
+CreateClient uses the same baseline.
+"""
+  covers = ["c-3"]
+  test_contract = [
+    '''if adopt re-blocks, TestAdopt_SharedKeepsOtherGrant fails: Ada's active youtube grant left Kid phone [tiktok]; Ben's sibling Kid tablet own [youtube, roblox]; AdoptClients(Ben, [Kid tablet], [Kid phone]) -> Kid phone own list exactly [roblox, tiktok]''',
+    '''if the subtraction is too broad, TestAdopt_CoverIsPerClient fails: Ada's youtube grant stored on Old laptop only -> adopting Kid phone for Ben writes youtube''',
+    '''if the subtraction is global across added clients, TestAdopt_TwoAdded fails: adding Kid phone (held open by Ada) and Old laptop together -> youtube written to Old laptop, not to Kid phone''',
+    '''if the sibling is poisoned, TestBaseline_SharedSiblingGrant fails: Ben's sibling Kid phone is open for youtube only via Ada's grant; CreateClient("Ben tv", child Ben) sends blocked_services containing youtube''',
+    '''if a no-op writes, TestAdopt_AllCovered fails: baseline within current plus held -> 0 /control/clients/update''',
+    '''if the child's own grants drop out of the baseline, the existing TestAdoptClients_GrantServices fails unchanged''',
+  ]
+  depends_on = ["t-2"]
+  status = "done"
+
+[[task]]
+  id = "t-7"
+  wave = 2
+  title = "Multi-owner rename in store and engine"
+  files = ["internal/store/clients.go", "internal/store/clients_test.go", "internal/grants/rename.go", "internal/grants/rename_test.go"]
+  description = """
+clientOwner -> clientOwners (all owners, id ASC). Store RenameClient moves every owner's row (an owner already holding
+newName drops its old row, others are updated) and active grants' stored clients follow; *ErrClientTaken only when a child
+holds newName but not oldName. AddChildClient checks "this child holds it" first. checkRename uses owner sets with the same
+rule, so AdGuard is renamed exactly once.
+"""
+  covers = ["c-7"]
+  test_contract = [
+    '''if one row moves, TestRenameClient_Shared fails: Ada and Ben hold Kid phone, each with an active grant on it -> both hold "Family TV", neither holds "Kid phone", both grants store "Family TV"''',
+    '''if the PK collides or the self-stale branch deletes by name, TestRenameClient_SharedSelfStale fails: Ada [Kid phone, TV], Ben [Kid phone]; rename Kid phone->TV -> nil, Ada [TV] (one row), Ben [TV]''',
+    '''if merges are silent, TestRenameClient_ForeignStale fails: Cleo holds stale "TV" -> *ErrClientTaken naming Cleo, both tables unchanged''',
+    '''if AddChildClient reads the first owner row, TestAddChildClient_SharedSelf fails: Ada and Ben share Kid phone; AddChildClient(Ben, "Kid phone") -> nil (no-op); TestAddChildClient_Errors (another child's stale mapping refused) stays green''',
+    '''if checkRename keeps one pointer, TestEngineRename_SharedStale fails: the self-stale setup through the engine -> nil and exactly one /control/clients/update''',
+    '''if a shared rename loses an owner, TestEngineRename_Shared fails: Kid phone -> Family TV with one AdGuard update; expiring Ben's grant then re-blocks on "Family TV"''',
+    '''if the outsider check is lost in the engine, TestEngineRename_Outsider fails: zero AdGuard writes and *store.ErrClientTaken''',
+  ]
+  depends_on = ["t-1"]
+  status = "done"
+
+[[task]]
+  id = "t-8"
+  wave = 2
+  title = "Children API: share, quiet removal, migration dedupe"
+  files = ["internal/api/children.go", "internal/api/children_test.go", "internal/api/migration.go", "internal/api/migration_test.go"]
+  description = "updateConflict keeps only the name check. added = in.Clients minus cur.Clients still goes to AdoptClients, shared clients included. POST /children first reads ListChildren and returns 409 on a case-insensitive name clash before any AdGuard call (store ErrNameTaken stays as the race backstop); then, with clients, it goes through AdoptClients (childID 0 — a new child has no grants — siblings empty, added = in.Clients) before CreateChild; an adopt failure is 502 naming the client and creates no child; POST without clients makes no AdGuard request. Removal-only PUTs and DELETE never call AdGuard. computeOffer dedupes mapped names and reports the lowest-id owner. Rewrite the client-taken PUT cases of TestChildUpdate_Conflicts and TestChildren_PutAtomic (the POST case moved to t-1)."
+  covers = ["c-1", "c-3", "c-7"]
+  test_contract = ["if the pre-check survives, TestChildUpdate_ShareNo409 fails: PUT /children/2 {Ben, [Kid phone]} while Ada holds it -> 200, GET /children lists Kid phone under both", "if a shared add skips adopt, TestChildUpdate_ShareAdopts fails: that PUT issues exactly one /control/clients/update for Kid phone", "if removal writes AdGuard, TestChildUpdate_RemoveSharedNoAdGuard fails: PUT Ben without Kid phone -> 200, zero AdGuard requests, Ada still lists it", "if delete writes AdGuard, TestChildDelete_SharedNoAdGuard fails: DELETE /children/2 -> 204, zero AdGuard requests, Ada still lists Kid phone", "if the name check is lost, TestChildUpdate_NameStill409 fails: PUT Ben {name:\"ada\"} -> 409 with zero AdGuard requests", "if a failed PUT half-applies, TestChildren_PutAtomic fails: with the fake failing /control/clients/update, PUT Ada {name:\"Alicia\", clients:[Kid phone, Old laptop]} returns a non-2xx and GET shows Ada still named \"Ada\" holding exactly [Kid phone]", "if the offer is not deduped, TestMigration_SharedOnce fails: Kid tablet (use_global) held by Ada and Ben -> GET /migration lists it once with child {1, Ada}; POST /migration issues exactly one /control/clients/update for it", "if POST skips adopt, TestChildCreate_SharedAdopts fails: Ada holds Kid phone; POST /children {Cy, [Kid phone]} -> 201 and exactly one /control/clients/update for Kid phone whose blocked_services are [roblox, tiktok, youtube] (global list unioned in); POST {Dee, []} -> 201 with zero AdGuard requests", "if POST writes the store before adopting, TestChildCreate_AdoptFailNoChild fails: with the fake failing /control/clients/update, POST /children {Cy, [Kid phone]} -> 502 naming Kid phone and GET /children lists no Cy", "if adopt runs before the name check, TestChildCreate_NameTakenNoAdGuard fails: Ada exists and holds Kid phone; POST /children {name:\"ada\", clients:[Kid phone]} -> 409 with zero AdGuard requests"]
+  depends_on = ["t-1"]
+  status = "done"
+
+[[task]]
+  id = "t-9"
+  wave = 2
+  title = "Clients API: owners list and rename view"
+  files = ["internal/api/clients.go", "internal/api/clients_test.go", "internal/api/rename.go", "internal/api/rename_test.go"]
+  description = "ownerIndex -> map[client][]childRef (id ASC). clientView.child is replaced by children in GET /clients, the POST /clients\n201 and the rename read-back. handleClientCreate's stale-mapping 409 fires when any holder differs from child_id. The\nrename read-back initialises children to [] before the ListChildren branch, so a failed owners read after a successful\nrename is still 200 with \"children\": []."
+  covers = ["c-1", "c-2", "c-7"]
+  test_contract = ["if last-writer-wins remains, TestClients_SharedOwners fails: Ada and Ben hold Kid phone -> children [{1,\"Ada\"},{2,\"Ben\"}] and the JSON has no \"child\" key", "if the empty case marshals null, TestClients_UnassignedEmpty fails: the Old laptop row has \"children\": []", "if the create guard regresses, TestClientCreate_StaleForeign fails: name held by Ben's stale mapping with child_id 1 -> 409 naming Ben, 0 /control/clients/add; with child_id 2 -> 201, children [{2,\"Ben\"}]", "if the rename read-back is single-owner, TestRename_SharedView fails: rename shared Kid phone -> Family TV -> 200 body children lists Ada and Ben", "if the degraded read-back leaves a nil slice, TestRename_OwnersReadFails fails: rename succeeds, ListChildren then errors -> 200 with \"children\": [] (not null)"]
+  depends_on = ["t-1"]
+  status = "done"
+
+[[task]]
+  id = "t-10"
+  wave = 2
+  title = "Grants API: shared devices on 201 and list"
+  files = ["internal/api/grants.go", "internal/api/grants_test.go"]
+  description = "Pure sharedOf(clients, childID, children) per the pinned rule. handleGrantCreate reads ListChildren before Create (may\nreplace today's GetChild): a failure is a 500 with no AdGuard write. The 201 carries shared; grantView gains shared for\nGET /grants, computed from the current mapping. A failed ListChildren on GET /grants degrades: every grant row is still\nreturned with shared: [] and a warn is logged, so the polled list never blanks on a store hiccup."
+  covers = ["c-4", "c-5"]
+  test_contract = ["if shared is not computed, TestGrants_CreateShared fails: Ada [Kid phone, Kid tablet], Ben [Kid phone]; POST {child_id:1, services:[youtube]} -> 201 shared exactly [{\"client\":\"Kid phone\",\"others\":[{\"id\":2,\"name\":\"Ben\"}]}]", "if the grant skips the shared client, TestGrants_SharedApplied fails on the fake: Ben's youtube grant over [Kid phone] removes youtube from Kid phone", "if the granter is not excluded or order drifts, TestGrants_SharedThreeOwners fails: Ada, Ben, Cleo hold Kid phone; Ben's grant -> others [{1,Ada},{3,Cleo}]", "if overlap is per-client, TestGrantCreate_SecondOwnerSameService fails: Ben's youtube grant while Ada's covers Kid phone -> 201, not 409", "if the slice can be nil, TestGrants_UnsharedEmpty fails: an unshared grant's 201 and GET row carry \"shared\": []", "if the list uses creation-time owners, TestGrants_ListSharedLive fails: Ben added to Kid phone after Ada's grant -> GET /grants lists Ben in shared", "if the children read is after apply, TestGrants_ChildrenReadFails fails: ListChildren error -> 500 and zero /control/clients/update", "if the view shape drifts, TestGrants_ViewShape fails: keys exactly (id, child_id, services, clients, shared, started_at, ends_at)", "if the list read failure is fatal, TestGrants_ListChildrenReadFails fails: two active grants, ListChildren error -> GET /grants 200 with both rows present (ids, ends_at unchanged) and shared [] on each"]
+  depends_on = ["t-1"]
+  status = "done"
+
+[[task]]
+  id = "t-11"
+  wave = 2
+  title = "Blocked API: shared_with and unblocked_by"
+  files = ["internal/api/blocked.go", "internal/api/blocked_test.go"]
+  description = "After the 404 check, handleBlocked reads engine List grants and ListChildren, passes Self, Owners and GrantCovers into\nblocked.Compute, and emits shared_with on every client row and unblocked_by on every service row. A failed grants or\nchildren read degrades to [] annotations with a warn, not an error status. A grant whose child_id is not in ListChildren\n(the granting child was deleted) still yields its GrantCover, with Child {id: grant.child_id, name: \"\"}."
+  covers = ["c-6"]
+  test_contract = ["if wiring is missing, TestBlocked_SharedUnblockedBy fails: Ada and Ben hold Kid phone, Ada's active youtube grant -> GET /children/2/blocked lists Kid phone with shared_with [{id:1,name:\"Ada\"}] and youtube unblocked_by [{client:\"Kid phone\", grant_id:<G>, child:{id:1,name:\"Ada\"}}]", "if Self is not passed, TestBlocked_OwnGrantUnnamed fails: GET /children/1/blocked -> youtube unblocked_by []", "if both owners don't list it, TestBlocked_BothOwnersListShared fails: Ada's and Ben's views both include Kid phone in clients", "if a row can omit a key, TestBlocked_AnnotationShape fails: every service row has \"unblocked_by\" and every client row has \"shared_with\" as arrays", "if a grants read failure is fatal, TestBlocked_GrantsReadFails fails: 200 with unblocked_by [] everywhere and states unchanged", "if the 404 path changes, the existing TestBlocked_NotFound fails: unknown child is 404 with 0 AdGuard requests", "if a children read failure is fatal, TestBlocked_ChildrenReadFails fails: ListChildren error -> 200 with shared_with [] on every client row, unblocked_by [] everywhere and states unchanged", "if a deleted granter is dropped or crashes the lookup, TestBlocked_DeletedGranter fails: Ada and Ben hold Kid phone, Ada's youtube grant G is active, Ada is deleted -> GET /children/2/blocked 200 with youtube unblocked_by [{client:\"Kid phone\", grant_id:G, child:{id:1,name:\"\"}}]"]
+  depends_on = ["t-1", "t-3"]
+  status = "done"
+
+[[task]]
+  id = "t-12"
+  wave = 2
+  title = "Children page: enable and label shared clients"
+  files = ["web/src/lib/Children.svelte", "web/src/lib/Children.test.ts"]
+  description = """
+Owners come from ClientView.children (not child). A client owned by other children is never disabled and is labelled
+"shared with <other owners, joined ', '>". Ticking it and saving sends it in the PUT. A failed share does not stay
+optimistically ticked.
+"""
+  covers = ["c-2"]
+  test_contract = [
+    '''if still disabled, Children.test sharedEnabled fails: Kid phone children [Ada] -> Ben's Kid phone checkbox enabled, label contains "shared with Ada"; Ada's own label does not contain "shared with Ada"''',
+    '''if names are wrong, Children.test sharedThree fails: owned by Ada and Ben -> Cleo's form shows "shared with Ada, Ben"''',
+    '''if ticking doesn't share, Children.test shareByCheckbox fails: tick + Save -> PUT /api/v1/children/2 clients includes "Kid phone"; after reload (children [Ada, Ben]) Ada's label reads "shared with Ben"''',
+    '''if the failure is optimistic, Children.test share502 fails: PUT 502 shows role=alert and after reload Kid phone is unchecked in Ben's form''',
+    '''if the old wording lingers, Children.test noAssignedTo fails on any "assigned to" text''',
+  ]
+  depends_on = ["t-4"]
+  status = "done"
+
+[[task]]
+  id = "t-13"
+  wave = 2
+  title = "Tap merge and active-grant row name shared"
+  files = ["web/src/lib/tap.ts", "web/src/lib/tap.test.ts", "web/src/lib/ActiveGrants.svelte", "web/src/lib/ActiveGrants.panel.test.ts"]
+  description = """
+grantFrom copies created.shared onto the merged grant, so applied and partial outcomes carry it. acceptOffer keeps the
+target's shared. ActiveGrants renders sharedText(grant.shared) per row.
+"""
+  covers = ["c-5"]
+  test_contract = [
+    '''if the 201's shared is dropped, tap.test sharedMerged fails: 201 with shared [{Kid phone,[Ben]}] -> merge() receives a grant with that shared before refresh resolves; applied and partial outcomes both carry it''',
+    '''if the extend path loses it, tap.test acceptKeepsShared fails: an accepted offer's merged grant keeps the target's shared''',
+    '''if the row ignores shared, ActiveGrants.panel.test sharedRow fails: that grant's row contains "Kid phone (shared with Ben)"; shared [] renders nothing extra''',
+  ]
+  depends_on = ["t-4"]
+  status = "done"
+
+[[task]]
+  id = "t-14"
+  wave = 2
+  title = "GrantForm passive shared-device hint"
+  files = ["web/src/lib/GrantForm.svelte", "web/src/lib/GrantForm.test.ts", "web/src/lib/Buttons.test.ts"]
+  description = """
+When value.child_id selects a child with shared devices, render a role=note from sharedDevices/sharedText: no control, no
+effect on `valid`, re-derived when the selection or children prop changes. The Buttons editor and Home's ad-hoc form
+inherit it through GrantForm.
+"""
+  covers = ["c-8"]
+  test_contract = [
+    '''if the hint is missing or stale, GrantForm.test hintFollowsChild fails: select Ada -> role=note contains "Kid phone (shared with Ben)"; switch to Cleo or no child -> no role=note; a children prop update re-derives it''',
+    '''if the hint gates submit, GrantForm.test hintPassive fails: with the note shown, child + service + minutes make valid true; the note contains no button or checkbox''',
+    '''if Buttons bypasses it, Buttons.test sharedHint fails: editing a button for Ada shows the note and Save issues one PUT /api/v1/buttons''',
+  ]
+  depends_on = ["t-4"]
+  status = "done"
+
+[[task]]
+  id = "t-15"
+  wave = 3
+  title = "Home: hint, notice, blocked attribution"
+  files = ["web/src/lib/Home.svelte", "web/src/lib/Home.test.ts"]
+  description = "Each child section with buttons renders one passive role=note from sharedDevices, referenced by each button's\naria-describedby. After an applied/partial tap with shared, a role=status line uses sharedText, beside (not replacing) the\npartial alert. The blocked disclosure keeps services with non-empty unblocked_by even when unblocked, rendering\n\"unblocked on <client> by <child>'s grant\" (\"by a removed child's grant\" when child.name is empty), and marks clients with\nshared_with as \"(shared with …)\"."
+  covers = ["c-5", "c-6", "c-8"]
+  test_contract = ["if the hint is missing or unlinked, Home.test sharedHint fails: Ada (with a button) and Ben both hold Kid phone -> before any tap Ada's button has an accessible description containing \"Kid phone (shared with Ben)\"; Cleo's has none", "if a confirm step creeps in, Home.test noConfirm fails: one click on a hinted tile -> exactly one POST /api/v1/grants, window.confirm never called, no role=dialog", "if the notice is missing, Home.test sharedNotice fails: 201 with shared [{Kid phone,[Ben]}] -> role=status contains \"Kid phone (shared with Ben)\"; shared [] -> no status line", "if partial overwrites it, Home.test partialShared fails: applied:false + shared -> both the \"except on\" alert and the shared status are present", "if the ad-hoc path skips it, Home.test adhocShared fails: the ad-hoc form for Ada shows the GrantForm note and its 201 shows the same status line", "if the filter hides it, Home.test unblockedBy fails: Ben's view with youtube state unblocked and unblocked_by [{Kid phone, 7, Ada}] lists youtube with \"unblocked on Kid phone by Ada's grant\"; unblocked with unblocked_by [] stays hidden", "if shared_with is not rendered, Home.test sharedWithLabel fails: Ben's blocked view with client Kid phone shared_with [{1,Ada}] shows \"Kid phone (shared with Ada)\"; a client with shared_with [] shows no \"(shared with\"", "if an empty granter name renders blank, Home.test unblockedByRemoved fails: Ben's view with youtube unblocked and unblocked_by [{Kid phone, 7, {1, \"\"}}] shows \"unblocked on Kid phone by a removed child's grant\" and no \"by 's grant\""]
+  depends_on = ["t-4", "t-13", "t-14"]
+  status = "done"
+
+[[task]]
+  id = "t-16"
+  wave = 3
+  title = "ClientNames shows owners; drop ClientView.child"
+  files = ["web/src/lib/ClientNames.svelte", "web/src/lib/ClientNames.test.ts", "web/src/lib/api.ts", "web/src/lib/api.test.ts"]
+  description = """
+ClientNames reads children[]. ClientView.child is deleted from api.ts and typed fixtures still asserting `child` move to
+`children`. Lands only after t-12, so no consumer reads .child when it is removed.
+"""
+  covers = ["c-2", "c-7"]
+  test_contract = [
+    '''if ClientNames reads .child, ClientNames.test owners fails: the Kid phone row reads "Kid phone — Ada, Ben"''',
+    '''if any consumer still reads .child on a ClientView, make typecheck fails''',
+    '''if the rename leaves a stale key, api.test listDevices fails: the parsed ClientView has children and no child''',
+  ]
+  depends_on = ["t-12"]
+  status = "done"
+
+[[task]]
+  id = "t-17"
+  wave = 3
+  title = "End-to-end shared lifecycle through the API"
+  files = ["internal/api/shared_test.go"]
+  description = """
+New. One harness test over the real store, engine and fake AdGuard: share Kid phone via PUT, grant Ada then Ben the same
+service, check the 201 shared and Ben's blocked view, End Ada, End Ben. Plus a share-during-grant case for c-3 over HTTP.
+"""
+  covers = ["c-1", "c-3", "c-4", "c-5", "c-6"]
+  test_contract = [
+    '''if any layer drops shared clients, TestShared_Lifecycle fails at the first broken step: PUT /children/2 adds Kid phone -> 200 (no 409) -> Ada youtube grant 201 shared names Ben -> Ben youtube grant 201 -> Ben's blocked view attributes youtube on Kid phone to Ada -> End Ada leaves youtube open on Kid phone -> End Ben re-blocks it''',
+    '''if the HTTP path re-blocks a covered service, TestShared_ShareDuringGrant fails: Ada's youtube grant left Kid phone [tiktok]; Ben holds Kid tablet with own [youtube, roblox]; PUT Ben adding Kid phone -> fake Kid phone blocked exactly [roblox, tiktok] until Ada's grant ends''',
+  ]
+  depends_on = ["t-5", "t-6", "t-8", "t-10", "t-11"]
+  status = "done"
