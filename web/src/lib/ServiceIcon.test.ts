@@ -53,5 +53,7 @@ describe('ServiceIcon', () => {
     const a = avatar(container)
     expect(a?.style.width).toBe('28px')
     expect(a?.style.height).toBe('28px')
+    // The letter is 60% of the box, rounded: 28 * 0.6 = 16.8 -> 17px.
+    expect(a?.style.fontSize).toBe('17px')
   })
 })
