@@ -3,7 +3,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Children from './Children.svelte'
-import type { Child, ClientView } from './api'
+import type { Child, ChildRef, ClientView } from './api'
 
 type Call = { method: string; url: string; body: string | null }
 type Answer = () => Response | Promise<Response>
@@ -31,8 +31,13 @@ function mockFetch(routes: Routes): Call[] {
 const ada: Child = { id: 1, name: 'Ada', clients: ['Kid phone'] }
 const ben: Child = { id: 2, name: 'Ben', clients: [] }
 
-function client(name: string, child: ClientView['child'] = null): ClientView {
-  return { name, ids: [], use_global_blocked_services: false, child }
+/** A client held by owners (id ASC), as GET /api/v1/clients sends it. */
+function client(name: string, ...owners: ChildRef[]): ClientView {
+  return { name, ids: [], use_global_blocked_services: false, child: owners[0] ?? null, children: owners }
+}
+
+function labelOf(f: HTMLElement, name: string): string {
+  return checkbox(f, name).closest('label')?.textContent ?? ''
 }
 
 /** A mutable server: routes read `state` so a re-fetch after a mutation sees the change. */
@@ -77,15 +82,17 @@ afterEach(() => {
 })
 
 describe('Children', () => {
-  it('renders ownership', async () => {
+  it('sharedEnabled', async () => {
     const { routes } = server([ada, ben], [client('Kid phone', { id: 1, name: 'Ada' }), client('Kid tablet')])
     mockFetch(routes)
     render(Children, { onBack: vi.fn() })
     await screen.findByDisplayValue('Ada')
 
     const benPhone = checkbox(form(2), 'Kid phone')
-    expect(benPhone.disabled).toBe(true)
-    expect(benPhone.closest('label')?.textContent).toContain('assigned to Ada')
+    expect(benPhone.disabled).toBe(false)
+    expect(benPhone.checked).toBe(false)
+    expect(labelOf(form(2), 'Kid phone')).toContain('shared with Ada')
+    expect(labelOf(form(1), 'Kid phone')).not.toContain('shared with')
     const adaPhone = checkbox(form(1), 'Kid phone')
     expect(adaPhone.disabled).toBe(false)
     expect(adaPhone.checked).toBe(true)
@@ -292,6 +299,84 @@ describe('Children', () => {
     expect(document.querySelectorAll('form[data-child]')).toHaveLength(2)
   })
 
+  it('sharedThree', async () => {
+    const cleo: Child = { id: 3, name: 'Cleo', clients: [] }
+    const both = [
+      { id: 1, name: 'Ada' },
+      { id: 2, name: 'Ben' },
+    ]
+    const { routes } = server([ada, { ...ben, clients: ['Kid phone'] }, cleo], [client('Kid phone', ...both)])
+    mockFetch(routes)
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Cleo')
+
+    expect(labelOf(form(3), 'Kid phone')).toContain('shared with Ada, Ben')
+    expect(labelOf(form(1), 'Kid phone')).toContain('shared with Ben')
+    expect(labelOf(form(1), 'Kid phone')).not.toContain('Ada')
+    expect(labelOf(form(2), 'Kid phone')).toContain('shared with Ada')
+    expect(checkbox(form(3), 'Kid phone').disabled).toBe(false)
+  })
+
+  it('shareByCheckbox', async () => {
+    const { state, routes } = server([ada, ben], [client('Kid phone', { id: 1, name: 'Ada' })])
+    const calls = mockFetch({
+      ...routes,
+      'PUT /api/v1/children/2': () => {
+        state.children = [ada, { ...ben, clients: ['Kid phone'] }]
+        state.clients = [client('Kid phone', { id: 1, name: 'Ada' }, { id: 2, name: 'Ben' })]
+        return json(200, state.children[1])
+      },
+    })
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ben')
+
+    await fireEvent.click(checkbox(form(2), 'Kid phone'))
+    await fireEvent.click(button(form(2), 'Save'))
+    await waitFor(() => expect(puts(calls)).toHaveLength(1))
+    expect(puts(calls)[0].url).toBe('/api/v1/children/2')
+    expect(JSON.parse(puts(calls)[0].body ?? '{}').clients).toContain('Kid phone')
+    await waitFor(() => expect(labelOf(form(1), 'Kid phone')).toContain('shared with Ben'))
+    expect(checkbox(form(2), 'Kid phone').checked).toBe(true)
+    expect(labelOf(form(2), 'Kid phone')).toContain('shared with Ada')
+  })
+
+  it('share502', async () => {
+    const { routes } = server([ada, ben], [client('Kid phone', { id: 1, name: 'Ada' })])
+    const calls = mockFetch({
+      ...routes,
+      'PUT /api/v1/children/2': () =>
+        json(502, { error: 'adguard_unavailable', message: 'AdGuard Home is unreachable — try again shortly' }),
+    })
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ben')
+
+    await fireEvent.click(checkbox(form(2), 'Kid phone'))
+    expect(checkbox(form(2), 'Kid phone').checked).toBe(true)
+    const listsBefore = calls.filter((c) => c.method === 'GET' && c.url === '/api/v1/children').length
+    await fireEvent.click(button(form(2), 'Save'))
+    await screen.findByRole('alert')
+    await waitFor(() =>
+      expect(calls.filter((c) => c.method === 'GET' && c.url === '/api/v1/children').length).toBe(listsBefore + 1),
+    )
+    await waitFor(() => expect(checkbox(form(2), 'Kid phone').checked).toBe(false))
+  })
+
+  it('noAssignedTo', async () => {
+    const both = [
+      { id: 1, name: 'Ada' },
+      { id: 2, name: 'Ben' },
+    ]
+    const { routes } = server(
+      [ada, { ...ben, clients: ['Kid phone'] }],
+      [client('Kid phone', ...both), client('Kid tablet', { id: 1, name: 'Ada' }), client('Old laptop')],
+    )
+    mockFetch(routes)
+    render(Children, { onBack: vi.fn() })
+    await screen.findByDisplayValue('Ben')
+
+    expect(document.body.textContent).not.toMatch(/assigned to/i)
+  })
+
   it('Back calls onBack', async () => {
     const { routes } = server([], [])
     mockFetch(routes)
@@ -362,7 +447,8 @@ describe('Children unlabelled devices', () => {
     const post = calls.find((c) => c.method === 'POST')!
     expect(JSON.parse(post.body!)).toEqual({ name: 'TV', ids: ['192.168.1.30'], child_id: 1 })
     expect(checkbox(form(1), 'TV').checked).toBe(true)
-    expect(checkbox(form(2), 'TV').disabled).toBe(true)
+    expect(checkbox(form(2), 'TV').disabled).toBe(false)
+    expect(labelOf(form(2), 'TV')).toContain('shared with Ada')
   })
 
   it('empty state: sentence when none, hidden with one, absent on a 502', async () => {
