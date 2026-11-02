@@ -50,5 +50,5 @@
 [[decisions]]
   key = "grant_coverage_basis"
   choice = "A grant covers a service on the clients stored on the grant at creation (renames followed), not on the child's current ownership; a grant whose child is later unassigned from or deleted off a shared client still holds the service open there until it expires or is ended"
-  why = "Matches how revert already targets a grant's stored clients; resolves how shared_device_rule's 'active grant (of any owner)' is read without a store lookup on every revert (plan review 2026-11-02)"
-  locked = false
+  why = "Matches how revert already targets a grant's stored clients; resolves how shared_device_rule's 'active grant (of any owner)' is read without a store lookup on every revert (plan review 2026-11-02); confirmed by the user and locked 2026-11-02"
+  locked = true

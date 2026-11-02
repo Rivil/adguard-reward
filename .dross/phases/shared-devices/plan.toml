@@ -84,20 +84,9 @@ pinned rule (another child's active grant, present mapped client, client does no
   wave = 1
   title = "SPA wire types and shared-device helper"
   files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts", "web/src/lib/grants.ts", "web/src/lib/grants.test.ts"]
-  description = """
-Per the pinned contract: ChildRef, SharedRef; Grant.shared and GrantCreated.shared; BlockedClient.shared_with;
-ServiceState.unblocked_by; ClientView gains children: ChildRef[] (`child` kept until t-16). Every new array defaults to []
-when absent. grants.ts: pure sharedDevices(childId, children) and sharedText(refs) — the single wording used by hint,
-notice and row.
-"""
+  description = "Per the pinned contract: ChildRef, SharedRef; Grant.shared and GrantCreated.shared; BlockedClient.shared_with;\nServiceState.unblocked_by; ClientView gains children: ChildRef[] (`child` kept until t-16). Every new array defaults to []\nwhen absent. grants.ts: pure sharedDevices(childId, children): SharedRef[] and sharedText(refs: SharedRef[]) — one typed\npath (others: ChildRef[]) and the single wording used by hint, notice and active-grant row."
   covers = ["c-2", "c-5", "c-6", "c-8"]
-  test_contract = [
-    '''if defaults are missing, api.test listGrants/createGrant/childBlocked fail: a row, 201, service or client without shared / unblocked_by / shared_with yields [] with no TypeError''',
-    '''if children is not defaulted, api.test listDevices fails: a client row without children yields children: []''',
-    '''if self is not excluded, grants.test sharedDevices fails: Ada [Kid phone, Kid tablet], Ben [Kid phone] -> for Ada exactly [{client:"Kid phone", others:["Ben"]}]; for Ben [{client:"Kid phone", others:["Ada"]}]; an unshared child -> []''',
-    '''if ordering drifts, grants.test sharedDevicesOrder fails: rows client ASC, others in children-array (id) order across two shuffled inputs''',
-    '''if wording forks, grants.test sharedText fails: [{Kid phone, [Ben, Cleo]}] -> "Kid phone (shared with Ben, Cleo)" and [] -> ""''',
-  ]
+  test_contract = ["if defaults are missing, api.test listGrants/createGrant/childBlocked fail: a row, 201, service or client without shared / unblocked_by / shared_with yields [] with no TypeError", "if children is not defaulted, api.test listDevices fails: a client row without children yields children: []", "if self is not excluded, grants.test sharedDevices fails: Ada [Kid phone, Kid tablet], Ben [Kid phone] -> for Ada exactly [{client:\"Kid phone\", others:[{id:2,name:\"Ben\"}]}]; for Ben [{client:\"Kid phone\", others:[{id:1,name:\"Ada\"}]}]; an unshared child -> []", "if ordering drifts, grants.test sharedDevicesOrder fails: rows client ASC, others in children-array (id) order across two shuffled inputs", "if wording forks or the helper reads strings, grants.test sharedText fails: [{client:\"Kid phone\", others:[{id:2,name:\"Ben\"},{id:3,name:\"Cleo\"}]}] -> \"Kid phone (shared with Ben, Cleo)\" and [] -> \"\""]
   status = "pending"
 
 [[task]]
@@ -166,9 +155,9 @@ rule, so AdGuard is renamed exactly once.
   wave = 2
   title = "Children API: share, quiet removal, migration dedupe"
   files = ["internal/api/children.go", "internal/api/children_test.go", "internal/api/migration.go", "internal/api/migration_test.go"]
-  description = "updateConflict keeps only the name check. added = in.Clients minus cur.Clients still goes to AdoptClients, shared clients included. Removal-only PUTs and DELETE never call AdGuard. computeOffer dedupes mapped names and reports the lowest-id owner. Rewrite the client-taken PUT cases of TestChildUpdate_Conflicts and TestChildren_PutAtomic (the POST case moved to t-1)."
-  covers = ["c-1", "c-7"]
-  test_contract = ["if the pre-check survives, TestChildUpdate_ShareNo409 fails: PUT /children/2 {Ben, [Kid phone]} while Ada holds it -> 200, GET /children lists Kid phone under both", "if a shared add skips adopt, TestChildUpdate_ShareAdopts fails: that PUT issues exactly one /control/clients/update for Kid phone", "if removal writes AdGuard, TestChildUpdate_RemoveSharedNoAdGuard fails: PUT Ben without Kid phone -> 200, zero AdGuard requests, Ada still lists it", "if delete writes AdGuard, TestChildDelete_SharedNoAdGuard fails: DELETE /children/2 -> 204, zero AdGuard requests, Ada still lists Kid phone", "if the name check is lost, TestChildUpdate_NameStill409 fails: PUT Ben {name:\"ada\"} -> 409 with zero AdGuard requests", "if a failed PUT half-applies, TestChildren_PutAtomic fails: with the fake failing /control/clients/update, PUT Ada {name:\"Alicia\", clients:[Kid phone, Old laptop]} returns a non-2xx and GET shows Ada still named \"Ada\" holding exactly [Kid phone]", "if the offer is not deduped, TestMigration_SharedOnce fails: Kid tablet (use_global) held by Ada and Ben -> GET /migration lists it once with child {1, Ada}; POST /migration issues exactly one /control/clients/update for it"]
+  description = "updateConflict keeps only the name check. added = in.Clients minus cur.Clients still goes to AdoptClients, shared clients included. POST /children with clients now also goes through AdoptClients (childID 0 — a new child has no grants — siblings empty, added = in.Clients) before CreateChild; an adopt failure is 502 naming the client and creates no child; POST without clients makes no AdGuard request. Removal-only PUTs and DELETE never call AdGuard. computeOffer dedupes mapped names and reports the lowest-id owner. Rewrite the client-taken PUT cases of TestChildUpdate_Conflicts and TestChildren_PutAtomic (the POST case moved to t-1)."
+  covers = ["c-1", "c-3", "c-7"]
+  test_contract = ["if the pre-check survives, TestChildUpdate_ShareNo409 fails: PUT /children/2 {Ben, [Kid phone]} while Ada holds it -> 200, GET /children lists Kid phone under both", "if a shared add skips adopt, TestChildUpdate_ShareAdopts fails: that PUT issues exactly one /control/clients/update for Kid phone", "if removal writes AdGuard, TestChildUpdate_RemoveSharedNoAdGuard fails: PUT Ben without Kid phone -> 200, zero AdGuard requests, Ada still lists it", "if delete writes AdGuard, TestChildDelete_SharedNoAdGuard fails: DELETE /children/2 -> 204, zero AdGuard requests, Ada still lists Kid phone", "if the name check is lost, TestChildUpdate_NameStill409 fails: PUT Ben {name:\"ada\"} -> 409 with zero AdGuard requests", "if a failed PUT half-applies, TestChildren_PutAtomic fails: with the fake failing /control/clients/update, PUT Ada {name:\"Alicia\", clients:[Kid phone, Old laptop]} returns a non-2xx and GET shows Ada still named \"Ada\" holding exactly [Kid phone]", "if the offer is not deduped, TestMigration_SharedOnce fails: Kid tablet (use_global) held by Ada and Ben -> GET /migration lists it once with child {1, Ada}; POST /migration issues exactly one /control/clients/update for it", "if POST skips adopt, TestChildCreate_SharedAdopts fails: Ada holds Kid phone; POST /children {Cy, [Kid phone]} -> 201 and exactly one /control/clients/update for Kid phone whose blocked_services are [roblox, tiktok, youtube] (global list unioned in); POST {Dee, []} -> 201 with zero AdGuard requests", "if POST writes the store before adopting, TestChildCreate_AdoptFailNoChild fails: with the fake failing /control/clients/update, POST /children {Cy, [Kid phone]} -> 502 naming Kid phone and GET /children lists no Cy"]
   depends_on = ["t-1"]
   status = "pending"
 
@@ -196,22 +185,9 @@ ownerIndex -> map[client][]childRef (id ASC). clientView.child is replaced by ch
   wave = 2
   title = "Grants API: shared devices on 201 and list"
   files = ["internal/api/grants.go", "internal/api/grants_test.go"]
-  description = """
-Pure sharedOf(clients, childID, children) per the pinned rule. handleGrantCreate reads ListChildren before Create (may
-replace today's GetChild): a failure is a 500 with no AdGuard write. The 201 carries shared; grantView gains shared for
-GET /grants, computed from the current mapping.
-"""
+  description = "Pure sharedOf(clients, childID, children) per the pinned rule. handleGrantCreate reads ListChildren before Create (may\nreplace today's GetChild): a failure is a 500 with no AdGuard write. The 201 carries shared; grantView gains shared for\nGET /grants, computed from the current mapping. A failed ListChildren on GET /grants degrades: every grant row is still\nreturned with shared: [] and a warn is logged, so the polled list never blanks on a store hiccup."
   covers = ["c-4", "c-5"]
-  test_contract = [
-    '''if shared is not computed, TestGrants_CreateShared fails: Ada [Kid phone, Kid tablet], Ben [Kid phone]; POST {child_id:1, services:[youtube]} -> 201 shared exactly [{"client":"Kid phone","others":[{"id":2,"name":"Ben"}]}]''',
-    '''if the grant skips the shared client, TestGrants_SharedApplied fails on the fake: Ben's youtube grant over [Kid phone] removes youtube from Kid phone''',
-    '''if the granter is not excluded or order drifts, TestGrants_SharedThreeOwners fails: Ada, Ben, Cleo hold Kid phone; Ben's grant -> others [{1,Ada},{3,Cleo}]''',
-    '''if overlap is per-client, TestGrantCreate_SecondOwnerSameService fails: Ben's youtube grant while Ada's covers Kid phone -> 201, not 409''',
-    '''if the slice can be nil, TestGrants_UnsharedEmpty fails: an unshared grant's 201 and GET row carry "shared": []''',
-    '''if the list uses creation-time owners, TestGrants_ListSharedLive fails: Ben added to Kid phone after Ada's grant -> GET /grants lists Ben in shared''',
-    '''if the children read is after apply, TestGrants_ChildrenReadFails fails: ListChildren error -> 500 and zero /control/clients/update''',
-    '''if the view shape drifts, TestGrants_ViewShape fails: keys exactly (id, child_id, services, clients, shared, started_at, ends_at)''',
-  ]
+  test_contract = ["if shared is not computed, TestGrants_CreateShared fails: Ada [Kid phone, Kid tablet], Ben [Kid phone]; POST {child_id:1, services:[youtube]} -> 201 shared exactly [{\"client\":\"Kid phone\",\"others\":[{\"id\":2,\"name\":\"Ben\"}]}]", "if the grant skips the shared client, TestGrants_SharedApplied fails on the fake: Ben's youtube grant over [Kid phone] removes youtube from Kid phone", "if the granter is not excluded or order drifts, TestGrants_SharedThreeOwners fails: Ada, Ben, Cleo hold Kid phone; Ben's grant -> others [{1,Ada},{3,Cleo}]", "if overlap is per-client, TestGrantCreate_SecondOwnerSameService fails: Ben's youtube grant while Ada's covers Kid phone -> 201, not 409", "if the slice can be nil, TestGrants_UnsharedEmpty fails: an unshared grant's 201 and GET row carry \"shared\": []", "if the list uses creation-time owners, TestGrants_ListSharedLive fails: Ben added to Kid phone after Ada's grant -> GET /grants lists Ben in shared", "if the children read is after apply, TestGrants_ChildrenReadFails fails: ListChildren error -> 500 and zero /control/clients/update", "if the view shape drifts, TestGrants_ViewShape fails: keys exactly (id, child_id, services, clients, shared, started_at, ends_at)", "if the list read failure is fatal, TestGrants_ListChildrenReadFails fails: two active grants, ListChildren error -> GET /grants 200 with both rows present (ids, ends_at unchanged) and shared [] on each"]
   depends_on = ["t-1"]
   status = "pending"
 
@@ -226,14 +202,7 @@ blocked.Compute, and emits shared_with on every client row and unblocked_by on e
 children read degrades to [] annotations with a warn, not an error status.
 """
   covers = ["c-6"]
-  test_contract = [
-    '''if wiring is missing, TestBlocked_SharedUnblockedBy fails: Ada and Ben hold Kid phone, Ada's active youtube grant -> GET /children/2/blocked lists Kid phone with shared_with [{id:1,name:"Ada"}] and youtube unblocked_by [{client:"Kid phone", grant_id:<G>, child:{id:1,name:"Ada"}}]''',
-    '''if Self is not passed, TestBlocked_OwnGrantUnnamed fails: GET /children/1/blocked -> youtube unblocked_by []''',
-    '''if both owners don't list it, TestBlocked_BothOwnersListShared fails: Ada's and Ben's views both include Kid phone in clients''',
-    '''if a row can omit a key, TestBlocked_AnnotationShape fails: every service row has "unblocked_by" and every client row has "shared_with" as arrays''',
-    '''if a grants read failure is fatal, TestBlocked_GrantsReadFails fails: 200 with unblocked_by [] everywhere and states unchanged''',
-    '''if the 404 path changes, the existing TestBlocked_NotFound fails: unknown child is 404 with 0 AdGuard requests''',
-  ]
+  test_contract = ["if wiring is missing, TestBlocked_SharedUnblockedBy fails: Ada and Ben hold Kid phone, Ada's active youtube grant -> GET /children/2/blocked lists Kid phone with shared_with [{id:1,name:\"Ada\"}] and youtube unblocked_by [{client:\"Kid phone\", grant_id:<G>, child:{id:1,name:\"Ada\"}}]", "if Self is not passed, TestBlocked_OwnGrantUnnamed fails: GET /children/1/blocked -> youtube unblocked_by []", "if both owners don't list it, TestBlocked_BothOwnersListShared fails: Ada's and Ben's views both include Kid phone in clients", "if a row can omit a key, TestBlocked_AnnotationShape fails: every service row has \"unblocked_by\" and every client row has \"shared_with\" as arrays", "if a grants read failure is fatal, TestBlocked_GrantsReadFails fails: 200 with unblocked_by [] everywhere and states unchanged", "if the 404 path changes, the existing TestBlocked_NotFound fails: unknown child is 404 with 0 AdGuard requests", "if a children read failure is fatal, TestBlocked_ChildrenReadFails fails: ListChildren error -> 200 with shared_with [] on every client row, unblocked_by [] everywhere and states unchanged"]
   depends_on = ["t-1", "t-3"]
   status = "pending"
 
