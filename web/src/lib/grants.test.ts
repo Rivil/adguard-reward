@@ -1,6 +1,6 @@
 // Stryker disable all: test sources are not mutation targets
 import { describe, expect, it } from 'vitest'
-import type { Grant } from './api'
+import type { Child, Grant } from './api'
 import {
   MAX_DURATION,
   MIN_DURATION,
@@ -11,6 +11,8 @@ import {
   ownDuration,
   remainingSeconds,
   secondsToMinutes,
+  sharedDevices,
+  sharedText,
 } from './grants'
 
 const T0 = Date.parse('2026-09-21T10:00:00Z')
@@ -117,5 +119,63 @@ describe('minutes', () => {
     expect(secondsToMinutes(5400)).toBe(90)
     expect(secondsToMinutes(90)).toBe(2)
     expect(secondsToMinutes(60)).toBe(1)
+  })
+})
+
+describe('sharedDevices', () => {
+  const ada: Child = { id: 1, name: 'Ada', clients: ['Kid phone', 'Kid tablet'] }
+  const ben: Child = { id: 2, name: 'Ben', clients: ['Kid phone'] }
+  const cleo: Child = { id: 3, name: 'Cleo', clients: ['Old laptop'] }
+
+  it('excludes the child itself and lists only shared clients', () => {
+    const children = [ada, ben, cleo]
+    expect(sharedDevices(1, children)).toEqual([{ client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] }])
+    expect(sharedDevices(2, children)).toEqual([{ client: 'Kid phone', others: [{ id: 1, name: 'Ada' }] }])
+    expect(sharedDevices(3, children)).toEqual([])
+    expect(sharedDevices(99, children)).toEqual([])
+  })
+
+  it('orders rows client ASC and others by id, whatever the input order', () => {
+    const a: Child = { id: 1, name: 'Ada', clients: ['TV', 'Kid phone'] }
+    const b: Child = { id: 2, name: 'Ben', clients: ['Kid phone', 'TV'] }
+    const c: Child = { id: 3, name: 'Cleo', clients: ['TV'] }
+    const want = [
+      { client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] },
+      {
+        client: 'TV',
+        others: [
+          { id: 2, name: 'Ben' },
+          { id: 3, name: 'Cleo' },
+        ],
+      },
+    ]
+    expect(sharedDevices(1, [a, b, c])).toEqual(want)
+    expect(sharedDevices(1, [c, b, a])).toEqual(want)
+  })
+})
+
+describe('sharedText', () => {
+  it('names each device and its other owners', () => {
+    expect(
+      sharedText([
+        {
+          client: 'Kid phone',
+          others: [
+            { id: 2, name: 'Ben' },
+            { id: 3, name: 'Cleo' },
+          ],
+        },
+      ]),
+    ).toBe('Kid phone (shared with Ben, Cleo)')
+  })
+
+  it('joins several devices and is empty for none', () => {
+    expect(
+      sharedText([
+        { client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] },
+        { client: 'TV', others: [{ id: 3, name: 'Cleo' }] },
+      ]),
+    ).toBe('Kid phone (shared with Ben), TV (shared with Cleo)')
+    expect(sharedText([])).toBe('')
   })
 })

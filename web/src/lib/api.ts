@@ -166,11 +166,26 @@ export interface ChildRef {
   name: string
 }
 
+// The shared-device fields below (children, shared, shared_with,
+// unblocked_by) are optional in the types only so object literals built
+// before the server sent them still type-check; every fetcher in this module
+// fills an absent one with [], so a value read from the API is never
+// undefined.
+
+/** A client a child shares with other children: the other owners, id ASC. */
+export interface SharedRef {
+  client: string
+  others: ChildRef[]
+}
+
 export interface ClientView {
   name: string
   ids: string[]
   use_global_blocked_services: boolean
+  /** @deprecated read `children`; removed once no consumer reads it. */
   child: ChildRef | null
+  /** Every owner, id ASC; [] when unassigned. Always filled by the fetchers below. */
+  children?: ChildRef[]
 }
 
 export interface Service {
@@ -186,12 +201,23 @@ export interface ServiceState extends Service {
   state: ServiceStateName
   /** Present clients on which a partial service is NOT blocked. */
   differs: string[]
+  /** Another child's active grant holding the service open on one of this child's clients. */
+  unblocked_by?: Unblock[]
+}
+
+export interface Unblock {
+  client: string
+  grant_id: number
+  /** name is "" when the granting child has since been deleted. */
+  child: ChildRef
 }
 
 export interface BlockedClient {
   name: string
   missing: boolean
   uses_global: boolean
+  /** The client's other owners, id ASC. */
+  shared_with?: ChildRef[]
 }
 
 export interface BlockedView {
@@ -233,9 +259,14 @@ export function deleteChild(id: number): Promise<void> {
 
 const CLIENTS = '/api/v1/clients'
 
+/** Fills `children` on a client row from a server that omitted it. */
+function clientView(c: ClientView): ClientView {
+  return { ...c, children: c.children ?? [] }
+}
+
 export async function listClients(): Promise<ClientView[]> {
   const res = await request<{ clients: ClientView[] }>('GET', CLIENTS)
-  return res.clients
+  return res.clients.map(clientView)
 }
 
 /** A device AdGuard has seen that no persistent client covers yet. */
@@ -257,20 +288,20 @@ export interface Devices {
 /** Persistent clients plus the unlabelled devices, from one GET. */
 export async function listDevices(): Promise<Devices> {
   const res = await request<Partial<Devices>>('GET', CLIENTS)
-  return { clients: res.clients ?? [], unlabelled: res.unlabelled ?? [] }
+  return { clients: (res.clients ?? []).map(clientView), unlabelled: res.unlabelled ?? [] }
 }
 
 /**
  * Create an AdGuard persistent client, optionally assigned to a child in the
  * same call. childId null sends child_id: null — no child.
  */
-export function createClient(name: string, ids: string[], childId: number | null): Promise<ClientView> {
-  return request<ClientView>('POST', CLIENTS, { name, ids, child_id: childId })
+export async function createClient(name: string, ids: string[], childId: number | null): Promise<ClientView> {
+  return clientView(await request<ClientView>('POST', CLIENTS, { name, ids, child_id: childId }))
 }
 
 /** Rename a persistent client. Both names travel in the body, never the path. */
-export function renameClient(from: string, to: string): Promise<ClientView> {
-  return request<ClientView>('POST', `${CLIENTS}/rename`, { from, to })
+export async function renameClient(from: string, to: string): Promise<ClientView> {
+  return clientView(await request<ClientView>('POST', `${CLIENTS}/rename`, { from, to }))
 }
 
 export async function listServices(): Promise<Service[]> {
@@ -278,8 +309,13 @@ export async function listServices(): Promise<Service[]> {
   return res.services
 }
 
-export function childBlocked(id: number): Promise<BlockedView> {
-  return request<BlockedView>('GET', `${CHILDREN}/${id}/blocked`)
+export async function childBlocked(id: number): Promise<BlockedView> {
+  const v = await request<BlockedView>('GET', `${CHILDREN}/${id}/blocked`)
+  return {
+    ...v,
+    clients: v.clients.map((c) => ({ ...c, shared_with: c.shared_with ?? [] })),
+    services: v.services.map((s) => ({ ...s, unblocked_by: s.unblocked_by ?? [] })),
+  }
 }
 
 export function migrationOffer(): Promise<MigrationOffer> {
@@ -301,6 +337,8 @@ export interface Grant {
   /** RFC 3339. */
   started_at: string
   ends_at: string
+  /** Shared clients the grant touches, from the current mapping; client ASC. */
+  shared?: SharedRef[]
 }
 
 export interface GrantCreated {
@@ -309,6 +347,8 @@ export interface GrantCreated {
   /** False when at least one client could not be unblocked; failed names them. */
   applied: boolean
   failed: string[]
+  /** Shared clients the grant touches and their other owners; client ASC. */
+  shared?: SharedRef[]
 }
 
 export interface ButtonInput {
@@ -328,12 +368,13 @@ const BUTTONS = '/api/v1/buttons'
 
 export async function listGrants(): Promise<Grant[]> {
   const res = await request<{ grants: Grant[] }>('GET', GRANTS)
-  return res.grants
+  return res.grants.map((g) => ({ ...g, shared: g.shared ?? [] }))
 }
 
 /** duration is seconds. A 409 rejects with grantId naming the overlapping grant. */
-export function createGrant(child_id: number, services: string[], duration: number): Promise<GrantCreated> {
-  return request<GrantCreated>('POST', GRANTS, { child_id, services, duration })
+export async function createGrant(child_id: number, services: string[], duration: number): Promise<GrantCreated> {
+  const g = await request<GrantCreated>('POST', GRANTS, { child_id, services, duration })
+  return { ...g, shared: g.shared ?? [] }
 }
 
 export function extendGrant(id: number, duration: number): Promise<{ id: number; ends_at: string }> {
