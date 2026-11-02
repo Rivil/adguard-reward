@@ -333,3 +333,39 @@ describe('GrantForm', () => {
     expect(fieldset().textContent).not.toContain('Keeps:')
   })
 })
+
+describe('GrantForm custom services', () => {
+  const portal: Service = { id: 'custom:1', name: 'school portal', icon: '', custom: true }
+
+  it('custom service row', () => {
+    mount({ services: [youtube, portal], value: { child_id: 1, services: ['custom:1'], minutes: 30 } })
+    const cb = checkbox('S')
+    expect(cb.value).toBe('custom:1')
+    expect(cb.checked).toBe(true)
+    const row = cb.closest('label') as HTMLElement
+    expect(row.querySelector('[data-letter-avatar]')?.textContent).toBe('S')
+    expect(row.querySelector('img')).toBeNull()
+    expect(row.textContent).toContain('school portal')
+    // In the catalogue, so never shown as stale.
+    expect(document.querySelector('[data-missing]')).toBeNull()
+    expect(document.body.textContent).not.toContain('not in AdGuard Home')
+    // Built-ins keep their real icon.
+    const yt = checkbox('YouTube').closest('label') as HTMLElement
+    expect(yt.querySelector('img')?.getAttribute('src')).toBe('data:image/svg+xml;base64,PHN2Zy8+')
+  })
+
+  it('custom service selection', async () => {
+    mount({ services: [youtube, portal], value: { child_id: 1, services: [], minutes: 30 } })
+    await fireEvent.click(checkbox('S'))
+    await fireEvent.click(checkbox('YouTube'))
+    expect(value().services).toEqual(['custom:1', 'youtube'])
+    expect(valid()).toBe(true)
+  })
+
+  it('search finds a custom service by name', async () => {
+    mount({ services: [youtube, portal] })
+    await fireEvent.input(screen.getByLabelText('Search services'), { target: { value: 'portal' } })
+    const rows = [...document.querySelectorAll('ul.services input[type="checkbox"]')].map((c) => (c as HTMLInputElement).value)
+    expect(rows).toEqual(['custom:1'])
+  })
+})
