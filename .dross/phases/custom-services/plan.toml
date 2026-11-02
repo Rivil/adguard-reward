@@ -24,23 +24,23 @@ task_seq = 18
     '''if malformed markers are repaired instead of refused, TestSplice_Malformed fails: each of lone begin, lone end, end-before-begin and two pairs returns ErrMalformedRegion and a nil slice''',
     '''if Splice is not idempotent, TestSplice_Idempotent fails: Splice(Splice(x, m), m) == Splice(x, m)''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-2"
   wave = 1
   title = "Validate domains and render region rules"
   files = ["internal/rules/domain.go", "internal/rules/domain_test.go", "internal/rules/render.go", "internal/rules/render_test.go"]
-  description = '''NormalizeDomain lowercases, strips one trailing dot, accepts only ASCII LDH labels (<=253 chars, >=2 labels, punycode ok, non-ASCII rejected). QuoteClient single-quotes a client name and backslash-escapes \ ' " , | (verify whether $ also needs escaping against AdGuard's $client grammar). Render(services, childClients, covers) returns deterministic body lines (no markers): per domain one block line over the union of mapped child clients and one @@ line over the union of clients any active grant covers that service on.'''
+  description = "NormalizeDomain lowercases, strips one trailing dot, accepts only ASCII LDH labels (<=253 chars, >=2 labels, punycode ok, non-ASCII rejected). QuoteClient single-quotes a client name and backslash-escapes ' , | $ only. Amended 2026-11-02 (user-approved during execute) after reading urlfilter@347285f3f046's $client decoding: the options delimiter is the last `$` not preceded by `\\`; `\\,` and `\\|` are unescaped by the option and client splits; inside single quotes only `\\'` is unescaped, so `\"` and `\\` stay bare (escaping them leaves a literal backslash and the rule never matches). Names that are empty, contain a newline/CR, or have a backslash before ' , | $ or at the end are refused: dropped from the line and logged. Render(services, childClients, covers) returns deterministic body lines (no markers): per domain one block line over the union of mapped child clients and one @@ line over the union of clients any active grant covers that service on."
   covers = ["c-2", "c-6", "c-7"]
-  test_contract = ["if any domain check is dropped, TestNormalizeDomain fails its row: https://a.com, a.com/x, a.com:443, *.a.com, \"a .com\", \" a.com\", \"a.com\\n\", ||a.com^, a.com^, a.com$important, /a\\.com/, @@a.com, com, \"\" and ä.com each return an error; Example.COM. -> example.com", "if client quoting is wrong, TestQuoteClient fails: QuoteClient(`Ann's \"tab\", |x`) == `'Ann\\'s \\\"tab\\\"\\, \\|x'` exactly; a client name containing a newline is dropped from the line (and logged), never split across lines", "if backslash or dollar handling in client names is wrong, TestQuoteClient fails: QuoteClient(`a\\b`) == `'a\\\\b'` exactly, and a name containing $ is emitted as AdGuard's $client grammar requires (checked against AdGuard source/docs before the row is written)", "if block lines are mis-scoped, TestRender_Block fails: 1 service [a.com,b.com], child clients [kid-phone,tv], no covers -> exactly ||a.com^$client='kid-phone'|'tv' and the b.com twin; no adult client present", "if an empty client set yields an unscoped rule, TestRender_NoClients fails: zero mapped child clients -> no block line at all (an unscoped ||d^ would block adults)", "if grant exceptions are missing or duplicated, TestRender_Cover fails: cover {custom:1,[kid-phone,tv]} adds exactly one @@ line per domain", "if ref-counting by union breaks, TestRender_SharedCover fails: covers A{custom:1,[a-phone,tv]} + B{custom:1,[b-phone,tv]} then only B -> the a.com exception is 'b-phone'|'tv' (tv kept, a-phone gone); dropping both removes the line", "if output is order-dependent, TestRender_Deterministic fails: 100 shuffled-input runs produce byte-identical output"]
-  status = "pending"
+  test_contract = ["if any domain check is dropped, TestNormalizeDomain fails its row: https://a.com, a.com/x, a.com:443, *.a.com, \"a .com\", \" a.com\", \"a.com\\n\", ||a.com^, a.com^, a.com$important, /a\\.com/, @@a.com, com, \"\" and ä.com each return an error; Example.COM. -> example.com", "if client quoting is wrong, TestQuoteClient fails: QuoteClient(`Ann's \"tab\", |x`) == `'Ann\\'s \"tab\"\\, \\|x'` exactly (amended: \" stays bare per urlfilter) and every accepted name decodes back to itself through a decoder mirroring urlfilter@347285f3f046; a client name containing a newline is dropped from the line (and logged), never split across lines", "if backslash or dollar handling in client names is wrong, TestQuoteClient fails: QuoteClient(`a\\b`) == `'a\\b'` exactly (amended: urlfilter never unescapes \\\\), QuoteClient(`a$b`) == `'a\\$b'` (urlfilter skips \\$ when finding the options delimiter), and `a\\'b`, `a\\,b`, `a\\|b`, `a\\$b` and a trailing backslash are refused", "if block lines are mis-scoped, TestRender_Block fails: 1 service [a.com,b.com], child clients [kid-phone,tv], no covers -> exactly ||a.com^$client='kid-phone'|'tv' and the b.com twin; no adult client present", "if an empty client set yields an unscoped rule, TestRender_NoClients fails: zero mapped child clients -> no block line at all (an unscoped ||d^ would block adults)", "if grant exceptions are missing or duplicated, TestRender_Cover fails: cover {custom:1,[kid-phone,tv]} adds exactly one @@ line per domain", "if ref-counting by union breaks, TestRender_SharedCover fails: covers A{custom:1,[a-phone,tv]} + B{custom:1,[b-phone,tv]} then only B -> the a.com exception is 'b-phone'|'tv' (tv kept, a-phone gone); dropping both removes the line", "if output is order-dependent, TestRender_Deterministic fails: 100 shuffled-input runs produce byte-identical output"]
+  status = "done"
 
 [[task]]
   id = "t-3"
   wave = 1
   title = "AdGuard user_rules locked read-modify-write + fake"
-  files = ["internal/adguard/rules.go", "internal/adguard/rules_test.go", "internal/adguard/adguardtest/server.go", "internal/adguard/adguardtest/testdata/filtering_status.json"]
+  files = ["internal/adguard/rules.go", "internal/adguard/rules_test.go", "internal/adguard/adguardtest/server.go", "internal/adguard/adguardtest/testdata/filtering_status.json", "internal/adguard/client.go"]
   description = '''Client.EditUserRules(ctx, fn) runs under a dedicated mutex: GET /control/filtering/status .user_rules, apply fn, POST /control/filtering/set_rules only when the result differs. Confirm endpoint shapes against AdGuard's OpenAPI before coding. The fake serves both from mutable state with SetUserRules/UserRules knobs and an in-flight counter on the filtering paths; faults via SetStatus.'''
   covers = ["c-8", "c-9"]
   test_contract = [
@@ -51,7 +51,7 @@ task_seq = 18
     '''if the body mangles existing lines, TestEditUserRules_Verbatim fails: set_rules body carries every original line byte-for-byte including blank lines and trailing whitespace''',
     '''if write errors are swallowed, TestEditUserRules_WriteError fails: set_rules 500 -> *StatusError''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-4"
@@ -61,7 +61,7 @@ task_seq = 18
   description = '''custom_services(id, name, name_key UNIQUE) + custom_service_domains(service_id FK CASCADE, position, domain UNIQUE). Create/Get/List; Update replaces name and whole domain set in one tx. Delete in one tx: an active grant listing custom:<id> -> *ErrServiceInUse{GrantID}; else strip the id from button services, delete buttons left empty, clear any button icon equal to the id, delete the row. Exports CustomServiceID, ParseCustomID, IsCustomServiceID.'''
   covers = ["c-1", "c-3", "c-4"]
   test_contract = ["if custom services do not persist, TestCustomServices_Persist fails: create, Close, store.Open same dir -> same name and domains in original order", "if uniqueness is not enforced, TestCustomServices_Unique fails: \"TikTok Web\" then \"tiktok web\" -> ErrNameTaken with one row; a domain owned by A -> *ErrDomainTaken{Owner:A} and nothing inserted; Update B to take A's domain -> same error and B's old domains intact", "if update is not atomic, TestCustomServices_Update fails: {a,b}->{b,c} yields exactly {b,c}; an injected failure after the delete step rolls back to {a,b}", "if delete ignores active grants, TestCustomServices_DeleteInUse fails: active grant 7 on custom:1 -> *ErrServiceInUse{GrantID:7} with service, domains and buttons untouched; an ended or expired grant does not block delete", "if delete leaves dangling button refs, TestCustomServices_DeleteStripsButtons fails: [custom:1, youtube] -> [youtube] with position kept, a [custom:1]-only button is gone, icon \"custom:1\" reads back \"\"", "if id parsing is loose, TestIsCustomServiceID fails: \"youtube\" -> false, \"custom:7\" -> true, \"custom:\" -> false; TestMigrate_Order lists 0007 last", "if a same-service duplicate domain causes a partial insert, TestCustomServices_SelfDuplicate fails: Create with [a.com, a.com] returns an error and inserts no row or domains (the API dedupes first, so this is the store's backstop)"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-5"
@@ -76,7 +76,7 @@ task_seq = 18
     '''if error details are lost, api.test 'custom service errors' fails: 400 -> messageFor names the bad domain; 409 {message, grant_id:7} -> ApiError carrying grantId 7''',
     '''if routing is not wired, api.test 'services route' fails: navigate('services') pushes '/services'; popstate on '/services' sets route 'services' ''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-6"

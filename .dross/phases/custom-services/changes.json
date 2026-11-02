@@ -2,5 +2,277 @@
   "phase": "custom-services",
   "base": "milestone/v0.2",
   "base_commit": "d409e27a5094c78a9d699b1ef9356f01ed9cc438",
-  "tasks": {}
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/rules/region.go",
+        "internal/rules/region_test.go"
+      ],
+      "commit": "2ef485b",
+      "completed_at": "2026-11-02T15:31:49.653594Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Splice",
+          "loc": "internal/rules/region.go:31",
+          "what": "replaces or appends the marker-delimited region of user_rules, refusing malformed markers"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/rules/domain.go",
+        "internal/rules/domain_test.go",
+        "internal/rules/render.go",
+        "internal/rules/render_test.go"
+      ],
+      "commit": "b0307d0",
+      "completed_at": "2026-11-02T15:55:53.251488Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Render",
+          "loc": "internal/rules/render.go:71",
+          "what": "renders per-domain child block lines and grant-union @@ exceptions with urlfilter-faithful $client quoting"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/adguard/rules.go",
+        "internal/adguard/rules_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/testdata/filtering_status.json",
+        "internal/adguard/client.go"
+      ],
+      "commit": "985f022",
+      "completed_at": "2026-11-02T16:00:23.012045Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Client.EditUserRules",
+          "loc": "internal/adguard/rules.go:19",
+          "what": "mutex-guarded read of filtering/status user_rules and set_rules write only on change"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/store/migrations/0007_custom_services.sql",
+        "internal/store/custom_services.go",
+        "internal/store/custom_services_test.go"
+      ],
+      "commit": "2c41430",
+      "completed_at": "2026-11-02T16:03:47.844334Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Store.DeleteCustomService",
+          "loc": "internal/store/custom_services.go:191",
+          "what": "stores never-reused custom:\u003cn\u003e services with unique names/domains; delete refuses active grants and strips buttons"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/ServiceIcon.svelte",
+        "web/src/lib/ServiceIcon.test.ts"
+      ],
+      "commit": "c485ae5",
+      "completed_at": "2026-11-02T16:06:01.48838Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "ServiceIcon",
+          "loc": "web/src/lib/ServiceIcon.svelte:1",
+          "what": "renders a catalogue icon or a grapheme-safe letter avatar for icon-less custom services; api.ts adds the custom-services client and /services route"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Splice also rejects managed lines that equal a marker, which the task record does not describe. It returns an ad-hoc fmt.Errorf rather than a sentinel, so callers cannot tell it apart from other errors with errors.Is. Reasonable defence for r-02, but outside the stated contract.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The package doc comment describes domain validation and rendering of block and exception lines, which this diff does not include. Presumably sibling tasks will add them.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestSplice_DoesNotAliasInput and the two-begins and two-ends malformed cases go beyond the contract and are useful.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-6",
+          "text": "test_contract requires QuoteClient(`Ann's \"tab\", |x`) == `'Ann\\'s \\\"tab\\\"\\, \\|x'` exactly; render.go leaves `\"` unescaped and TestQuoteClient asserts `'Ann\\'s \"tab\"\\, \\|x'` instead, so the contracted row is not met",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-6",
+          "text": "test_contract requires QuoteClient(`a\\b`) == `'a\\\\b'` exactly and the description says `\\` is backslash-escaped; QuoteClient writes `\\` bare and TestQuoteClient asserts `'a\\b'`",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "BLOCKING",
+          "criterion": "c-6",
+          "text": "QuoteClient departs from the task description's escape set (\\ ' \" , |) without a recorded contract amendment. The urlfilter rationale in the doc comment may be correct, but the contract was only open on `$`; amend the record or follow it",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "decodeClients is a hand-written copy of urlfilter's parsing. No urlfilter dependency exists in the repo, so QuoteClient and its oracle can be wrong in the same way and the round-trip assertions still pass",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "A name ending in a backslash is accepted and emitted as `'trailing\\'`, which ends in what reads as an escaped quote. A real parser may treat the value as unterminated; refusing a trailing `\\` (as is done for `\\` before ' , | $) would be safer",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The $ handling (`a$b` -\u003e `'a\\$b'`) follows the record's instruction to check AdGuard's $client grammar, and the reasoning is written in the doc comment",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Render normalises stored domains again and skips invalid ones with a log. TestRender_SkipsInvalidStoredDomain covers this, which is good defence in depth for r-04",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Render takes an extra *slog.Logger parameter beyond the Render(services, childClients, covers) signature in the task record; nil is handled, so callers in sibling tasks need to pass nil or a logger",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Render sorts services with slices.SortFunc on ID only, which is not stable; if two Service values ever share an ID, output order could vary between runs. IDs are expected to be unique, so this is only latent",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "decodeClients is a hand transcription of urlfilter@347285f3f046 (including the global \\$ -\u003e $ unescape in options) and is the only oracle for the $client escaping; it must be re-checked whenever AdGuard's $client grammar changes, as its comment says",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "rulesMu is per-Client: edits are serialised only if the app shares one adguard.Client; a second Client instance, or edits made in AdGuard's own UI, can still race between the GET and the set_rules POST. AdGuard has no ETag, so this read-modify-write cannot guard against that anyway.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "json.Marshal escapes \u003c, \u003e and \u0026 as \\u003c etc., so the raw body is not byte-identical to the rule text, but the lines AdGuard decodes are identical; the Verbatim test checks the decoded values, which is the right level.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestEditUserRules_WriteRejected adds 400 -\u003e *InputRejectedError coverage beyond the contract; the fake's DisallowUnknownFields check on set_rules also pins down the request shape.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "test_contract says TestMigrate_Order lists 0007 last, but TestMigrate_Order runs against a stub FS and can't see the real migrations. The diff adds TestMigrate_CustomServicesLast instead, which checks the same thing against the embedded set and schema_migrations.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "custom_service_domains.domain UNIQUE is case-sensitive and the store saves domains exactly as given, so case-insensitive domain uniqueness depends on the API lowercasing domains first. The doc comment says so; the API task must do it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "DeleteCustomService deletes the custom_service_domains rows explicitly even though the FK already has ON DELETE CASCADE. It's harmless, and it still works if foreign_keys were ever off.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Route 'services' is added but App.svelte has no $route === 'services' branch yet, so /services renders an empty page until the management_ui task lands",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "test_contract's 'letter avatar' and 'custom services' cases are split across several it-blocks (blank, emoji, img, endpoints); every listed assertion is present",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
 }
