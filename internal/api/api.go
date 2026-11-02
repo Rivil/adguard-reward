@@ -51,6 +51,10 @@ type Grants interface {
 	CreateClient(ctx context.Context, name string, ids []string, childID *int64) error
 	AdoptClients(ctx context.Context, childID int64, siblings, added []string) error
 	RenameClient(ctx context.Context, oldName, newName string) error
+	CreateService(ctx context.Context, name string, domains []string) (grants.ServiceResult, error)
+	UpdateService(ctx context.Context, id int64, name string, domains []string) (grants.ServiceResult, error)
+	DeleteService(ctx context.Context, id int64) (grants.ServiceResult, error)
+	SyncRules(ctx context.Context) error
 }
 
 // ButtonStore is the slice of *store.Store the buttons handlers need. It
@@ -132,6 +136,10 @@ func (a *API) routes() {
 	a.mux.Handle("POST /api/v1/grants/{id}/end", a.requireSession(http.HandlerFunc(a.handleGrantEnd)))
 	a.mux.Handle("GET /api/v1/buttons", a.requireSession(http.HandlerFunc(a.handleButtonsList)))
 	a.mux.Handle("PUT /api/v1/buttons", a.requireSession(http.HandlerFunc(a.handleButtonsReplace)))
+	a.mux.Handle("GET /api/v1/custom-services", a.requireSession(http.HandlerFunc(a.handleCustomServicesList)))
+	a.mux.Handle("POST /api/v1/custom-services", a.requireSession(http.HandlerFunc(a.handleCustomServiceCreate)))
+	a.mux.Handle("PUT /api/v1/custom-services/{id}", a.requireSession(http.HandlerFunc(a.handleCustomServiceUpdate)))
+	a.mux.Handle("DELETE /api/v1/custom-services/{id}", a.requireSession(http.HandlerFunc(a.handleCustomServiceDelete)))
 	// Unknown paths are 401 without a session and 404 with one, so the
 	// route table cannot be probed anonymously.
 	a.mux.Handle("/api/v1/", a.requireSession(http.NotFoundHandler()))
