@@ -188,12 +188,12 @@ task_seq = 18
   id = "t-13"
   wave = 4
   title = "Converge region in every reconcile pass"
-  files = ["internal/grants/reconcile.go", "internal/grants/reconcile_test.go"]
-  description = '''Drop the zero-grants early return (reconcile.go:41). Every pass ends with syncRules after the overdue loop, including when the clients read fails. Stats gains RulesWritten; a rewritten region logs at info, a malformed region logs at error with no write.'''
+  files = ["internal/grants/reconcile.go", "internal/grants/reconcile_test.go", "internal/grants/rules.go", "internal/api/custom_services_test.go"]
+  description = "Drop the zero-grants early return (reconcile.go:41). Every pass ends with syncRules after the overdue loop, including when the clients read fails. Stats gains RulesWritten; a rewritten region logs at info, a malformed region logs at error with no write. Amended 2026-11-02 (user-approved): syncRules writes nothing when the desired region is empty and no markers exist yet, so a fresh install gets no AdGuard write until a custom service has a child client to block; internal/grants/rules.go and the stale Edges fixture in internal/api/custom_services_test.go were added to this task's files for it."
   covers = ["c-8", "c-9"]
   depends_on = ["t-6", "t-11"]
   test_contract = ["if the zero-grants early return survives, TestReconcile_RegionNoGrants fails: zero grants, one custom service, empty user_rules -> one pass appends the region", "if tampering is not undone, TestReconcile_RegionTamper fails: deleting a block line and adding @@||a.com^$client='kid-phone' inside the markers -> next pass restores exact Render output; a line added outside the markers survives; a second pass issues 0 set_rules POSTs", "if a clients outage blocks convergence, TestReconcile_RegionClientsDown fails: /control/clients failing still lets the region converge", "if a restart gap is not repaired, TestReconcile_OverdueCustom fails: overdue grant on custom:1 -> after one pass no @@ line remains and the grant is expired", "if an unapplied service is never written, TestReconcile_AppliedFalse fails: a service stored with Applied=false (set_rules fault) gets its block lines on the next pass", "if malformed markers abort the pass or get rewritten, TestReconcile_Malformed fails: only a begin marker -> error logged, 0 POSTs, grant repair continues", "if a half-ended grant's exceptions are not restored, TestReconcile_HalfEndedGrant fails: grant [youtube, custom:1]; a clients/update fault on End after the region write -> ErrRevertFailed with the @@ lines gone; one Reconcile pass with the fault cleared restores the @@ lines and the grant stays active (moved from t-11's contract, user-approved 2026-11-02)"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-14"
@@ -236,7 +236,7 @@ task_seq = 18
     '''if buttons reject custom ids, TestButtons_Custom fails: PUT /buttons services ["custom:1"], icon "custom:1" -> 200 and echoed; ["custom:99"] -> 422 buttons[0].services''',
     '''if delete_refs is not honoured end-to-end, TestCustomServices_DeleteAfterGrant fails: grant on custom:1 then DELETE /custom-services/1 -> 409; after End -> 204 and the custom:1-only button is gone from GET /buttons''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-17"
@@ -251,7 +251,7 @@ task_seq = 18
     '''if startup does not converge, TestRun_CustomRulesRestoredAtStartup fails: a stored service, a grant whose ends_at passed while down, and a fake holding a stale @@ region wrapped in foreign lines -> by the first /healthz answer block lines are present, no @@ remains, the grant is expired, and foreign lines are byte-identical''',
     '''if the tick does not converge, TestRun_CustomRulesReconcilerTick fails: with reconcileInterval overridden, a manual edit inside the markers is undone within one tick''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-18"
@@ -261,5 +261,5 @@ task_seq = 18
   description = "handleChildCreate, handleChildUpdate and handleChildDelete call Grants.SyncRules after the store write succeeds (AdoptClients runs before the store write, so it cannot resync). A SyncRules failure is logged and does not fail the request — the reconciler converges within one tick."
   covers = ["c-8"]
   test_contract = ["if a newly added device is not blocked at once, TestChildUpdate_ResyncsRules fails: with custom service [a.com] stored, PUT /children/{id} adding kid-tablet -> by the time the response returns the fake region's ||a.com^ line names 'kid-tablet'", "if a removed device stays blocked, TestChildUpdate_RemovalResyncs fails: removing kid-tablet from the child -> the ||a.com^ line no longer names 'kid-tablet' when the response returns", "if deleting a child leaves its devices blocked, TestChildDelete_ResyncsRules fails: DELETE /children/{id} -> no region line names any of its clients when the response returns", "if a sync failure breaks the child write, TestChildCreate_SyncFailure fails: set_rules 500 -> POST /children still 201 and the child is stored"]
-  status = "pending"
+  status = "done"
   depends_on = ["t-14"]

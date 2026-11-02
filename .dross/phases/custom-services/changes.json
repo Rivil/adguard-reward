@@ -71,6 +71,24 @@
         }
       ]
     },
+    "t-13": {
+      "files": [
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go",
+        "internal/grants/rules.go",
+        "internal/api/custom_services_test.go"
+      ],
+      "commit": "e0e25c2",
+      "completed_at": "2026-11-02T17:21:28.614695Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Engine.Reconcile",
+          "loc": "internal/grants/reconcile.go:42",
+          "what": "every startup and tick pass converges the managed region from intent after the grant half; malformed markers logged, never rewritten"
+        }
+      ]
+    },
     "t-14": {
       "files": [
         "internal/api/custom_services.go",
@@ -103,6 +121,55 @@
           "symbol": "covered",
           "loc": "internal/blocked/blocked.go:257",
           "what": "blocked view folds custom services from intent (unblocked iff an active grant covers the client); omitted, never guessed, when grants or the custom list cannot be read"
+        }
+      ]
+    },
+    "t-16": {
+      "files": [
+        "internal/api/grants.go",
+        "internal/api/grants_test.go",
+        "internal/api/buttons.go",
+        "internal/api/buttons_test.go"
+      ],
+      "commit": "b3cbd74",
+      "completed_at": "2026-11-02T17:24:27.873456Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "API.handleGrantCreate",
+          "loc": "internal/api/grants.go:195",
+          "what": "POST /grants and PUT /buttons validate services and icons against the merged catalogue so custom:\u003cn\u003e ids are grantable and pickable"
+        }
+      ]
+    },
+    "t-17": {
+      "files": [
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "e987153",
+      "completed_at": "2026-11-02T17:28:00.316341Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "TestRun_CustomRulesRestoredAtStartup",
+          "loc": "cmd/adguard-reward/main_test.go:1554",
+          "what": "end-to-end proof through run(): custom services survive restart, startup pass and ticks converge the region with foreign lines byte-identical"
+        }
+      ]
+    },
+    "t-18": {
+      "files": [
+        "internal/api/children.go",
+        "internal/api/children_test.go"
+      ],
+      "commit": "d517fea",
+      "completed_at": "2026-11-02T17:31:08.76663Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "API.resyncRules",
+          "loc": "internal/api/children.go:321",
+          "what": "child create/update/delete resync the region after the store write so block lines follow a child's devices immediately; failures only log"
         }
       ]
     },
@@ -418,6 +485,35 @@
         }
       ]
     },
+    "t-13": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-8",
+          "text": "An overdue grant with a custom service whose built-in revert keeps failing makes the reconciler flip-flop: expireLocked rewrites the region without the grant's exceptions, the revert fails so the grant stays active, then the final syncRules(…, 0) restores the @@ lines. The child keeps the custom service past expiry and each tick spends 2 set_rules POSTs. No test covers this path.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-9",
+          "text": "syncRules gains an undescribed skip: an empty desired region with no markers present writes nothing. This changes behaviour for every caller and narrows c-9's 'a missing region is appended at the end' (it forced the custom_services_test Edges fixture change). Reasonable, but not in the task description.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "RulesWritten under-reports: when an overdue grant's expireLocked rewrites the region during the grant half, the final syncRules finds it already converged and RulesWritten stays 0, although the Stats doc says it is 1 whenever the pass rewrote the region.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
     "t-14": {
       "outcome": "pass",
       "rounds": 1,
@@ -472,6 +568,102 @@
           "severity": "NOTE",
           "criterion": "c-5",
           "text": "TestFold_Custom also checks that grants on other services do not unblock the custom service, and TestFold_CustomAfterCatalogue checks that custom entries come after the built-ins in the order given and that no built-in is marked custom. Both go beyond the test_contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-16": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "The new errors.As branch for *grants.ErrUnknownService in handleGrantCreate (internal/api/grants.go), which handles a custom service deleted between the catalogue read and engine.Create, is not exercised by any API test. Only the engine-level tests in internal/grants/grants_test.go cover the error itself.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Grant and button validation now go through a.catalogue and writeCatalogueError, so a failed custom-service store read becomes a 500 while an AdGuard failure stays a 502. Neither handler's error path has a new test in this diff.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestCustomServices_DeleteAfterGrant goes beyond the contract: it also checks the 409 grant_id, that buttons are unchanged after the refused delete, that the mixed button keeps its other service and loses its icon, and that no region line remains for the deleted service's domain.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-17": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRun_CustomRulesReconcilerTick sleeps for a fixed 300 ms and 500 ms in its no-extra-writes and 60 s checks. The thresholds are generous, but they add about 0.8 s to the suite and still depend on timing.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The marker strings are written out in the test rather than imported, which also pins the locked marker_format decision.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-18": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "Doc comments in internal/api/children.go are now false: handleChildCreate says 'A POST without clients never calls AdGuard', handleChildUpdate says a PUT that adds nothing 'never calls AdGuard (c-7)', and handleChildDelete says 'It never calls AdGuard'. All three now read user_rules through SyncRules and may write set_rules when custom services exist.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 'no AdGuard call' tests from earlier work (TestChildren_NoAdGuard, TestChildUpdate_RemoveOnly, adguardSince, TestChildCreate_SharedAdopts) were relaxed to allow the GET /control/filtering/status read. They run with no custom services, so they still catch client writes, but they no longer prove AdGuard is never touched.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "SyncRules runs on r.Context(), so a client that disconnects mid-request can cancel the resync. That is acceptable because a failure only logs and the reconciler catches up.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-8",
+          "text": "No test checks that creating a child with clients syncs successfully (the new child's clients appear in the ||a.com^ line). Only the create-failure path is tested. The contract doesn't require it, but create is the only one of the three handlers without a success-path resync test.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "resyncRules runs on r.Context(), so if the client disconnects mid-request the sync is cancelled. It is only logged and the reconciler converges the region later, which matches the stated design.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The existing 'CRUD makes no AdGuard calls' tests were loosened to ignore only the user_rules GET, so they would still catch any set_rules or client write. That keeps them meaningful.",
           "resolution": "non-blocking, left"
         }
       ]
