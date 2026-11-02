@@ -82,26 +82,39 @@ _introduced 01-config-adguard-client · 3951cf9 · extended 02-auth-sessions · 
 
 _introduced 06-deploy-nora · 2bb312a_
 
+### Button icons
+
+A preset may carry a chosen icon — any service id from the live AdGuard catalogue, stored nullable (`""` ↔ NULL) — set or cleared from the settings Icon picker; the API validates it against the same catalogue read (422 `buttons[i].icon`), and Home shows it when still in the catalogue, else the first service's icon. While the catalogue is down the picker is disabled and a stored icon is kept as-is; a stale id resets visibly to Default.
+
+- Button.Icon — internal/store/buttons.go:21
+- API.handleButtonsReplace — internal/api/buttons.go:86
+- Buttons icon select — web/src/lib/Buttons.svelte:277
+- iconFor — web/src/lib/Home.svelte:109
+
+_introduced button-editor · c00ee53_
+
 ### Button presets
 
-A parent's one-tap presets `{id, label, child_id, services[], duration}` stored in order (`buttons` + `button_services`, migration 0004) and replaced atomically as a whole list — `ReplaceButtons` answers a typed `ErrUnknownChild`, `ListButtons` reads one snapshot. The `/buttons` settings page lists them in array order with Edit/Delete and one label + grant-form editor; every save PUTs the whole list (minutes → seconds, ids stripped) and re-renders from the response, a failure keeps the draft. No reorder controls and no custom icon (M2 button editor).
+A parent's one-tap presets `{id, label, child_id, services[], icon, duration}` stored in order (`buttons` + `button_services`, migrations 0004/0006) and replaced atomically as a whole list — `ReplaceButtons` answers a typed `ErrUnknownChild`, `ListButtons` reads one snapshot. The `/buttons` settings page groups them by child like Home, with Up/Down (swaps with the same-child neighbour, disabled at group edges, PUTs the whole list at once, a failure reloads from the server), Edit, and an inline Delete <label>? Confirm/Cancel (no browser dialog); every save PUTs the whole list (minutes → seconds, ids stripped) and re-renders from the response, index state re-pointed in the same step.
 
-- Store.ListButtons — internal/store/buttons.go:48
-- Store.ReplaceButtons — internal/store/buttons.go:65
+- Store.ListButtons — internal/store/buttons.go:51
+- Store.ReplaceButtons — internal/store/buttons.go:68
 - Buttons.svelte — web/src/lib/Buttons.svelte:1
-- Buttons.run — web/src/lib/Buttons.svelte:52
+- Buttons.run — web/src/lib/Buttons.svelte:85
+- move — web/src/lib/Buttons.svelte:192
+- del — web/src/lib/Buttons.svelte:203
 
-_introduced 05-phone-ui-buttons-pwa · 2b8fa07 · efa1c46_
+_introduced 05-phone-ui-buttons-pwa · 2b8fa07 · efa1c46 · extended button-editor · 2454ed2_
 
 ### Buttons API
 
-`GET /api/v1/buttons` returns the stored list in order; `PUT /api/v1/buttons` replaces it whole, validating cheapest-first (label 1–64 runes, duration 1 min – 24 h, service ids against one catalogue read, then child existence) and answering 422 naming `buttons[i].<field>` with the stored list untouched. Behind the session gate; `ButtonStore` is wired through `api.Deps`.
+`GET /api/v1/buttons` returns the stored list in order; `PUT /api/v1/buttons` replaces it whole, validating cheapest-first (label 1–64 runes, duration 1 min – 24 h, service ids against one catalogue read, then child existence) and answering 422 naming `buttons[i].<field>` with the stored list untouched; an optional `icon` is checked against that same catalogue read and GET always returns it. Behind the session gate; `ButtonStore` is wired through `api.Deps`.
 
-- API.handleButtonsList — internal/api/buttons.go:60
-- API.handleButtonsReplace — internal/api/buttons.go:82
-- indexOfChild — internal/api/buttons.go:180
+- API.handleButtonsList — internal/api/buttons.go:64
+- API.handleButtonsReplace — internal/api/buttons.go:86
+- indexOfChild — internal/api/buttons.go:192
 
-_introduced 05-phone-ui-buttons-pwa · 3ae3217_
+_introduced 05-phone-ui-buttons-pwa · 3ae3217 · extended button-editor · eab01af_
 
 ### Children
 
@@ -226,7 +239,7 @@ _introduced 01-config-adguard-client · 1c168a4_
 
 ### Home page
 
-Signed-in landing page: the active-grant panel first, then each child's buttons in stored order (first service's AdGuard icon) — one tap creates the grant with no confirm, an inline line names any client the apply failed on, and a 409 becomes an extend-offer dialog that extends the overlapping grant by the tap's duration and creates the rest; an ad-hoc unlock form (grant form) runs through the same tap path when no button fits. Each child's currently blocked services (partial when its devices disagree, clients that differ named, global-list badge) sit under a lazily loaded disclosure that is open only while no buttons exist; an unreachable AdGuard replaces that list with an error state. Hosts the global-list migration banner.
+Signed-in landing page: the active-grant panel first, then each child's buttons in stored order (chosen icon, else the first service's AdGuard icon) — one tap creates the grant with no confirm, an inline line names any client the apply failed on, and a 409 becomes an extend-offer dialog that extends the overlapping grant by the tap's duration and creates the rest; an ad-hoc unlock form (grant form) runs through the same tap path when no button fits. Each child's currently blocked services (partial when its devices disagree, clients that differ named, global-list badge) sit under a lazily loaded disclosure that is open only while no buttons exist; an unreachable AdGuard replaces that list with an error state. Hosts the global-list migration banner.
 
 - Home.load — web/src/lib/Home.svelte:55
 - Home.migrated — web/src/lib/Home.svelte:191
