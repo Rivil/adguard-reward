@@ -255,3 +255,66 @@ func TestRename_AdGuardRefuses(t *testing.T) {
 		t.Errorf("Ada clients = %v, want unchanged [Kid phone]", got)
 	}
 }
+
+func TestEngineRename_SharedStale(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone", "TV")
+	ben := e.child("Ben", "Kid phone")
+
+	before := e.posts()
+	if err := e.eng.RenameClient(ctx, "Kid phone", "TV"); err != nil {
+		t.Fatalf("RenameClient: %v", err)
+	}
+	if n := e.posts() - before; n != 1 {
+		t.Errorf("update POSTs = %d, want exactly 1", n)
+	}
+	for _, c := range []store.Child{ada, ben} {
+		if got := mustChild(t, e, c.ID).Clients; !reflect.DeepEqual(got, []string{"TV"}) {
+			t.Errorf("%s clients = %v, want [TV]", c.Name, got)
+		}
+	}
+}
+
+func TestEngineRename_Shared(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	ben := e.child("Ben", "Kid phone")
+	res := e.create(ben.ID, []string{"youtube"}, []string{"Kid phone"})
+
+	mark := len(e.updatesFor())
+	e.rename("Kid phone", "Family TV")
+	if got := e.updatesFor()[mark:]; !reflect.DeepEqual(got, []string{"Kid phone"}) {
+		t.Errorf("update POSTs = %v, want exactly one rename", got)
+	}
+	for _, c := range []store.Child{ada, ben} {
+		if got := mustChild(t, e, c.ID).Clients; !reflect.DeepEqual(got, []string{"Family TV"}) {
+			t.Errorf("%s clients = %v, want [Family TV]", c.Name, got)
+		}
+	}
+
+	e.clk.Advance(d + time.Second)
+	e.wantStatus(res.Grant.ID, store.StatusExpired)
+	if got := e.blocked("Family TV"); !slices.Contains(got, "youtube") {
+		t.Errorf("Family TV after Ben's expiry = %v, want youtube re-blocked", got)
+	}
+}
+
+func TestEngineRename_Outsider(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ada", "Kid phone")
+	e.child("Ben", "Kid phone")
+	cleo := e.child("Cleo", "TV")
+
+	before := len(e.fake.Requests())
+	err := e.eng.RenameClient(ctx, "Kid phone", "TV")
+	var taken *store.ErrClientTaken
+	if !errors.As(err, &taken) || taken.ChildID != cleo.ID || taken.Client != "TV" {
+		t.Errorf("err = %v, want *store.ErrClientTaken naming Cleo", err)
+	}
+	if n := len(e.fake.Requests()) - before; n != 0 {
+		t.Errorf("AdGuard requests = %d, want 0", n)
+	}
+	if !e.has("Kid phone") || e.has("TV") {
+		t.Error("AdGuard was renamed despite the conflict")
+	}
+}

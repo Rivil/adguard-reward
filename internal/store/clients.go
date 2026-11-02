@@ -15,41 +15,42 @@ const activeGrantIDs = `SELECT id FROM grants WHERE status = 'active'`
 // RenameClient follows an AdGuard persistent-client rename from oldName to
 // newName in one transaction:
 //
-//   - the child_clients row moves to newName. When the same child already
-//     holds newName (a stale self-mapping to a name AdGuard no longer knows)
-//     the old row is dropped and the existing one kept;
+//   - every owner's child_clients row moves to newName (a client may be
+//     shared by several children). An owner that already holds newName (a
+//     stale self-mapping to a name AdGuard no longer knows) drops its old row
+//     and keeps the existing one;
 //   - every active grant's stored client moves to newName, deduplicated when
 //     that grant already holds newName, so a running grant still reverts on
 //     the device. Expired and ended grants are left as recorded.
 //
-// *ErrClientTaken is returned, with nothing written, when a child other than
-// oldName's owner holds newName. An oldName no child maps leaves
-// child_clients untouched. A same-name rename is a no-op.
+// *ErrClientTaken is returned, with nothing written, when a child holds
+// newName but not oldName — the lowest such child id is named. An oldName no
+// child maps leaves child_clients untouched. A same-name rename is a no-op.
 func (st *Store) RenameClient(ctx context.Context, oldName, newName string) error {
 	if oldName == newName {
 		return nil
 	}
 	err := st.inTx(ctx, func(tx *sql.Tx) error {
-		oldOwner, err := clientOwner(ctx, tx, oldName)
+		oldOwners, err := clientOwners(ctx, tx, oldName)
 		if err != nil {
 			return err
 		}
-		newOwner, err := clientOwner(ctx, tx, newName)
+		newOwners, err := clientOwners(ctx, tx, newName)
 		if err != nil {
 			return err
 		}
-		switch {
-		case newOwner != nil && (oldOwner == nil || newOwner.ChildID != oldOwner.ChildID):
-			newOwner.Client = newName
-			return newOwner
-		case newOwner != nil:
-			if _, err := tx.ExecContext(ctx,
-				`DELETE FROM child_clients WHERE client_name = ?`, oldName); err != nil {
-				return err
+		if outsider := firstOutsider(newOwners, oldOwners); outsider != nil {
+			outsider.Client = newName
+			return outsider
+		}
+		for _, o := range oldOwners {
+			q := `UPDATE child_clients SET client_name = ? WHERE child_id = ? AND client_name = ?`
+			args := []any{newName, o.ChildID, oldName}
+			if holds(newOwners, o.ChildID) {
+				q = `DELETE FROM child_clients WHERE child_id = ? AND client_name = ?`
+				args = args[1:]
 			}
-		case oldOwner != nil:
-			if _, err := tx.ExecContext(ctx,
-				`UPDATE child_clients SET client_name = ? WHERE client_name = ?`, newName, oldName); err != nil {
+			if _, err := tx.ExecContext(ctx, q, args...); err != nil {
 				return err
 			}
 		}
@@ -75,7 +76,8 @@ func (st *Store) RenameClient(ctx context.Context, oldName, newName string) erro
 
 // AddChildClient maps one client to a child with a single insert — never a
 // replace of the child's list. A child that already holds the name is a
-// no-op; another child holding it is *ErrClientTaken; an unknown child is
+// no-op, whoever else shares it; otherwise another child holding it is
+// *ErrClientTaken naming the lowest owner id; an unknown child is
 // ErrChildNotFound.
 func (st *Store) AddChildClient(ctx context.Context, childID int64, name string) error {
 	name = strings.TrimSpace(name)
@@ -86,16 +88,16 @@ func (st *Store) AddChildClient(ctx context.Context, childID int64, name string)
 		if _, err := getChild(ctx, tx, childID); err != nil {
 			return err
 		}
-		owner, err := clientOwner(ctx, tx, name)
+		owners, err := clientOwners(ctx, tx, name)
 		if err != nil {
 			return err
 		}
-		if owner != nil {
-			if owner.ChildID == childID {
-				return nil
-			}
-			owner.Client = name
-			return owner
+		if holds(owners, childID) {
+			return nil
+		}
+		if len(owners) > 0 {
+			owners[0].Client = name
+			return owners[0]
 		}
 		return insertClients(ctx, tx, childID, []string{name})
 	})
@@ -105,19 +107,47 @@ func (st *Store) AddChildClient(ctx context.Context, childID int64, name string)
 	return nil
 }
 
-// clientOwner returns the child that maps name, or nil when none does. The
-// result is an *ErrClientTaken so a conflict can be returned as-is once the
+// clientOwners returns every child that maps name, id ascending, or none.
+// Each is an *ErrClientTaken so a conflict can be returned as-is once the
 // caller fills in Client.
-func clientOwner(ctx context.Context, tx *sql.Tx, name string) (*ErrClientTaken, error) {
-	var owner ErrClientTaken
-	err := tx.QueryRowContext(ctx,
+func clientOwners(ctx context.Context, tx *sql.Tx, name string) ([]*ErrClientTaken, error) {
+	rows, err := tx.QueryContext(ctx,
 		`SELECT c.id, c.name FROM child_clients cc JOIN children c ON c.id = cc.child_id
-		  WHERE cc.client_name = ?`, name).Scan(&owner.ChildID, &owner.ChildName)
-	if errors.Is(err, sql.ErrNoRows) {
-		return nil, nil
-	}
+		  WHERE cc.client_name = ? ORDER BY c.id`, name)
 	if err != nil {
-		return nil, fmt.Errorf("client owner: %w", err)
+		return nil, fmt.Errorf("client owners: %w", err)
 	}
-	return &owner, nil
+	defer rows.Close()
+	var owners []*ErrClientTaken
+	for rows.Next() {
+		var o ErrClientTaken
+		if err := rows.Scan(&o.ChildID, &o.ChildName); err != nil {
+			return nil, fmt.Errorf("client owners: %w", err)
+		}
+		owners = append(owners, &o)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("client owners: %w", err)
+	}
+	return owners, nil
+}
+
+// holds reports whether childID is among owners.
+func holds(owners []*ErrClientTaken, childID int64) bool {
+	for _, o := range owners {
+		if o.ChildID == childID {
+			return true
+		}
+	}
+	return false
+}
+
+// firstOutsider returns the first of owners not in among, or nil.
+func firstOutsider(owners, among []*ErrClientTaken) *ErrClientTaken {
+	for _, o := range owners {
+		if !holds(among, o.ChildID) {
+			return o
+		}
+	}
+	return nil
 }
