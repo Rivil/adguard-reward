@@ -1,8 +1,12 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"io"
+	"log/slog"
+	"maps"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -12,6 +16,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Rivil/adguard-reward/internal/adguard"
+	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
+	"github.com/Rivil/adguard-reward/internal/grants"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
 
@@ -393,12 +400,228 @@ func TestGrants_ViewShape(t *testing.T) {
 
 	w, _ := h.listGrants(cookie)
 	raw := w.Body.String()
-	for _, want := range []string{`"services":["tiktok"]`, `"clients":["Kid phone"]`, `"started_at":"`, `"ends_at":"`} {
+	for _, want := range []string{`"services":["tiktok"]`, `"clients":["Kid phone"]`, `"shared":[]`, `"started_at":"`, `"ends_at":"`} {
 		if !strings.Contains(raw, want) {
 			t.Errorf("GET body lacks %s: %s", want, raw)
 		}
 	}
 	if strings.Contains(raw, ":null") {
 		t.Errorf("GET body serialises a null: %s", raw)
+	}
+	var rows struct {
+		Grants []map[string]json.RawMessage `json:"grants"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &rows); err != nil || len(rows.Grants) != 1 {
+		t.Fatalf("GET body %s: %v", raw, err)
+	}
+	keys := slices.Sorted(maps.Keys(rows.Grants[0]))
+	if want := []string{"child_id", "clients", "ends_at", "id", "services", "shared", "started_at"}; !reflect.DeepEqual(keys, want) {
+		t.Errorf("grant keys = %v, want exactly %v", keys, want)
+	}
+}
+
+// grantShared is the 201 with its shared list.
+type grantShared struct {
+	ID     int64       `json:"id"`
+	Shared []sharedRef `json:"shared"`
+}
+
+func decodeShared(t *testing.T, w *httptest.ResponseRecorder) grantShared {
+	t.Helper()
+	if w.Code != http.StatusCreated {
+		t.Fatalf("POST /api/v1/grants: %d %s, want 201", w.Code, w.Body.String())
+	}
+	var out grantShared
+	if err := json.Unmarshal(w.Body.Bytes(), &out); err != nil {
+		t.Fatalf("201 body %q: %v", w.Body.String(), err)
+	}
+	return out
+}
+
+func TestGrants_CreateShared(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone", "Kid tablet")
+	ben := h.createOK(cookie, "Ben", "Kid phone")
+
+	w := h.postGrant(cookie, grantBody(ada.ID, []string{"youtube"}, 1800))
+	got := decodeShared(t, w)
+	want := []sharedRef{{Client: "Kid phone", Others: []childRef{{ben.ID, "Ben"}}}}
+	if !reflect.DeepEqual(got.Shared, want) {
+		t.Errorf("201 shared = %+v, want exactly %+v", got.Shared, want)
+	}
+	if !strings.Contains(w.Body.String(), `"shared":[{"client":"Kid phone","others":[{"id":`+itoa(ben.ID)+`,"name":"Ben"}]}]`) {
+		t.Errorf("raw 201 = %s", w.Body.String())
+	}
+}
+
+func TestGrants_SharedApplied(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.createOK(cookie, "Ada", "Kid phone")
+	ben := h.createOK(cookie, "Ben", "Kid phone")
+	if got := h.blocked("Kid phone"); !slices.Contains(got, "youtube") {
+		t.Fatalf("precondition: Kid phone = %v, want youtube blocked", got)
+	}
+
+	h.grantOK(cookie, ben.ID, []string{"youtube"}, 1800)
+	if got := h.blocked("Kid phone"); slices.Contains(got, "youtube") {
+		t.Errorf("Kid phone = %v after Ben's youtube grant, want youtube unblocked", got)
+	}
+}
+
+func TestGrants_SharedThreeOwners(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ben := h.createOK(cookie, "Ben", "Kid phone")
+	cleo := h.createOK(cookie, "Cleo", "Kid phone")
+
+	got := decodeShared(t, h.postGrant(cookie, grantBody(ben.ID, []string{"youtube"}, 1800)))
+	want := []sharedRef{{Client: "Kid phone", Others: []childRef{{ada.ID, "Ada"}, {cleo.ID, "Cleo"}}}}
+	if !reflect.DeepEqual(got.Shared, want) {
+		t.Errorf("Ben's 201 shared = %+v, want %+v", got.Shared, want)
+	}
+}
+
+func TestGrantCreate_SecondOwnerSameService(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ben := h.createOK(cookie, "Ben", "Kid phone")
+
+	first := h.grantOK(cookie, ada.ID, []string{"youtube"}, 1800)
+	w := h.postGrant(cookie, grantBody(ben.ID, []string{"youtube"}, 1800))
+	if w.Code != http.StatusCreated {
+		t.Fatalf("Ben's youtube grant while Ada's covers Kid phone: %d %s, want 201", w.Code, w.Body.String())
+	}
+	if got := decodeShared(t, w); got.ID == first.ID {
+		t.Errorf("Ben's grant reused id %d", first.ID)
+	}
+}
+
+func TestGrants_UnsharedEmpty(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+
+	w := h.postGrant(cookie, grantBody(ada.ID, []string{"youtube"}, 1800))
+	if w.Code != http.StatusCreated || !strings.Contains(w.Body.String(), `"shared":[]`) {
+		t.Errorf("201 = %d %s, want \"shared\":[]", w.Code, w.Body.String())
+	}
+	lw, _ := h.listGrants(cookie)
+	if !strings.Contains(lw.Body.String(), `"shared":[]`) {
+		t.Errorf("GET = %s, want the row's \"shared\":[]", lw.Body.String())
+	}
+}
+
+func TestGrants_ListSharedLive(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	h.grantOK(cookie, ada.ID, []string{"youtube"}, 1800)
+	ben := h.createOK(cookie, "Ben", "Kid phone")
+
+	_, body := h.listGrants(cookie)
+	want := []sharedRef{{Client: "Kid phone", Others: []childRef{{ben.ID, "Ben"}}}}
+	if len(body.Grants) != 1 || !reflect.DeepEqual(body.Grants[0].Shared, want) {
+		t.Errorf("GET /grants = %+v, want Ada's grant shared %+v", body.Grants, want)
+	}
+}
+
+// grantsDirect wires the grant handlers over a fresh fake, store and engine
+// with every children read failing. Handlers are called directly, so the
+// session and CSRF middleware are not under test here.
+type grantsDirect struct {
+	a     *API
+	fake  *adguardtest.Server
+	store *store.Store
+	eng   *grants.Engine
+}
+
+func newGrantsDirect(t *testing.T) grantsDirect {
+	t.Helper()
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	fake := adguardtest.New(t, adguardtest.Options{User: fakeUser, Pass: fakePass})
+	client, err := adguard.New(fake.URL(), fakeUser, fakePass, adguard.WithLogger(log))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(t.TempDir(), log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	eng := grants.New(st, client, grants.Options{Now: (&clock{t: t0}).Now, ApplyTimeout: harnessApplyTimeout, Log: log})
+	t.Cleanup(eng.Close)
+	a := New(Deps{AdGuard: client, Log: log, Children: failingChildren{}, Grants: eng})
+	return grantsDirect{a: a, fake: fake, store: st, eng: eng}
+}
+
+func TestGrants_ChildrenReadFails(t *testing.T) {
+	d := newGrantsDirect(t)
+	ctx := context.Background()
+	ada, err := d.store.CreateChild(ctx, "Ada", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(grantBody(ada.ID, []string{"youtube"}, 1800))
+	w := httptest.NewRecorder()
+	d.a.handleGrantCreate(w, httptest.NewRequest(http.MethodPost, "/api/v1/grants", bytes.NewReader(body)))
+
+	if w.Code != http.StatusInternalServerError {
+		t.Errorf("%d %s, want 500", w.Code, w.Body.String())
+	}
+	if n := d.fake.CountRequests("POST", "/control/clients/update"); n != 0 {
+		t.Errorf("fake saw %d update POSTs, want 0", n)
+	}
+	if rows, err := d.eng.List(ctx); err != nil || len(rows) != 0 {
+		t.Errorf("active grants = %v, %v; want none", rows, err)
+	}
+}
+
+func TestGrants_ListChildrenReadFails(t *testing.T) {
+	d := newGrantsDirect(t)
+	ctx := context.Background()
+	ada, err := d.store.CreateChild(ctx, "Ada", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ben, err := d.store.CreateChild(ctx, "Ben", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []store.Child{ada, ben} {
+		if _, err := d.eng.Create(ctx, c.ID, []string{"youtube"}, c.Clients, 30*time.Minute); err != nil {
+			t.Fatalf("grant for %s: %v", c.Name, err)
+		}
+	}
+	want, err := d.eng.List(ctx)
+	if err != nil || len(want) != 2 {
+		t.Fatalf("engine List = %v, %v; want 2 grants", want, err)
+	}
+
+	w := httptest.NewRecorder()
+	d.a.handleGrantsList(w, httptest.NewRequest(http.MethodGet, "/api/v1/grants", nil))
+	if w.Code != http.StatusOK {
+		t.Fatalf("%d %s, want 200", w.Code, w.Body.String())
+	}
+	var body grantsBody
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	if len(body.Grants) != 2 {
+		t.Fatalf("GET lists %d grants, want 2: %s", len(body.Grants), w.Body.String())
+	}
+	for i, g := range body.Grants {
+		if g.ID != want[i].ID || g.EndsAt != rfc3339(want[i].EndsAt) {
+			t.Errorf("row %d = id %d ends_at %s, want id %d ends_at %s", i, g.ID, g.EndsAt, want[i].ID, rfc3339(want[i].EndsAt))
+		}
+		if g.Shared == nil || len(g.Shared) != 0 {
+			t.Errorf("row %d shared = %v, want []", i, g.Shared)
+		}
+	}
+	if strings.Contains(w.Body.String(), ":null") {
+		t.Errorf("degraded body serialises a null: %s", w.Body.String())
 	}
 }
