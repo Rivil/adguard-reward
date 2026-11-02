@@ -59,7 +59,7 @@ func usesGlobal(h *harness, cookie, name string) bool {
 func TestMigration_OfferScope(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone", "Kid tablet")
+	ada := h.seedChild("Ada", "Kid phone", "Kid tablet")
 	setGlobal(h, "Old laptop", true) // unmapped: must not appear
 
 	w, offer := h.getOffer(cookie)
@@ -104,7 +104,7 @@ func TestMigration_OfferScope(t *testing.T) {
 func TestMigration_OfferIsReadOnly(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone", "Kid tablet")
+	ada := h.seedChild("Ada", "Kid phone", "Kid tablet")
 	w, offer := h.getOffer(cookie)
 	if w.Code != http.StatusOK || len(offer.Clients) != 1 || offer.Clients[0].Name != "Kid tablet" || offer.Clients[0].Child.ID != ada.ID {
 		t.Fatalf("%d %s", w.Code, w.Body.String())
@@ -122,7 +122,7 @@ func TestMigration_OfferIsReadOnly(t *testing.T) {
 func TestMigration_Apply(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	h.createOK(cookie, "Ada", "Kid phone", "Kid tablet")
+	h.seedChild("Ada", "Kid phone", "Kid tablet")
 	setGlobal(h, "Old laptop", true)
 
 	w, migrated := h.apply(cookie)
@@ -174,7 +174,7 @@ func TestMigration_Apply(t *testing.T) {
 func TestMigration_ApplyEmpty(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	h.createOK(cookie, "Ada", "Kid phone")
+	h.seedChild("Ada", "Kid phone")
 	w, migrated := h.apply(cookie)
 	if w.Code != http.StatusOK || migrated == nil || len(migrated) != 0 {
 		t.Fatalf("%d %s, want 200 {migrated:[]}", w.Code, w.Body.String())
@@ -183,7 +183,7 @@ func TestMigration_ApplyEmpty(t *testing.T) {
 		t.Error("empty apply wrote a client")
 	}
 
-	h.createOK(cookie, "Ben", "Kid tablet")
+	h.seedChild("Ben", "Kid tablet")
 	for i := 0; i < 2; i++ {
 		if w, _ := h.apply(cookie); w.Code != http.StatusOK {
 			t.Fatalf("apply %d: %d %s", i, w.Code, w.Body.String())
@@ -197,7 +197,7 @@ func TestMigration_ApplyEmpty(t *testing.T) {
 func TestMigration_PartialFailure(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	h.createOK(cookie, "Ada", "Kid phone", "Kid tablet")
+	h.seedChild("Ada", "Kid phone", "Kid tablet")
 	setGlobal(h, "Kid phone", true)
 	h.fake.SetUpdateStatus("Kid tablet", 500)
 
@@ -223,7 +223,7 @@ func TestMigration_PartialFailure(t *testing.T) {
 func TestMigration_AdGuardDown(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	h.createOK(cookie, "Ada", "Kid tablet")
+	h.seedChild("Ada", "Kid tablet")
 
 	h.fake.SetStatus("/control/clients/update", 500)
 	w, _ := h.apply(cookie)
@@ -246,7 +246,7 @@ func TestMigration_AdGuardDown(t *testing.T) {
 func TestMigration_CSRF(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	h.createOK(cookie, "Ada", "Kid tablet")
+	h.seedChild("Ada", "Kid tablet")
 
 	if w, _ := h.apply(cookie, noCSRF()); w.Code != http.StatusForbidden {
 		t.Errorf("POST without CSRF header: %d, want 403", w.Code)
@@ -259,5 +259,27 @@ func TestMigration_CSRF(t *testing.T) {
 	}
 	if w := h.do(http.MethodPost, "/api/v1/migration", nil); w.Code != http.StatusUnauthorized {
 		t.Errorf("POST without cookie: %d, want 401", w.Code)
+	}
+}
+
+func TestMigration_SharedOnce(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid tablet")
+	h.seedChild("Ben", "Kid tablet")
+
+	w, offer := h.getOffer(cookie)
+	if w.Code != http.StatusOK {
+		t.Fatalf("GET /migration: %d %s", w.Code, w.Body.String())
+	}
+	if len(offer.Clients) != 1 || offer.Clients[0].Name != "Kid tablet" ||
+		offer.Clients[0].Child != (childRef{ID: ada.ID, Name: "Ada"}) {
+		t.Fatalf("offer clients = %+v, want Kid tablet once with child {%d Ada}", offer.Clients, ada.ID)
+	}
+	if w, _ := h.apply(cookie); w.Code != http.StatusOK {
+		t.Fatalf("POST /migration: %d %s", w.Code, w.Body.String())
+	}
+	if got := h.updatesNaming("Kid tablet"); len(got) != 1 {
+		t.Errorf("update POSTs for Kid tablet = %d, want exactly 1", len(got))
 	}
 }

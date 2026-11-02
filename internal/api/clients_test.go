@@ -319,7 +319,7 @@ func TestCreateClient_ChildChecks(t *testing.T) {
 func TestCreateClient_WithChild(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 
 	w := h.postClient(cookie, withChild(tvBody, ada.ID))
 	if w.Code != http.StatusCreated {

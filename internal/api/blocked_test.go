@@ -38,7 +38,7 @@ func stateOf(b blockedBody) map[string][2]any {
 func TestBlocked_View(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone", "Kid tablet", "Ghost")
+	ada := h.seedChild("Ada", "Kid phone", "Kid tablet", "Ghost")
 	before := len(h.fake.Requests())
 
 	w, body := h.getBlocked(cookie, ada.ID)
@@ -82,7 +82,7 @@ func TestBlocked_View(t *testing.T) {
 func TestBlocked_Live(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 	_, body := h.getBlocked(cookie, ada.ID)
 	if stateOf(body)["roblox"][0] != "unblocked" {
 		t.Fatalf("roblox before = %v", stateOf(body)["roblox"])

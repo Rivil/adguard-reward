@@ -97,7 +97,7 @@ func grantPath(id int64, action string) string {
 func TestGrants_Gated(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 
 	body := grantBody(ada.ID, []string{"tiktok"}, 1800)
 	for _, tc := range []struct{ method, path string }{
