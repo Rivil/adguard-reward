@@ -3,7 +3,7 @@ phases = ["01-config-adguard-client", "02-auth-sessions", "03-children-and-block
 [milestone]
   version = "v0.1"
   title = "Reward loop"
-  status = "active"
+  status = "complete"
   started = "2026-09-19"
   base = "main"
 
