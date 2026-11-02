@@ -3,6 +3,8 @@ package grants
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"net/http"
 	"reflect"
 	"slices"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Rivil/adguard-reward/internal/rules"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
 
@@ -90,8 +93,11 @@ func TestReconcile_NoopNoWrites(t *testing.T) {
 	if st := empty.reconcile(); st != (Stats{}) {
 		t.Errorf("Stats with no grants = %+v, want zero", st)
 	}
-	if n := len(empty.fake.Requests()); n != 0 {
-		t.Errorf("no active grants but %d requests were made", n)
+	// With no grants the pass still converges the managed region: one
+	// user_rules read, no clients read and — nothing to manage — no write.
+	reqs := empty.fake.Requests()
+	if len(reqs) != 1 || reqs[0].Method != "GET" || reqs[0].Path != "/control/filtering/status" {
+		t.Errorf("no active grants: requests %+v, want only GET /control/filtering/status", reqs)
 	}
 }
 
@@ -490,4 +496,190 @@ func TestReconcile_WritesCountsActual(t *testing.T) {
 	}
 	e.wantBlocks("Old laptop", "youtube", true)
 	e.wantBlocks("Kid phone", "youtube", false)
+}
+
+func TestReconcile_RegionNoGrants(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ann", "kid-phone")
+	// Stored straight into the store: nothing has written the region yet.
+	if _, err := e.st.CreateCustomService(ctx, "Portal", []string{"a.com"}); err != nil {
+		t.Fatal(err)
+	}
+	st := e.reconcile()
+	if st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	want := []string{rules.BeginMarker, "||a.com^$client='kid-phone'", rules.EndMarker}
+	if got := e.fake.UserRules(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("user_rules %q, want %q", got, want)
+	}
+	if n := e.gets(); n != 0 {
+		t.Errorf("no grants but %d clients reads", n)
+	}
+}
+
+func TestReconcile_RegionTamper(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ann", "kid-phone")
+	e.createService("Portal", "a.com", "b.com")
+	want := e.region()
+
+	// A manual edit inside the markers: a block line gone, an exception
+	// added; plus a parent's own line outside them.
+	all := e.fake.UserRules()
+	tampered := []string{"! mine"}
+	for _, l := range all {
+		if l == "||a.com^$client='kid-phone'" {
+			continue
+		}
+		tampered = append(tampered, l)
+		if l == rules.BeginMarker {
+			tampered = append(tampered, "@@||a.com^$client='kid-phone'")
+		}
+	}
+	tampered = append(tampered, "||outside.example^")
+	e.fake.SetUserRules(tampered)
+
+	if st := e.reconcile(); st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got := e.region(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want restored %q", got, want)
+	}
+	if got, w := e.outside(), []string{"! mine", "||outside.example^"}; !reflect.DeepEqual(got, w) {
+		t.Fatalf("outside the markers %q, want %q", got, w)
+	}
+
+	posts := e.setRulesPosts()
+	if st := e.reconcile(); st.RulesWritten != 0 {
+		t.Fatalf("second pass Stats %+v, want RulesWritten 0", st)
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("converged pass issued %d set_rules POSTs", n)
+	}
+}
+
+func TestReconcile_RegionClientsDown(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "kid-phone")
+	r := e.createService("Portal", "a.com")
+	e.create(kid.ID, []string{r.Service.ServiceID()}, []string{"kid-phone"})
+	want := e.region()
+	e.fake.SetUserRules([]string{rules.BeginMarker, "||stale^", rules.EndMarker})
+
+	e.fake.SetStatus("/control/clients", http.StatusBadGateway)
+	st, err := e.eng.Reconcile(ctx)
+	if err == nil {
+		t.Fatal("Reconcile: nil error with /control/clients down")
+	}
+	if st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got := e.region(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q despite the clients outage", got, want)
+	}
+}
+
+func TestReconcile_OverdueCustom(t *testing.T) {
+	e := newEnv(t, withNoTimers)
+	kid := e.child("Ann", "kid-phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	g := e.seedOverdue(kid.ID, []string{svc}, []string{"kid-phone"})
+	if err := e.eng.SyncRules(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(e.exceptions()) != 1 {
+		t.Fatalf("setup: exceptions %q", e.exceptions())
+	}
+
+	st := e.reconcile()
+	if st.Reverted != 1 {
+		t.Fatalf("Stats %+v, want one reverted", st)
+	}
+	e.wantStatus(g.ID, store.StatusExpired)
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("exceptions after the pass %q, want none", got)
+	}
+	if got, want := e.region(), []string{"||a.com^$client='kid-phone'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q", got, want)
+	}
+}
+
+func TestReconcile_AppliedFalse(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ann", "kid-phone")
+	e.fake.SetStatus(setRulesPath, http.StatusInternalServerError)
+	r, err := e.eng.CreateService(ctx, "Portal", []string{"a.com"})
+	if err != nil || r.Applied {
+		t.Fatalf("setup: %+v %v, want Applied=false", r, err)
+	}
+	e.fake.SetResponse(setRulesPath, 0, nil)
+
+	if st := e.reconcile(); st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got, want := e.region(), []string{"||a.com^$client='kid-phone'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q", got, want)
+	}
+}
+
+func TestReconcile_Malformed(t *testing.T) {
+	e := newEnv(t, nil)
+	e.offGlobal("youtube", "tiktok")
+	kid := e.child("Ann", "Kid phone", "Kid tablet")
+	e.createService("Portal", "a.com")
+	g := e.create(kid.ID, []string{"youtube"}, both)
+	e.setBlocked("Kid tablet", "youtube", "tiktok") // drift: re-blocked in AdGuard's UI
+
+	broken := []string{"||x^", rules.BeginMarker, "||y^"}
+	e.fake.SetUserRules(broken)
+	posts := e.setRulesPosts()
+
+	st, err := e.eng.Reconcile(ctx)
+	if err != nil {
+		t.Fatalf("Reconcile: %v, want nil (malformed region is logged, not fatal)", err)
+	}
+	if st.Repaired != 1 || st.RulesWritten != 0 {
+		t.Fatalf("Stats %+v, want the drift repaired and no rules write", st)
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("%d set_rules POSTs into a malformed region", n)
+	}
+	if !reflect.DeepEqual(e.fake.UserRules(), broken) {
+		t.Fatalf("user_rules changed: %q", e.fake.UserRules())
+	}
+	if logs := e.logs.String(); !strings.Contains(logs, "level=ERROR") || !strings.Contains(logs, "malformed") {
+		t.Fatalf("malformed region not logged at error:\n%s", logs)
+	}
+	e.wantBlocks("Kid tablet", "youtube", false)
+	e.wantStatus(g.Grant.ID, store.StatusActive)
+}
+
+func TestReconcile_HalfEndedGrant(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "Kid phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	res := e.create(kid.ID, []string{"youtube", svc}, []string{"Kid phone"})
+	want := e.exceptions()
+	if len(want) != 1 {
+		t.Fatalf("setup: exceptions %q", want)
+	}
+
+	e.fake.SetUpdateStatus("Kid phone", http.StatusInternalServerError)
+	var rf *ErrRevertFailed
+	if err := e.eng.End(ctx, res.Grant.ID); !errors.As(err, &rf) {
+		t.Fatalf("End: %v, want *ErrRevertFailed", err)
+	}
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("after the half-failed End: exceptions %q, want none", got)
+	}
+	e.fake.SetUpdateStatus("Kid phone", 0)
+
+	if st := e.reconcile(); st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions after one pass %q, want %q", got, want)
+	}
+	e.wantStatus(res.Grant.ID, store.StatusActive)
 }

@@ -2,22 +2,26 @@ package grants
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"slices"
 	"time"
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
+	"github.com/Rivil/adguard-reward/internal/rules"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
 
 // Stats summarises one reconcile pass. Writes counts the Add/Remove calls
 // issued; each costs at most one POST, and none when the list already
-// matched.
+// matched. RulesWritten is 1 when the pass rewrote the managed user_rules
+// region, else 0.
 type Stats struct {
-	Grants   int // active grants examined
-	Reverted int // overdue grants reverted and marked expired
-	Repaired int // clients whose drifted blocked_services were re-unblocked
-	Writes   int
+	Grants       int // active grants examined
+	Reverted     int // overdue grants reverted and marked expired
+	Repaired     int // clients whose drifted blocked_services were re-unblocked
+	Writes       int
+	RulesWritten int
 }
 
 // Reconcile converges AdGuard with the active grants in one pass, under the
@@ -28,7 +32,13 @@ type Stats struct {
 // AdGuard's UI — is removed again. Live grants without an armed timer get
 // one (post-restart). The pass reads AdGuard once for itself plus one re-read
 // inside each Add/Remove; a pass that finds nothing to do issues no writes.
-// A failed read aborts the pass with no status change and no writes.
+// A failed clients read skips the grant half with no status change.
+//
+// Every pass — with or without grants, and even when the clients read
+// failed — then converges the managed user_rules region to intent (stored
+// custom services, children and active grants), undoing a restart gap, a
+// lagging write or a manual edit inside the markers. A malformed region is
+// logged at error and left untouched; the grant half still ran.
 func (e *Engine) Reconcile(ctx context.Context) (Stats, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -38,18 +48,43 @@ func (e *Engine) Reconcile(ctx context.Context) (Stats, error) {
 		return Stats{}, fmt.Errorf("reconcile: list grants: %w", err)
 	}
 	st := Stats{Grants: len(grants)}
-	if len(grants) == 0 {
-		return st, nil
-	}
 
 	// One ApplyTimeout budget for every AdGuard call of the pass. Unlike a
 	// request-driven operation this one follows ctx's cancellation: an
 	// aborted pass is safe, the next one redoes it.
 	actx, cancel := context.WithTimeout(ctx, e.applyTimeout)
 	defer cancel()
+
+	var passErr error
+	if len(grants) > 0 {
+		if err := e.reconcileGrants(ctx, actx, grants, &st); err != nil {
+			passErr = err
+		}
+	}
+
+	changed, err := e.syncRules(ctx, actx, 0)
+	switch {
+	case errors.Is(err, rules.ErrMalformedRegion):
+		e.log.Error("reconcile: managed rules region is malformed; not rewritten — fix the adguard-reward markers in AdGuard's custom rules", "err", err)
+	case err != nil:
+		e.log.Warn("reconcile: managed rules not converged", "err", err)
+		if passErr == nil {
+			passErr = fmt.Errorf("reconcile: %w", err)
+		}
+	case changed:
+		st.RulesWritten = 1
+		e.log.Info("reconcile: managed rules region rewritten")
+	}
+	return st, passErr
+}
+
+// reconcileGrants is the grant half of a pass: overdue grants expire, live
+// grants get drifted built-in ids removed again and a timer armed. A failed
+// clients read returns the error with nothing done. Caller holds mu.
+func (e *Engine) reconcileGrants(ctx, actx context.Context, grants []store.Grant, st *Stats) error {
 	res, err := e.ag.Clients(actx)
 	if err != nil {
-		return st, fmt.Errorf("reconcile: read clients: %w", err)
+		return fmt.Errorf("reconcile: read clients: %w", err)
 	}
 	byName := make(map[string]adguard.PersistentClient, len(res.Persistent))
 	for _, pc := range res.Persistent {
@@ -96,7 +131,7 @@ func (e *Engine) Reconcile(ctx context.Context) (Stats, error) {
 			e.arm(g)
 		}
 	}
-	return st, nil
+	return nil
 }
 
 // intersect returns the members of want present in have, in want's order.
@@ -118,7 +153,8 @@ func (e *Engine) Start(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	e.log.Info("startup reconcile", "grants", st.Grants, "reverted", st.Reverted, "repaired", st.Repaired)
+	e.log.Info("startup reconcile", "grants", st.Grants, "reverted", st.Reverted, "repaired", st.Repaired,
+		"rules_written", st.RulesWritten)
 	return nil
 }
 
@@ -140,8 +176,9 @@ func (e *Engine) Run(ctx context.Context, interval time.Duration) {
 			// the log is the only place that decision is observable.
 			if err != nil && ctx.Err() == nil {
 				e.log.Error("reconcile failed", "err", err)
-			} else if st.Reverted > 0 || st.Repaired > 0 {
-				e.log.Info("reconcile", "grants", st.Grants, "reverted", st.Reverted, "repaired", st.Repaired)
+			} else if st.Reverted > 0 || st.Repaired > 0 || st.RulesWritten > 0 {
+				e.log.Info("reconcile", "grants", st.Grants, "reverted", st.Reverted, "repaired", st.Repaired,
+					"rules_written", st.RulesWritten)
 			}
 		}
 	}

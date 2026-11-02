@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 
 	"github.com/Rivil/adguard-reward/internal/rules"
 	"github.com/Rivil/adguard-reward/internal/store"
@@ -39,7 +40,8 @@ func (e *Engine) SyncRules(ctx context.Context) error {
 // from a partial read could unblock every child. The AdGuard
 // read-modify-write goes through actx and writes only when the region
 // changes; a malformed region is refused (rules.ErrMalformedRegion) with no
-// write. changed reports a write. Caller holds mu.
+// write. An empty desired region with no markers present writes nothing.
+// changed reports a write. Caller holds mu.
 func (e *Engine) syncRules(ctx, actx context.Context, exclude int64) (changed bool, err error) {
 	svcs, err := e.store.ListCustomServices(ctx)
 	if err != nil {
@@ -55,6 +57,11 @@ func (e *Engine) syncRules(ctx, actx context.Context, exclude int64) (changed bo
 	}
 	desired := desiredRegion(svcs, children, active, exclude, e.log)
 	changed, err = e.ag.EditUserRules(actx, func(current []string) ([]string, error) {
+		// Nothing to manage and no region yet: leave the parent's rules
+		// untouched rather than append an empty marker pair.
+		if len(desired) == 0 && !slices.Contains(current, rules.BeginMarker) && !slices.Contains(current, rules.EndMarker) {
+			return current, nil
+		}
 		return rules.Splice(current, desired)
 	})
 	if err != nil {

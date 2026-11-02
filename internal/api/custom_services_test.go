@@ -320,6 +320,10 @@ func TestCustomServices_Delete(t *testing.T) {
 func TestCustomServices_Edges(t *testing.T) {
 	h := newCustomHarness(t)
 	cookie := h.loginOK()
+	// A mapped child client, so the service has a region to write.
+	if _, err := h.store.CreateChild(context.Background(), "Ada", []string{"kid-phone"}); err != nil {
+		t.Fatal(err)
+	}
 
 	h.fake.SetStatus(setRulesPath, http.StatusInternalServerError)
 	w := h.do(http.MethodPost, customPath, customBody{"Portal", []string{"a.com"}}, withCookie(cookie))
