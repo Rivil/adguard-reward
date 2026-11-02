@@ -53,6 +53,59 @@
         }
       ]
     },
+    "t-12": {
+      "files": [
+        "internal/grants/clients.go",
+        "internal/grants/rename.go",
+        "internal/grants/clients_test.go",
+        "internal/grants/rename_test.go"
+      ],
+      "commit": "6d3bb6d",
+      "completed_at": "2026-11-02T16:49:41.115578Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Engine.baselineFrom",
+          "loc": "internal/grants/clients.go:151",
+          "what": "adoption baselines carry built-in ids only; child client create and rename resync the region before returning"
+        }
+      ]
+    },
+    "t-14": {
+      "files": [
+        "internal/api/custom_services.go",
+        "internal/api/custom_services_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "89fbea5",
+      "completed_at": "2026-11-02T16:53:27.06763Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "decodeCustomService",
+          "loc": "internal/api/custom_services.go:55",
+          "what": "GET/POST/PUT/DELETE /api/v1/custom-services: plain-hostname validation naming domains[i], built-in and custom name clashes 409, in-use delete 409 with grant_id"
+        }
+      ]
+    },
+    "t-15": {
+      "files": [
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go",
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go"
+      ],
+      "commit": "ab880cd",
+      "completed_at": "2026-11-02T16:56:06.32585Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "covered",
+          "loc": "internal/blocked/blocked.go:257",
+          "what": "blocked view folds custom services from intent (unblocked iff an active grant covers the client); omitted, never guessed, when grants or the custom list cannot be read"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/rules/domain.go",
@@ -318,6 +371,107 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "When the region sync fails during expiry, expireLocked returns with no timer re-armed (expire already removed it from e.timers). This matches the existing revert-failure behaviour and leaves convergence to the reconciler (t-13).",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-12": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-8",
+          "text": "test_contract says TestRenameClient_StoreFailure fails if a rolled-back rename rewrites the region, but the test cannot fail. The region already matches the store before the failing rename, and syncRules builds it from the unchanged store, so a resync on the rollback path (or an unconditional one) gives an identical region and EditUserRules skips the set_rules POST. Make the region stale first (e.g. a manual edit inside the markers, or an active custom grant whose exception is missing), then assert it stays untouched after the failed rename.",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRenameClient_ResyncsRules renames 'Kid phone' -\u003e 'Ada phone' instead of the contract's 'Tab' -\u003e 'Tablet'. The old name is not a substring of the new one, so noLineContains still catches a stale rule, but the substring case the contract seems to aim at is not exercised.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-6",
+          "text": "TestRenameClient_ResyncsRules renames 'Kid phone' -\u003e 'Kid phone 2' instead of the contract's 'Tab' -\u003e 'Tablet'; it is the same prefix case and asserts the exact quoted value, so the contract's intent is met",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "resyncRules failure path (log a warning, return nil) is not tested for CreateClient or RenameClient; the reconciler is the fallback",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "RenameClient's resync reuses actx after two AdGuard calls, so under a slow AdGuard it may time out and fall back to the reconciler; this is by design and gets logged",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-14": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "TestCustomServices_Update checks only len(region)==2 and the absence of a.com; it does not check that the added c.com line is present. The test_contract line asks only for a.com to be gone, so this is not a contract gap, but asserting the exact b.com/c.com lines would also cover the 'added domains present' part of c-3.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "When DeleteService fails, handleCustomServiceDelete re-lists every custom service just to find the name for the error message. Having DeleteService return the service it loaded before failing would avoid the extra read.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "newCustomHarness builds a second grants engine over the same store and fake, while the engine created by newHarness is still alive until cleanup. That is harmless if the engine runs no background work against AdGuard; otherwise the two could interleave.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-15": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "In internal/api/blocked.go, if the children read fails, sharedInputs returns before it reads grants. coversOK is then false, so custom entries are dropped even though grants might have been readable. This is safe (the view never wrongly says blocked) but drops more than the description strictly requires.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "When the grants read fails, handleBlocked logs two warnings: one from sharedInputs and one from customInputs. customInputs also reads the custom list before the AdGuard Clients call, so that read is wasted when AdGuard then returns 502.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "TestFold_Custom also checks that grants on other services do not unblock the custom service, and TestFold_CustomAfterCatalogue checks that custom entries come after the built-ins in the order given and that no built-in is marked custom. Both go beyond the test_contract.",
           "resolution": "non-blocking, left"
         }
       ]

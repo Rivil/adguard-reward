@@ -182,7 +182,7 @@ task_seq = 18
     '''if a new device is not blocked immediately, TestCreateClient_ResyncsRules fails: a device added to a child via CreateClient is in the custom block lines before the call returns''',
     '''if a rolled-back rename rewrites the region, TestRenameClient_StoreFailure fails: AdGuard rename succeeds but store fails (existing rollback path) -> region not rewritten''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-13"
@@ -204,7 +204,7 @@ task_seq = 18
   covers = ["c-1", "c-2", "c-3", "c-4"]
   depends_on = ["t-6", "t-7"]
   test_contract = ["if a bad domain is stored, TestCustomServices_BadDomain fails: POST each c-2 form (scheme, path, port, *., space, newline, ||, ^, $, /re/), alone and as [\"ok.com\", bad] -> 400 naming the bad domain, GET stays [] and 0 set_rules POSTs; PUT with a bad domain -> 400 and stored domains unchanged", "if create does not block children, TestCustomServices_Create fails: POST {Portal,[a.com]} -> 201 {id, service_id:\"custom:1\", ...} and the fake region carries ||a.com^$client= naming every mapped child client and no unmapped one", "if name/domain conflicts slip through, TestCustomServices_Conflicts fails: \"youtube\" vs fixture \"YouTube\" -> 409; catalogue 502 -> 502 and nothing stored; duplicate custom name in any case -> 409; a domain owned elsewhere -> 409 naming the owner", "if edit leaves removed domains, TestCustomServices_Update fails: PUT [a,b]->[b,c] -> 200 and no region line contains a.com", "if delete ignores an active grant, TestCustomServices_Delete fails: with active grant 7 -> 409, body grant_id 7 and \"7\" in the message, still listed; without a grant -> 204 and no region line for its domains", "if write failures or auth are mishandled, TestCustomServices_Edges fails: set_rules failing on POST -> 201 with applied:false; no session -> 401; missing CSRF -> 403", "if rename clashes slip through or a self case-change is refused, TestCustomServices_Rename fails: PUT renaming to \"YouTube\" (built-in) -> 409; to another custom service's name in any case -> 409; changing only the case of its own name (\"portal\" -> \"Portal\") -> 200", "if normalised duplicates are not deduped, TestCustomServices_DedupeDomains fails: POST [\"a.com\",\"A.com.\",\"b.com\"] -> 201 with domains [a.com,b.com] and exactly one ||a.com^ block line in the region"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-15"
@@ -220,7 +220,7 @@ task_seq = 18
     '''if a read failure reports false state or 500s, TestBlocked_CustomReadFailure fails: custom-list read failing -> 200 with built-ins only; grants read failing -> custom entries absent, built-ins present''',
     '''if the wire shape drifts, TestBlocked_CustomJSON fails: custom entries carry icon "" and custom:true''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-16"
