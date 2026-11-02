@@ -105,34 +105,37 @@ _introduced 05-phone-ui-buttons-pwa · 3ae3217_
 
 ### Children
 
-`/api/v1/children` CRUD over `{id, name, clients[]}` rows in SQLite (`children` + `child_clients`, migration 0002): names unique case-insensitively, an AdGuard client name owned by at most one child, both enforced in one transaction that answers 409 `conflict` naming the owning child (and client); clients are trimmed / de-duplicated / sorted, listing is a single LEFT JOIN query, and nothing is ever auto-pruned when AdGuard forgets a client. A client added through `PUT /children/{id}` first gets the child's baseline merged into its own AdGuard list (siblings' effective services, or the global list for a child's first client, ∪ services under the child's active grants; `use_global_blocked_services` cleared, nothing removed), with 404 / 409 decided before any AdGuard call; removing a client never touches AdGuard.
+`/api/v1/children` CRUD over `{id, name, clients[]}` rows in SQLite (`children` + `child_clients`, migration 0002): names unique case-insensitively and enforced in one transaction that answers 409 `conflict` naming the owning child; a client may belong to several children (`child_clients` keyed `(client_name, child_id)`, migration 0005), so sharing one through `PUT` never 409s; clients are trimmed / de-duplicated / sorted, listing is a single LEFT JOIN query, and nothing is ever auto-pruned when AdGuard forgets a client. A client added through `PUT /children/{id}` first gets the child's baseline merged into its own AdGuard list (siblings' effective services, or the global list for a child's first client, ∪ services under the child's active grants, minus any service another owner's active grant holds open on that client; `use_global_blocked_services` cleared, nothing removed), with 404 / 409 decided before any AdGuard call; removing a client from one child, or deleting a child, never touches AdGuard and leaves it with its other owners.
 
 - Store.ListChildren — internal/store/children.go:90
-- Store.CreateChild — internal/store/children.go:134
-- Store.UpdateChild — internal/store/children.go:165
-- API.handleChildCreate — internal/api/children.go:138
-- API.handleChildUpdate — internal/api/children.go:177
+- Store.CreateChild — internal/store/children.go:135
+- Store.UpdateChild — internal/store/children.go:167
+- Store.DeleteChild — internal/store/children.go:199
+- Engine.AdoptClients — internal/grants/clients.go:82
+- API.handleChildCreate — internal/api/children.go:145
+- API.handleChildUpdate — internal/api/children.go:203
+- API.handleChildDelete — internal/api/children.go:293
 
-_introduced 03-children-and-blocked-view · 422a0f9 · 0333f40 · extended auto-client-labelling · 5dbce8d_
+_introduced 03-children-and-blocked-view · 422a0f9 · 0333f40 · extended auto-client-labelling · 5dbce8d · extended shared-devices · 39b1bb3 · 2a72085 · 338e460_
 
 ### Children settings page
 
-`/children` route where a parent creates, renames and deletes children and assigns AdGuard clients by checkbox: a client owned by another child is disabled and labelled with that child's name, a client AdGuard no longer knows is struck through with a remove control, every mutation re-renders from the server's response, and the route survives a reload. It also hosts the unlabelled-devices list (device labelling) and inline rename of any listed client (client rename).
+`/children` route where a parent creates, renames and deletes children and assigns AdGuard clients by checkbox: a client another child owns stays enabled and is labelled 'shared with <owners>' (ticking it shares the device), a client AdGuard no longer knows is struck through with a remove control, every mutation re-renders from the server's response, and the route survives a reload. It also hosts the unlabelled-devices list (device labelling) and inline rename of any listed client (client rename).
 
 - Children.load — web/src/lib/Children.svelte:33
 
-_introduced 03-children-and-blocked-view · ed235b1 · 275c341 · 63d8347 · extended auto-client-labelling · 70bfe89 · 5ab554d_
+_introduced 03-children-and-blocked-view · ed235b1 · 275c341 · 63d8347 · extended auto-client-labelling · 70bfe89 · 5ab554d · extended shared-devices · cceda5c_
 
 ### Client rename
 
-Any persistent client the app lists can be renamed from the children page: `POST /api/v1/clients/rename` runs under the engine mutex — 409 on a stale foreign mapping first, then the AdGuard rename, then one store transaction that renames the child mapping and the client names stored on active grants (so a running grant still reverts on that device), renaming back in AdGuard if the store write fails; not-found / taken / rejected / down map to 404 / 409 / 400 / 502. The inline row reloads every draft from the server on success.
+Any persistent client the app lists can be renamed from the children page: `POST /api/v1/clients/rename` runs under the engine mutex — 409 on a stale foreign mapping first, then the AdGuard rename, then one store transaction that moves every owner's mapping row of the client (a shared client stays with all its owners) and renames the client names stored on active grants (so a running grant still reverts on that device), renaming back in AdGuard if the store write fails; not-found / taken / rejected / down map to 404 / 409 / 400 / 502. The inline row reloads every draft from the server on success.
 
 - API.handleClientRename — internal/api/rename.go:56
-- Engine.RenameClient — internal/grants/rename.go:25
-- Store.RenameClient — internal/store/clients.go:28
+- Engine.RenameClient — internal/grants/rename.go:26
+- Store.RenameClient — internal/store/clients.go:29
 - ClientNames — web/src/lib/ClientNames.svelte:23
 
-_introduced auto-client-labelling · 62deec9 · 13cb959 · aaa9e85 · 5ab554d_
+_introduced auto-client-labelling · 62deec9 · 13cb959 · aaa9e85 · 5ab554d · extended shared-devices · f638de4 · e199c43_
 
 ### Configuration loading
 
@@ -339,6 +342,22 @@ Sessions live in a single-connection WAL SQLite file under `data_dir` (0700 dir 
 
 _introduced 02-auth-sessions · 0a98a31_
 
+### Shared devices
+
+One AdGuard client can belong to several children (the family TV): any owner's grant unblocks its services there, and a service is re-blocked only when no active grant of any owner still covers it on that client, judged on each grant's stored clients (locked: shared_device_rule, grant_coverage_basis). The grant 201 and `GET /grants` name each shared client and its other owners, the blocked view annotates clients with `shared_with` and open services with `unblocked_by` naming the granting child, and the phone shows a passive pre-tap note on buttons and the grant form plus a post-tap 'Also unblocked on …' line — never a confirmation step.
+
+- revertPlan — internal/grants/shared.go:20
+- sharedOf — internal/api/grants.go:69
+- sharedInputs — internal/api/blocked.go:92
+- unblockedBy — internal/blocked/blocked.go:213
+- ownerIndex — internal/api/clients.go:66
+- sharedDevices — web/src/lib/grants.ts:76
+- grantFrom — web/src/lib/tap.ts:49
+- sharedNotes — web/src/lib/Home.svelte:44
+- TestShared_Lifecycle — internal/api/shared_test.go:31
+
+_introduced shared-devices · de17a66 · cc98788 · a0de076 · c1e0a91 · 4798977 · 754bf5a · fdffe18_
+
 ### SPA API client
 
 Single typed fetch wrapper for the Svelte SPA: adds the CSRF header and same-origin cookie, routes any 401 to `/login`, maps error codes to fixed user messages (a 409 echoes the server's message naming the child or client, and carries the overlapping `grant_id`), exposes typed functions for the children / clients (incl. unlabelled devices, create with optional child, rename) / services / blocked / migration / grants / buttons endpoints, a history-backed route store (`login | home | children | buttons`), and a per-login `migrationDismissed` store reset on login and logout.
@@ -363,14 +382,15 @@ _introduced 05-phone-ui-buttons-pwa · 1b8647f · 4de11cf · 2109098_
 
 ### Timed grants
 
-A grant temporarily unblocks one or more catalogue services for one child: the engine owns every grant-related AdGuard write under one mutex with one `ApplyTimeout` context per operation. `Create` removes the services from each of the child's mapped clients and stores exactly that client list on the row (a client moved to another child mid-grant is still re-blocked at expiry); an in-process timer at `ends_at` re-blocks by set-union — idempotent — and CASes the grant to `expired`, while a failed AdGuard write leaves it `active` for the reconciler to retry; `Extend` reschedules the timer, `End` reverts immediately. On the phone, `runTap` is the one path from a tap to a grant: a single in-flight POST per key, the 201 merged into the active list as server truth, a partial apply naming the failed clients, and a 409 turned into an extend offer resolved client-side against the loaded list (`overlapsFor`) — accepting it extends the overlapping grant by the tap's duration and creates a new grant for the remaining services. Pure countdown / duration / own-span helpers mirror the server bounds.
+A grant temporarily unblocks one or more catalogue services for one child: the engine owns every grant-related AdGuard write under one mutex with one `ApplyTimeout` context per operation. `Create` removes the services from each of the child's mapped clients and stores exactly that client list on the row (a client moved to another child mid-grant is still re-blocked at expiry); an in-process timer at `ends_at` re-blocks by set-union — idempotent, and on each stored client only the services no other active grant still covers there (ref-counted, re-read under the mutex) — and CASes the grant to `expired`, while a failed AdGuard write leaves it `active` for the reconciler to retry; `Extend` reschedules the timer, `End` reverts immediately. On the phone, `runTap` is the one path from a tap to a grant: a single in-flight POST per key, the 201 merged into the active list as server truth, a partial apply naming the failed clients, and a 409 turned into an extend offer resolved client-side against the loaded list (`overlapsFor`) — accepting it extends the overlapping grant by the tap's duration and creates a new grant for the remaining services. Pure countdown / duration / own-span helpers mirror the server bounds.
 
-- grants.New — internal/grants/grants.go:104
-- Engine.Create — internal/grants/grants.go:141
-- Engine.Extend — internal/grants/grants.go:260
-- Engine.End — internal/grants/grants.go:282
-- runTap — web/src/lib/tap.ts:93
-- acceptOffer — web/src/lib/tap.ts:114
-- overlapsFor — web/src/lib/grants.ts:54
+- grants.New — internal/grants/grants.go:111
+- Engine.Create — internal/grants/grants.go:148
+- Engine.revert — internal/grants/grants.go:207
+- Engine.Extend — internal/grants/grants.go:288
+- Engine.End — internal/grants/grants.go:313
+- runTap — web/src/lib/tap.ts:94
+- acceptOffer — web/src/lib/tap.ts:115
+- overlapsFor — web/src/lib/grants.ts:55
 
-_introduced 04-grants-scheduler-reconciler · 6064863 · extended 05-phone-ui-buttons-pwa · 2322e19 · 257ccc3_
+_introduced 04-grants-scheduler-reconciler · 6064863 · extended 05-phone-ui-buttons-pwa · 2322e19 · 257ccc3 · extended shared-devices · 181af67_
