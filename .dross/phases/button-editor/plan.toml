@@ -1,0 +1,67 @@
+task_seq = 6
+
+[phase]
+  id = "button-editor"
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Store button icon column"
+  files = ["internal/store/migrations/0006_button_icon.sql", "internal/store/buttons.go", "internal/store/buttons_test.go"]
+  description = "Migration 0006 adds a nullable icon TEXT column to buttons. store.Button gains Icon string;\nReplaceButtons writes \"\" as NULL, loadButtons reads NULL back as \"\". No catalogue check here —\nthat is the API's job (locked icon_source)."
+  covers = ["c-2"]
+  test_contract = ["if the icon is not persisted, TestButtons_IconPersists fails: Replace with Icon \"tiktok\" on one button and \"\" on another, Close, Open the same dir, List returns \"tiktok\" and \"\" on the matching buttons", "if \"\" is not normalised to no icon, TestButtons_IconPersists fails: the raw buttons.icon column is NULL for the button saved with \"\"", "if the migration breaks existing rows, TestButtons_IconMigration fails: a store with buttons written before 0006 opens and lists them with Icon \"\" and their labels/services/order intact"]
+  status = "pending"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Group settings list by child, add up/down"
+  files = ["web/src/lib/Buttons.svelte", "web/src/lib/Buttons.test.ts"]
+  description = "Settings list renders one group per child (Home's grouping), each button row gets Up / Down.\nA tap swaps the button with its same-child neighbour in the full list and PUTs the whole list\nimmediately through the existing run/put path (locked reorder_scope, reorder_save).\nUp is disabled on a group's first button, Down on its last; all controls disabled while pending."
+  covers = ["c-1"]
+  test_contract = ["if the swap crosses children or moves the wrong item, Buttons.test 'down swaps within the child' fails: with list [Ada1, Ben1, Ada2], Down on Ada1 PUTs [Ada2, Ben1, Ada1] by label, and Up on Ada2 PUTs the same", "if edge controls stay live, Buttons.test 'edge controls disabled' fails: Up on each group's first row and Down on each group's last row are disabled; a single-button group has both disabled", "if controls are not locked during the PUT, Buttons.test 'everything is locked while a PUT is in flight' fails: while a reorder PUT is unresolved every Up/Down/Edit/Delete button is disabled", "if a failed reorder is not rolled back to server truth, Buttons.test 'failed reorder reloads' fails: a 500 on the reorder PUT shows the role=alert and issues a fresh GET /api/v1/buttons whose order is what the list then renders", "if grouping is lost, Buttons.test 'grouped by child' fails: rows render under a heading per child name in child order, not as one flat list", "if the open edit is tracked by a stale position, Buttons.test 'edit survives reorder' fails: with [Ada1, Ben1, Ada2], Edit Ada1, tap Down on Ada1 (now [Ada2, Ben1, Ada1]), change the label and Save — the PUT carries the new label on the button that was Ada1, and Ada2 is unchanged"]
+  status = "pending"
+
+[[task]]
+  id = "t-3"
+  wave = 1
+  title = "Inline delete confirmation"
+  files = ["web/src/lib/Buttons.svelte", "web/src/lib/Buttons.test.ts"]
+  description = "Delete no longer PUTs directly: it swaps that row's actions for an inline\n'Delete <label>?' Confirm / Cancel. Confirm PUTs the list without the item; Cancel restores the\nrow. Only one row can be confirming at a time. No window.confirm."
+  covers = ["c-3"]
+  test_contract = ["if Delete PUTs straight away, Buttons.test 'delete asks first' fails: clicking Delete issues no PUT and shows Confirm and Cancel inside that row", "if Cancel touches the server, Buttons.test 'cancel delete' fails: Cancel issues no PUT, the row is still rendered and the confirmation is gone", "if Confirm sends the wrong list, Buttons.test 'delete PUTs without the item' fails: Confirm PUTs every other button in order and not the deleted one", "if a browser dialog is used, Buttons.test 'delete asks first' fails: a vi.spyOn(window, 'confirm') spy is never called across Delete, Cancel and Confirm", "if more than one row can confirm at once, Buttons.test 'one confirmation at a time' fails: Delete on row A then Delete on row B leaves only row B showing Confirm/Cancel", "if delete uses the position within a child's group instead of the whole list, Buttons.test 'delete in a mixed list' fails: with [Ada1, Ben1, Ada2], Confirm on Ada2 PUTs [Ada1, Ben1]", "if a delete while editing retargets Save, Buttons.test 'edit survives delete' fails: Edit Ada2, confirm deleting Ada1, Save — the PUT updates Ada2 and does not resurrect Ada1"]
+  status = "pending"
+
+[[task]]
+  id = "t-4"
+  wave = 2
+  title = "API icon field + catalogue validation"
+  files = ["internal/api/buttons.go", "internal/api/buttons_test.go"]
+  description = "buttonView and buttonInput gain icon (string; \"\" = default to first service). PUT trims it and,\nwhen non-empty, checks it against the same single catalogue read used for services; an unknown id\nis 422 buttons[i].icon. GET returns the stored icon, always present."
+  covers = ["c-2"]
+  depends_on = ["t-1"]
+  test_contract = ["if the icon does not round-trip, TestButtons_IconRoundTrip fails: PUT a button with icon \"tiktok\" and services [youtube] then GET returns icon \"tiktok\"; a button PUT without icon GETs icon \"\"", "if an unknown icon is accepted, TestButtons_Validation fails: icon \"nope\" returns 422 with message naming buttons[i].icon and a following GET shows the previous list unchanged", "if icon validation adds a catalogue read, TestButtons_IconRoundTrip fails: a PUT with services and icon set causes exactly one /control/blocked_services/all hit", "if icon breaks the empty-list path, TestButtons_CatalogueDown still passes: PUT [] with the catalogue down is 200 with zero catalogue requests"]
+  status = "pending"
+
+[[task]]
+  id = "t-5"
+  wave = 2
+  title = "Settings icon picker"
+  files = ["web/src/lib/api.ts", "web/src/lib/Buttons.svelte", "web/src/lib/Buttons.test.ts"]
+  description = "ButtonInput gains icon: string. The Buttons form gets an Icon <select>: 'Default (first service)' (\"\") plus every catalogue service by name, with a preview <img> of the choice. toInput carries icon so reorder/delete/edit keep it. With services null the select is disabled and a stored icon is sent unchanged (locked icon_fallback). With the catalogue loaded, a stored icon missing from it is shown as Default with a visible note naming the lost icon, and every PUT sends \"\" for it so the list stays saveable (no 422)."
+  covers = ["c-2"]
+  depends_on = ["t-2", "t-3", "t-4"]
+  test_contract = ["if the chosen icon is not sent, Buttons.test 'icon picker sets and clears' fails: choosing TikTok PUTs icon \"tiktok\" for that button, and editing it back to Default PUTs icon \"\"", "if Edit drops the stored icon, Buttons.test 'edit preloads icon' fails: Edit on a button with icon \"tiktok\" shows tiktok selected in the picker", "if reorder or delete strip icons, Buttons.test 'reorder and delete keep icons' fails: a Down tap and a delete Confirm each PUT every remaining button with its original (catalogue-valid) icon", "if the picker ignores an outage, Buttons.test 'services 502 keeps stored icon' fails: with GET services 502 the icon select is disabled, and saving an edited button whose icon is \"tiktok\" PUTs icon \"tiktok\"", "if a stale icon is resent or reset silently, Buttons.test 'stale icon resets visibly' fails: with the catalogue loaded and a button whose icon \"gone\" is absent from it, its row/edit form shows a note that the icon is no longer available, Edit shows Default selected, and both a Save of that button and a Down tap on another button PUT icon \"\" for it"]
+  status = "pending"
+
+[[task]]
+  id = "t-6"
+  wave = 3
+  title = "Home shows the chosen icon"
+  files = ["web/src/lib/Home.svelte", "web/src/lib/Home.test.ts"]
+  description = "iconFor uses b.icon when it is non-empty and present in the catalogue, else the first service's\nicon as today (locked icon_fallback)."
+  covers = ["c-2"]
+  depends_on = ["t-5"]
+  test_contract = ["if the chosen icon is ignored, Home.test 'button shows its chosen icon' fails: a button with services [youtube] and icon \"tiktok\" renders an img whose src is tiktok's iconUrl", "if a missing icon blanks the button, Home.test 'unknown icon falls back' fails: icon \"gone\" not in the catalogue renders the first service's icon", "if the default changes, Home.test 'no icon uses first service' fails: icon \"\" renders the first service's icon"]
+  status = "pending"
