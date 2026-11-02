@@ -9,13 +9,16 @@ import (
 )
 
 // Button is a preset grant a parent taps on Home. Services keeps the order it
-// was given (the first supplies the icon), deduped on first occurrence, and is
-// never nil. Duration is whole seconds in the database.
+// was given, deduped on first occurrence, and is never nil. Icon is a catalogue
+// service id chosen for the button, or "" for none — then the first service
+// supplies the icon. "" is stored as NULL. Duration is whole seconds in the
+// database.
 type Button struct {
 	ID       int64
 	ChildID  int64
 	Label    string
 	Services []string
+	Icon     string
 	Duration time.Duration
 }
 
@@ -78,8 +81,9 @@ func (st *Store) ReplaceButtons(ctx context.Context, in []Button) ([]Button, err
 				return err
 			}
 			res, err := tx.ExecContext(ctx,
-				`INSERT INTO buttons (position, label, child_id, duration) VALUES (?, ?, ?, ?)`,
-				i, b.Label, b.ChildID, int64(b.Duration/time.Second))
+				`INSERT INTO buttons (position, label, child_id, icon, duration) VALUES (?, ?, ?, ?, ?)`,
+				i, b.Label, b.ChildID, sql.NullString{String: b.Icon, Valid: b.Icon != ""},
+				int64(b.Duration/time.Second))
 			if err != nil {
 				return err
 			}
@@ -115,7 +119,7 @@ func (st *Store) ReplaceButtons(ctx context.Context, in []Button) ([]Button, err
 // a concurrent replace cannot commit between them.
 func loadButtons(ctx context.Context, q querier) ([]Button, error) {
 	rows, err := q.QueryContext(ctx,
-		`SELECT id, child_id, label, duration FROM buttons ORDER BY position ASC`)
+		`SELECT id, child_id, label, icon, duration FROM buttons ORDER BY position ASC`)
 	if err != nil {
 		return nil, err
 	}
@@ -124,12 +128,14 @@ func loadButtons(ctx context.Context, q querier) ([]Button, error) {
 	for rows.Next() {
 		var (
 			b    Button
+			icon sql.NullString
 			secs int64
 		)
-		if err := rows.Scan(&b.ID, &b.ChildID, &b.Label, &secs); err != nil {
+		if err := rows.Scan(&b.ID, &b.ChildID, &b.Label, &icon, &secs); err != nil {
 			rows.Close()
 			return nil, err
 		}
+		b.Icon = icon.String
 		b.Duration = time.Duration(secs) * time.Second
 		b.Services = []string{}
 		index[b.ID] = len(out)

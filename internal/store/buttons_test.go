@@ -335,3 +335,89 @@ func listKey(bs []Button) string {
 	}
 	return strings.Join(parts, ";")
 }
+
+func TestButtons_IconPersists(t *testing.T) {
+	dir := t.TempDir()
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ada := mustCreate(t, s, "Ada")
+	withIcon := btn(ada.ID, "chosen", "youtube")
+	withIcon.Icon = "tiktok"
+	stored := mustReplace(t, s, []Button{withIcon, btn(ada.ID, "default", "roblox")})
+	if stored[0].Icon != "tiktok" || stored[1].Icon != "" {
+		t.Fatalf("Replace icons = %q, %q; want \"tiktok\", \"\"", stored[0].Icon, stored[1].Icon)
+	}
+	// "" is no icon, not an empty-string icon: the column is NULL.
+	if got := queryStrings(t, s.DB(), `SELECT label FROM buttons WHERE icon IS NULL ORDER BY position`); !reflect.DeepEqual(got, []string{"default"}) {
+		t.Fatalf("buttons with NULL icon = %v, want [default]", got)
+	}
+	if got := queryStrings(t, s.DB(), `SELECT icon FROM buttons WHERE icon IS NOT NULL`); !reflect.DeepEqual(got, []string{"tiktok"}) {
+		t.Fatalf("non-NULL icons = %v, want [tiktok]", got)
+	}
+	if err := s.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err = Open(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+	got := mustList(t, s)
+	if !reflect.DeepEqual(got, stored) {
+		t.Fatalf("after reopen = %+v, want %+v", got, stored)
+	}
+	if got[0].Label != "chosen" || got[0].Icon != "tiktok" || got[1].Label != "default" || got[1].Icon != "" {
+		t.Fatalf("after reopen icons = %+v, want chosen:tiktok, default:\"\"", got)
+	}
+}
+
+func TestButtons_IconMigration(t *testing.T) {
+	dir := t.TempDir()
+	old, err := openWith(dir, nil, migrationsThrough(t, "0005_shared_clients.sql"))
+	if err != nil {
+		t.Fatalf("open at 0005: %v", err)
+	}
+	for _, q := range []string{
+		`INSERT INTO children (id, name, created_at) VALUES (1, 'Ada', 0), (2, 'Ben', 0)`,
+		`INSERT INTO buttons (id, position, label, child_id, duration) VALUES (1, 0, 'A1', 1, 1800), (2, 1, 'B1', 2, 3600), (3, 2, 'A2', 1, 7200)`,
+		`INSERT INTO button_services (button_id, position, service_id) VALUES (1, 0, 'youtube'), (1, 1, 'tiktok'), (2, 0, 'roblox'), (3, 0, 'netflix')`,
+	} {
+		if _, err := old.DB().Exec(q); err != nil {
+			t.Fatalf("seed at 0005: %v", err)
+		}
+	}
+	// Positive control: at 0005 there is no icon column.
+	if _, err := old.DB().Exec(`UPDATE buttons SET icon = 'x'`); err == nil {
+		t.Fatal("0005 schema accepted an icon — the seed is not the old schema")
+	}
+	if err := old.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatalf("Open over 0005: %v", err)
+	}
+	defer s.Close()
+	want := []Button{
+		{ID: 1, ChildID: 1, Label: "A1", Services: []string{"youtube", "tiktok"}, Duration: 30 * time.Minute},
+		{ID: 2, ChildID: 2, Label: "B1", Services: []string{"roblox"}, Duration: time.Hour},
+		{ID: 3, ChildID: 1, Label: "A2", Services: []string{"netflix"}, Duration: 2 * time.Hour},
+	}
+	if got := mustList(t, s); !reflect.DeepEqual(got, want) {
+		t.Fatalf("after 0006 List = %+v, want %+v", got, want)
+	}
+	applied := queryStrings(t, s.DB(), `SELECT name FROM schema_migrations ORDER BY rowid`)
+	i5 := -1
+	for i, n := range applied {
+		if n == "0005_shared_clients.sql" {
+			i5 = i
+		}
+	}
+	if i5 < 0 || i5+1 >= len(applied) || applied[i5+1] != "0006_button_icon.sql" {
+		t.Fatalf("schema_migrations = %v, want 0006_button_icon.sql applied right after 0005_shared_clients.sql", applied)
+	}
+}
