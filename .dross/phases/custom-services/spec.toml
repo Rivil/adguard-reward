@@ -1,0 +1,82 @@
+[phase]
+id        = "custom-services"
+title     = "custom-services"
+milestone = "v0.2"
+
+[[criteria]]
+id   = "c-1"
+text = "A parent can create a custom service (name + one or more manually entered domains) and it persists across restarts."
+
+[[criteria]]
+id   = "c-2"
+text = "A domain that isn't a plain hostname (scheme, path, port, wildcard, whitespace/newline, or rule syntax like `||`, `^`, `$`, `/regex/`) is rejected with 400 and nothing is stored."
+
+[[criteria]]
+id   = "c-3"
+text = "A parent can edit a custom service's name and domains; after a domain edit the managed region carries rules for exactly the new domain list (rules for removed domains gone, added domains present)."
+
+[[criteria]]
+id   = "c-4"
+text = "A parent can delete a custom service; afterwards the managed region contains no rule for any of its domains."
+
+[[criteria]]
+id   = "c-5"
+text = "Custom services appear alongside built-in ones in the grant form, the button editor (as a button service), and the child's blocked view with their block state."
+
+[[criteria]]
+id   = "c-6"
+text = "Granting a custom service writes one `@@||domain^$client=...` exception per domain covering the grant's clients inside the managed region."
+
+[[criteria]]
+id   = "c-7"
+text = "Ending or expiring a grant removes its custom-service exceptions, except on a client where another active grant still covers that service (same ref-counting as built-ins on shared devices)."
+
+[[criteria]]
+id   = "c-8"
+text = "The reconciler converges the managed region to the desired rules (from stored custom services + active grants) at startup and on its normal tick — undoing a restart gap or a manual edit inside the markers."
+
+[[criteria]]
+id   = "c-9"
+text = "Every user_rules line outside the marker region is byte-for-byte unchanged (content and order) after any create, edit, delete, grant, extend, end, expiry or reconcile; a missing region is appended at the end."
+
+[[decisions]]
+key    = "block_scope"
+choice = "A custom service blocks every mapped child client via one `||domain^$client=...` rule per domain; adults are never blocked. Per-child unblock arrives with permanent-toggles."
+why    = "Mirrors 'blocked for the kids' without touching parents' devices; grants punch @@ exceptions on top; avoids pre-building permanent-toggles."
+locked = true
+
+[[decisions]]
+key    = "delete_refs"
+choice = "Delete returns 409 naming the grant while an active grant covers the service; otherwise it deletes and strips the service from buttons, deleting any button left with no services."
+why    = "Never silently re-blocks mid-reward; buttons are cheap to clean up automatically."
+locked = true
+
+[[decisions]]
+key    = "client_targeting"
+choice = "Rules target clients as `$client='<persistent client name>'` (quoted, escaped)."
+why    = "The app already tracks clients by persistent name and handles renames; IP lists would drift."
+locked = true
+
+[[decisions]]
+key    = "marker_format"
+choice = "Managed region is delimited by `! adguard-reward begin` and `! adguard-reward end` comment lines."
+why    = "AdGuard `!` comments are inert; a fixed, greppable pair makes the region unambiguous for r-02."
+locked = true
+
+[[decisions]]
+key    = "uniqueness"
+choice = "Custom service names must be unique (case-insensitive) across custom and built-in services, and a domain may belong to only one custom service; conflicts return 409."
+why    = "Avoids indistinguishable entries in lists and keeps per-domain rules and ref-counting single-owner."
+locked = true
+
+[[decisions]]
+key    = "custom_icon"
+choice = "Custom services render a letter avatar from their name; no icon upload."
+why    = "AdGuard serves no icon for them and an upload path is scope creep."
+locked = true
+
+[[decisions]]
+key    = "management_ui"
+choice = "Custom services are created, edited and deleted in a 'Services' section of Settings next to Buttons."
+why    = "Settings already hosts the button editor; keeps the phone home screen unchanged."
+locked = true
