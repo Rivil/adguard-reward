@@ -332,6 +332,48 @@ describe('Buttons', () => {
       expect(labelInput().value).toBe('')
       expect(document.querySelector('li.editing')).toBeNull()
     })
+
+    it('delete with no edit open leaves the form on a new button', async () => {
+      const s = await mount([b1, b2])
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(3, 'Confirm'))
+      await waitFor(() => expect(rows().length).toBe(1))
+      expect(formHeading()).toBe('New button')
+      expect(document.querySelector('li.editing')).toBeNull()
+
+      // The next Save appends; it does not land on some index the delete invented.
+      await fireEvent.input(labelInput(), { target: { value: 'New' } })
+      await fireEvent.change(childSelect(), { target: { value: '1' } })
+      await fireEvent.click(checkbox('TikTok'))
+      await waitFor(() => expect(saveButton().disabled).toBe(false))
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(puts(s.calls)[1].buttons.map((b) => b.label)).toEqual(['Roblox 1h', 'New'])
+    })
+
+    it('delete below the open edit leaves the edit in place', async () => {
+      // [Ada1, Ben1, Ada2]: editing Ada1 (first) while Ben1 (second) goes.
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.click(rowButton(4, 'Delete'))
+      await fireEvent.click(rowButton(4, 'Confirm'))
+      await waitFor(() => expect(rows().length).toBe(2))
+      // [Ada1, Ada2] with fresh ids 100, 101: the edit stays on Ada1.
+      await waitFor(() => expect(rowButton(100, 'Edit').disabled).toBe(false))
+      expect(document.querySelector('li.editing')?.getAttribute('data-button')).toBe('100')
+      expect(formHeading()).toBe('Edit button')
+
+      await fireEvent.input(labelInput(), { target: { value: 'Renamed' } })
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(puts(s.calls)[1].buttons.map((b) => b.label)).toEqual(['Renamed', 'TikTok 30m'])
+    })
+
+    it('the confirmation is a group named for its button', async () => {
+      await mount([b1, b2])
+      await fireEvent.click(rowButton(3, 'Delete'))
+      expect(screen.getByRole('group', { name: 'Delete YouTube 90m?' })).toBe(confirmOf(3))
+    })
   })
 
   it('422 shows the server message and keeps the draft', async () => {
@@ -511,6 +553,12 @@ describe('Buttons', () => {
       await fireEvent.click(saveButton())
       await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
       expect(order(puts(s.calls)[1])).toEqual(['Renamed', 'Roblox 1h', 'YouTube 90m'])
+    })
+
+    it('Up and Down are named for their button', async () => {
+      await mount([b1, b2, b3])
+      expect(screen.getByRole('button', { name: 'Move YouTube 90m down' })).toBe(rowButton(3, 'Down'))
+      expect(screen.getByRole('button', { name: 'Move TikTok 30m up' })).toBe(rowButton(5, 'Up'))
     })
   })
 
@@ -709,6 +757,63 @@ describe('Buttons', () => {
       // Picking a real icon again clears the note.
       await fireEvent.change(iconSelect(), { target: { value: 'roblox' } })
       expect(formLost()).toBeNull()
+    })
+
+    it('a failed save keeps the chosen icon', async () => {
+      const s = await mount([b1], { put: () => json(422, { error: 'unprocessable', message: 'nope' }) })
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.change(iconSelect(), { target: { value: 'tiktok' } })
+      await fireEvent.click(saveButton())
+      await screen.findByRole('alert')
+      // The reload re-reads the catalogue; tiktok is still in it, so nothing is reset.
+      await waitFor(() => expect(getsOf(s.calls, '/api/v1/services')).toBe(2))
+      await waitFor(() => expect(saveButton().disabled).toBe(false))
+      expect(iconSelect().value).toBe('tiktok')
+      expect(formLost()).toBeNull()
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(puts(s.calls)[1].buttons[0].icon).toBe('tiktok')
+    })
+
+    it('a failed save during an outage keeps the stored icon', async () => {
+      const s = await mount([{ ...b1, icon: 'tiktok' }], { services: 'down', put: () => json(500, { error: 'internal', message: 'boom' }) })
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.click(saveButton())
+      await screen.findByRole('alert')
+      await waitFor(() => expect(getsOf(s.calls, '/api/v1/services')).toBe(2))
+      await waitFor(() => expect(saveButton().disabled).toBe(false))
+      expect(iconSelect().value).toBe('tiktok')
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(puts(s.calls)[1].buttons[0].icon).toBe('tiktok')
+    })
+
+    it('a new button after a saved icon starts on Default', async () => {
+      const s = await mount([b1])
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.change(iconSelect(), { target: { value: 'tiktok' } })
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(formHeading()).toBe('New button'))
+      await fireEvent.input(labelInput(), { target: { value: 'New' } })
+      await fireEvent.change(childSelect(), { target: { value: '2' } })
+      await fireEvent.click(checkbox('Roblox'))
+      await waitFor(() => expect(saveButton().disabled).toBe(false))
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(icons(puts(s.calls)[1])).toEqual([
+        ['YouTube 90m', 'tiktok'],
+        ['New', ''],
+      ])
+    })
+
+    it('an outage offers only Default unless an icon is stored', async () => {
+      await mount([b1, { ...b2, icon: 'tiktok' }], { services: 'down' })
+      const values = () => [...iconSelect().options].map((o) => o.value)
+      expect(values()).toEqual([''])
+      await fireEvent.click(rowButton(4, 'Edit'))
+      expect(values()).toEqual(['', 'tiktok'])
+      await fireEvent.click(rowButton(3, 'Edit'))
+      expect(values()).toEqual([''])
     })
   })
 
