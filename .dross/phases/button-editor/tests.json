@@ -1,0 +1,814 @@
+{
+  "phase": "button-editor",
+  "generated_at": "2026-11-02T11:05:09.450609Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "internal/api/buttons.go",
+        "internal/api/buttons_test.go",
+        "internal/store/buttons.go",
+        "internal/store/buttons_test.go",
+        "internal/store/store_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 42,
+        "Survived": 0,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 1,
+        "Surviving": null,
+        "NotCovered": 0
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "internal/api/buttons.go": "adapter-lacks-range-runner",
+        "internal/api/buttons_test.go": "adapter-lacks-range-runner",
+        "internal/store/buttons.go": "adapter-lacks-range-runner",
+        "internal/store/buttons_test.go": "adapter-lacks-range-runner",
+        "internal/store/store_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/api.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 456,
+        "Survived": 34,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9306122448979591,
+        "Surviving": [
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 26,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "cac773d5866378f2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 32,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "958c5408e188c7cb",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 74,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "3c89aba4dc64998a",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 96,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "e528d9de6aadadb5",
+            "Lifecycle": "accepted",
+            "Note": "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 159,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "dd5d7cedc16558c1",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 210,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "634ff18332a41d80",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 210,
+            "Op": "LogicalOperator",
+            "Snippet": "editing !== null || editing \u003e i",
+            "Origin": "in-hunk",
+            "Key": "038342944c957ca4",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 210,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "634ff18332a41d80",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 210,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "634ff18332a41d80",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 210,
+            "Op": "EqualityOperator",
+            "Snippet": "editing \u003e= i",
+            "Origin": "in-hunk",
+            "Key": "c11e6591b162d114",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 243,
+            "Op": "StringLiteral",
+            "Snippet": "``",
+            "Origin": "in-hunk",
+            "Key": "5bc8606b0756baec",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 250,
+            "Op": "StringLiteral",
+            "Snippet": "``",
+            "Origin": "in-hunk",
+            "Key": "de399d67f7faa005",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 250,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "23578fa82aec08f8",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 253,
+            "Op": "StringLiteral",
+            "Snippet": "``",
+            "Origin": "in-hunk",
+            "Key": "f352b7bd6198c409",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 253,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "3d5c69513cfd827e",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 281,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "f9ebe1b8594c27d1",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 281,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "bffba378ac08c766",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 122,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "a6d312f12b091b9b",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 123,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9382694512e2eb73",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 212,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "bc76e085b2a98272",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 221,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "7f673034875137a4",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 310,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 310,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 30,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "9e7b970f78a207cf",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 31,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "332725e64d242d98",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 55,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4a2c7171134bef4f",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 122,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "6451ace12288b160",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 122,
+            "Op": "EqualityOperator",
+            "Snippet": "(out.grant.shared ?? []).length \u003e= 0",
+            "Origin": "inherited",
+            "Key": "abeb67deb0f8d203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: length \u003e= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 135,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "inherited",
+            "Key": "6232b0be4db10034",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 169,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "85c805b4f0c4fa20",
+            "Lifecycle": "accepted",
+            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 223,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "84cebad2af320e60",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 296,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].code",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 296,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].text",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 82,
+            "Op": "OptionalChaining",
+            "Snippet": "stopPolling()",
+            "Origin": "inherited",
+            "Key": "6c8255537ab76c28",
+            "Lifecycle": "accepted",
+            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+          }
+        ],
+        "NotCovered": 6
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/lib/Buttons.test.ts": [
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "TSTypeAliasDeclaration Stored"
+          },
+          {
+            "start": 110,
+            "end": 722,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Home.test.ts": [
+          {
+            "start": 170,
+            "end": 989,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 352,
+            "end": 364,
+            "construct": "TSInterfaceDeclaration ButtonInput"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/lib/Buttons.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/store/migrations/0006_button_icon.sql",
+      "reason": "no mutation adapter for .sql"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 157,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 158,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/05-phone-ui-buttons-pwa/spec.toml",
+      ".dross/phases/button-editor/REVIEW.md",
+      ".dross/phases/button-editor/changes.json",
+      ".dross/phases/button-editor/plan.toml",
+      ".dross/phases/button-editor/spec.toml",
+      ".dross/project.toml",
+      "internal/api/buttons.go",
+      "internal/api/buttons_test.go",
+      "internal/store/buttons.go",
+      "internal/store/buttons_test.go",
+      "internal/store/migrations/0006_button_icon.sql",
+      "internal/store/store_test.go",
+      "web/package.json",
+      "web/src/lib/Buttons.svelte",
+      "web/src/lib/Buttons.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Home.test.ts",
+      "web/src/lib/api.ts"
+    ],
+    "hunks": {
+      ".dross/phases/05-phone-ui-buttons-pwa/spec.toml": [
+        {
+          "start": 87,
+          "end": 87
+        },
+        {
+          "start": 93,
+          "end": 93
+        }
+      ],
+      ".dross/phases/button-editor/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 45
+        }
+      ],
+      ".dross/phases/button-editor/changes.json": [
+        {
+          "start": 1,
+          "end": 252
+        }
+      ],
+      ".dross/phases/button-editor/plan.toml": [
+        {
+          "start": 1,
+          "end": 67
+        }
+      ],
+      ".dross/phases/button-editor/spec.toml": [
+        {
+          "start": 1,
+          "end": 42
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      "internal/api/buttons.go": [
+        {
+          "start": 18,
+          "end": 20
+        },
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 39,
+          "end": 39
+        },
+        {
+          "start": 54,
+          "end": 54
+        },
+        {
+          "start": 88,
+          "end": 88
+        },
+        {
+          "start": 126,
+          "end": 127
+        },
+        {
+          "start": 165,
+          "end": 171
+        }
+      ],
+      "internal/api/buttons_test.go": [
+        {
+          "start": 174,
+          "end": 175
+        },
+        {
+          "start": 191,
+          "end": 224
+        }
+      ],
+      "internal/store/buttons.go": [
+        {
+          "start": 12,
+          "end": 15
+        },
+        {
+          "start": 21,
+          "end": 21
+        },
+        {
+          "start": 84,
+          "end": 86
+        },
+        {
+          "start": 122,
+          "end": 122
+        },
+        {
+          "start": 131,
+          "end": 131
+        },
+        {
+          "start": 134,
+          "end": 134
+        },
+        {
+          "start": 138,
+          "end": 138
+        }
+      ],
+      "internal/store/buttons_test.go": [
+        {
+          "start": 338,
+          "end": 423
+        }
+      ],
+      "internal/store/migrations/0006_button_icon.sql": [
+        {
+          "start": 1,
+          "end": 5
+        }
+      ],
+      "internal/store/store_test.go": [
+        {
+          "start": 382,
+          "end": 383
+        },
+        {
+          "start": 385,
+          "end": 392
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        }
+      ],
+      "web/src/lib/Buttons.svelte": [
+        {
+          "start": 5,
+          "end": 5
+        },
+        {
+          "start": 34,
+          "end": 40
+        },
+        {
+          "start": 44,
+          "end": 58
+        },
+        {
+          "start": 61,
+          "end": 63
+        },
+        {
+          "start": 71,
+          "end": 77
+        },
+        {
+          "start": 109,
+          "end": 119
+        },
+        {
+          "start": 121,
+          "end": 122
+        },
+        {
+          "start": 131,
+          "end": 131
+        },
+        {
+          "start": 143,
+          "end": 148
+        },
+        {
+          "start": 151,
+          "end": 151
+        },
+        {
+          "start": 159,
+          "end": 160
+        },
+        {
+          "start": 176,
+          "end": 177
+        },
+        {
+          "start": 180,
+          "end": 212
+        },
+        {
+          "start": 227,
+          "end": 264
+        },
+        {
+          "start": 274,
+          "end": 297
+        },
+        {
+          "start": 313,
+          "end": 316
+        },
+        {
+          "start": 319,
+          "end": 319
+        },
+        {
+          "start": 357,
+          "end": 358
+        },
+        {
+          "start": 362,
+          "end": 378
+        },
+        {
+          "start": 391,
+          "end": 397
+        }
+      ],
+      "web/src/lib/Buttons.test.ts": [
+        {
+          "start": 41,
+          "end": 41
+        },
+        {
+          "start": 134,
+          "end": 135
+        },
+        {
+          "start": 201,
+          "end": 203
+        },
+        {
+          "start": 208,
+          "end": 334
+        },
+        {
+          "start": 363,
+          "end": 363
+        },
+        {
+          "start": 385,
+          "end": 385
+        },
+        {
+          "start": 394,
+          "end": 514
+        },
+        {
+          "start": 524,
+          "end": 524
+        },
+        {
+          "start": 555,
+          "end": 555
+        },
+        {
+          "start": 566,
+          "end": 566
+        },
+        {
+          "start": 570,
+          "end": 714
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 106,
+          "end": 108
+        },
+        {
+          "start": 110,
+          "end": 112
+        }
+      ],
+      "web/src/lib/Home.test.ts": [
+        {
+          "start": 208,
+          "end": 235
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 358,
+          "end": 363
+        }
+      ]
+    },
+    "base": "62905167e4851ce11d108c7b5bc8e2f8441dafcc",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/lib/Buttons.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local",
+  "measured_commit": "396439b8b82b5c7e28cd46a98e6498f092b61ed0",
+  "measured_tree": "54a48e46ac70f124f71ba931f85dee544ac7a76b"
+}
