@@ -3,6 +3,14 @@
   "base": "milestone/v0.2",
   "base_commit": "d409e27a5094c78a9d699b1ef9356f01ed9cc438",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/Services.svelte"
+      ],
+      "commit": "4ea7143",
+      "completed_at": "2026-11-02T19:08:45.382989Z",
+      "notes": "quick: swap object-form class for class:editing directive in Services.svelte (Stryker instrumenter breaks Svelte 5 object-form class)"
+    },
     "t-1": {
       "files": [
         "internal/rules/region.go",
