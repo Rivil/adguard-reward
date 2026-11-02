@@ -1,14 +1,23 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/Rivil/adguard-reward/internal/adguard"
+	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
+	"github.com/Rivil/adguard-reward/internal/grants"
+	"github.com/Rivil/adguard-reward/internal/store"
 )
 
 type childrenBody struct {
@@ -679,5 +688,68 @@ func TestChildCreate_NameTakenNoAdGuard(t *testing.T) {
 	}
 	if n := h.adguardSince(mark); n != 0 {
 		t.Errorf("name conflict made %d AdGuard requests, want 0", n)
+	}
+}
+
+// activeReadFails is the real store with ListActiveGrants failing: the
+// engine's baseline read during adopt errors after AdGuard answered.
+type activeReadFails struct{ *store.Store }
+
+func (activeReadFails) ListActiveGrants(context.Context) ([]store.Grant, error) {
+	return nil, errors.New("database is locked")
+}
+
+// A store read failing inside adopt is neither *ErrAdoptFailed nor an
+// AdGuard outage: writeAdoptError answers 500 internal, logs it, and the
+// share is not saved.
+func TestChildUpdate_AdoptStoreReadFails(t *testing.T) {
+	logs := &lockedBuffer{}
+	log := slog.New(slog.NewTextHandler(logs, nil))
+	fake := adguardtest.New(t, adguardtest.Options{User: fakeUser, Pass: fakePass})
+	client, err := adguard.New(fake.URL(), fakeUser, fakePass, adguard.WithLogger(log))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(t.TempDir(), log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	eng := grants.New(activeReadFails{st}, client, grants.Options{Now: (&clock{t: t0}).Now, ApplyTimeout: harnessApplyTimeout, Log: log})
+	t.Cleanup(eng.Close)
+	a := New(Deps{AdGuard: client, Log: log, Children: st, Grants: eng})
+
+	ctx := context.Background()
+	if _, err := st.CreateChild(ctx, "Ada", []string{"Kid phone"}); err != nil {
+		t.Fatal(err)
+	}
+	ben, err := st.CreateChild(ctx, "Ben", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(map[string]any{"name": "Ben", "clients": []string{"Kid phone"}})
+	r := httptest.NewRequest(http.MethodPut, childPath(ben.ID), bytes.NewReader(body))
+	r.SetPathValue("id", strconv.FormatInt(ben.ID, 10))
+	w := httptest.NewRecorder()
+	a.handleChildUpdate(w, r)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("PUT Ben [Kid phone]: %d %s, want 500", w.Code, w.Body.String())
+	}
+	if e := decodeErr(t, w); e.Error != "internal" || e.Message != "could not update child" {
+		t.Errorf("error = %+v, want internal / could not update child", e)
+	}
+	if !strings.Contains(logs.String(), "update child: baseline failed") {
+		t.Errorf("log %q lacks the baseline failure", logs.String())
+	}
+	if n := fake.CountRequests("POST", "/control/clients/update"); n != 0 {
+		t.Errorf("fake saw %d update POSTs, want 0", n)
+	}
+	got, err := st.GetChild(ctx, ben.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Clients) != 0 {
+		t.Errorf("Ben clients = %v, want [] (nothing saved)", got.Clients)
 	}
 }
