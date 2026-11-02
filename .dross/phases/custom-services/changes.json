@@ -11,6 +11,16 @@
       "completed_at": "2026-11-02T19:08:45.382989Z",
       "notes": "quick: swap object-form class for class:editing directive in Services.svelte (Stryker instrumenter breaks Svelte 5 object-form class)"
     },
+    "quick-2": {
+      "files": [
+        "web/src/lib/Services.test.ts",
+        "web/src/App.test.ts",
+        "web/src/lib/ServiceIcon.test.ts"
+      ],
+      "commit": "4a70a20",
+      "completed_at": "2026-11-02T19:47:29.682311Z",
+      "notes": "quick: test-only kills for 20 custom-services Stryker survivors (Services/App/ServiceIcon); 2 more equivalents accepted"
+    },
     "t-1": {
       "files": [
         "internal/rules/region.go",

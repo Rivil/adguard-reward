@@ -1496,3 +1496,21 @@
   line = 341
   accepted_in = "custom-services"
   reason = "Stryker static-mutant ceiling: module-level CUSTOM_SERVICES const is evaluated once at import, before the per-test mutant switch activates. The URL is asserted for GET/POST/PUT/DELETE (api.test.ts:606-609)."
+
+[[accepted]]
+  key = "37bd6dcd60a08004"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "StringLiteral"
+  text = "if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {"
+  line = 13
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant at col 25: typeof Intl !== 'undefined' -> typeof Intl !== \"\" is always true (typeof never yields an empty string), the same as the accepted guard mutants on this line. The 'Segmenter' literal mutant on this line is killed by ServiceIcon.test.ts:32 (family emoji)."
+
+[[accepted]]
+  key = "6fac435270d9bb93"
+  file = "web/src/lib/Services.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 22
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: pending's initial false -> true is unobservable because onMount's run() sets pending = true before any test or user can see the DOM, and finally resets it, so every observable state is identical."
