@@ -733,15 +733,6 @@
   accepted_in = "04-grants-scheduler-reconciler"
 
 [[accepted]]
-  key = "07257c7ebd994d79"
-  file = "internal/grants/grants.go"
-  op = "ARITHMETIC_BASE"
-  text = "return \"grants: revert failed for \" + strings.Join(e.Clients, \", \")"
-  line = 47
-  reason = "ARITHMETIC_BASE on the string concatenation in ErrRevertFailed.Error(): string - string does not compile (not viable). The type itself is exercised via errors.As in TestGrants_EndRevertFails / TestEngine_EndRevertFailure; only the Error() text is never read."
-  accepted_in = "04-grants-scheduler-reconciler"
-
-[[accepted]]
   key = "149b5b8d30816792"
   file = "internal/grants/grants.go"
   op = "CONDITIONALS_NEGATION"
@@ -766,15 +757,6 @@
   text = "panic(\"web: embedded dist dir missing: \" + err.Error())"
   line = 20
   category = "string-concat-panic-embed"
-  accepted_in = "05-phone-ui-buttons-pwa"
-
-[[accepted]]
-  key = "791f265470427dc7"
-  file = "web/src/lib/api.ts"
-  op = "StringLiteral"
-  text = "const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children', buttons: '/buttons' }"
-  line = 33
-  category = "stryker-static-attribution"
   accepted_in = "05-phone-ui-buttons-pwa"
 
 [[accepted]]
@@ -1433,3 +1415,84 @@
   line = 193
   accepted_in = "custom-services"
   reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "7c2390c767e9930a"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "ConditionalExpression"
+  text = "if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {"
+  line = 13
+  accepted_in = "custom-services"
+  reason = "Feature guard for browsers without Intl.Segmenter. jsdom/Node always provide it, so forcing the guard true is unobservable in any test environment; the grapheme behaviour it protects is pinned by ServiceIcon.test.ts:32 (family-emoji case)."
+
+[[accepted]]
+  key = "a48d90340229f456"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "LogicalOperator"
+  text = "if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {"
+  line = 13
+  accepted_in = "custom-services"
+  reason = "&& -> || on the Intl.Segmenter feature guard: Intl is always defined in jsdom/Node, so both forms evaluate true; equivalent in every test environment."
+
+[[accepted]]
+  key = "654ac3271c555fa6"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "ObjectLiteral"
+  text = "const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' })"
+  line = 14
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: granularity 'grapheme' is Intl.Segmenter's documented default, so {granularity:'grapheme'} -> {} segments identically."
+
+[[accepted]]
+  key = "979484f15856d4c9"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "OptionalChaining"
+  text = "first = seg.segment(t)[Symbol.iterator]().next().value?.segment"
+  line = 15
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: letterOf returns '?' for a blank trimmed name before segmenting (line 11), so the first segment's value is never undefined and dropping ?. cannot throw."
+
+[[accepted]]
+  key = "98d03b837dfb088c"
+  file = "web/src/lib/Services.svelte"
+  op = "BooleanLiteral"
+  text = "return true"
+  line = 55
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return true -> false is unobservable."
+
+[[accepted]]
+  key = "74abd16500e92203"
+  file = "web/src/lib/Services.svelte"
+  op = "BooleanLiteral"
+  text = "return false"
+  line = 61
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return false -> true is unobservable."
+
+[[accepted]]
+  key = "9d6183df834aa3b3"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "home: '/',"
+  line = 35
+  accepted_in = "custom-services"
+  reason = "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates, so the mutation never takes effect. The value is asserted (api.test.ts:368 expects '/')."
+
+[[accepted]]
+  key = "cb4084c4e0eff4fa"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "services: '/services',"
+  line = 38
+  accepted_in = "custom-services"
+  reason = "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates. The value is asserted (api.test.ts:659 expects '/services')."
+
+[[accepted]]
+  key = "74d2fbec3ff0b092"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const CUSTOM_SERVICES = '/api/v1/custom-services'"
+  line = 341
+  accepted_in = "custom-services"
+  reason = "Stryker static-mutant ceiling: module-level CUSTOM_SERVICES const is evaluated once at import, before the per-test mutant switch activates. The URL is asserted for GET/POST/PUT/DELETE (api.test.ts:606-609)."
