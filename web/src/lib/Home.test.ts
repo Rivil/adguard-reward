@@ -987,3 +987,76 @@ describe('Home', () => {
     }
   })
 })
+
+describe('Home custom services', () => {
+  const portal: Service = { id: 'custom:1', name: 'Portal', icon: '', custom: true }
+  const avatarIn = (el: Element) => el.querySelector('[data-letter-avatar]')
+
+  it('custom blocked entry', async () => {
+    server(
+      {},
+      {
+        '/api/v1/children/1/blocked': () =>
+          json(
+            200,
+            view(1, 'Ada', {
+              services: [
+                { id: 'custom:1', name: 'Portal', icon: '', custom: true, state: 'blocked', differs: [] },
+                { id: 'custom:2', name: 'homework hub', icon: '', custom: true, state: 'partial', differs: ['Kid phone'] },
+                { id: 'youtube', name: 'YouTube', icon: ICON, state: 'blocked', differs: [] },
+              ],
+            }),
+          ),
+      },
+    )
+    await mountLoaded()
+    const d1 = details('details[data-blocked="1"]')
+    await open(d1)
+    await waitFor(() => expect(d1.querySelectorAll('li').length).toBe(3))
+
+    const blockedLi = d1.querySelector('li[data-state="blocked"]')!
+    expect(avatarIn(blockedLi)?.textContent).toBe('P')
+    expect(blockedLi.querySelector('img')).toBeNull()
+    expect(blockedLi.textContent?.replace(/\s+/g, ' ').trim()).toBe('P Portal')
+    expect(blockedLi.querySelector('.partial')).toBeNull()
+
+    const partialLi = d1.querySelector('li[data-state="partial"]')!
+    expect(avatarIn(partialLi)?.textContent).toBe('H')
+    expect(partialLi.querySelector('img')).toBeNull()
+    expect(partialLi.textContent).toContain('homework hub')
+    expect(partialLi.querySelector('.partial')?.textContent).toContain('unblocked on Kid phone')
+
+    // A built-in in the same list keeps its real icon.
+    const yt = [...d1.querySelectorAll('li')].find((li) => li.textContent?.includes('YouTube'))!
+    expect(yt.querySelector('img')?.getAttribute('src')).toBe('data:image/svg+xml;base64,' + ICON)
+    expect(avatarIn(yt)).toBeNull()
+  })
+
+  it('custom button tile', async () => {
+    server({
+      buttons: [{ ...b1, services: ['custom:1'], icon: '' }, { ...b2, services: ['roblox'], icon: 'custom:1' }, { ...b3, services: ['youtube', 'custom:1'] }],
+      services: [...services, portal],
+    })
+    await mountLoaded()
+    // First service custom, and a custom service picked as the icon.
+    for (const id of [11, 12]) {
+      await waitFor(() => expect(avatarIn(tile(id))?.textContent).toBe('P'))
+      expect(tile(id).querySelector('img')).toBeNull()
+      expect(tile(id).querySelector('[data-letter-avatar]')?.getAttribute('style')).toContain('width: 28px')
+    }
+    // A built-in-first button beside them still shows its <img>.
+    expect(tile(13).querySelector('img')?.getAttribute('src')).toBe('data:image/svg+xml;base64,' + YT_ICON)
+    expect(avatarIn(tile(13))).toBeNull()
+  })
+
+  it('services nav', async () => {
+    server()
+    mount()
+    const nav = screen.getByRole('navigation')
+    const labels = [...nav.querySelectorAll('button')].map((b) => b.textContent?.trim())
+    expect(labels.indexOf('Services')).toBe(labels.indexOf('Buttons') + 1)
+    await fireEvent.click(screen.getByRole('button', { name: 'Services' }))
+    expect(location.pathname).toBe('/services')
+    expect(get(route)).toBe('services')
+  })
+})

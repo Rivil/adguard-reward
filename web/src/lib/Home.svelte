@@ -5,7 +5,6 @@
     childBlocked,
     createGrant,
     extendGrant,
-    iconUrl,
     listButtons,
     listChildren,
     listServices,
@@ -21,6 +20,7 @@
   import ActiveGrants from './ActiveGrants.svelte'
   import GrantForm, { type GrantFormValue } from './GrantForm.svelte'
   import MigrationBanner from './MigrationBanner.svelte'
+  import ServiceIcon from './ServiceIcon.svelte'
   import { formatDuration, minutesToSeconds, sharedDevices, sharedText } from './grants'
   import { acceptOffer, runTap, type Offer, type Outcome, type TapDeps, type TapSpec } from './tap'
 
@@ -105,11 +105,11 @@
 
   // The button's chosen icon while the catalogue still has it, else the
   // first service's (locked icon_fallback): a catalogue change never blanks
-  // a button that still has a known service.
-  function iconFor(b: Button): string | null {
+  // a button that still has a known service. A custom service comes back
+  // too; ServiceIcon draws its letter avatar rather than an empty <img>.
+  function iconFor(b: Button): Service | null {
     const chosen = b.icon ? services?.find((s) => s.id === b.icon) : undefined
-    const pick = chosen ?? services?.find((s) => s.id === b.services[0])
-    return pick ? iconUrl(pick.icon) : null
+    return chosen ?? services?.find((s) => s.id === b.services[0]) ?? null
   }
 
   function buttonsFor(childId: number): Button[] {
@@ -232,6 +232,7 @@
   <nav>
     <button type="button" onclick={() => navigate('children')}>Children</button>
     <button type="button" onclick={() => navigate('buttons')}>Buttons</button>
+    <button type="button" onclick={() => navigate('services')}>Services</button>
     <button type="button" onclick={signOut} disabled={pending}>Log out</button>
   </nav>
 
@@ -280,7 +281,7 @@
                 disabled={inflight[`button:${b.id}`] === true}
               >
                 {#if icon}
-                  <img alt="" src={icon} width="28" height="28" />
+                  <ServiceIcon name={icon.name} icon={icon.icon} size={28} />
                 {/if}
                 <span class="label">{b.label}</span>
                 <span class="duration">{formatDuration(b.duration)}</span>
@@ -323,7 +324,7 @@
                 {#each shown(v) as s (s.id)}
                   {@const on = openOn(s)}
                   <li data-state={s.state}>
-                    <img alt="" src={iconUrl(s.icon)} width="20" height="20" />
+                    <ServiceIcon name={s.name} icon={s.icon} size={20} />
                     {s.name}{#if on.length > 0}
                       <span class="partial"> — unblocked on {on.join(', ')}</span>
                     {/if}

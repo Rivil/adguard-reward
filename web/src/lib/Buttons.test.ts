@@ -815,6 +815,39 @@ describe('Buttons', () => {
       await fireEvent.click(rowButton(3, 'Edit'))
       expect(values()).toEqual([''])
     })
+
+    it('custom icon', async () => {
+      const portal: Service = { id: 'custom:1', name: 'Portal', icon: '', custom: true }
+      const s = await mount([b1], { services: [youtube, tiktok, portal] })
+      const avatar = () => document.querySelector('form [data-icon-preview] [data-letter-avatar]')
+      expect([...iconSelect().options].map((o) => [o.value, o.textContent])).toContainEqual(['custom:1', 'Portal'])
+
+      await fireEvent.click(rowButton(3, 'Edit'))
+      // A built-in preview is still the real icon.
+      expect(document.querySelector('form [data-icon-preview] img')).not.toBeNull()
+      expect(avatar()).toBeNull()
+
+      await fireEvent.change(iconSelect(), { target: { value: 'custom:1' } })
+      expect(preview()).toBe('custom:1')
+      expect(avatar()?.textContent).toBe('P')
+      expect(document.querySelector('form [data-icon-preview] img')).toBeNull()
+      // A custom service is a known catalogue id, never a lost icon.
+      expect(formLost()).toBeNull()
+
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400, icon: 'custom:1' })
+    })
+
+    it('Default previews a custom first service as its letter', async () => {
+      const portal: Service = { id: 'custom:1', name: 'Portal', icon: '', custom: true }
+      await mount([{ ...b1, services: ['custom:1', 'youtube'] }], { services: [youtube, portal] })
+      await fireEvent.click(rowButton(3, 'Edit'))
+      expect(iconSelect().value).toBe('')
+      expect(preview()).toBe('custom:1')
+      expect(document.querySelector('form [data-icon-preview] [data-letter-avatar]')?.textContent).toBe('P')
+      expect(document.querySelector('form [data-icon-preview] img')).toBeNull()
+    })
   })
 
   it('Back calls onBack', async () => {
