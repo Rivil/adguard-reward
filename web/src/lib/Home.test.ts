@@ -769,6 +769,183 @@ describe('Home', () => {
     expect(document.querySelector('[data-migration]')).toBeNull()
   })
 
+  describe('shared devices', () => {
+    const adaS: Child = { id: 1, name: 'Ada', clients: ['Kid phone'] }
+    const benS: Child = { id: 2, name: 'Ben', clients: ['Kid phone'] }
+    const cleo: Child = { id: 3, name: 'Cleo', clients: ['Cleo tablet'] }
+    const b4: Button = { id: 14, label: 'Roblox', child_id: 3, services: ['roblox'], duration: 1800 }
+    const kidPhone = [{ client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] }]
+    const NOTICE = 'Also unblocked on Kid phone (shared with Ben)'
+
+    const created = (id: number, over: Record<string, unknown> = {}) =>
+      json(201, { id, ends_at: new Date(Date.now() + 3600 * 1000).toISOString(), applied: true, failed: [], ...over })
+
+    /** The text aria-describedby points at, resolved the way a screen reader does for plain text. */
+    function description(el: Element): string {
+      return (el.getAttribute('aria-describedby') ?? '')
+        .split(/\s+/)
+        .filter(Boolean)
+        .map((id) => document.getElementById(id)?.textContent ?? '')
+        .join(' ')
+    }
+
+    const status = (id: number) => section(id).querySelector('[role="status"]')
+    const flat = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+
+    it('sharedHint: a button whose child shares a device is described by one passive note', async () => {
+      const s = server({ children: [adaS, benS, cleo], buttons: [b1, b2, b4] })
+      await mountLoaded()
+      await waitFor(() => expect(tile(14)).toBeTruthy())
+
+      const notes = section(1).querySelectorAll('[role="note"]')
+      expect(notes).toHaveLength(1)
+      expect(notes[0].textContent).toContain('Kid phone (shared with Ben)')
+      expect(notes[0].querySelector('button, input')).toBeNull()
+      for (const id of [11, 12]) expect(description(tile(id))).toContain('Kid phone (shared with Ben)')
+      expect(screen.getByRole('button', { name: /YouTube \+ TikTok/, description: /Kid phone \(shared with Ben\)/ })).toBe(tile(11))
+
+      expect(tile(14).hasAttribute('aria-describedby')).toBe(false)
+      expect(description(tile(14))).toBe('')
+      expect(section(3).querySelector('[role="note"]')).toBeNull()
+      expect(posts(s.calls)).toHaveLength(0)
+    })
+
+    it('noConfirm: one click on a hinted tile is one POST, no confirmation', async () => {
+      const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+      try {
+        const s = server({ children: [adaS, benS], buttons: [b1] }, { 'POST /api/v1/grants': () => created(50, { shared: kidPhone }) })
+        await mountLoaded()
+        await waitFor(() => expect(tile(11)).toBeTruthy())
+        expect(description(tile(11))).toContain('Kid phone (shared with Ben)')
+
+        await fireEvent.click(tile(11))
+        await waitFor(() => expect(status(1)).not.toBeNull())
+        expect(posts(s.calls)).toHaveLength(1)
+        expect(posts(s.calls)[0].body).toBe('{"child_id":1,"services":["youtube","tiktok"],"duration":3600}')
+        expect(confirm).not.toHaveBeenCalled()
+        expect(document.querySelector('[role="dialog"]')).toBeNull()
+      } finally {
+        confirm.mockRestore()
+      }
+    })
+
+    it('sharedNotice: the 201 names the shared device; shared [] shows no status line', async () => {
+      let shared: unknown[] = kidPhone
+      let id = 60
+      server({ children: [adaS, benS], buttons: [b1] }, { 'POST /api/v1/grants': () => created(++id, { shared }) })
+      await mountLoaded()
+      await waitFor(() => expect(tile(11)).toBeTruthy())
+      expect(status(1)).toBeNull()
+
+      await fireEvent.click(tile(11))
+      await waitFor(() => expect(status(1)).not.toBeNull())
+      expect(flat(status(1))).toContain('Kid phone (shared with Ben)')
+      expect(flat(status(1))).toBe(NOTICE)
+      expect(section(1).querySelector('[role="alert"]')).toBeNull()
+      expect(status(2)).toBeNull()
+
+      // The next tap's notice replaces the last one: none when nothing is shared.
+      shared = []
+      await fireEvent.click(tile(11))
+      await waitFor(() => expect(document.querySelector('li[data-grant="62"]')).not.toBeNull())
+      await waitFor(() => expect(tile(11).disabled).toBe(false))
+      expect(status(1)).toBeNull()
+    })
+
+    it('partialShared: a partial tap keeps both the except-on alert and the shared status', async () => {
+      server(
+        { children: [adaS, benS], buttons: [b1] },
+        { 'POST /api/v1/grants': () => created(70, { applied: false, failed: ['Kid phone'], shared: kidPhone }) },
+      )
+      await mountLoaded()
+      await waitFor(() => expect(tile(11)).toBeTruthy())
+
+      await fireEvent.click(tile(11))
+      await waitFor(() => expect(status(1)).not.toBeNull())
+      const alert = section(1).querySelector('[role="alert"]')
+      expect(alert?.getAttribute('data-error')).toBe('partial')
+      expect(alert?.textContent).toBe('Unlocked, except on Kid phone')
+      expect(flat(status(1))).toBe(NOTICE)
+    })
+
+    it('adhocShared: the ad-hoc form shows the GrantForm note and its 201 the same status line', async () => {
+      const s = server({ children: [adaS, benS], buttons: [] }, { 'POST /api/v1/grants': () => created(80, { shared: kidPhone }) })
+      await mountLoaded()
+      await waitFor(() => expect(document.querySelector('[data-adhoc] fieldset')).toBeTruthy())
+      const adhoc = details('[data-adhoc]')
+      expect(adhoc.querySelector('[role="note"]')).toBeNull()
+
+      await fireEvent.change(screen.getByLabelText('Child'), { target: { value: '1' } })
+      expect(adhoc.querySelector('[role="note"]')?.textContent).toContain('Kid phone (shared with Ben)')
+      await fireEvent.click(checkbox('TikTok'))
+      await fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+      await waitFor(() => expect(status(1)).not.toBeNull())
+      expect(posts(s.calls)).toHaveLength(1)
+      expect(flat(status(1))).toBe(NOTICE)
+    })
+
+    it('unblockedBy: a service another child holds open is listed with who holds it', async () => {
+      const benView = view(2, 'Ben', {
+        services: [
+          { id: 'youtube', name: 'YouTube', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [{ client: 'Kid phone', grant_id: 7, child: { id: 1, name: 'Ada' } }] },
+          { id: 'tiktok', name: 'TikTok', icon: ICON, state: 'partial', differs: ['Ben tablet', 'Kid phone'], unblocked_by: [{ client: 'Kid phone', grant_id: 7, child: { id: 1, name: 'Ada' } }] },
+          { id: 'roblox', name: 'Roblox', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [] },
+        ],
+      })
+      server({ children: [adaS, benS] }, { '/api/v1/children/2/blocked': () => json(200, benView) })
+      await mountLoaded()
+      const d2 = details('details[data-blocked="2"]')
+      await open(d2)
+      await waitFor(() => expect(d2.querySelectorAll('li').length).toBe(2))
+
+      const yt = d2.querySelector('li[data-state="unblocked"]')
+      expect(flat(yt)).toContain('YouTube')
+      expect(flat(yt?.querySelector('.partial'))).toBe("— unblocked on Kid phone by Ada's grant")
+      // A partial service names its plain clients once and the shared one by its grant.
+      const tt = d2.querySelector('li[data-state="partial"]')
+      expect(flat(tt)).toContain('TikTok')
+      expect(flat(tt?.querySelector('.partial'))).toBe("— unblocked on Ben tablet, Kid phone by Ada's grant")
+      expect(d2.textContent).not.toContain('Roblox')
+      expect(d2.textContent).not.toContain('Nothing is blocked')
+    })
+
+    it('sharedWithLabel: a shared client is marked with its other owners', async () => {
+      const benView = view(2, 'Ben', {
+        clients: [
+          { name: 'Kid phone', missing: false, uses_global: false, shared_with: [{ id: 1, name: 'Ada' }] },
+          { name: 'Ben tablet', missing: false, uses_global: false, shared_with: [] },
+        ],
+      })
+      server({ children: [adaS, benS] }, { '/api/v1/children/2/blocked': () => json(200, benView) })
+      await mountLoaded()
+      const d2 = details('details[data-blocked="2"]')
+      await open(d2)
+      await waitFor(() => expect(d2.querySelectorAll('.client').length).toBe(2))
+
+      const [phone, tablet] = [...d2.querySelectorAll('.client')]
+      expect(flat(phone)).toBe('Kid phone (shared with Ada)')
+      expect(flat(tablet)).toBe('Ben tablet')
+      expect(tablet.textContent).not.toContain('(shared with')
+    })
+
+    it('unblockedByRemoved: a deleted granter is named as a removed child', async () => {
+      const benView = view(2, 'Ben', {
+        services: [
+          { id: 'youtube', name: 'YouTube', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [{ client: 'Kid phone', grant_id: 7, child: { id: 1, name: '' } }] },
+        ],
+      })
+      server({ children: [benS] }, { '/api/v1/children/2/blocked': () => json(200, benView) })
+      mount()
+      await screen.findByRole('heading', { name: 'Ben' })
+      const d2 = details('details[data-blocked="2"]')
+      await open(d2)
+      await waitFor(() => expect(d2.querySelectorAll('li').length).toBe(1))
+      expect(flat(d2.querySelector('li'))).toContain('YouTube')
+      expect(flat(d2.querySelector('li .partial'))).toBe("— unblocked on Kid phone by a removed child's grant")
+      expect(d2.textContent).not.toContain("by 's grant")
+    })
+  })
+
   it('401 while polling routes through onUnauthorized', async () => {
     const spy = vi.fn()
     setOnUnauthorized(spy)
