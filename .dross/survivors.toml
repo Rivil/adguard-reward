@@ -1053,33 +1053,6 @@
   reason = "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
 
 [[accepted]]
-  key = "52cb11cea95d948c"
-  file = "internal/store/clients.go"
-  op = "CONDITIONALS_NEGATION"
-  text = "case newOwner != nil && (oldOwner == nil || newOwner.ChildID != oldOwner.ChildID):"
-  line = 42
-  category = "gremlins-switch-case-covered"
-  accepted_in = "auto-client-labelling"
-
-[[accepted]]
-  key = "6bf93880bcde1ac8"
-  file = "internal/store/clients.go"
-  op = "CONDITIONALS_NEGATION"
-  text = "case newOwner != nil:"
-  line = 45
-  category = "gremlins-switch-case-covered"
-  accepted_in = "auto-client-labelling"
-
-[[accepted]]
-  key = "f62be8d2dba8bc1c"
-  file = "internal/store/clients.go"
-  op = "CONDITIONALS_NEGATION"
-  text = "case oldOwner != nil:"
-  line = 50
-  category = "gremlins-switch-case-covered"
-  accepted_in = "auto-client-labelling"
-
-[[accepted]]
   key = "ec84ab086867857b"
   file = "internal/grants/clients.go"
   op = "CONDITIONALS_NEGATION"
