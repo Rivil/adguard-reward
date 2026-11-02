@@ -72,9 +72,13 @@ func (e *Engine) CreateClient(ctx context.Context, name string, ids []string, ch
 // AdoptClients gives each client being added to a child the child's
 // baseline, computed from siblings — the clients that stay with the child —
 // as an addition to what the client already blocks: nothing is removed and
-// use_global_blocked_services is cleared. A client AdGuard does not know is
-// skipped. No added clients means no AdGuard request at all. The first
-// failure is *ErrAdoptFailed naming the client.
+// use_global_blocked_services is cleared. A service another active grant
+// still covers on that client (of any owner, on the grant's stored clients)
+// is left out of that client's addition, so sharing a device never re-blocks
+// what another owner's grant unblocked there (locked: shared_device_rule).
+// A client whose list already holds everything is not written. A client
+// AdGuard does not know is skipped. No added clients means no AdGuard
+// request at all. The first failure is *ErrAdoptFailed naming the client.
 func (e *Engine) AdoptClients(ctx context.Context, childID int64, siblings, added []string) error {
 	if len(added) == 0 {
 		return nil
@@ -88,7 +92,7 @@ func (e *Engine) AdoptClients(ctx context.Context, childID int64, siblings, adde
 	if err != nil {
 		return err
 	}
-	base, err := e.baselineFrom(ctx, res, childID, siblings)
+	base, active, err := e.baselineFrom(ctx, res, childID, siblings)
 	if err != nil {
 		return err
 	}
@@ -100,7 +104,7 @@ func (e *Engine) AdoptClients(ctx context.Context, childID int64, siblings, adde
 		if !known[name] {
 			continue
 		}
-		err := e.ag.AdoptBlockedServices(actx, name, base)
+		err := e.ag.AdoptBlockedServices(actx, name, without(base, heldOpen(active, 0, name)))
 		switch {
 		case err == nil, errors.Is(err, adguard.ErrClientNotFound):
 		default:
@@ -110,6 +114,17 @@ func (e *Engine) AdoptClients(ctx context.Context, childID int64, siblings, adde
 	return nil
 }
 
+// without returns the members of base not in held (sorted), never nil.
+func without(base, held []string) []string {
+	out := []string{}
+	for _, s := range base {
+		if _, ok := slices.BinarySearch(held, s); !ok {
+			out = append(out, s)
+		}
+	}
+	return out
+}
+
 // baseline reads AdGuard through actx and computes childID's baseline.
 // Caller holds mu.
 func (e *Engine) baseline(ctx, actx context.Context, childID int64, siblings []string) ([]string, error) {
@@ -117,46 +132,49 @@ func (e *Engine) baseline(ctx, actx context.Context, childID int64, siblings []s
 	if err != nil {
 		return nil, err
 	}
-	return e.baselineFrom(ctx, res, childID, siblings)
+	base, _, err := e.baselineFrom(ctx, res, childID, siblings)
+	return base, err
 }
 
 // baselineFrom is what a device joining childID must block: the union of
 // the effective blocked sets of the siblings AdGuard knows (the global list
 // for one that inherits it), or AdGuard's global list when there are none,
-// plus every service under the child's active grants — the grants unblocked
-// those on the siblings, and their revert will never touch the new device.
-// Sorted, never nil. Caller holds mu.
-func (e *Engine) baselineFrom(ctx context.Context, res adguard.ClientsResult, childID int64, siblings []string) ([]string, error) {
+// plus every service under the child's active grants and under any active
+// grant (of any child) stored on a known sibling — those grants unblocked
+// the services on the siblings, and their revert will never touch the new
+// device. It also returns the active grants it read. Sorted, never nil.
+// Caller holds mu.
+func (e *Engine) baselineFrom(ctx context.Context, res adguard.ClientsResult, childID int64, siblings []string) ([]string, []store.Grant, error) {
 	byName := make(map[string]adguard.PersistentClient, len(res.Persistent))
 	for _, pc := range res.Persistent {
 		byName[pc.Name] = pc
 	}
 	out := []string{}
-	found := false
+	var known []string
 	for _, s := range siblings {
 		pc, ok := byName[s]
 		if !ok {
 			continue
 		}
-		found = true
+		known = append(known, s)
 		if pc.UseGlobalBlockedServices {
 			out = append(out, res.GlobalBlockedServices...)
 		} else {
 			out = append(out, pc.BlockedServices...)
 		}
 	}
-	if !found {
+	if len(known) == 0 {
 		out = append(out, res.GlobalBlockedServices...)
 	}
 	grants, err := e.store.ListActiveGrants(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	for _, g := range grants {
-		if g.ChildID == childID {
+		if g.ChildID == childID || slices.ContainsFunc(known, func(s string) bool { return slices.Contains(g.Clients, s) }) {
 			out = append(out, g.Services...)
 		}
 	}
 	slices.Sort(out)
-	return slices.Compact(out), nil
+	return slices.Compact(out), grants, nil
 }

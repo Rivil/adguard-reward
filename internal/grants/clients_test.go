@@ -299,3 +299,82 @@ func TestCreateClient_ReadFails(t *testing.T) {
 		t.Errorf("adds = %d, want 0", n)
 	}
 }
+
+// adopt runs AdoptClients and fails the test on error.
+func (e *env) adopt(childID int64, siblings, added []string) {
+	e.t.Helper()
+	if err := e.eng.AdoptClients(ctx, childID, siblings, added); err != nil {
+		e.t.Fatalf("AdoptClients(%d, %v, %v): %v", childID, siblings, added, err)
+	}
+}
+
+func TestAdopt_SharedKeepsOtherGrant(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	g := e.create(ada.ID, []string{"youtube"}, []string{"Kid phone"})
+	if got := e.blocked("Kid phone"); !reflect.DeepEqual(got, []string{"tiktok"}) {
+		t.Fatalf("setup: Kid phone = %v, want [tiktok]", got)
+	}
+	e.offGlobal("youtube", "roblox")
+	ben := e.child("Ben", "Kid tablet")
+
+	e.adopt(ben.ID, []string{"Kid tablet"}, []string{"Kid phone"})
+	e.wantOwn("Kid phone", "roblox", "tiktok")
+
+	// Ada's revert still owns the re-block.
+	e.clk.Advance(d + time.Second)
+	e.wantStatus(g.Grant.ID, store.StatusExpired)
+	e.wantOwn("Kid phone", "roblox", "tiktok", "youtube")
+}
+
+func TestAdopt_CoverIsPerClient(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone", "Old laptop")
+	e.create(ada.ID, []string{"youtube"}, []string{"Old laptop"})
+	e.ownList("Kid phone", "tiktok")
+	e.offGlobal("youtube")
+	ben := e.child("Ben", "Kid tablet")
+
+	e.adopt(ben.ID, []string{"Kid tablet"}, []string{"Kid phone"})
+	e.wantOwn("Kid phone", "tiktok", "youtube")
+}
+
+func TestAdopt_TwoAdded(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	e.create(ada.ID, []string{"youtube"}, []string{"Kid phone"})
+	e.offGlobal("youtube")
+	ben := e.child("Ben", "Kid tablet")
+
+	e.adopt(ben.ID, []string{"Kid tablet"}, []string{"Kid phone", "Old laptop"})
+	e.wantOwn("Old laptop", "youtube")
+	e.wantOwn("Kid phone", "tiktok")
+}
+
+func TestBaseline_SharedSiblingGrant(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	ben := e.child("Ben", "Kid phone")
+	e.create(ada.ID, []string{"youtube"}, []string{"Kid phone"})
+	if got := e.blocked("Kid phone"); !reflect.DeepEqual(got, []string{"tiktok"}) {
+		t.Fatalf("setup: Kid phone = %v, want [tiktok]", got)
+	}
+
+	e.createClient("Ben tv", ptr(ben.ID))
+	e.wantOwn("Ben tv", "tiktok", "youtube")
+}
+
+func TestAdopt_AllCovered(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	e.create(ada.ID, []string{"youtube"}, []string{"Kid phone"})
+	e.offGlobal("youtube", "tiktok")
+	ben := e.child("Ben", "Kid tablet")
+	before := e.posts()
+
+	e.adopt(ben.ID, []string{"Kid tablet"}, []string{"Kid phone"})
+	if n := e.posts() - before; n != 0 {
+		t.Errorf("update POSTs = %d, want 0 (baseline within current plus held)", n)
+	}
+	e.wantOwn("Kid phone", "tiktok")
+}
