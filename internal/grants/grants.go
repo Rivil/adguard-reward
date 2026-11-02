@@ -38,13 +38,53 @@ const DefaultApplyTimeout = 4 * time.Second
 var ErrGrantNotFound = store.ErrGrantNotFound
 
 // ErrRevertFailed says which clients End could not re-block; the grant
-// stays active with its timer so the reconciler retries.
+// stays active with its timer so the reconciler retries. Err, when set, is
+// the cause shared by every client (a failed managed-region write).
 type ErrRevertFailed struct {
 	Clients []string
+	Err     error
 }
 
 func (e *ErrRevertFailed) Error() string {
-	return "grants: revert failed for " + strings.Join(e.Clients, ", ")
+	msg := "grants: revert failed for " + strings.Join(e.Clients, ", ")
+	if e.Err != nil {
+		msg += ": " + e.Err.Error()
+	}
+	return msg
+}
+
+func (e *ErrRevertFailed) Unwrap() error { return e.Err }
+
+// ErrUnknownService refuses a grant naming a custom service id that has no
+// stored service; nothing is stored.
+type ErrUnknownService struct {
+	ID string
+}
+
+func (e *ErrUnknownService) Error() string {
+	return fmt.Sprintf("grants: unknown custom service %s", e.ID)
+}
+
+// customPrefix is the namespace of custom service ids. Anything in it —
+// canonical or not — is never an AdGuard built-in.
+const customPrefix = "custom:"
+
+// builtin returns ids without anything in the custom namespace: only
+// AdGuard's own service ids may reach a client's blocked_services. Custom
+// services are enforced through the managed user_rules region instead.
+func builtin(ids []string) []string {
+	out := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if !strings.HasPrefix(id, customPrefix) {
+			out = append(out, id)
+		}
+	}
+	return out
+}
+
+// hasCustom reports whether ids names any custom service.
+func hasCustom(ids []string) bool {
+	return slices.ContainsFunc(ids, store.IsCustomServiceID)
 }
 
 // Store is the persistence the engine needs; *store.Store satisfies it.
@@ -145,15 +185,35 @@ func (e *Engine) List(ctx context.Context) ([]store.Grant, error) {
 	return e.store.ListActiveGrants(ctx)
 }
 
-// Create stores an active grant for d from now and removes services from
-// each client's blocked_services. An overlapping active grant is
-// *store.ErrGrantOverlap from the store, untouched. A client that cannot be
-// written — unknown, inheriting the global list, or an AdGuard error — goes
-// into Result.Failed; the row stays active for the reconciler to converge
-// (locked partial_apply). The expiry timer is armed either way.
+// Create stores an active grant for d from now and unblocks its services:
+// built-in ids are removed from each client's blocked_services, custom ids
+// get @@ exceptions through the managed region. A custom id with no stored
+// service is *ErrUnknownService and nothing is stored; the check runs under
+// the mutex so a concurrent DeleteService cannot slip between it and the
+// insert. An overlapping active grant is *store.ErrGrantOverlap from the
+// store, untouched. A client that cannot be written — unknown, inheriting the
+// global list, or an AdGuard error; every client when the region write fails
+// — goes into Result.Failed; the row stays active for the reconciler to
+// converge (locked partial_apply). The expiry timer is armed either way.
 func (e *Engine) Create(ctx context.Context, childID int64, services, clients []string, d time.Duration) (Result, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
+
+	for _, id := range services {
+		if !strings.HasPrefix(id, customPrefix) {
+			continue
+		}
+		n, ok := store.ParseCustomID(id)
+		if !ok {
+			return Result{}, &ErrUnknownService{ID: id}
+		}
+		if _, err := e.store.GetCustomService(ctx, n); err != nil {
+			if errors.Is(err, store.ErrCustomServiceNotFound) {
+				return Result{}, &ErrUnknownService{ID: id}
+			}
+			return Result{}, err
+		}
+	}
 
 	now := e.now()
 	g, err := e.store.CreateGrant(ctx, childID, services, clients, now, now.Add(d))
@@ -163,13 +223,24 @@ func (e *Engine) Create(ctx context.Context, childID int64, services, clients []
 	actx, cancel := e.applyContext(ctx)
 	defer cancel()
 	failed := e.unblock(actx, g)
+	if hasCustom(g.Services) {
+		if _, err := e.syncRules(ctx, actx, 0); err != nil {
+			e.log.Warn("grant apply: managed rules not updated", "grant", g.ID, "err", err)
+			failed = slices.Clone(g.Clients)
+		}
+	}
 	e.arm(g)
 	return Result{Grant: g, Applied: len(failed) == 0, Failed: failed}, nil
 }
 
-// unblock removes g's services from each stored client, reading AdGuard once
-// for the global flag. A failed read fails every client without a write.
+// unblock removes g's built-in services from each stored client, reading
+// AdGuard once for the global flag. A failed read fails every client without
+// a write. A grant with only custom services touches no client.
 func (e *Engine) unblock(ctx context.Context, g store.Grant) []string {
+	services := builtin(g.Services)
+	if len(services) == 0 {
+		return []string{}
+	}
 	res, err := e.ag.Clients(ctx)
 	if err != nil {
 		e.log.Warn("grant apply: read clients failed", "grant", g.ID, "err", err)
@@ -191,7 +262,7 @@ func (e *Engine) unblock(ctx context.Context, g store.Grant) []string {
 				"grant", g.ID, "client", name)
 			failed = append(failed, name)
 		default:
-			if err := e.ag.RemoveBlockedServices(ctx, name, g.Services); err != nil {
+			if err := e.ag.RemoveBlockedServices(ctx, name, services); err != nil {
 				e.log.Warn("grant apply: unblock failed", "grant", g.ID, "client", name, "err", err)
 				failed = append(failed, name)
 			}
@@ -209,8 +280,13 @@ func (e *Engine) unblock(ctx context.Context, g store.Grant) []string {
 // statuses the previous one committed. A failed read fails every client
 // without a write — never re-block blind. AdGuard calls go through actx. A
 // client AdGuard no longer has counts as reverted; any other failure is
-// returned by name. writes counts the Add calls issued. Caller holds mu.
+// returned by name. writes counts the Add calls issued. Only built-in ids are
+// re-blocked here; a grant with none issues nothing. Caller holds mu.
 func (e *Engine) revert(ctx, actx context.Context, g store.Grant) (failed []string, writes int) {
+	g.Services = builtin(g.Services)
+	if len(g.Services) == 0 {
+		return []string{}, 0
+	}
 	active, err := e.store.ListActiveGrants(ctx)
 	if err != nil {
 		e.log.Warn("grant revert: read active grants failed", "grant", g.ID, "err", err)
@@ -268,10 +344,18 @@ func (e *Engine) expire(id int64) {
 }
 
 // expireLocked reverts an overdue active grant through actx — the
-// operation's shared AdGuard context — and marks it expired through ctx.
-// It reports whether the status changed and how many AdGuard writes the
-// revert issued. Caller holds mu.
+// operation's shared AdGuard context — and marks it expired through ctx, in
+// End's order: region without the grant, built-in revert, status CAS. Any
+// failure leaves it active for the reconciler. It reports whether the status
+// changed and how many blocked_services writes the revert issued. Caller
+// holds mu.
 func (e *Engine) expireLocked(ctx, actx context.Context, g store.Grant) (bool, int) {
+	if hasCustom(g.Services) {
+		if _, err := e.syncRules(ctx, actx, g.ID); err != nil {
+			e.log.Warn("grant expiry: managed rules not updated, grant stays active", "grant", g.ID, "err", err)
+			return false, 0
+		}
+	}
 	failed, writes := e.revert(ctx, actx, g)
 	if len(failed) > 0 {
 		e.log.Warn("grant expiry: revert incomplete, grant stays active", "grant", g.ID, "clients", failed)
@@ -312,10 +396,13 @@ func (e *Engine) Extend(ctx context.Context, id int64, d time.Duration) (store.G
 
 // End reverts an active grant now and marks it ended. Like expiry it
 // re-blocks a service on a client only when no other active grant still
-// covers it there. An unknown or non-active grant is ErrGrantNotFound; a
-// client that could not be re-blocked — every client, when the active grants
-// could not be read — is *ErrRevertFailed and the grant stays active with
-// its timer.
+// covers it there. The order is: managed region rewritten without the grant's
+// exceptions, then the built-in revert, then the status CAS. An unknown or
+// non-active grant is ErrGrantNotFound; a client that could not be
+// re-blocked — every client, when the active grants could not be read or the
+// region write failed (Err carries why, e.g. a malformed region) — is
+// *ErrRevertFailed and the grant stays active with its timer; the reconciler
+// re-converges both halves from intent.
 func (e *Engine) End(ctx context.Context, id int64) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -329,6 +416,11 @@ func (e *Engine) End(ctx context.Context, id int64) error {
 	}
 	actx, cancel := e.applyContext(ctx)
 	defer cancel()
+	if hasCustom(g.Services) {
+		if _, err := e.syncRules(ctx, actx, g.ID); err != nil {
+			return &ErrRevertFailed{Clients: slices.Clone(g.Clients), Err: err}
+		}
+	}
 	if failed, _ := e.revert(ctx, actx, g); len(failed) > 0 {
 		return &ErrRevertFailed{Clients: failed}
 	}
