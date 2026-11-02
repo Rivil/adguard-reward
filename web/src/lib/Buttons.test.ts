@@ -38,7 +38,7 @@ const b1: Button = { id: 3, label: 'YouTube 90m', child_id: 1, services: ['youtu
 const b2: Button = { id: 4, label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 }
 const b3: Button = { id: 5, label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800 }
 
-type Stored = { label: string; child_id: number; services: string[]; duration: number }
+type Stored = { label: string; child_id: number; services: string[]; duration: number; icon: string }
 
 /** A mutable server: PUT replaces the list and hands back fresh ids; `state.servicesDown` flips the catalogue mid-test. */
 function server(buttons: Button[], opts: { services?: Service[] | 'down'; put?: Answer; children?: Child[] } = {}) {
@@ -131,8 +131,8 @@ describe('Buttons', () => {
     expect(sent).toHaveLength(1)
     expect(sent[0]).toEqual({
       buttons: [
-        { label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400 },
-        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800 },
+        { label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400, icon: '' },
+        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800, icon: '' },
       ],
     })
     expect(s.calls.find((c) => c.method === 'PUT')?.body).not.toContain('"id"')
@@ -198,7 +198,7 @@ describe('Buttons', () => {
     await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
     const sent = puts(s.calls)[0].buttons
     expect(sent.map((b) => b.label)).toEqual(['YouTube 90m', 'Renamed', 'TikTok 30m'])
-    expect(sent[1]).toEqual({ label: 'Renamed', child_id: 2, services: ['roblox', 'tiktok'], duration: 2700 })
+    expect(sent[1]).toEqual({ label: 'Renamed', child_id: 2, services: ['roblox', 'tiktok'], duration: 2700, icon: '' })
     // Grouped by child, Ben's renamed button renders after both of Ada's.
     await waitFor(() => expect(rows()[2].textContent).toContain('Renamed'))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull())
@@ -244,7 +244,7 @@ describe('Buttons', () => {
       await fireEvent.click(rowButton(3, 'Delete'))
       await fireEvent.click(rowButton(3, 'Confirm'))
       await waitFor(() => expect(rows().length).toBe(1))
-      expect(puts(s.calls)).toEqual([{ buttons: [{ label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 }] }])
+      expect(puts(s.calls)).toEqual([{ buttons: [{ label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600, icon: '' }] }])
       expect(rows()[0].textContent).toContain('Roblox 1h')
       expect(confirming()).toEqual([])
     })
@@ -317,8 +317,8 @@ describe('Buttons', () => {
       await fireEvent.click(saveButton())
       await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
       expect(puts(s.calls)[1].buttons).toEqual([
-        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 },
-        { label: 'Renamed', child_id: 1, services: ['tiktok'], duration: 1800 },
+        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600, icon: '' },
+        { label: 'Renamed', child_id: 1, services: ['tiktok'], duration: 1800, icon: '' },
       ])
     })
 
@@ -382,6 +382,7 @@ describe('Buttons', () => {
     expect(saveButton().disabled).toBe(true)
     expect(labelInput().disabled).toBe(true)
     expect(grantForm().disabled).toBe(true)
+    expect((screen.getByLabelText('Icon') as HTMLSelectElement).disabled).toBe(true)
     expect(rowButton(3, 'Edit').disabled).toBe(true)
     expect(rowButton(4, 'Delete').disabled).toBe(true)
 
@@ -415,9 +416,9 @@ describe('Buttons', () => {
       await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
       // Everything else about each button rides along unchanged.
       expect(puts(s.calls)[0].buttons).toEqual([
-        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800 },
-        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 },
-        { label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400 },
+        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800, icon: '' },
+        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600, icon: '' },
+        { label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400, icon: '' },
       ])
       // The list renders the server's answer: Ada's group is now TikTok then YouTube.
       await waitFor(() => expect(rows().map((r) => r.querySelector('strong')?.textContent)).toEqual(['TikTok 30m', 'YouTube 90m', 'Roblox 1h']))
@@ -492,9 +493,9 @@ describe('Buttons', () => {
       await fireEvent.click(saveButton())
       await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
       expect(puts(s.calls)[1].buttons).toEqual([
-        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800 },
-        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 },
-        { label: 'Renamed', child_id: 1, services: ['youtube'], duration: 5400 },
+        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800, icon: '' },
+        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600, icon: '' },
+        { label: 'Renamed', child_id: 1, services: ['youtube'], duration: 5400, icon: '' },
       ])
     })
 
@@ -551,7 +552,7 @@ describe('Buttons', () => {
     expect(saveButton().disabled).toBe(false)
     await fireEvent.click(saveButton())
     await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
-    expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400 })
+    expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400, icon: '' })
   })
 
   it('sharedHint', async () => {
@@ -562,8 +563,153 @@ describe('Buttons', () => {
 
     await fireEvent.click(saveButton())
     await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
-    expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400 })
+    expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400, icon: '' })
     expect(s.calls.filter((c) => c.method === 'PUT' && c.url === '/api/v1/buttons')).toHaveLength(1)
+  })
+
+  describe('icon', () => {
+    const iconSelect = () => screen.getByLabelText('Icon') as HTMLSelectElement
+    const preview = () => document.querySelector('form [data-icon-preview]')?.getAttribute('data-icon-preview') ?? null
+    const rowLost = (id: number) => document.querySelector(`li[data-button="${id}"] [data-lost-icon]`)
+    const formLost = () => document.querySelector('form [data-lost-icon]')
+    const icons = (sent: { buttons: Stored[] }) => sent.buttons.map((b) => [b.label, b.icon])
+
+    it('icon picker sets and clears', async () => {
+      const s = await mount([b1, b2])
+      expect([...iconSelect().options].map((o) => [o.value, o.textContent])).toEqual([
+        ['', 'Default (first service)'],
+        ['youtube', 'YouTube'],
+        ['tiktok', 'TikTok'],
+        ['roblox', 'Roblox'],
+      ])
+      expect(iconSelect().disabled).toBe(false)
+
+      await fireEvent.click(rowButton(3, 'Edit'))
+      expect(iconSelect().value).toBe('')
+      // Default previews what Home would show: the first service's icon.
+      expect(preview()).toBe('youtube')
+      await fireEvent.change(iconSelect(), { target: { value: 'tiktok' } })
+      expect(preview()).toBe('tiktok')
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400, icon: 'tiktok' })
+      expect(puts(s.calls)[0].buttons[1].icon).toBe('')
+      // A saved form starts the next button back on Default.
+      await waitFor(() => expect(formHeading()).toBe('New button'))
+      expect(iconSelect().value).toBe('')
+
+      await fireEvent.click(rowButton(100, 'Edit'))
+      expect(iconSelect().value).toBe('tiktok')
+      await fireEvent.change(iconSelect(), { target: { value: '' } })
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(icons(puts(s.calls)[1])).toEqual([
+        ['YouTube 90m', ''],
+        ['Roblox 1h', ''],
+      ])
+    })
+
+    it('edit preloads icon', async () => {
+      await mount([{ ...b1, icon: 'tiktok' }, { ...b2, icon: '' }])
+      await fireEvent.click(rowButton(3, 'Edit'))
+      expect(iconSelect().value).toBe('tiktok')
+      expect(iconSelect().selectedOptions[0]?.textContent).toBe('TikTok')
+      expect(preview()).toBe('tiktok')
+      await fireEvent.click(rowButton(4, 'Edit'))
+      expect(iconSelect().value).toBe('')
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.click(screen.getByRole('button', { name: 'Cancel' }))
+      expect(iconSelect().value).toBe('')
+    })
+
+    it('reorder and delete keep icons', async () => {
+      const s = await mount([
+        { ...b1, icon: 'tiktok' },
+        { ...b2, icon: 'youtube' },
+        { ...b3, icon: '' },
+      ])
+      await fireEvent.click(rowButton(3, 'Down'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(icons(puts(s.calls)[0])).toEqual([
+        ['TikTok 30m', ''],
+        ['Roblox 1h', 'youtube'],
+        ['YouTube 90m', 'tiktok'],
+      ])
+      // [TikTok, Roblox, YouTube] with fresh ids 100, 101, 102.
+      await waitFor(() => expect(rowButton(101, 'Delete').disabled).toBe(false))
+      await fireEvent.click(rowButton(101, 'Delete'))
+      await fireEvent.click(rowButton(101, 'Confirm'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(icons(puts(s.calls)[1])).toEqual([
+        ['TikTok 30m', ''],
+        ['YouTube 90m', 'tiktok'],
+      ])
+    })
+
+    it('services 502 keeps stored icon', async () => {
+      const s = await mount([{ ...b1, icon: 'tiktok' }, b2], { services: 'down' })
+      expect(iconSelect().disabled).toBe(true)
+      // An outage is not a stale icon: nothing is flagged or reset.
+      expect(document.querySelector('[data-lost-icon]')).toBeNull()
+
+      await fireEvent.click(rowButton(3, 'Edit'))
+      expect(iconSelect().disabled).toBe(true)
+      expect(iconSelect().value).toBe('tiktok')
+      expect(formLost()).toBeNull()
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(icons(puts(s.calls)[0])).toEqual([
+        ['YouTube 90m', 'tiktok'],
+        ['Roblox 1h', ''],
+      ])
+    })
+
+    it('stale icon resets visibly', async () => {
+      const stale: Button = { id: 8, label: 'Old', child_id: 2, services: ['roblox'], duration: 600, icon: 'gone' }
+      const list = [b1, b3, stale, b2]
+      // The server hands the same list back, so the stale icon stays stored
+      // and every PUT has to deal with it.
+      const s = await mount(list, { put: () => json(200, { buttons: list }) })
+      expect(rowLost(8)?.textContent).toContain('“gone” is no longer available')
+      expect(rowLost(3)).toBeNull()
+      expect(formLost()).toBeNull()
+
+      await fireEvent.click(rowButton(8, 'Edit'))
+      expect(iconSelect().value).toBe('')
+      expect(formLost()?.textContent).toContain('“gone” is no longer available')
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(puts(s.calls)[0].buttons[2]).toEqual({ label: 'Old', child_id: 2, services: ['roblox'], duration: 600, icon: '' })
+      await waitFor(() => expect(formHeading()).toBe('New button'))
+      expect(formLost()).toBeNull()
+
+      // A tap that never touches the stale button still has to PUT it saveable.
+      await fireEvent.click(rowButton(3, 'Down'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(icons(puts(s.calls)[1])).toEqual([
+        ['TikTok 30m', ''],
+        ['YouTube 90m', ''],
+        ['Old', ''],
+        ['Roblox 1h', ''],
+      ])
+    })
+
+    it('a reloaded catalogue without the chosen icon resets it visibly', async () => {
+      const catalogue = [youtube, tiktok, roblox]
+      const s = await mount([b1], { services: catalogue, put: () => json(422, { error: 'unprocessable', message: 'nope' }) })
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.change(iconSelect(), { target: { value: 'tiktok' } })
+      catalogue.splice(1, 1)
+      await fireEvent.click(saveButton())
+      await screen.findByRole('alert')
+      expect(puts(s.calls)[0].buttons[0].icon).toBe('tiktok')
+      await waitFor(() => expect(getsOf(s.calls, '/api/v1/services')).toBe(2))
+      await waitFor(() => expect(iconSelect().value).toBe(''))
+      expect(formLost()?.textContent).toContain('“tiktok” is no longer available')
+      // Picking a real icon again clears the note.
+      await fireEvent.change(iconSelect(), { target: { value: 'roblox' } })
+      expect(formLost()).toBeNull()
+    })
   })
 
   it('Back calls onBack', async () => {

@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import {
     ApiError,
+    iconUrl,
     listButtons,
     listChildren,
     listServices,
@@ -30,6 +31,11 @@
   let value = $state<GrantFormValue>({ child_id: null, services: [], minutes: 60 })
   let valid = $state(false)
   let editing = $state<number | null>(null)
+  // The form's icon: "" is Default (the first service's), else a catalogue id.
+  let icon = $state('')
+  // A stored icon the catalogue no longer has, which the form shows as
+  // Default; null when there is nothing to explain.
+  let formLost = $state<string | null>(null)
   // The one row asking "Delete <label>?", by full-list index like `editing`.
   let confirming = $state<number | null>(null)
 
@@ -62,6 +68,13 @@
     } catch {
       services = null
     }
+    // A catalogue that arrives without the form's icon would make Save a 422:
+    // fall back to Default, and say so.
+    const lost = lostIcon(icon)
+    if (lost !== null) {
+      formLost = lost
+      icon = ''
+    }
   }
 
   onMount(() => {
@@ -93,8 +106,20 @@
     }
   }
 
+  /**
+   * `id` when the loaded catalogue lacks it, else null. With the catalogue
+   * unreachable nothing counts as lost: a stored icon is kept as-is
+   * (locked icon_fallback).
+   */
+  function lostIcon(id: string | undefined): string | null {
+    if (services === null || !id) return null
+    return services.some((s) => s.id === id) ? null : id
+  }
+
+  /** A stored button as a PUT sends it; a lost icon goes as "" so the list stays saveable. */
   function toInput(b: Button): ButtonInput {
-    return { label: b.label, child_id: b.child_id, services: b.services, duration: b.duration }
+    const kept = lostIcon(b.icon) === null ? (b.icon ?? '') : ''
+    return { label: b.label, child_id: b.child_id, services: b.services, duration: b.duration, icon: kept }
   }
 
   function draft(): ButtonInput {
@@ -103,6 +128,7 @@
       child_id: value.child_id ?? 0,
       services: value.services,
       duration: minutesToSeconds(value.minutes),
+      icon,
     }
   }
 
@@ -130,6 +156,8 @@
     editing = null
     label = ''
     value = { child_id: null, services: [], minutes: 60 }
+    icon = ''
+    formLost = null
   }
 
   async function save(e: SubmitEvent) {
@@ -145,7 +173,15 @@
     editing = i
     label = b.label
     value = { child_id: b.child_id, services: [...b.services], minutes: secondsToMinutes(b.duration) }
+    formLost = lostIcon(b.icon)
+    icon = formLost === null ? (b.icon ?? '') : ''
   }
+
+  /** What the preview shows: the chosen icon, or for Default the first service's. */
+  const preview = $derived.by(() => {
+    const id = icon !== '' ? icon : value.services[0]
+    return services?.find((s) => s.id === id) ?? null
+  })
 
   /**
    * Swap the row at full-list index `i` with the row at `j` (its same-child
@@ -199,6 +235,9 @@
               <div class="row">
                 <strong>{b.label}</strong>
                 <span class="meta">{childName(b.child_id)} · {b.services.map(serviceName).join(', ')} · {formatDuration(b.duration)}</span>
+                {#if lostIcon(b.icon) !== null}
+                  <span class="hint" data-lost-icon>Icon “{b.icon}” is no longer available — using the default</span>
+                {/if}
               </div>
               {#if confirming === i}
                 <div class="actions confirm" role="group" aria-label={`Delete ${b.label}?`}>
@@ -232,6 +271,30 @@
       <input name="label" type="text" aria-label="Label" maxlength="64" bind:value={label} disabled={pending} />
     </label>
     <GrantForm {children} {services} bind:value bind:valid disabled={pending} />
+    <div class="field">
+      <label for="button-icon">Icon</label>
+      <div class="icon">
+        <select id="button-icon" name="icon" bind:value={icon} disabled={pending || services === null}>
+          <option value="">Default (first service)</option>
+          {#if services === null}
+            <!-- Catalogue unreachable: the stored choice is kept, shown by id. -->
+            {#if icon !== ''}
+              <option value={icon}>{icon}</option>
+            {/if}
+          {:else}
+            {#each services as s (s.id)}
+              <option value={s.id}>{s.name}</option>
+            {/each}
+          {/if}
+        </select>
+        {#if preview}
+          <img alt="" src={iconUrl(preview.icon)} width="24" height="24" data-icon-preview={preview.id} />
+        {/if}
+      </div>
+      {#if formLost !== null && icon === ''}
+        <p class="hint" data-lost-icon>Icon “{formLost}” is no longer available — using the default</p>
+      {/if}
+    </div>
     <div class="actions">
       <button type="submit" disabled={!canSave}>Save</button>
       {#if editing !== null}
@@ -291,9 +354,27 @@
     display: grid;
     gap: 0.25rem;
   }
-  .field > span {
+  .field > span,
+  .field > label {
     font-size: 0.9rem;
     color: var(--text-h);
+  }
+  .icon {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .icon select {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    padding: 0.5rem;
+    min-height: 2.75rem;
+  }
+  .hint {
+    margin: 0;
+    opacity: 0.75;
+    font-size: 0.9rem;
   }
   input[type='text'] {
     font: inherit;
