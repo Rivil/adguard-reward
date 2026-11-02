@@ -10,8 +10,12 @@ import {
   childBlocked,
   createChild,
   createClient,
+  createCustomService,
   createGrant,
   deleteChild,
+  deleteCustomService,
+  listCustomServices,
+  updateCustomService,
   endGrant,
   extendGrant,
   iconUrl,
@@ -580,5 +584,87 @@ describe('shared-device fields default to []', () => {
     expect((await listClients())[0].children).toEqual([])
     expect((await createClient('TV', [], null)).children).toEqual([])
     expect((await renameClient('A', 'TV')).children).toEqual([])
+  })
+})
+
+describe('custom services', () => {
+  const portal = { id: 3, service_id: 'custom:3', name: 'Portal', domains: ['a.com'], applied: true }
+
+  it('hit the exact URL, method and body with the CSRF header', async () => {
+    const calls = mockFetch(
+      json(200, { custom_services: [portal] }),
+      json(201, portal),
+      json(200, { ...portal, name: 'Portal 2', domains: ['b.com'] }),
+      new Response(null, { status: 204 }),
+    )
+    expect(await listCustomServices()).toEqual([portal])
+    expect(await createCustomService('Portal', ['a.com'])).toEqual(portal)
+    expect((await updateCustomService(3, 'Portal 2', ['b.com'])).domains).toEqual(['b.com'])
+    expect(await deleteCustomService(3)).toBeUndefined()
+
+    expect(calls.map((c) => [c.init.method, c.url, c.init.body ?? null])).toEqual([
+      ['GET', '/api/v1/custom-services', null],
+      ['POST', '/api/v1/custom-services', JSON.stringify({ name: 'Portal', domains: ['a.com'] })],
+      ['PUT', '/api/v1/custom-services/3', JSON.stringify({ name: 'Portal 2', domains: ['b.com'] })],
+      ['DELETE', '/api/v1/custom-services/3', null],
+    ])
+    for (const c of calls) {
+      expect(header(c.init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    }
+  })
+
+  it('custom service errors', async () => {
+    mockFetch(json(400, { error: 'invalid_request', message: 'domains[1]: domain "a.com/x": not a plain hostname' }))
+    const bad = await fails(createCustomService('Portal', ['ok.com', 'a.com/x']))
+    expect(bad.status).toBe(400)
+    expect(messageFor(bad)).toContain('a.com/x')
+
+    mockFetch(json(409, { error: 'conflict', message: 'Portal is in use by active grant 7', grant_id: 7 }))
+    const inUse = await fails(deleteCustomService(3))
+    expect(inUse.status).toBe(409)
+    expect(inUse.grantId).toBe(7)
+    expect(messageFor(inUse)).toBe('Portal is in use by active grant 7')
+  })
+
+  it('listServices and childBlocked fill a missing custom and keep a present one', async () => {
+    mockFetch(
+      json(200, {
+        services: [
+          { id: 'youtube', name: 'YouTube', icon: 'x' },
+          { id: 'custom:1', name: 'Portal', icon: '', custom: true },
+        ],
+      }),
+      json(200, {
+        child: { id: 2, name: 'Ada' },
+        clients: [],
+        services: [
+          { id: 'youtube', name: 'YouTube', icon: 'x', state: 'blocked', differs: [] },
+          { id: 'custom:1', name: 'Portal', icon: '', custom: true, state: 'partial', differs: ['tv'] },
+        ],
+      }),
+    )
+    expect((await listServices()).map((s) => s.custom)).toEqual([false, true])
+    expect((await childBlocked(2)).services.map((s) => s.custom)).toEqual([false, true])
+  })
+})
+
+describe('services route', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/')
+    route.set('home')
+  })
+
+  it('maps the services route both ways', () => {
+    navigate('services')
+    expect(location.pathname).toBe('/services')
+    expect(get(route)).toBe('services')
+
+    history.replaceState(null, '', '/')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('home')
+
+    history.replaceState(null, '', '/services')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('services')
   })
 })
