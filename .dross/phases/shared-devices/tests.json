@@ -1,0 +1,2457 @@
+{
+  "phase": "shared-devices",
+  "generated_at": "2026-11-02T09:52:14.040989Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go",
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/clients.go",
+        "internal/api/clients_test.go",
+        "internal/api/grants.go",
+        "internal/api/grants_test.go",
+        "internal/api/migration.go",
+        "internal/api/migration_test.go",
+        "internal/api/rename.go",
+        "internal/api/rename_test.go",
+        "internal/api/shared_test.go",
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go",
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go",
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go",
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go",
+        "internal/grants/rename.go",
+        "internal/grants/rename_test.go",
+        "internal/grants/shared.go",
+        "internal/grants/shared_test.go",
+        "internal/store/children.go",
+        "internal/store/children_test.go",
+        "internal/store/clients.go",
+        "internal/store/clients_test.go",
+        "internal/store/store_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 252,
+        "Survived": 9,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9655172413793104,
+        "Surviving": [
+          {
+            "File": "internal/api/grants.go",
+            "Line": 157,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "971ea8d8d9b5ff52",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+          },
+          {
+            "File": "internal/api/grants.go",
+            "Line": 158,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "3d175e3325616cdf",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 144,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "d80e2d09b950a6b5",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 144,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 144,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 147,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "55673a2b65311747",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 109,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "ec84ab086867857b",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 47,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "07257c7ebd994d79",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on the string concatenation in ErrRevertFailed.Error(): string - string does not compile (not viable). The type itself is exercised via errors.As in TestGrants_EndRevertFails / TestEngine_EndRevertFailure; only the Error() text is never read."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 224,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "149b5b8d30816792",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (case err == nil -\u003e err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
+          }
+        ],
+        "NotCovered": 9
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "internal/api/blocked.go": "adapter-lacks-range-runner",
+        "internal/api/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/api/children.go": "adapter-lacks-range-runner",
+        "internal/api/children_test.go": "adapter-lacks-range-runner",
+        "internal/api/clients.go": "adapter-lacks-range-runner",
+        "internal/api/clients_test.go": "adapter-lacks-range-runner",
+        "internal/api/grants.go": "adapter-lacks-range-runner",
+        "internal/api/grants_test.go": "adapter-lacks-range-runner",
+        "internal/api/migration.go": "adapter-lacks-range-runner",
+        "internal/api/migration_test.go": "adapter-lacks-range-runner",
+        "internal/api/rename.go": "adapter-lacks-range-runner",
+        "internal/api/rename_test.go": "adapter-lacks-range-runner",
+        "internal/api/shared_test.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/grants/clients.go": "adapter-lacks-range-runner",
+        "internal/grants/clients_test.go": "adapter-lacks-range-runner",
+        "internal/grants/grants.go": "adapter-lacks-range-runner",
+        "internal/grants/grants_test.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile_test.go": "adapter-lacks-range-runner",
+        "internal/grants/rename.go": "adapter-lacks-range-runner",
+        "internal/grants/rename_test.go": "adapter-lacks-range-runner",
+        "internal/grants/shared.go": "adapter-lacks-range-runner",
+        "internal/grants/shared_test.go": "adapter-lacks-range-runner",
+        "internal/store/children.go": "adapter-lacks-range-runner",
+        "internal/store/children_test.go": "adapter-lacks-range-runner",
+        "internal/store/clients.go": "adapter-lacks-range-runner",
+        "internal/store/clients_test.go": "adapter-lacks-range-runner",
+        "internal/store/store_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/lib/ActiveGrants.panel.test.ts",
+        "web/src/lib/ActiveGrants.svelte",
+        "web/src/lib/Buttons.test.ts",
+        "web/src/lib/Children.svelte",
+        "web/src/lib/Children.test.ts",
+        "web/src/lib/ClientNames.svelte",
+        "web/src/lib/ClientNames.test.ts",
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/activeGrants.test.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts",
+        "web/src/lib/grants.test.ts",
+        "web/src/lib/grants.ts",
+        "web/src/lib/tap.test.ts",
+        "web/src/lib/tap.ts",
+        "web/stryker.config.mjs"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 617,
+        "Survived": 51,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9236526946107785,
+        "Surviving": [
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 118,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a6d312f12b091b9b",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 119,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9382694512e2eb73",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 208,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "bc76e085b2a98272",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 217,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "7f673034875137a4",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 306,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 306,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 30,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "9e7b970f78a207cf",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 31,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "332725e64d242d98",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 55,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4a2c7171134bef4f",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 118,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "6451ace12288b160",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 118,
+            "Op": "EqualityOperator",
+            "Snippet": "(out.grant.shared ?? []).length \u003e= 0",
+            "Origin": "in-hunk",
+            "Key": "abeb67deb0f8d203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: length \u003e= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 131,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "inherited",
+            "Key": "6232b0be4db10034",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 165,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "85c805b4f0c4fa20",
+            "Lifecycle": "accepted",
+            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 219,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "84cebad2af320e60",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 292,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].code",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 292,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].text",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 82,
+            "Op": "OptionalChaining",
+            "Snippet": "stopPolling()",
+            "Origin": "inherited",
+            "Key": "6c8255537ab76c28",
+            "Lifecycle": "accepted",
+            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 131,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a5b51c8fe20a4fcd",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 21,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "efe4eae9dcf17bf2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 22,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "86752b45cbacdad7",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 30,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "fd2e2d4d8db99396",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 59,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "6485f7e42f3edd6a",
+            "Lifecycle": "accepted",
+            "Note": "reloadOnError is true at every call site (the parameter is never passed false), so the guard is constant and the mutant equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 77,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "23b258f0df7fd7fe",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/src/lib/Children.svelte",
+            "Line": 77,
+            "Op": "LogicalOperator",
+            "Snippet": "checked || !d.clients.includes(name)",
+            "Origin": "inherited",
+            "Key": "5ad3db1cdd919929",
+            "Lifecycle": "accepted",
+            "Note": "A checkbox change event delivers checked=true only when the box was unchecked, i.e. the name is not yet in the draft; the includes() guard is redundant under DOM semantics, so both mutants on line 68 are equivalent."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 4,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "6c0229c7a791edfa",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 5,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "462f570872709404",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 6,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "2462f1b076b4e965",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 6,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "25b8291a7513cacc",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 7,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "b0a1b69fe8d0769a",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 7,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9dada2f0e50f7800",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 8,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "b5d644fad38137bd",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 8,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "5ce873c89415142e",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 8,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "5ce873c89415142e",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 8,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "5ce873c89415142e",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 9,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "fd2e398a8266c702",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 9,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4bb4543da79a4d17",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 9,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4bb4543da79a4d17",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 10,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "16a8190aa46b7ac9",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 10,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "831fcd513b94f817",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 11,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "fa6e2382c0a398ac",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/stryker.config.mjs",
+            "Line": 12,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "158d7de022076122",
+            "Lifecycle": "accepted",
+            "Note": "Mutants in web/stryker.config.mjs are Stryker rewriting its own runner configuration: the mutated copy lives only in the sandbox and never configures the run that measures it, and no test in the suite reads the file, so nothing can observe the change. Untestable by construction; excluded from the product surface."
+          },
+          {
+            "File": "web/src/lib/ActiveGrants.svelte",
+            "Line": 33,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "796e4f25f8b64e3c",
+            "Lifecycle": "accepted",
+            "Note": "Grant ids are AUTOINCREMENT and never reused, so an id that leaves the list never returns; pruning 'asked' is memory hygiene with no observable effect."
+          },
+          {
+            "File": "web/src/lib/ClientNames.svelte",
+            "Line": 46,
+            "Op": "OptionalChaining",
+            "Snippet": "c.children.length",
+            "Origin": "in-hunk",
+            "Key": "cd169da8a77c2191",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: clientView (api.ts:262) always sets children to an array, so c.children?.length and c.children.length behave the same."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 56,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9d3b09a97aead0f5",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 64,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8b4f0513f10ed864",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: the [] arm is only reachable with a null catalogue, where nothing reads shown (lazy $derived, template null branch never renders the list)"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 21,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "286edbfec9fcea7e",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 52,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "5c1a2fb452a2128c",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: with the null guard forced false, sharedDevices(null, children) finds no child with id null and returns [], the same as the guarded branch."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 56,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "9f8c19698c217d12",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 63,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "511b6f39daef4909",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: shown is a lazy $derived read only inside the template's services!==null branch; the null guard exists for the type checker and is never evaluated with a null catalogue"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 65,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "46f8922b47508734",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: with an empty needle the filter path returns every service because x.includes('') is always true; the early return is an optimisation"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 65,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "inherited",
+            "Key": "969ac8ba8b79e0da",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
+          }
+        ],
+        "NotCovered": 26
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/lib/ActiveGrants.panel.test.ts": [
+          {
+            "start": 99,
+            "end": 322,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Buttons.test.ts": [
+          {
+            "start": 44,
+            "end": 64,
+            "construct": "FunctionDeclaration server"
+          },
+          {
+            "start": 110,
+            "end": 331,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Children.test.ts": [
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "hunk"
+          },
+          {
+            "start": 35,
+            "end": 37,
+            "construct": "FunctionDeclaration client"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "hunk"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "construct": "FunctionDeclaration labelOf"
+          },
+          {
+            "start": 84,
+            "end": 388,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 390,
+            "end": 481,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/ClientNames.test.ts": [
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "construct": "FunctionDeclaration client"
+          },
+          {
+            "start": 48,
+            "end": 180,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/GrantForm.test.ts": [
+          {
+            "start": 58,
+            "end": 94,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 95,
+            "end": 95,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/lib/Home.test.ts": [
+          {
+            "start": 170,
+            "end": 961,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/activeGrants.test.ts": [
+          {
+            "start": 8,
+            "end": 18,
+            "construct": "FunctionDeclaration grant"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 262,
+            "end": 328,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 464,
+            "end": 516,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 517,
+            "end": 517,
+            "construct": "hunk"
+          },
+          {
+            "start": 518,
+            "end": 584,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 169,
+            "end": 175,
+            "construct": "hunk"
+          },
+          {
+            "start": 176,
+            "end": 179,
+            "construct": "TSInterfaceDeclaration SharedRef"
+          },
+          {
+            "start": 180,
+            "end": 180,
+            "construct": "hunk"
+          },
+          {
+            "start": 181,
+            "end": 187,
+            "construct": "TSInterfaceDeclaration ClientView"
+          },
+          {
+            "start": 198,
+            "end": 204,
+            "construct": "TSInterfaceDeclaration ServiceState"
+          },
+          {
+            "start": 205,
+            "end": 205,
+            "construct": "hunk"
+          },
+          {
+            "start": 206,
+            "end": 211,
+            "construct": "TSInterfaceDeclaration Unblock"
+          },
+          {
+            "start": 213,
+            "end": 219,
+            "construct": "TSInterfaceDeclaration BlockedClient"
+          },
+          {
+            "start": 260,
+            "end": 260,
+            "construct": "hunk"
+          },
+          {
+            "start": 261,
+            "end": 263,
+            "construct": "FunctionDeclaration clientView"
+          },
+          {
+            "start": 264,
+            "end": 264,
+            "construct": "hunk"
+          },
+          {
+            "start": 265,
+            "end": 268,
+            "construct": "FunctionDeclaration listClients"
+          },
+          {
+            "start": 287,
+            "end": 290,
+            "construct": "FunctionDeclaration listDevices"
+          },
+          {
+            "start": 296,
+            "end": 298,
+            "construct": "FunctionDeclaration createClient"
+          },
+          {
+            "start": 301,
+            "end": 303,
+            "construct": "FunctionDeclaration renameClient"
+          },
+          {
+            "start": 310,
+            "end": 317,
+            "construct": "FunctionDeclaration childBlocked"
+          },
+          {
+            "start": 330,
+            "end": 340,
+            "construct": "TSInterfaceDeclaration Grant"
+          },
+          {
+            "start": 342,
+            "end": 350,
+            "construct": "TSInterfaceDeclaration GrantCreated"
+          },
+          {
+            "start": 367,
+            "end": 370,
+            "construct": "FunctionDeclaration listGrants"
+          },
+          {
+            "start": 373,
+            "end": 376,
+            "construct": "FunctionDeclaration createGrant"
+          }
+        ],
+        "web/src/lib/grants.test.ts": [
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 16,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 124,
+            "end": 124,
+            "construct": "hunk"
+          },
+          {
+            "start": 125,
+            "end": 155,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 156,
+            "end": 156,
+            "construct": "hunk"
+          },
+          {
+            "start": 157,
+            "end": 181,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/grants.ts": [
+          {
+            "start": 2,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 71,
+            "end": 75,
+            "construct": "hunk"
+          },
+          {
+            "start": 76,
+            "end": 88,
+            "construct": "FunctionDeclaration sharedDevices"
+          },
+          {
+            "start": 89,
+            "end": 94,
+            "construct": "hunk"
+          },
+          {
+            "start": 95,
+            "end": 97,
+            "construct": "FunctionDeclaration sharedText"
+          }
+        ],
+        "web/src/lib/tap.test.ts": [
+          {
+            "start": 34,
+            "end": 146,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 148,
+            "end": 229,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/tap.ts": [
+          {
+            "start": 48,
+            "end": 48,
+            "construct": "hunk"
+          },
+          {
+            "start": 49,
+            "end": 60,
+            "construct": "FunctionDeclaration grantFrom"
+          }
+        ],
+        "web/stryker.config.mjs": [
+          {
+            "start": 4,
+            "end": 17,
+            "construct": "ExportDefaultDeclaration"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/lib/ActiveGrants.svelte": "ast-unavailable",
+        "web/src/lib/Children.svelte": "ast-unavailable",
+        "web/src/lib/ClientNames.svelte": "ast-unavailable",
+        "web/src/lib/GrantForm.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/store/migrations/0005_shared_clients.sql",
+      "reason": "no mutation adapter for .sql"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/shared-devices/REVIEW.md",
+      ".dross/phases/shared-devices/changes.json",
+      ".dross/phases/shared-devices/panel/mvp.md",
+      ".dross/phases/shared-devices/panel/risk.md",
+      ".dross/phases/shared-devices/panel/synthesis.md",
+      ".dross/phases/shared-devices/panel/verification.md",
+      ".dross/phases/shared-devices/plan.toml",
+      ".dross/phases/shared-devices/spec.toml",
+      ".dross/project.toml",
+      ".dross/survivors.toml",
+      "internal/api/blocked.go",
+      "internal/api/blocked_test.go",
+      "internal/api/children.go",
+      "internal/api/children_test.go",
+      "internal/api/clients.go",
+      "internal/api/clients_test.go",
+      "internal/api/grants.go",
+      "internal/api/grants_test.go",
+      "internal/api/migration.go",
+      "internal/api/migration_test.go",
+      "internal/api/rename.go",
+      "internal/api/rename_test.go",
+      "internal/api/shared_test.go",
+      "internal/blocked/blocked.go",
+      "internal/blocked/blocked_test.go",
+      "internal/grants/clients.go",
+      "internal/grants/clients_test.go",
+      "internal/grants/grants.go",
+      "internal/grants/grants_test.go",
+      "internal/grants/reconcile.go",
+      "internal/grants/reconcile_test.go",
+      "internal/grants/rename.go",
+      "internal/grants/rename_test.go",
+      "internal/grants/shared.go",
+      "internal/grants/shared_test.go",
+      "internal/store/children.go",
+      "internal/store/children_test.go",
+      "internal/store/clients.go",
+      "internal/store/clients_test.go",
+      "internal/store/migrations/0005_shared_clients.sql",
+      "internal/store/store_test.go",
+      "web/package.json",
+      "web/src/lib/ActiveGrants.panel.test.ts",
+      "web/src/lib/ActiveGrants.svelte",
+      "web/src/lib/Buttons.test.ts",
+      "web/src/lib/Children.svelte",
+      "web/src/lib/Children.test.ts",
+      "web/src/lib/ClientNames.svelte",
+      "web/src/lib/ClientNames.test.ts",
+      "web/src/lib/GrantForm.svelte",
+      "web/src/lib/GrantForm.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Home.test.ts",
+      "web/src/lib/activeGrants.test.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts",
+      "web/src/lib/grants.test.ts",
+      "web/src/lib/grants.ts",
+      "web/src/lib/tap.test.ts",
+      "web/src/lib/tap.ts",
+      "web/stryker.config.mjs"
+    ],
+    "hunks": {
+      ".dross/phases/shared-devices/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 47
+        }
+      ],
+      ".dross/phases/shared-devices/changes.json": [
+        {
+          "start": 1,
+          "end": 724
+        }
+      ],
+      ".dross/phases/shared-devices/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 199
+        }
+      ],
+      ".dross/phases/shared-devices/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 393
+        }
+      ],
+      ".dross/phases/shared-devices/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 598
+        }
+      ],
+      ".dross/phases/shared-devices/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 524
+        }
+      ],
+      ".dross/phases/shared-devices/plan.toml": [
+        {
+          "start": 1,
+          "end": 299
+        }
+      ],
+      ".dross/phases/shared-devices/spec.toml": [
+        {
+          "start": 1,
+          "end": 54
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 65,
+          "end": 68
+        },
+        {
+          "start": 1166,
+          "end": 1264
+        }
+      ],
+      "internal/api/blocked.go": [
+        {
+          "start": 9,
+          "end": 10
+        },
+        {
+          "start": 12,
+          "end": 15
+        },
+        {
+          "start": 18,
+          "end": 20
+        },
+        {
+          "start": 23,
+          "end": 25
+        },
+        {
+          "start": 30,
+          "end": 32
+        },
+        {
+          "start": 43,
+          "end": 43
+        },
+        {
+          "start": 59,
+          "end": 61
+        },
+        {
+          "start": 66,
+          "end": 68
+        },
+        {
+          "start": 76,
+          "end": 76
+        },
+        {
+          "start": 85,
+          "end": 131
+        }
+      ],
+      "internal/api/blocked_test.go": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 12,
+          "end": 15
+        },
+        {
+          "start": 47,
+          "end": 47
+        },
+        {
+          "start": 68,
+          "end": 68
+        },
+        {
+          "start": 70,
+          "end": 72
+        },
+        {
+          "start": 92,
+          "end": 92
+        },
+        {
+          "start": 198,
+          "end": 410
+        }
+      ],
+      "internal/api/children.go": [
+        {
+          "start": 137,
+          "end": 144
+        },
+        {
+          "start": 150,
+          "end": 164
+        },
+        {
+          "start": 191,
+          "end": 202
+        },
+        {
+          "start": 236,
+          "end": 236
+        },
+        {
+          "start": 248,
+          "end": 252
+        },
+        {
+          "start": 255,
+          "end": 255
+        },
+        {
+          "start": 273,
+          "end": 276
+        },
+        {
+          "start": 280,
+          "end": 280
+        },
+        {
+          "start": 284,
+          "end": 284
+        },
+        {
+          "start": 286,
+          "end": 287
+        },
+        {
+          "start": 291,
+          "end": 292
+        }
+      ],
+      "internal/api/children_test.go": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 7,
+          "end": 8
+        },
+        {
+          "start": 13,
+          "end": 13
+        },
+        {
+          "start": 16,
+          "end": 20
+        },
+        {
+          "start": 62,
+          "end": 73
+        },
+        {
+          "start": 198,
+          "end": 221
+        },
+        {
+          "start": 225,
+          "end": 226
+        },
+        {
+          "start": 228,
+          "end": 230
+        },
+        {
+          "start": 300,
+          "end": 300
+        },
+        {
+          "start": 361,
+          "end": 361
+        },
+        {
+          "start": 376,
+          "end": 376
+        },
+        {
+          "start": 388,
+          "end": 388
+        },
+        {
+          "start": 400,
+          "end": 400
+        },
+        {
+          "start": 414,
+          "end": 414
+        },
+        {
+          "start": 444,
+          "end": 445
+        },
+        {
+          "start": 448,
+          "end": 448
+        },
+        {
+          "start": 453,
+          "end": 453
+        },
+        {
+          "start": 463,
+          "end": 463
+        },
+        {
+          "start": 486,
+          "end": 486
+        },
+        {
+          "start": 510,
+          "end": 755
+        }
+      ],
+      "internal/api/clients.go": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 12,
+          "end": 12
+        },
+        {
+          "start": 31,
+          "end": 32
+        },
+        {
+          "start": 34,
+          "end": 37
+        },
+        {
+          "start": 64,
+          "end": 67
+        },
+        {
+          "start": 70,
+          "end": 70
+        },
+        {
+          "start": 73,
+          "end": 76
+        },
+        {
+          "start": 79,
+          "end": 88
+        },
+        {
+          "start": 108,
+          "end": 108
+        },
+        {
+          "start": 111,
+          "end": 112
+        },
+        {
+          "start": 189,
+          "end": 192
+        },
+        {
+          "start": 212,
+          "end": 217
+        },
+        {
+          "start": 223,
+          "end": 226
+        },
+        {
+          "start": 231,
+          "end": 231
+        }
+      ],
+      "internal/api/clients_test.go": [
+        {
+          "start": 86,
+          "end": 87
+        },
+        {
+          "start": 93,
+          "end": 94
+        },
+        {
+          "start": 96,
+          "end": 97
+        },
+        {
+          "start": 322,
+          "end": 322
+        },
+        {
+          "start": 332,
+          "end": 332
+        },
+        {
+          "start": 342,
+          "end": 342
+        },
+        {
+          "start": 375,
+          "end": 375
+        },
+        {
+          "start": 438,
+          "end": 531
+        }
+      ],
+      "internal/api/grants.go": [
+        {
+          "start": 9,
+          "end": 9
+        },
+        {
+          "start": 24,
+          "end": 24
+        },
+        {
+          "start": 27,
+          "end": 33
+        },
+        {
+          "start": 36,
+          "end": 37
+        },
+        {
+          "start": 44,
+          "end": 46
+        },
+        {
+          "start": 52,
+          "end": 52
+        },
+        {
+          "start": 58,
+          "end": 88
+        },
+        {
+          "start": 162,
+          "end": 165
+        },
+        {
+          "start": 172,
+          "end": 176
+        },
+        {
+          "start": 179,
+          "end": 179
+        },
+        {
+          "start": 187,
+          "end": 192
+        },
+        {
+          "start": 217,
+          "end": 217
+        },
+        {
+          "start": 219,
+          "end": 224
+        },
+        {
+          "start": 227,
+          "end": 227
+        },
+        {
+          "start": 269,
+          "end": 274
+        }
+      ],
+      "internal/api/grants_test.go": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 7,
+          "end": 9
+        },
+        {
+          "start": 19,
+          "end": 21
+        },
+        {
+          "start": 107,
+          "end": 107
+        },
+        {
+          "start": 403,
+          "end": 403
+        },
+        {
+          "start": 411,
+          "end": 626
+        }
+      ],
+      "internal/api/migration.go": [
+        {
+          "start": 24,
+          "end": 25
+        },
+        {
+          "start": 40,
+          "end": 40
+        },
+        {
+          "start": 42,
+          "end": 44
+        }
+      ],
+      "internal/api/migration_test.go": [
+        {
+          "start": 62,
+          "end": 62
+        },
+        {
+          "start": 107,
+          "end": 107
+        },
+        {
+          "start": 125,
+          "end": 125
+        },
+        {
+          "start": 177,
+          "end": 177
+        },
+        {
+          "start": 186,
+          "end": 186
+        },
+        {
+          "start": 200,
+          "end": 200
+        },
+        {
+          "start": 226,
+          "end": 226
+        },
+        {
+          "start": 249,
+          "end": 249
+        },
+        {
+          "start": 264,
+          "end": 285
+        }
+      ],
+      "internal/api/rename.go": [
+        {
+          "start": 68,
+          "end": 71
+        },
+        {
+          "start": 73,
+          "end": 73
+        },
+        {
+          "start": 75,
+          "end": 75
+        }
+      ],
+      "internal/api/rename_test.go": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 6,
+          "end": 8
+        },
+        {
+          "start": 15,
+          "end": 17
+        },
+        {
+          "start": 40,
+          "end": 40
+        },
+        {
+          "start": 61,
+          "end": 61
+        },
+        {
+          "start": 159,
+          "end": 217
+        }
+      ],
+      "internal/api/shared_test.go": [
+        {
+          "start": 1,
+          "end": 112
+        }
+      ],
+      "internal/blocked/blocked.go": [
+        {
+          "start": 7,
+          "end": 7
+        },
+        {
+          "start": 23,
+          "end": 27
+        },
+        {
+          "start": 33,
+          "end": 57
+        },
+        {
+          "start": 63,
+          "end": 63
+        },
+        {
+          "start": 68,
+          "end": 68
+        },
+        {
+          "start": 73,
+          "end": 75
+        },
+        {
+          "start": 77,
+          "end": 82
+        },
+        {
+          "start": 112,
+          "end": 112
+        },
+        {
+          "start": 115,
+          "end": 117
+        },
+        {
+          "start": 126,
+          "end": 126
+        },
+        {
+          "start": 131,
+          "end": 131
+        },
+        {
+          "start": 133,
+          "end": 134
+        },
+        {
+          "start": 136,
+          "end": 142
+        },
+        {
+          "start": 199,
+          "end": 223
+        }
+      ],
+      "internal/blocked/blocked_test.go": [
+        {
+          "start": 59,
+          "end": 64
+        },
+        {
+          "start": 101,
+          "end": 101
+        },
+        {
+          "start": 109,
+          "end": 111
+        },
+        {
+          "start": 143,
+          "end": 143
+        },
+        {
+          "start": 259,
+          "end": 413
+        }
+      ],
+      "internal/grants/clients.go": [
+        {
+          "start": 75,
+          "end": 81
+        },
+        {
+          "start": 95,
+          "end": 95
+        },
+        {
+          "start": 107,
+          "end": 107
+        },
+        {
+          "start": 117,
+          "end": 127
+        },
+        {
+          "start": 135,
+          "end": 136
+        },
+        {
+          "start": 142,
+          "end": 147
+        },
+        {
+          "start": 153,
+          "end": 153
+        },
+        {
+          "start": 159,
+          "end": 159
+        },
+        {
+          "start": 166,
+          "end": 166
+        },
+        {
+          "start": 171,
+          "end": 171
+        },
+        {
+          "start": 174,
+          "end": 174
+        },
+        {
+          "start": 179,
+          "end": 179
+        }
+      ],
+      "internal/grants/clients_test.go": [
+        {
+          "start": 302,
+          "end": 380
+        }
+      ],
+      "internal/grants/grants.go": [
+        {
+          "start": 197,
+          "end": 214
+        },
+        {
+          "start": 216,
+          "end": 222
+        },
+        {
+          "start": 232,
+          "end": 232
+        },
+        {
+          "start": 266,
+          "end": 270
+        },
+        {
+          "start": 272,
+          "end": 272
+        },
+        {
+          "start": 277,
+          "end": 277
+        },
+        {
+          "start": 283,
+          "end": 283
+        },
+        {
+          "start": 307,
+          "end": 312
+        },
+        {
+          "start": 326,
+          "end": 326
+        }
+      ],
+      "internal/grants/grants_test.go": [
+        {
+          "start": 137,
+          "end": 143
+        },
+        {
+          "start": 165,
+          "end": 169
+        },
+        {
+          "start": 609,
+          "end": 872
+        }
+      ],
+      "internal/grants/reconcile.go": [
+        {
+          "start": 25,
+          "end": 31
+        },
+        {
+          "start": 62,
+          "end": 67
+        }
+      ],
+      "internal/grants/reconcile_test.go": [
+        {
+          "start": 446,
+          "end": 493
+        }
+      ],
+      "internal/grants/rename.go": [
+        {
+          "start": 19,
+          "end": 21
+        },
+        {
+          "start": 55,
+          "end": 59
+        },
+        {
+          "start": 65,
+          "end": 67
+        }
+      ],
+      "internal/grants/rename_test.go": [
+        {
+          "start": 258,
+          "end": 320
+        }
+      ],
+      "internal/grants/shared.go": [
+        {
+          "start": 1,
+          "end": 50
+        }
+      ],
+      "internal/grants/shared_test.go": [
+        {
+          "start": 1,
+          "end": 106
+        }
+      ],
+      "internal/store/children.go": [
+        {
+          "start": 131,
+          "end": 134
+        },
+        {
+          "start": 139,
+          "end": 139
+        },
+        {
+          "start": 164,
+          "end": 166
+        },
+        {
+          "start": 174,
+          "end": 174
+        },
+        {
+          "start": 196,
+          "end": 198
+        },
+        {
+          "start": 211,
+          "end": 214
+        }
+      ],
+      "internal/store/children_test.go": [
+        {
+          "start": 61,
+          "end": 75
+        },
+        {
+          "start": 78,
+          "end": 80
+        },
+        {
+          "start": 82,
+          "end": 83
+        },
+        {
+          "start": 85,
+          "end": 87
+        },
+        {
+          "start": 89,
+          "end": 96
+        },
+        {
+          "start": 98,
+          "end": 127
+        },
+        {
+          "start": 129,
+          "end": 130
+        },
+        {
+          "start": 138,
+          "end": 140
+        }
+      ],
+      "internal/store/clients.go": [
+        {
+          "start": 18,
+          "end": 21
+        },
+        {
+          "start": 26,
+          "end": 28
+        },
+        {
+          "start": 34,
+          "end": 34
+        },
+        {
+          "start": 38,
+          "end": 38
+        },
+        {
+          "start": 42,
+          "end": 51
+        },
+        {
+          "start": 53,
+          "end": 53
+        },
+        {
+          "start": 79,
+          "end": 80
+        },
+        {
+          "start": 91,
+          "end": 91
+        },
+        {
+          "start": 95,
+          "end": 100
+        },
+        {
+          "start": 110,
+          "end": 111
+        },
+        {
+          "start": 113,
+          "end": 114
+        },
+        {
+          "start": 116,
+          "end": 116
+        },
+        {
+          "start": 118,
+          "end": 118
+        },
+        {
+          "start": 120,
+          "end": 152
+        }
+      ],
+      "internal/store/clients_test.go": [
+        {
+          "start": 224,
+          "end": 294
+        }
+      ],
+      "internal/store/migrations/0005_shared_clients.sql": [
+        {
+          "start": 1,
+          "end": 22
+        }
+      ],
+      "internal/store/store_test.go": [
+        {
+          "start": 316,
+          "end": 453
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        }
+      ],
+      "web/src/lib/ActiveGrants.panel.test.ts": [
+        {
+          "start": 309,
+          "end": 316
+        }
+      ],
+      "web/src/lib/ActiveGrants.svelte": [
+        {
+          "start": 5,
+          "end": 5
+        },
+        {
+          "start": 93,
+          "end": 95
+        },
+        {
+          "start": 140,
+          "end": 141
+        }
+      ],
+      "web/src/lib/Buttons.test.ts": [
+        {
+          "start": 44,
+          "end": 44
+        },
+        {
+          "start": 48,
+          "end": 48
+        },
+        {
+          "start": 312,
+          "end": 323
+        }
+      ],
+      "web/src/lib/Children.svelte": [
+        {
+          "start": 131,
+          "end": 131
+        },
+        {
+          "start": 136,
+          "end": 136
+        },
+        {
+          "start": 139,
+          "end": 140
+        },
+        {
+          "start": 202,
+          "end": 202
+        }
+      ],
+      "web/src/lib/Children.test.ts": [
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 34,
+          "end": 40
+        },
+        {
+          "start": 85,
+          "end": 85
+        },
+        {
+          "start": 92,
+          "end": 95
+        },
+        {
+          "start": 302,
+          "end": 379
+        },
+        {
+          "start": 450,
+          "end": 451
+        }
+      ],
+      "web/src/lib/ClientNames.svelte": [
+        {
+          "start": 46,
+          "end": 46
+        }
+      ],
+      "web/src/lib/ClientNames.test.ts": [
+        {
+          "start": 7,
+          "end": 7
+        },
+        {
+          "start": 31,
+          "end": 32
+        },
+        {
+          "start": 84,
+          "end": 94
+        }
+      ],
+      "web/src/lib/GrantForm.svelte": [
+        {
+          "start": 15,
+          "end": 15
+        },
+        {
+          "start": 50,
+          "end": 53
+        },
+        {
+          "start": 105,
+          "end": 107
+        }
+      ],
+      "web/src/lib/GrantForm.test.ts": [
+        {
+          "start": 58,
+          "end": 95
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 24,
+          "end": 24
+        },
+        {
+          "start": 42,
+          "end": 44
+        },
+        {
+          "start": 118,
+          "end": 120
+        },
+        {
+          "start": 141,
+          "end": 141
+        },
+        {
+          "start": 205,
+          "end": 206
+        },
+        {
+          "start": 208,
+          "end": 221
+        },
+        {
+          "start": 257,
+          "end": 258
+        },
+        {
+          "start": 270,
+          "end": 277
+        },
+        {
+          "start": 286,
+          "end": 289
+        },
+        {
+          "start": 294,
+          "end": 296
+        },
+        {
+          "start": 306,
+          "end": 306
+        },
+        {
+          "start": 320,
+          "end": 320
+        },
+        {
+          "start": 323,
+          "end": 324
+        },
+        {
+          "start": 458,
+          "end": 459
+        }
+      ],
+      "web/src/lib/Home.test.ts": [
+        {
+          "start": 772,
+          "end": 948
+        }
+      ],
+      "web/src/lib/activeGrants.test.ts": [
+        {
+          "start": 16,
+          "end": 16
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 271,
+          "end": 271
+        },
+        {
+          "start": 276,
+          "end": 276
+        },
+        {
+          "start": 284,
+          "end": 290
+        },
+        {
+          "start": 465,
+          "end": 465
+        },
+        {
+          "start": 468,
+          "end": 468
+        },
+        {
+          "start": 517,
+          "end": 584
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 169,
+          "end": 180
+        },
+        {
+          "start": 185,
+          "end": 186
+        },
+        {
+          "start": 202,
+          "end": 210
+        },
+        {
+          "start": 217,
+          "end": 218
+        },
+        {
+          "start": 260,
+          "end": 264
+        },
+        {
+          "start": 267,
+          "end": 267
+        },
+        {
+          "start": 289,
+          "end": 289
+        },
+        {
+          "start": 296,
+          "end": 297
+        },
+        {
+          "start": 301,
+          "end": 302
+        },
+        {
+          "start": 310,
+          "end": 316
+        },
+        {
+          "start": 338,
+          "end": 339
+        },
+        {
+          "start": 348,
+          "end": 349
+        },
+        {
+          "start": 369,
+          "end": 369
+        },
+        {
+          "start": 373,
+          "end": 375
+        }
+      ],
+      "web/src/lib/grants.test.ts": [
+        {
+          "start": 3,
+          "end": 3
+        },
+        {
+          "start": 14,
+          "end": 15
+        },
+        {
+          "start": 124,
+          "end": 181
+        }
+      ],
+      "web/src/lib/grants.ts": [
+        {
+          "start": 2,
+          "end": 5
+        },
+        {
+          "start": 71,
+          "end": 97
+        }
+      ],
+      "web/src/lib/tap.test.ts": [
+        {
+          "start": 57,
+          "end": 57
+        },
+        {
+          "start": 86,
+          "end": 104
+        },
+        {
+          "start": 179,
+          "end": 187
+        }
+      ],
+      "web/src/lib/tap.ts": [
+        {
+          "start": 48,
+          "end": 48
+        },
+        {
+          "start": 58,
+          "end": 58
+        }
+      ],
+      "web/stryker.config.mjs": [
+        {
+          "start": 13,
+          "end": 16
+        }
+      ]
+    },
+    "base": "f0388a308965b20329855e466e98a50b63a87053",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/lib/ActiveGrants.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Children.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/ClientNames.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local",
+  "measured_commit": "68b4cd277b3a321d767c1c5fd538d6f6c0a7dd8c",
+  "measured_tree": "2f8f2a9a9033100fb8dc37fa959384d7445a2a15"
+}
