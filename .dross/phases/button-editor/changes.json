@@ -3,6 +3,14 @@
   "base": "milestone/v0.1",
   "base_commit": "62905167e4851ce11d108c7b5bc8e2f8441dafcc",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "09ce49d",
+      "completed_at": "2026-11-02T11:21:21.220738Z",
+      "notes": "quick: Kill 11 in-diff Buttons.svelte survivors"
+    },
     "t-1": {
       "files": [
         "internal/store/migrations/0006_button_icon.sql",
