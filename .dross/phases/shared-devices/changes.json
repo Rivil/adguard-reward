@@ -72,6 +72,79 @@
           "what": "SPA wire types for shared/shared_with/unblocked_by/children (defaulted to []) plus the one shared-device wording helper"
         }
       ]
+    },
+    "t-5": {
+      "files": [
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go",
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go"
+      ],
+      "commit": "181af67",
+      "completed_at": "2026-11-02T08:21:30.200572Z",
+      "landmarks": [
+        {
+          "feature": "timed grant revert",
+          "symbol": "Engine.revert",
+          "loc": "internal/grants/grants.go:207",
+          "what": "re-reads active grants under the mutex and re-blocks only services no other live grant still covers on that client; a failed read writes nothing"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go"
+      ],
+      "commit": "2a72085",
+      "completed_at": "2026-11-02T08:24:31.98699Z",
+      "landmarks": [
+        {
+          "feature": "device adoption baseline",
+          "symbol": "Engine.AdoptClients",
+          "loc": "internal/grants/clients.go:82",
+          "what": "adds the child's baseline (incl. services of active grants on siblings) minus services another live grant holds open on that client; set-union, no-op skipped"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "internal/store/clients.go",
+        "internal/store/clients_test.go",
+        "internal/grants/rename.go",
+        "internal/grants/rename_test.go"
+      ],
+      "commit": "f638de4",
+      "completed_at": "2026-11-02T08:27:19.019614Z",
+      "landmarks": [
+        {
+          "feature": "client rename",
+          "symbol": "Store.RenameClient",
+          "loc": "internal/store/clients.go:29",
+          "what": "moves every owner's row of a shared client (owners already holding newName drop the old row); refused only when a child holds newName but not oldName"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/migration.go",
+        "internal/api/migration_test.go",
+        "internal/api/blocked_test.go",
+        "internal/api/clients_test.go",
+        "internal/api/grants_test.go"
+      ],
+      "commit": "338e460",
+      "completed_at": "2026-11-02T08:32:39.269763Z",
+      "landmarks": [
+        {
+          "feature": "child device assignment",
+          "symbol": "API.handleChildCreate",
+          "loc": "internal/api/children.go:145",
+          "what": "name 409 before AdGuard, then adopts every listed client (shared ones included) before creating the child; PUT shares without 409, removal and DELETE never call AdGuard"
+        }
+      ]
     }
   },
   "reviews": {
@@ -177,6 +250,104 @@
           "severity": "NOTE",
           "criterion": "c-8",
           "text": "sharedDevices sorts client names with the default Array.prototype.sort (UTF-16 code-unit order). That matches a byte-order sort on the server for ASCII names but may differ for non-ASCII names; acceptable for a 'client ASC' contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Reconcile now does one ListActiveGrants per overdue grant (N+1 store reads in a pass with many overdue grants); acceptable for correctness since each revert must see the statuses the previous one committed",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "TestEngine_ExpiredGrantNoCover mostly exercises the store's active-status filter rather than revert logic, since ListActiveGrants already excludes ended rows; still a valid guard against a future snapshot or all-grants read",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "TestBaseline_SharedSiblingGrant checks the fake's stored list for Ben tv instead of the add request body; for a fresh client the two are the same, so the contract line is still enforced",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "without() relies on heldOpen returning a sorted, de-duplicated slice (it does, in shared.go); a future change to heldOpen's ordering would quietly break the binary search",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-7",
+          "text": "With several outsiders holding newName, store.RenameClient names the lowest child id while checkRename names the first in ListChildren order; if those orders differ the two layers could name different children (only the engine's error reaches the caller, since checkRename rejects first)",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-7",
+          "text": "TestRenameClient_SharedSelfStale would fail on the old delete that removed the old name from every owner, and TestAddChildClient_SharedSelf would fail on the old first-owner-row read, so both tests guard the regressions their test_contract lines describe",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "Undeclared files: blocked_test.go, clients_test.go and grants_test.go are not in the task's files list. The edits are a mechanical switch from createOK to seedChild, needed because POST now writes the client's blocked-services list to AdGuard.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "In handleChildCreate, a name race lost at CreateChild (store ErrNameTaken backstop) happens after AdoptClients has already written the baseline to AdGuard, so the client's list can grow with no child created. The description accepts this as the race backstop, and the write only adds services.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Many existing children and migration tests now seed children straight into the store, so only the new create tests and TestChildren_NoAdGuard (now client-less) still exercise POST.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "adguardSince leaves out /control/login when counting 'zero AdGuard requests'. That is harmless, since a login only happens alongside another request.",
           "resolution": "non-blocking, left"
         }
       ]

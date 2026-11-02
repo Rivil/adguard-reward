@@ -102,7 +102,7 @@ loop goes through the same revert, so each expiry sees the statuses the previous
   covers = ["c-4"]
   test_contract = ["if revert is not ref-counted, TestEngine_SharedExpiryKeepsOther fails: G1 (Ada, youtube, [Kid phone, Old laptop]) and G2 (Ben, youtube, [Kid phone]); advance past G1 -> Old laptop blocks youtube, Kid phone does not, G1 expired; advance past G2 -> Kid phone blocks youtube", "if End bypasses it, TestEngine_SharedEnd fails: End(G1) with G2 active -> nil, G1 ended, Kid phone still lacks youtube; End(G2) then re-blocks it", "if a different service is spared, TestEngine_EndSharedOtherService fails: Ada's grant is tiktok, Ben's is youtube, both on Kid phone; ending Ben's re-blocks youtube", "if reconcile uses its snapshot, TestReconcile_BothOverdueShared fails: G1 and G2 both past ends_at, no timer fired -> one Reconcile expires both, Reverted == 2, Kid phone blocks youtube", "if reconcile ignores a live owner, TestReconcile_OverdueSharedKeepsOther fails: an overdue Ben grant reverted while Ada's live grant covers Kid phone leaves youtube open there, Reverted == 1", "if timers race, TestExpire_SharedTimersSerial fails: both expiry callbacks fired concurrently -> youtube blocked on Kid phone and MaxInFlightUpdates() == 1", "if expired/ended grants count as cover, TestEngine_ExpiredGrantNoCover fails: an ended G0 on Kid phone does not keep youtube open when G1 expires", "if a fully covered client still gets a POST, TestEngine_CoveredNoWrite fails: G1 on [Kid phone] only with G2 active -> G1's expiry issues 0 /control/clients/update", "if the read fails open, TestEnd_ActiveReadFails fails: ListActiveGrants error -> *ErrRevertFailed, zero AdGuard update POSTs, grant still active", "if ownership is used, TestExpire_ClientUnassigned fails: Kid phone removed from Ada after her grant; expiry still re-blocks it", "if the unshared path regresses, the existing TestEngine_TimerReverts and TestReconcile_DriftRepaired fail unchanged", "if Writes still counts every stored client, TestReconcile_WritesCountsActual fails: G1 overdue on [Kid phone, Old laptop] while G2 covers youtube on Kid phone -> one Reconcile reports Writes == 1 (Old laptop only)", "if revert filters holders by current ownership, TestExpire_HolderUnassigned fails: G_Ada and G_Ben both youtube on [Kid phone]; Kid phone removed from Ada (case 2: Ada deleted); advance past G_Ben -> Kid phone still lacks youtube; advance past G_Ada -> Kid phone blocks youtube"]
   depends_on = ["t-2"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-6"
@@ -124,7 +124,7 @@ CreateClient uses the same baseline.
     '''if the child's own grants drop out of the baseline, the existing TestAdoptClients_GrantServices fails unchanged''',
   ]
   depends_on = ["t-2"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-7"
@@ -148,7 +148,7 @@ rule, so AdGuard is renamed exactly once.
     '''if the outsider check is lost in the engine, TestEngineRename_Outsider fails: zero AdGuard writes and *store.ErrClientTaken''',
   ]
   depends_on = ["t-1"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-8"
@@ -159,7 +159,7 @@ rule, so AdGuard is renamed exactly once.
   covers = ["c-1", "c-3", "c-7"]
   test_contract = ["if the pre-check survives, TestChildUpdate_ShareNo409 fails: PUT /children/2 {Ben, [Kid phone]} while Ada holds it -> 200, GET /children lists Kid phone under both", "if a shared add skips adopt, TestChildUpdate_ShareAdopts fails: that PUT issues exactly one /control/clients/update for Kid phone", "if removal writes AdGuard, TestChildUpdate_RemoveSharedNoAdGuard fails: PUT Ben without Kid phone -> 200, zero AdGuard requests, Ada still lists it", "if delete writes AdGuard, TestChildDelete_SharedNoAdGuard fails: DELETE /children/2 -> 204, zero AdGuard requests, Ada still lists Kid phone", "if the name check is lost, TestChildUpdate_NameStill409 fails: PUT Ben {name:\"ada\"} -> 409 with zero AdGuard requests", "if a failed PUT half-applies, TestChildren_PutAtomic fails: with the fake failing /control/clients/update, PUT Ada {name:\"Alicia\", clients:[Kid phone, Old laptop]} returns a non-2xx and GET shows Ada still named \"Ada\" holding exactly [Kid phone]", "if the offer is not deduped, TestMigration_SharedOnce fails: Kid tablet (use_global) held by Ada and Ben -> GET /migration lists it once with child {1, Ada}; POST /migration issues exactly one /control/clients/update for it", "if POST skips adopt, TestChildCreate_SharedAdopts fails: Ada holds Kid phone; POST /children {Cy, [Kid phone]} -> 201 and exactly one /control/clients/update for Kid phone whose blocked_services are [roblox, tiktok, youtube] (global list unioned in); POST {Dee, []} -> 201 with zero AdGuard requests", "if POST writes the store before adopting, TestChildCreate_AdoptFailNoChild fails: with the fake failing /control/clients/update, POST /children {Cy, [Kid phone]} -> 502 naming Kid phone and GET /children lists no Cy", "if adopt runs before the name check, TestChildCreate_NameTakenNoAdGuard fails: Ada exists and holds Kid phone; POST /children {name:\"ada\", clients:[Kid phone]} -> 409 with zero AdGuard requests"]
   depends_on = ["t-1"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-9"
