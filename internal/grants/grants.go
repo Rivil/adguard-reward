@@ -194,13 +194,32 @@ func (e *Engine) unblock(ctx context.Context, g store.Grant) []string {
 	return failed
 }
 
-// revert re-adds g's services to every stored client (set-union, so a second
-// revert changes nothing). A client AdGuard no longer has counts as
-// reverted; any other failure is returned by name.
-func (e *Engine) revert(ctx context.Context, g store.Grant) []string {
-	failed := []string{}
+// revert re-adds g's services to its stored clients (set-union, so a second
+// revert changes nothing), ref-counted (locked: shared_device_rule): it
+// re-reads the active grants through ctx on every call and re-blocks on each
+// client only what no other active grant still covers there, issuing no
+// write for a client that is fully held open. Re-reading rather than taking
+// a caller's snapshot means consecutive reverts under mu each see the
+// statuses the previous one committed. A failed read fails every client
+// without a write — never re-block blind. AdGuard calls go through actx. A
+// client AdGuard no longer has counts as reverted; any other failure is
+// returned by name. writes counts the Add calls issued. Caller holds mu.
+func (e *Engine) revert(ctx, actx context.Context, g store.Grant) (failed []string, writes int) {
+	active, err := e.store.ListActiveGrants(ctx)
+	if err != nil {
+		e.log.Warn("grant revert: read active grants failed", "grant", g.ID, "err", err)
+		return slices.Clone(g.Clients), 0
+	}
+	plan := revertPlan(g, active)
+	failed = []string{}
 	for _, name := range g.Clients {
-		err := e.ag.AddBlockedServices(ctx, name, g.Services)
+		svcs, ok := plan[name]
+		if !ok {
+			e.log.Debug("grant revert: every service still held open by another grant", "grant", g.ID, "client", name)
+			continue
+		}
+		writes++
+		err := e.ag.AddBlockedServices(actx, name, svcs)
 		switch {
 		case err == nil:
 		case errors.Is(err, adguard.ErrClientNotFound):
@@ -210,7 +229,7 @@ func (e *Engine) revert(ctx context.Context, g store.Grant) []string {
 			failed = append(failed, name)
 		}
 	}
-	return failed
+	return failed, writes
 }
 
 // expire is the timer callback. It re-checks the row under the mutex: a
@@ -244,22 +263,24 @@ func (e *Engine) expire(id int64) {
 
 // expireLocked reverts an overdue active grant through actx — the
 // operation's shared AdGuard context — and marks it expired through ctx.
-// It reports whether the status changed. Caller holds mu.
-func (e *Engine) expireLocked(ctx, actx context.Context, g store.Grant) bool {
-	if failed := e.revert(actx, g); len(failed) > 0 {
+// It reports whether the status changed and how many AdGuard writes the
+// revert issued. Caller holds mu.
+func (e *Engine) expireLocked(ctx, actx context.Context, g store.Grant) (bool, int) {
+	failed, writes := e.revert(ctx, actx, g)
+	if len(failed) > 0 {
 		e.log.Warn("grant expiry: revert incomplete, grant stays active", "grant", g.ID, "clients", failed)
-		return false
+		return false, writes
 	}
 	ok, err := e.store.SetGrantStatus(ctx, g.ID, store.StatusActive, store.StatusExpired, e.now())
 	if err != nil {
 		e.log.Error("grant expiry: status update failed", "grant", g.ID, "err", err)
-		return false
+		return false, writes
 	}
 	if ok {
 		e.log.Info("grant expired", "grant", g.ID, "child", g.ChildID, "services", g.Services)
 		e.stopTimer(g.ID)
 	}
-	return ok
+	return ok, writes
 }
 
 // Extend pushes an active grant's ends_at by d and reschedules its timer.
@@ -283,9 +304,12 @@ func (e *Engine) Extend(ctx context.Context, id int64, d time.Duration) (store.G
 	return g, nil
 }
 
-// End reverts an active grant now and marks it ended. An unknown or
-// non-active grant is ErrGrantNotFound; a client that could not be re-blocked
-// is *ErrRevertFailed and the grant stays active with its timer.
+// End reverts an active grant now and marks it ended. Like expiry it
+// re-blocks a service on a client only when no other active grant still
+// covers it there. An unknown or non-active grant is ErrGrantNotFound; a
+// client that could not be re-blocked — every client, when the active grants
+// could not be read — is *ErrRevertFailed and the grant stays active with
+// its timer.
 func (e *Engine) End(ctx context.Context, id int64) error {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -299,7 +323,7 @@ func (e *Engine) End(ctx context.Context, id int64) error {
 	}
 	actx, cancel := e.applyContext(ctx)
 	defer cancel()
-	if failed := e.revert(actx, g); len(failed) > 0 {
+	if failed, _ := e.revert(ctx, actx, g); len(failed) > 0 {
 		return &ErrRevertFailed{Clients: failed}
 	}
 	// The clients are re-blocked; record it even if the request has gone.

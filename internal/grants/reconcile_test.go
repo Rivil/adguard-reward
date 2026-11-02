@@ -443,3 +443,51 @@ func TestReconcile_RunLogs(t *testing.T) {
 		}
 	})
 }
+
+func TestReconcile_BothOverdueShared(t *testing.T) {
+	e := newEnv(t, nil)
+	// Both grants applied, then the process was down past both ends_at.
+	e.setBlocked("Kid phone", "tiktok")
+	g1 := e.seedOverdue(1, youtube, kidPhone)
+	g2 := e.seedOverdue(2, youtube, kidPhone)
+
+	st := e.reconcile()
+	if st.Reverted != 2 {
+		t.Errorf("Stats.Reverted = %d, want 2", st.Reverted)
+	}
+	e.wantStatus(g1.ID, store.StatusExpired)
+	e.wantStatus(g2.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", true)
+}
+
+func TestReconcile_OverdueSharedKeepsOther(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.create(1, youtube, kidPhone).Grant
+	ben := e.seedOverdue(2, youtube, kidPhone)
+
+	st := e.reconcile()
+	if st.Reverted != 1 {
+		t.Errorf("Stats.Reverted = %d, want 1", st.Reverted)
+	}
+	e.wantStatus(ben.ID, store.StatusExpired)
+	e.wantStatus(ada.ID, store.StatusActive)
+	e.wantBlocks("Kid phone", "youtube", false)
+}
+
+func TestReconcile_WritesCountsActual(t *testing.T) {
+	e := newEnv(t, nil)
+	e.setBlocked("Old laptop", "tiktok")
+	e.create(2, youtube, kidPhone) // G2, live, applied: no drift
+	e.seedOverdue(1, youtube, phoneLapt)
+	before := len(e.updatesFor())
+
+	st := e.reconcile()
+	if st.Writes != 1 {
+		t.Errorf("Stats.Writes = %d, want 1 (Old laptop only; Kid phone is held open by G2)", st.Writes)
+	}
+	if got := e.updatesFor()[before:]; !reflect.DeepEqual(got, []string{"Old laptop"}) {
+		t.Errorf("pass wrote %v, want [Old laptop]", got)
+	}
+	e.wantBlocks("Old laptop", "youtube", true)
+	e.wantBlocks("Kid phone", "youtube", false)
+}

@@ -22,13 +22,13 @@ type Stats struct {
 
 // Reconcile converges AdGuard with the active grants in one pass, under the
 // engine mutex: every grant past ends_at is reverted and marked expired
-// (exactly as the timer would), and for every live grant each stored client
-// is read live and any granted id that has reappeared in its blocked_services
-// — a parent re-blocked it in AdGuard's UI — is removed again. Live grants
-// without an armed timer get one (post-restart). The pass reads AdGuard once
-// for itself plus one re-read inside each Add/Remove; a pass that finds
-// nothing to do issues no writes. A failed read aborts the pass with no
-// status change and no writes.
+// (exactly as the timer would, ref-counted against the other active grants),
+// and for every live grant each stored client is read live and any granted
+// id that has reappeared in its blocked_services — a parent re-blocked it in
+// AdGuard's UI — is removed again. Live grants without an armed timer get
+// one (post-restart). The pass reads AdGuard once for itself plus one re-read
+// inside each Add/Remove; a pass that finds nothing to do issues no writes.
+// A failed read aborts the pass with no status change and no writes.
 func (e *Engine) Reconcile(ctx context.Context) (Stats, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -59,8 +59,12 @@ func (e *Engine) Reconcile(ctx context.Context) (Stats, error) {
 	now := e.now()
 	for _, g := range grants {
 		if !now.Before(g.EndsAt) {
-			st.Writes += len(g.Clients)
-			if e.expireLocked(ctx, actx, g) {
+			// Through the same ref-counted revert as the timer, which
+			// re-reads the active grants itself: the snapshot above goes
+			// stale as soon as an earlier overdue grant in this loop expires.
+			expired, writes := e.expireLocked(ctx, actx, g)
+			st.Writes += writes
+			if expired {
 				st.Reverted++
 			}
 			continue
