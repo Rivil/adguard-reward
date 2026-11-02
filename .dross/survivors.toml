@@ -1289,3 +1289,12 @@
   line = 253
   accepted_in = "button-editor"
   reason = "equivalent: the 'down !== null &&' onclick guard is redundant with disabled={... || down === null}; a disabled button never fires click"
+
+[[accepted]]
+  key = "634ff18332a41d80"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "else if (editing !== null && editing > i) editing -= 1"
+  line = 210
+  accepted_in = "button-editor"
+  reason = "equivalent: null > i is false for every row index i >= 0, so the editing !== null guard only narrows the type"

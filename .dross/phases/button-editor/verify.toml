@@ -1,23 +1,25 @@
 [verify]
   phase = "button-editor"
-  generated_at = 2026-11-02T11:05:09.450609Z
-  verdict = "pending"
-  measured_commit = "396439b8b82b5c7e28cd46a98e6498f092b61ed0"
-  measured_tree = "54a48e46ac70f124f71ba931f85dee544ac7a76b"
+  generated_at = 2026-11-02T11:32:27.996074Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-11-02T11:42:59.419199Z
+  measured_commit = "87b57f839260c82476af3e05e802da21d6ab56b4"
+  measured_tree = "044fce3371585807334889eb43a2da0bb23ab1be"
 
 [summary]
   mutation_status = "measured"
   measured_on = "local"
-  mutation_score = 0.9360902255639098
-  mutants_killed = 498
-  mutants_survived = 34
+  mutation_score = 0.9548872180451128
+  mutants_killed = 508
+  mutants_survived = 24
   mutants_not_covered = 6
   mutants_no_block = 0
   mutants_test_gap = 0
   mutants_in_scope = 532
-  unclassified_in_scope = 14
+  unclassified_in_scope = 0
   criteria_total = 3
-  criteria_covered = 0
+  criteria_covered = 3
   criteria_uncovered = 0
 
   [[summary.leg]]
@@ -35,83 +37,33 @@
   [[summary.leg]]
     language = "typescript"
     tool = "stryker"
-    killed = 456
-    survived = 34
+    killed = 466
+    survived = 24
     timeout = 0
     in_scope = 490
-    score = 0.9306122448979591
+    score = 0.9510204081632653
     file_count = 5
     measured_on = "local"
-    ranges = ["web/src/lib/Buttons.test.ts:110-722 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:41-41 (TSTypeAliasDeclaration Stored)", "web/src/lib/Home.test.ts:170-989 (ExpressionStatement)", "web/src/lib/api.ts:352-364 (TSInterfaceDeclaration ButtonInput)"]
+    ranges = ["web/src/lib/Buttons.test.ts:110-827 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:41-41 (TSTypeAliasDeclaration Stored)", "web/src/lib/Home.test.ts:170-989 (ExpressionStatement)", "web/src/lib/api.ts:352-364 (TSInterfaceDeclaration ButtonInput)"]
     whole_file = ["web/src/lib/Buttons.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable"]
 
 [[criterion]]
   id = "c-1"
-  status = "unknown"
+  status = "covered"
+  tests = ["web/src/lib/Buttons.test.ts:reorder > 'down swaps within the child'", "web/src/lib/Buttons.test.ts:reorder > 'up swaps within the child'", "web/src/lib/Buttons.test.ts:reorder > 'edge controls disabled'", "web/src/lib/Buttons.test.ts:reorder > 'failed reorder reloads'", "internal/store/buttons_test.go:TestButtons_OrderPersists", "web/src/lib/Home.test.ts:'renders buttons per child in stored order'"]
+  notes = "UI swap within child + PUT order asserted; store order survives Close/Open; Home renders per-child stored order"
 
 [[criterion]]
   id = "c-2"
-  status = "unknown"
+  status = "covered"
+  tests = ["web/src/lib/Buttons.test.ts:icon > 'icon picker sets and clears'", "web/src/lib/Buttons.test.ts:icon > 'edit preloads icon'", "internal/api/buttons_test.go:TestButtons_IconRoundTrip", "internal/api/buttons_test.go:TestButtons_Validation 'icon nope' (422 buttons[0].icon)", "internal/store/buttons_test.go:TestButtons_IconPersists", "web/src/lib/Home.test.ts:'button shows its chosen icon'", "web/src/lib/Home.test.ts:'unknown icon falls back'", "web/src/lib/Home.test.ts:'no icon uses first service'"]
+  notes = "set/clear in form, GET/PUT round-trip, NULL storage across reopen, 422 on non-catalogue id, Home chosen/fallback/default each asserted by distinct icon src"
 
 [[criterion]]
   id = "c-3"
-  status = "unknown"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:74 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:159 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:210 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:210 (LogicalOperator)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:210 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:210 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:210 (EqualityOperator)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:243 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:250 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:250 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:253 (StringLiteral)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:253 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:281 (ConditionalExpression)"
-
-[[finding]]
-  severity = "BLOCKING"
-  text = "stryker mutant survived: web/src/lib/Buttons.svelte:281 (StringLiteral)"
+  status = "covered"
+  tests = ["web/src/lib/Buttons.test.ts:delete > 'delete asks first'", "web/src/lib/Buttons.test.ts:delete > 'cancel delete'", "web/src/lib/Buttons.test.ts:delete > 'delete PUTs without the item'"]
+  notes = "no PUT before Confirm and window.confirm never called; Cancel sends zero PUTs and leaves rows unchanged"
 
 [[finding]]
   severity = "NOTE"
@@ -124,3 +76,11 @@
 [[finding]]
   severity = "NOTE"
   text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/Buttons.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "NOTE"
+  text = "Buttons.svelte:210 'editing !== null' -> true accepted as equivalent (null > i is false for every row index); 27 survivors accepted in total, 0 unclassified"
+
+[[finding]]
+  severity = "NOTE"
+  text = "solo reviewer t-2 FLAG left open: after a failed reorder PUT whose reload returns a reordered list, `editing` keeps its old index and Save can overwrite a different row; no test combines open edit + failed reorder (same weakness on save/delete failure paths)"
