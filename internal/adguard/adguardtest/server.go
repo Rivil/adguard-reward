@@ -19,6 +19,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -80,6 +81,11 @@ type Server struct {
 	added       [][]byte // raw bodies of accepted POST /control/clients/add
 	inFlight    int
 	maxInFlight int
+
+	userRules       []string // served as user_rules; nil serves null
+	lastSetRules    []byte   // raw body of the most recent accepted set_rules
+	filterInFlight  int
+	filterMaxFlight int
 }
 
 // New starts a fake AdGuard Home. It is closed when t ends.
@@ -95,6 +101,9 @@ func New(t testing.TB, opts Options) *Server {
 	}
 	s.loadClients()
 	s.dhcpDoc = decodeDoc("dhcp_status.json")
+	if err := json.Unmarshal(decodeDoc("filtering_status.json")["user_rules"], &s.userRules); err != nil {
+		panic("adguardtest: filtering_status.json user_rules: " + err.Error())
+	}
 	s.srv = httptest.NewServer(http.HandlerFunc(s.serve))
 	t.Cleanup(s.Close)
 	return s
@@ -358,6 +367,39 @@ func (s *Server) MaxInFlightUpdates() int {
 	return s.maxInFlight
 }
 
+// SetUserRules replaces the custom filtering rules served as user_rules by
+// GET /control/filtering/status. nil serves null, as an AdGuard that never
+// had a rule may.
+func (s *Server) SetUserRules(rules []string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.userRules = slices.Clone(rules)
+}
+
+// UserRules returns the stored custom filtering rules, nil when null.
+func (s *Server) UserRules() []string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return slices.Clone(s.userRules)
+}
+
+// LastSetRules returns the raw body of the most recent accepted POST
+// /control/filtering/set_rules, or nil.
+func (s *Server) LastSetRules() []byte {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return bytes.Clone(s.lastSetRules)
+}
+
+// MaxInFlightFiltering reports the highest number of concurrent requests
+// seen on GET /control/filtering/status and POST /control/filtering/set_rules.
+// A client that serialises its user_rules edits never exceeds 1.
+func (s *Server) MaxInFlightFiltering() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.filterMaxFlight
+}
+
 func (s *Server) indexOf(name string) int {
 	for i, c := range s.clients {
 		var n string
@@ -384,6 +426,13 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 			s.maxInFlight = s.inFlight
 		}
 	}
+	filtering := r.URL.Path == "/control/filtering/status" || r.URL.Path == "/control/filtering/set_rules"
+	if filtering {
+		s.filterInFlight++
+		if s.filterInFlight > s.filterMaxFlight {
+			s.filterMaxFlight = s.filterInFlight
+		}
+	}
 	s.mu.Unlock()
 	if rmw {
 		defer func() {
@@ -391,6 +440,15 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 			s.inFlight--
 			s.mu.Unlock()
 		}()
+	}
+	if filtering {
+		defer func() {
+			s.mu.Lock()
+			s.filterInFlight--
+			s.mu.Unlock()
+		}()
+		// Widen the window a lost mutex would race through.
+		time.Sleep(time.Millisecond)
 	}
 
 	if delay > 0 {
@@ -440,6 +498,10 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 		s.handleUpdate(w, body)
 	case "POST /control/clients/add":
 		s.handleAdd(w, body)
+	case "GET /control/filtering/status":
+		writeJSON(w, s.filteringJSON())
+	case "POST /control/filtering/set_rules":
+		s.handleSetRules(w, body)
 	default:
 		http.NotFound(w, r)
 	}
@@ -551,6 +613,35 @@ func (s *Server) handleAdd(w http.ResponseWriter, body []byte) {
 	s.clients = append(s.clients, data)
 	s.dirty = true
 	s.added = append(s.added, bytes.Clone(body))
+	w.WriteHeader(http.StatusOK)
+}
+
+// filteringJSON serves filtering_status.json with the stored user_rules.
+func (s *Server) filteringJSON() []byte {
+	doc := decodeDoc("filtering_status.json")
+	s.mu.Lock()
+	doc["user_rules"] = mustJSON(s.userRules)
+	s.mu.Unlock()
+	return mustJSON(doc)
+}
+
+// handleSetRules stores the rules of POST /control/filtering/set_rules
+// verbatim. An unknown field or a body that is not {"rules": [...]} answers
+// 400; a null rules list is stored as null, as AdGuard would clear them.
+func (s *Server) handleSetRules(w http.ResponseWriter, body []byte) {
+	var in struct {
+		Rules []string `json:"rules"`
+	}
+	dec := json.NewDecoder(bytes.NewReader(body))
+	dec.DisallowUnknownFields()
+	if err := dec.Decode(&in); err != nil {
+		http.Error(w, "invalid set_rules request: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.userRules = in.Rules
+	s.lastSetRules = bytes.Clone(body)
 	w.WriteHeader(http.StatusOK)
 }
 

@@ -35,6 +35,8 @@ type Client struct {
 	// rmw serialises SetBlockedServices' read-modify-write so two grants
 	// on the same client cannot clobber each other's write.
 	rmw sync.Mutex
+	// rulesMu serialises EditUserRules' read-modify-write of user_rules.
+	rulesMu sync.Mutex
 }
 
 // Option configures a Client.
