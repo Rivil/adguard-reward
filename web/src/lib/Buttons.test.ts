@@ -199,7 +199,8 @@ describe('Buttons', () => {
     const sent = puts(s.calls)[0].buttons
     expect(sent.map((b) => b.label)).toEqual(['YouTube 90m', 'Renamed', 'TikTok 30m'])
     expect(sent[1]).toEqual({ label: 'Renamed', child_id: 2, services: ['roblox', 'tiktok'], duration: 2700 })
-    await waitFor(() => expect(rows()[1].textContent).toContain('Renamed'))
+    // Grouped by child, Ben's renamed button renders after both of Ada's.
+    await waitFor(() => expect(rows()[2].textContent).toContain('Renamed'))
     await waitFor(() => expect(screen.queryByRole('button', { name: 'Cancel' })).toBeNull())
     expect(labelInput().value).toBe('')
   })
@@ -267,6 +268,127 @@ describe('Buttons', () => {
     expect(labelInput().disabled).toBe(false)
     expect(grantForm().disabled).toBe(false)
     expect(rowButton(3, 'Edit').disabled).toBe(false)
+
+    // A reorder PUT locks every row control too, not just the one tapped.
+    expect(rowButton(3, 'Down').disabled).toBe(false)
+    await fireEvent.click(rowButton(3, 'Down'))
+    expect(puts(s.calls)).toHaveLength(2)
+    for (const id of [3, 4, 102]) {
+      for (const name of ['Up', 'Down', 'Edit', 'Delete']) {
+        expect(rowButton(id, name).disabled, `${name} on row ${id}`).toBe(true)
+      }
+    }
+    expect(saveButton().disabled).toBe(true)
+    release(json(200, { buttons: [{ ...b1, id: 103 }, b2, { id: 104, label: 'Held', child_id: 1, services: ['youtube'], duration: 3600 }] }))
+    await waitFor(() => expect(rowButton(103, 'Edit').disabled).toBe(false))
+  })
+
+  describe('reorder', () => {
+    const order = (sent: { buttons: Stored[] }) => sent.buttons.map((b) => b.label)
+
+    it('down swaps within the child', async () => {
+      // [Ada1, Ben1, Ada2]: Ada1's neighbour is Ada2, not Ben's button between them.
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(3, 'Down'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      // Everything else about each button rides along unchanged.
+      expect(puts(s.calls)[0].buttons).toEqual([
+        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800 },
+        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 },
+        { label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400 },
+      ])
+      // The list renders the server's answer: Ada's group is now TikTok then YouTube.
+      await waitFor(() => expect(rows().map((r) => r.querySelector('strong')?.textContent)).toEqual(['TikTok 30m', 'YouTube 90m', 'Roblox 1h']))
+    })
+
+    it('up swaps within the child', async () => {
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(5, 'Up'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(order(puts(s.calls)[0])).toEqual(['TikTok 30m', 'Roblox 1h', 'YouTube 90m'])
+    })
+
+    it('edge controls disabled', async () => {
+      const b4: Button = { id: 6, label: 'Middle', child_id: 1, services: ['roblox'], duration: 600 }
+      await mount([b1, b2, b4, b3])
+      // Ada: [b1, b4, b3]; Ben: [b2] alone.
+      expect(rowButton(3, 'Up').disabled).toBe(true)
+      expect(rowButton(3, 'Down').disabled).toBe(false)
+      expect(rowButton(6, 'Up').disabled).toBe(false)
+      expect(rowButton(6, 'Down').disabled).toBe(false)
+      expect(rowButton(5, 'Up').disabled).toBe(false)
+      expect(rowButton(5, 'Down').disabled).toBe(true)
+      expect(rowButton(4, 'Up').disabled).toBe(true)
+      expect(rowButton(4, 'Down').disabled).toBe(true)
+    })
+
+    it('failed reorder reloads', async () => {
+      // The PUT fails, and meanwhile the server's list has moved on: what
+      // renders is the fresh GET, not the order the tap asked for.
+      const s = await mount([b1, b2, b3], {
+        put: () => {
+          s.state.buttons = [b3, b2, b1]
+          return json(500, { error: 'internal', message: 'boom' })
+        },
+      })
+      await fireEvent.click(rowButton(3, 'Down'))
+      await screen.findByRole('alert')
+      await waitFor(() => expect(getsOf(s.calls, '/api/v1/buttons')).toBe(2))
+      await waitFor(() => expect(rows().map((r) => r.dataset.button)).toEqual(['5', '3', '4']))
+    })
+
+    it('grouped by child', async () => {
+      // Children come back Ben first, so Ben's group heads the page even
+      // though Ada's button is first in the stored list.
+      await mount([b1, b2, b3], { children: [ben, ada] })
+      const sections = [...document.querySelectorAll<HTMLElement>('section[data-child]')]
+      expect(sections.map((sec) => sec.querySelector('h2')?.textContent)).toEqual(['Ben', 'Ada'])
+      const inGroup = (sec: HTMLElement) => [...sec.querySelectorAll<HTMLElement>('li[data-button]')].map((li) => li.dataset.button)
+      expect(inGroup(sections[0])).toEqual(['4'])
+      expect(inGroup(sections[1])).toEqual(['3', '5'])
+      expect(document.querySelectorAll('ul.list')).toHaveLength(2)
+    })
+
+    it('a button for an unknown child still gets a group', async () => {
+      const orphan: Button = { id: 7, label: 'Orphan', child_id: 9, services: ['gone'], duration: 600 }
+      await mount([orphan, b1])
+      const sections = [...document.querySelectorAll<HTMLElement>('section[data-child]')]
+      expect(sections.map((sec) => sec.querySelector('h2')?.textContent)).toEqual(['Ada', 'child 9'])
+    })
+
+    it('edit survives reorder', async () => {
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.click(rowButton(3, 'Down'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      // [Ada2, Ben1, Ada1] with fresh ids 100, 101, 102: the edit follows Ada1 to 102.
+      await waitFor(() => expect(rowButton(102, 'Edit').disabled).toBe(false))
+      expect(document.querySelector('li.editing')?.getAttribute('data-button')).toBe('102')
+      expect(labelInput().value).toBe('YouTube 90m')
+
+      await fireEvent.input(labelInput(), { target: { value: 'Renamed' } })
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(puts(s.calls)[1].buttons).toEqual([
+        { label: 'TikTok 30m', child_id: 1, services: ['tiktok'], duration: 1800 },
+        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 },
+        { label: 'Renamed', child_id: 1, services: ['youtube'], duration: 5400 },
+      ])
+    })
+
+    it('edit on the neighbour survives reorder', async () => {
+      // Editing Ada2 while Ada1 moves down past it: the edit stays on Ada2.
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(5, 'Edit'))
+      await fireEvent.click(rowButton(3, 'Down'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      await waitFor(() => expect(rowButton(100, 'Edit').disabled).toBe(false))
+      expect(document.querySelector('li.editing')?.getAttribute('data-button')).toBe('100')
+      await fireEvent.input(labelInput(), { target: { value: 'Renamed' } })
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(order(puts(s.calls)[1])).toEqual(['Renamed', 'Roblox 1h', 'YouTube 90m'])
+    })
   })
 
   it('a failed PUT reloads the catalogue too', async () => {
