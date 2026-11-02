@@ -171,6 +171,8 @@ func TestButtons_Validation(t *testing.T) {
 		m["child_id"] = 999
 		m["services"] = []string{"nope"}
 	})), 422, "buttons[0].child_id")
+	check("icon nope", buttonsReq(item(func(m map[string]any) { m["icon"] = "nope" })), 422, "buttons[0].icon", "nope")
+	check("second icon nope", buttonsReq(item(func(map[string]any) {}), item(func(m map[string]any) { m["icon"] = "nope" })), 422, "buttons[1].icon")
 
 	check("stray id", `{"buttons":[{"label":"x","id":1,"child_id":`+itoa(ada.ID)+`,"services":["tiktok"],"duration":1800}]}`, 400)
 	check("buttons null", `{"buttons":null}`, 400)
@@ -183,6 +185,40 @@ func TestButtons_Validation(t *testing.T) {
 	check("duration 86400", buttonsReq(item(func(m map[string]any) { m["duration"] = 86400 })), 200)
 	if got := h.putOK(cookie, item(func(m map[string]any) { m["services"] = []string{" tiktok ", "tiktok", "youtube"} })); !reflect.DeepEqual(got[0].Services, []string{"tiktok", "youtube"}) {
 		t.Errorf("services normalised = %v, want [tiktok youtube]", got[0].Services)
+	}
+}
+
+func TestButtons_IconRoundTrip(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+
+	// The icon may be any catalogue service, not one of the button's own.
+	chosen := buttonItem("YouTube", ada.ID, []string{"youtube"}, 3600)
+	chosen["icon"] = " tiktok "
+	hits := h.catalogueHits()
+	got := h.putOK(cookie, chosen, buttonItem("Plain", ada.ID, []string{"youtube"}, 1800))
+	if n := h.catalogueHits() - hits; n != 1 {
+		t.Errorf("PUT with services and an icon issued %d catalogue requests, want exactly 1", n)
+	}
+	if got[0].Icon != "tiktok" || got[1].Icon != "" {
+		t.Fatalf("PUT icons = %q, %q; want trimmed \"tiktok\" and \"\"", got[0].Icon, got[1].Icon)
+	}
+	list := h.getButtons(cookie)
+	listed := decodeButtons(t, list)
+	if len(listed) != 2 || listed[0].Icon != "tiktok" || listed[1].Icon != "" {
+		t.Fatalf("GET icons = %+v, want tiktok then \"\"", listed)
+	}
+	// Always present on the wire, even when empty.
+	if strings.Count(list.Body.String(), `"icon":`) != 2 || !strings.Contains(list.Body.String(), `"icon":""`) {
+		t.Errorf("GET body %s, want an icon key on every button", list.Body.String())
+	}
+
+	// Blank is no icon, the same as leaving it out.
+	blank := buttonItem("Blank", ada.ID, []string{"youtube"}, 1800)
+	blank["icon"] = "   "
+	if got := h.putOK(cookie, blank); got[0].Icon != "" {
+		t.Errorf("blank icon stored as %q, want \"\"", got[0].Icon)
 	}
 }
 
