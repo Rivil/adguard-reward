@@ -1262,3 +1262,39 @@
   line = 219
   accepted_in = "shared-devices"
   reason = "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."
+
+[[accepted]]
+  key = "c11e6591b162d114"
+  file = "web/src/lib/Buttons.svelte"
+  op = "EqualityOperator"
+  text = "else if (editing !== null && editing > i) editing -= 1"
+  line = 210
+  accepted_in = "button-editor"
+  reason = "equivalent: editing === i is handled by the preceding branch, so > and >= agree on every reachable state"
+
+[[accepted]]
+  key = "23578fa82aec08f8"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "<button type=\"button\" aria-label={`Move ${b.label} up`} onclick={() => up !== null && move(i, up)} disabled={pending || up === null}>"
+  line = 250
+  accepted_in = "button-editor"
+  reason = "equivalent: the 'up !== null &&' onclick guard is redundant with disabled={... || up === null}; a disabled button never fires click"
+
+[[accepted]]
+  key = "3d5c69513cfd827e"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "<button type=\"button\" aria-label={`Move ${b.label} down`} onclick={() => down !== null && move(i, down)} disabled={pending || down === null}>"
+  line = 253
+  accepted_in = "button-editor"
+  reason = "equivalent: the 'down !== null &&' onclick guard is redundant with disabled={... || down === null}; a disabled button never fires click"
+
+[[accepted]]
+  key = "634ff18332a41d80"
+  file = "web/src/lib/Buttons.svelte"
+  op = "ConditionalExpression"
+  text = "else if (editing !== null && editing > i) editing -= 1"
+  line = 210
+  accepted_in = "button-editor"
+  reason = "equivalent: null > i is false for every row index i >= 0, so the editing !== null guard only narrows the type"

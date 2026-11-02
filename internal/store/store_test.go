@@ -379,9 +379,17 @@ func TestMigrate_0005PreservesClients(t *testing.T) {
 	if got, want := clientPairs(t, s.DB()), []string{"Ada:Kid phone", "Ben:Kid tablet"}; fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("child_clients after 0005 = %v, want exactly %v", got, want)
 	}
+	// Later migrations run after 0005 too, so check 0005 directly follows 0004
+	// rather than being last.
 	applied := queryStrings(t, s.DB(), `SELECT name FROM schema_migrations ORDER BY rowid`)
-	if n := len(applied); n < 2 || applied[n-2] != "0004_buttons.sql" || applied[n-1] != "0005_shared_clients.sql" {
-		t.Fatalf("schema_migrations = %v, want 0005_shared_clients.sql applied after 0004_buttons.sql", applied)
+	i4 := -1
+	for i, n := range applied {
+		if n == "0004_buttons.sql" {
+			i4 = i
+		}
+	}
+	if i4 < 0 || i4+1 >= len(applied) || applied[i4+1] != "0005_shared_clients.sql" {
+		t.Fatalf("schema_migrations = %v, want 0005_shared_clients.sql applied right after 0004_buttons.sql", applied)
 	}
 	// The migrated table takes a second owner.
 	if _, err := s.DB().Exec(`INSERT INTO child_clients (client_name, child_id) VALUES ('Kid phone', 2)`); err != nil {

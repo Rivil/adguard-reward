@@ -205,6 +205,34 @@ describe('Home', () => {
     expect(tile(11).querySelector('img')).toBeNull()
   })
 
+  // A catalogue whose icons all differ, so each src names exactly one service.
+  const distinct: Service[] = [
+    { id: 'youtube', name: 'YouTube', icon: YT_ICON },
+    { id: 'tiktok', name: 'TikTok', icon: 'VFQ=' },
+    { id: 'roblox', name: 'Roblox', icon: 'Ulg=' },
+  ]
+  // The tile has no img until the catalogue arrives, so wait on the src itself.
+  const expectIcon = (id: number, icon: string) =>
+    waitFor(() => expect(tile(id).querySelector('img')?.getAttribute('src')).toBe('data:image/svg+xml;base64,' + icon))
+
+  it('button shows its chosen icon', async () => {
+    server({ buttons: [{ ...b1, services: ['youtube'], icon: 'tiktok' }], services: distinct })
+    await mountLoaded()
+    await expectIcon(11, 'VFQ=')
+  })
+
+  it('unknown icon falls back', async () => {
+    server({ buttons: [{ ...b1, services: ['youtube', 'tiktok'], icon: 'gone' }], services: distinct })
+    await mountLoaded()
+    await expectIcon(11, YT_ICON)
+  })
+
+  it('no icon uses first service', async () => {
+    server({ buttons: [{ ...b1, services: ['roblox', 'tiktok'], icon: '' }], services: distinct })
+    await mountLoaded()
+    await expectIcon(11, 'Ulg=')
+  })
+
   it('layout order', async () => {
     server()
     await mountLoaded()

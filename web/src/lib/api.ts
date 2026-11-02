@@ -355,6 +355,12 @@ export interface ButtonInput {
   services: string[]
   /** Seconds. */
   duration: number
+  /**
+   * Catalogue service id whose icon Home shows; "" (or absent) is the first
+   * service's icon. The server always sends it; optional in the type only so
+   * literals built before it existed still type-check. Read it as `icon ?? ''`.
+   */
+  icon?: string
 }
 
 export interface Button extends ButtonInput {

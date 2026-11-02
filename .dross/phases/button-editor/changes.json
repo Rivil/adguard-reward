@@ -1,0 +1,262 @@
+{
+  "phase": "button-editor",
+  "pr": 9,
+  "base": "milestone/v0.1",
+  "base_commit": "62905167e4851ce11d108c7b5bc8e2f8441dafcc",
+  "status": "shipped",
+  "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "09ce49d",
+      "completed_at": "2026-11-02T11:21:21.220738Z",
+      "notes": "quick: Kill 11 in-diff Buttons.svelte survivors"
+    },
+    "t-1": {
+      "files": [
+        "internal/store/migrations/0006_button_icon.sql",
+        "internal/store/buttons.go",
+        "internal/store/buttons_test.go",
+        "internal/store/store_test.go"
+      ],
+      "commit": "c00ee53",
+      "completed_at": "2026-11-02T10:47:32.988873Z",
+      "landmarks": [
+        {
+          "feature": "button icons",
+          "symbol": "Button.Icon",
+          "loc": "internal/store/buttons.go:21",
+          "what": "nullable buttons.icon column (migration 0006); \"\" stored as NULL and read back as \"\""
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "2454ed2",
+      "completed_at": "2026-11-02T10:50:36.675084Z",
+      "landmarks": [
+        {
+          "feature": "button settings editor",
+          "symbol": "move",
+          "loc": "web/src/lib/Buttons.svelte:145",
+          "what": "settings list grouped by child; Up/Down swaps with the same-child neighbour and PUTs the whole list, the open edit following its button"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "e83cb00",
+      "completed_at": "2026-11-02T10:53:14.026933Z",
+      "landmarks": [
+        {
+          "feature": "button settings editor",
+          "symbol": "del",
+          "loc": "web/src/lib/Buttons.svelte:167",
+          "what": "inline Delete \u003clabel\u003e? Confirm/Cancel per row (no browser dialog); index state re-pointed atomically with each PUT via put's onSaved"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/api/buttons.go",
+        "internal/api/buttons_test.go"
+      ],
+      "commit": "eab01af",
+      "completed_at": "2026-11-02T10:54:37.022942Z",
+      "landmarks": [
+        {
+          "feature": "button icons",
+          "symbol": "handleButtonsReplace",
+          "loc": "internal/api/buttons.go:167",
+          "what": "PUT /api/v1/buttons accepts icon, validated against the single catalogue read (422 buttons[i].icon); GET always returns icon"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "b4705cb",
+      "completed_at": "2026-11-02T10:59:27.93213Z",
+      "landmarks": [
+        {
+          "feature": "button icons",
+          "symbol": "Buttons icon select",
+          "loc": "web/src/lib/Buttons.svelte:277",
+          "what": "settings Icon picker over the live catalogue with preview; disabled and pass-through when the catalogue is down, stale ids reset visibly to Default"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "1915f8a",
+      "completed_at": "2026-11-02T11:01:27.145203Z",
+      "landmarks": [
+        {
+          "feature": "button icons",
+          "symbol": "iconFor",
+          "loc": "web/src/lib/Home.svelte:109",
+          "what": "Home tile uses the button's chosen icon when it is in the catalogue, else the first service's icon"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "internal/store/store_test.go is modified but not listed in the task's files; the change is a needed follow-on (TestMigrate_0005PreservesClients assumed 0005 was the last migration applied, which 0006 breaks), and it now checks that 0005 comes right after 0004",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestButtons_IconMigration first confirms the 0005 schema has no icon column, so it really is testing an old-schema store",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-1",
+          "text": "move() only re-points `editing` when the PUT succeeds. If the reorder PUT fails and the reload brings back a list whose order has changed on the server (the case 'failed reorder reloads' simulates), `editing` still holds the old index. It can then point at a different button while the form holds the first button's data, so Save would overwrite the wrong row. The existing save and delete failure paths have the same weakness, and no test combines an open edit with a failed reorder.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Every PUT response brings fresh ids, so the keyed each blocks re-create every row after each reorder. That is harmless at this list size.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 'edit on the neighbour survives reorder' and 'a button for an unknown child still gets a group' tests cover paths beyond the test_contract: the edit stays on the swapped-past neighbour, and a button whose child is unknown still gets its own group.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-3",
+          "text": "In 'delete asks first' the window.confirm spy is restored only at the end of the test; if an earlier expect fails, the spy is never restored and stays on window for later tests. An afterEach vi.restoreAllMocks() or try/finally would avoid this.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Clicking Delete or Cancel removes the button that has keyboard focus, and focus is not moved to Confirm or back to Delete. Keyboard and screen-reader users lose their place.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The confirm group's aria-label repeats the visible 'Delete \u003clabel\u003e?' text, so screen readers may announce it twice.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "move() and del() now re-point index state in the same step the PUT response lands, which removes a render where the edit highlight sat on the wrong row; both tests for this ('confirmation follows its button through a reorder', 'edit survives delete') are solid.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Icon is checked after the same item's services, so an item with both a bad service and a bad icon reports buttons[i].services first; this fits the existing stop-at-the-first-bad-field 422 behaviour",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestButtons_IconRoundTrip deliberately uses an icon (tiktok) that is not one of the button's own services, which exercises the locked icon_source decision directly",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-2",
+          "text": "Task record says ButtonInput gains `icon: string`, but api.ts declares it optional (`icon?: string`) so older literals and fixtures still type-check; toInput/draft always send it, so behaviour is unaffected, but the type no longer forces callers to supply it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "formLost is not cleared when the user picks a valid icon after a reset; choosing Default again in the same form brings the 'no longer available' note back (edit/resetForm do clear it)",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Extra test 'a reloaded catalogue without the chosen icon resets it visibly' covers the load()-time reset path beyond the test_contract",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "When a button has a chosen icon that is still in the catalogue, it now shows that icon even if its first service is unknown. The existing 'first service is unknown renders no icon' test only covers the case with no icon set, which is consistent with icon_fallback.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
+}

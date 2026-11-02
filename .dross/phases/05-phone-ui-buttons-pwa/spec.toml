@@ -84,11 +84,13 @@
   locked = true
 
 [[deferred]]
+  id = "6a1242ed19dc540c"
   text = "Button reorder controls (drag / up-down) in the settings form"
   why = "M2 full button editor"
   target = "button-editor"
 
 [[deferred]]
+  id = "2c0089bfa8d89337"
   text = "Custom per-button icon choice instead of the first service's AdGuard icon"
   why = "M2 full button editor"
   target = "button-editor"

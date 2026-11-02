@@ -15,13 +15,15 @@ import (
 // maxLabelRunes bounds a button label: it has to fit on a phone-width tile.
 const maxLabelRunes = 64
 
-// buttonView is the wire shape of one button; services is never null and
-// duration is whole seconds.
+// buttonView is the wire shape of one button; services is never null,
+// icon is always present ("" = the first service's icon) and duration is
+// whole seconds.
 type buttonView struct {
 	ID       int64    `json:"id"`
 	Label    string   `json:"label"`
 	ChildID  int64    `json:"child_id"`
 	Services []string `json:"services"`
+	Icon     string   `json:"icon"`
 	Duration int      `json:"duration"`
 }
 
@@ -34,6 +36,7 @@ func buttonViewOf(b store.Button) buttonView {
 		Label:    b.Label,
 		ChildID:  b.ChildID,
 		Services: b.Services,
+		Icon:     b.Icon,
 		Duration: int(b.Duration / time.Second),
 	}
 }
@@ -48,6 +51,7 @@ type buttonInput struct {
 	Label    string   `json:"label"`
 	ChildID  int64    `json:"child_id"`
 	Services []string `json:"services"`
+	Icon     string   `json:"icon"`     // a catalogue service id; "" or absent = none
 	Duration int      `json:"duration"` // seconds
 }
 
@@ -81,7 +85,7 @@ func writeButtons(w http.ResponseWriter, rows []store.Button) {
 // the catalogue is read once, only when there is something to check.
 func (a *API) handleButtonsReplace(w http.ResponseWriter, r *http.Request) {
 	var in buttonsRequest
-	if !decodeGrantBody(w, r, &in, `{"buttons":[{label, child_id, services, duration}]}`) {
+	if !decodeGrantBody(w, r, &in, `{"buttons":[{label, child_id, services, icon, duration}]}`) {
 		return
 	}
 	if in.Buttons == nil {
@@ -119,7 +123,8 @@ func (a *API) handleButtonsReplace(w http.ResponseWriter, r *http.Request) {
 				fmt.Sprintf("buttons[%d].services: must name at least one service", i))
 			return
 		}
-		items = append(items, store.Button{Label: label, ChildID: b.ChildID, Services: services, Duration: d})
+		items = append(items, store.Button{Label: label, ChildID: b.ChildID, Services: services,
+			Icon: strings.TrimSpace(b.Icon), Duration: d})
 	}
 
 	checked := map[int64]bool{}
@@ -156,6 +161,13 @@ func (a *API) handleButtonsReplace(w http.ResponseWriter, r *http.Request) {
 						fmt.Sprintf("buttons[%d].services: unknown service %q", i, s))
 					return
 				}
+			}
+			// Any catalogue service may be the icon, not just the button's
+			// own (locked icon_source); it is checked against the same read.
+			if b.Icon != "" && !known[b.Icon] {
+				writeError(w, http.StatusUnprocessableEntity, CodeUnprocessable,
+					fmt.Sprintf("buttons[%d].icon: unknown service %q", i, b.Icon))
+				return
 			}
 		}
 	}
