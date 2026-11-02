@@ -60,6 +60,12 @@ type ButtonStore interface {
 	ReplaceButtons(ctx context.Context, in []store.Button) ([]store.Button, error)
 }
 
+// CustomServiceStore is the slice of *store.Store the catalogue needs: the
+// parent-defined services, by id.
+type CustomServiceStore interface {
+	ListCustomServices(ctx context.Context) ([]store.CustomService, error)
+}
+
 // Deps is everything the handlers reach for. Interfaces are api-local so
 // the package compiles against fakes.
 type Deps struct {
@@ -72,6 +78,9 @@ type Deps struct {
 	Children ChildStore
 	Grants   Grants
 	Buttons  ButtonStore
+	// CustomServices may be nil, and the catalogue then lists built-ins
+	// only; main always wires it.
+	CustomServices CustomServiceStore
 }
 
 // API is the router plus its dependencies.

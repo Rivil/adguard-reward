@@ -1359,6 +1359,51 @@ func TestRun_ButtonsWired(t *testing.T) {
 	}
 }
 
+// TestRun_CustomServicesWired boots run() on a data_dir holding a custom
+// service, as a previous process left it, and expects /services to list it
+// after the built-ins: proof main hands the store to api.Deps.
+func TestRun_CustomServicesWired(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	portal, err := st.CreateCustomService(context.Background(), "Portal", []string{"portal.example.com"})
+	_ = st.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+	ck := loginOK(t, c, base)
+
+	resp := call(t, c, http.MethodGet, base, "/api/v1/services", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("GET /api/v1/services = %d %s, want 200", resp.StatusCode, b)
+	}
+	var body struct {
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	n := len(body.Services)
+	if n < 2 {
+		t.Fatalf("services = %v, want the built-ins then Portal", body.Services)
+	}
+	want := map[string]any{"id": store.CustomServiceID(portal.ID), "name": "Portal", "icon": "", "custom": true}
+	if !reflect.DeepEqual(body.Services[n-1], want) {
+		t.Errorf("last service = %v, want %v", body.Services[n-1], want)
+	}
+	if body.Services[0]["custom"] != false {
+		t.Errorf("first service = %v, want a built-in with custom:false", body.Services[0])
+	}
+}
+
 // TestRun_NoraConfig boots the process on the *shipped* nora template, with
 // only what cannot be committed supplied from the environment, and simulates
 // tailscale serve: requests arrive from 127.0.0.1 carrying the phone's tailnet

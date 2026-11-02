@@ -124,15 +124,16 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 		ErrorWriter: api.UnauthorizedWriter,
 	})
 	apiHandler := api.New(api.Deps{
-		AdGuard:  client,
-		ClientIP: api.ClientIP(cfg.TrustedProxyNets()),
-		Log:      log,
-		Auth:     sessions,
-		Limiter:  ratelimit.New(ratelimit.Defaults()),
-		Sessions: st,
-		Children: st,
-		Grants:   eng,
-		Buttons:  st,
+		AdGuard:        client,
+		ClientIP:       api.ClientIP(cfg.TrustedProxyNets()),
+		Log:            log,
+		Auth:           sessions,
+		Limiter:        ratelimit.New(ratelimit.Defaults()),
+		Sessions:       st,
+		Children:       st,
+		Grants:         eng,
+		Buttons:        st,
+		CustomServices: st,
 	}).Handler()
 
 	// /healthz stays on the plain mux, outside the API chain: it is
