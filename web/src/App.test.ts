@@ -320,3 +320,31 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
   })
 })
+
+describe('services route', () => {
+  it('loading /services renders the Services heading', async () => {
+    history.replaceState(null, '', '/services')
+    route.set('services')
+    const calls = mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/custom-services': () => json(200, { custom_services: [] }),
+    })
+    render(App)
+    expect(await screen.findByRole('heading', { name: 'Services' })).toBeTruthy()
+    expect(location.pathname).toBe('/services')
+    expect(get(route)).toBe('services')
+    expect(calls.map((c) => c.url)).toContain('/api/v1/custom-services')
+  })
+
+  it('services needs a session', async () => {
+    history.replaceState(null, '', '/services')
+    route.set('services')
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+    await tick()
+    expect(location.pathname).toBe('/login')
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+    expect(screen.queryByRole('heading', { name: 'Services' })).toBeNull()
+  })
+})
