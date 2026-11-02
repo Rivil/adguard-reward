@@ -45,7 +45,7 @@ const NETWORK_MESSAGE = "Can't reach the server — check your connection"
 // first is still out is dropped, never a second POST.
 const inflight = new Set<string>()
 
-/** The grant a 201 describes, shaped like the server will list it. */
+/** The grant a 201 describes, shaped like the server will list it, shared devices included. */
 function grantFrom(spec: TapSpec, services: string[], created: GrantCreated): Grant {
   const ends = Date.parse(created.ends_at)
   return {
@@ -55,6 +55,7 @@ function grantFrom(spec: TapSpec, services: string[], created: GrantCreated): Gr
     clients: spec.clients,
     started_at: new Date(ends - spec.duration * 1000).toISOString(),
     ends_at: created.ends_at,
+    shared: created.shared ?? [],
   }
 }
 
