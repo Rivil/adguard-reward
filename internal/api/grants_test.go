@@ -625,3 +625,70 @@ func TestGrants_ListChildrenReadFails(t *testing.T) {
 		t.Errorf("degraded body serialises a null: %s", w.Body.String())
 	}
 }
+
+// TestGrants_Custom grants a custom service through the real engine and
+// fake: the catalogue check accepts its "custom:<n>" id, the region gains one
+// @@ exception per domain for the child's clients, and no custom id leaks
+// into a client's blocked_services.
+func TestGrants_Custom(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	cs := createCustom(t, h, cookie, "Portal", "a.com", "b.com")
+	if cs.ServiceID != "custom:1" {
+		t.Fatalf("precondition: service id %q, want custom:1", cs.ServiceID)
+	}
+	before := h.sortedBlocked("Kid phone")
+
+	created := h.grantOK(cookie, ada.ID, []string{"custom:1"}, 1800)
+	if !created.Applied || len(created.Failed) != 0 {
+		t.Fatalf("201 = %+v, want applied true, failed []", created)
+	}
+	want := []string{
+		"||a.com^$client='Kid phone'",
+		"||b.com^$client='Kid phone'",
+		"@@||a.com^$client='Kid phone'",
+		"@@||b.com^$client='Kid phone'",
+	}
+	if got := managedRegion(h); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q", got, want)
+	}
+	if got := h.sortedBlocked("Kid phone"); !reflect.DeepEqual(got, before) {
+		t.Errorf("Kid phone blocked_services = %v, want unchanged %v", got, before)
+	}
+	_, list := h.listGrants(cookie)
+	if len(list.Grants) != 1 || !reflect.DeepEqual(list.Grants[0].Services, []string{"custom:1"}) {
+		t.Errorf("GET grants = %+v, want one grant on [custom:1]", list.Grants)
+	}
+}
+
+// TestGrants_UnknownCustom refuses a custom id with no stored service: the
+// prefix alone is not a pass. Nothing is stored and the region is untouched.
+func TestGrants_UnknownCustom(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	createCustom(t, h, cookie, "Portal", "a.com")
+	sets := h.fake.CountRequests("POST", setRulesPath)
+
+	for _, services := range [][]string{{"custom:99"}, {"custom:1", "custom:99"}, {"tiktok", "custom:99"}} {
+		w := h.postGrant(cookie, grantBody(ada.ID, services, 1800))
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("%v: %d %s, want 422", services, w.Code, w.Body.String())
+		}
+		if e := decodeErr(t, w); e.Error != CodeUnprocessable || !strings.Contains(e.Message, `"custom:99"`) {
+			t.Errorf("%v: envelope = %+v, want unprocessable naming custom:99", services, e)
+		}
+	}
+	for _, id := range []string{"custom:", "custom:abc", "custom:01"} {
+		if w := h.postGrant(cookie, grantBody(ada.ID, []string{id}, 1800)); w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("%q: %d %s, want 422", id, w.Code, w.Body.String())
+		}
+	}
+	if n := h.grantRows(); n != 0 {
+		t.Errorf("%d grant rows after rejected creates", n)
+	}
+	if n := h.fake.CountRequests("POST", setRulesPath) - sets; n != 0 {
+		t.Errorf("%d set_rules POSTs after rejected creates", n)
+	}
+}
