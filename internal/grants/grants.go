@@ -58,6 +58,11 @@ type Store interface {
 	ListChildren(ctx context.Context) ([]store.Child, error)
 	AddChildClient(ctx context.Context, childID int64, name string) error
 	RenameClient(ctx context.Context, oldName, newName string) error
+	ListCustomServices(ctx context.Context) ([]store.CustomService, error)
+	GetCustomService(ctx context.Context, id int64) (store.CustomService, error)
+	CreateCustomService(ctx context.Context, name string, domains []string) (store.CustomService, error)
+	UpdateCustomService(ctx context.Context, id int64, name string, domains []string) (store.CustomService, error)
+	DeleteCustomService(ctx context.Context, id int64) error
 }
 
 // AdGuard is the client subset the engine writes through; *adguard.Client
@@ -69,6 +74,7 @@ type AdGuard interface {
 	AddClient(ctx context.Context, nc adguard.NewClient) error
 	AdoptBlockedServices(ctx context.Context, clientName string, ids []string) error
 	RenameClient(ctx context.Context, oldName, newName string) error
+	EditUserRules(ctx context.Context, fn func(current []string) ([]string, error)) (bool, error)
 }
 
 // Timer is what AfterFunc returns; *time.Timer satisfies it.
