@@ -127,7 +127,7 @@
   {:else}
     <ul class="list">
       {#each services as s (s.id)}
-        <li class={{ editing: editing === s.id }} data-service={s.service_id}>
+        <li class:editing={editing === s.id} data-service={s.service_id}>
           <div class="row">
             <ServiceIcon name={s.name} icon="" size={28} />
             <div>
