@@ -1298,3 +1298,138 @@
   line = 210
   accepted_in = "button-editor"
   reason = "equivalent: null > i is false for every row index i >= 0, so the editing !== null guard only narrows the type"
+
+[[accepted]]
+  key = "891c4e5dcff99373"
+  file = "internal/rules/region.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case begins == 0 && ends == 0:"
+  line = 51
+  accepted_in = "custom-services"
+  reason = "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "f20868ec245ab68d"
+  file = "internal/rules/region.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case begins == 1 && ends == 1 && begin < end:"
+  line = 57
+  accepted_in = "custom-services"
+  reason = "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "304c22427bc9c248"
+  file = "internal/rules/region.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case begins == 1 && ends == 1 && begin < end:"
+  line = 57
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: the case only applies when exactly one BeginMarker and one EndMarker line exist, and a single line cannot equal both, so begin == end is unreachable and begin < end vs begin <= end behave identically (hand-applied 2026-11-02: tests pass, as expected for an equivalent)."
+
+[[accepted]]
+  key = "cccf33fd143b660e"
+  file = "internal/grants/reconcile.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 69
+  accepted_in = "custom-services"
+  reason = "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -> err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "02e04620e8b34819"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "INCREMENT_DECREMENT"
+  text = "s.filterInFlight++"
+  line = 431
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "3188cf890a3ee017"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "if s.filterInFlight > s.filterMaxFlight {"
+  line = 432
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "24f1c500a12e3a58"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "INCREMENT_DECREMENT"
+  text = "s.filterInFlight--"
+  line = 447
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "d1ef95a7df479858"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "if err := dec.Decode(&in); err != nil {"
+  line = 637
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "31c90b7c2c61feca"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "if s.filterInFlight > s.filterMaxFlight {"
+  line = 432
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant in the test double's max-in-flight tracker: > vs >= only differs when filterInFlight == filterMaxFlight, where the assignment rewrites the same value (hand-applied 2026-11-02: tests pass, as expected for an equivalent)."
+
+[[accepted]]
+  key = "fbcbc76509425f22"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: filtering_status.json user_rules: \" + err.Error())"
+  line = 105
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "6366333d825413bd"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "http.Error(w, \"invalid set_rules request: \"+err.Error(), http.StatusBadRequest)"
+  line = 638
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "d6679638cc1e6564"
+  file = "internal/api/custom_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "a.log.Error(op+\" failed\", \"err\", err)"
+  line = 153
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "476fdd58ed2fe273"
+  file = "internal/api/custom_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "writeError(w, http.StatusInternalServerError, \"internal\", \"could not \"+op)"
+  line = 154
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "e39161b598da64d9"
+  file = "internal/api/clients.go"
+  op = "ARITHMETIC_BASE"
+  text = "func (e *catalogueAdGuardError) Error() string { return \"adguard services: \" + e.err.Error() }"
+  line = 284
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "37db173ea9b8e0ba"
+  file = "internal/grants/clients.go"
+  op = "ARITHMETIC_BASE"
+  text = "e.log.Warn(op+\": managed rules not updated; the reconciler will retry\", \"client\", client, \"err\", err)"
+  line = 193
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
