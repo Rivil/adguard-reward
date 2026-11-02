@@ -103,9 +103,13 @@
     return serviceNames[id] ?? id
   }
 
+  // The button's chosen icon while the catalogue still has it, else the
+  // first service's (locked icon_fallback): a catalogue change never blanks
+  // a button that still has a known service.
   function iconFor(b: Button): string | null {
-    const first = services?.find((s) => s.id === b.services[0])
-    return first ? iconUrl(first.icon) : null
+    const chosen = b.icon ? services?.find((s) => s.id === b.icon) : undefined
+    const pick = chosen ?? services?.find((s) => s.id === b.services[0])
+    return pick ? iconUrl(pick.icon) : null
   }
 
   function buttonsFor(childId: number): Button[] {
