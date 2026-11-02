@@ -30,6 +30,8 @@
   let value = $state<GrantFormValue>({ child_id: null, services: [], minutes: 60 })
   let valid = $state(false)
   let editing = $state<number | null>(null)
+  // The one row asking "Delete <label>?", by full-list index like `editing`.
+  let confirming = $state<number | null>(null)
 
   const canSave = $derived(!pending && label.trim() !== '' && valid)
 
@@ -50,6 +52,9 @@
 
   async function load() {
     const [b, c] = await Promise.all([listButtons(), listChildren()])
+    // A reloaded list may be in any order, so a delete question asked by
+    // index no longer names a known button.
+    confirming = null
     buttons = b
     children = c
     try {
@@ -109,10 +114,15 @@
     return services?.find((s) => s.id === id)?.name ?? id
   }
 
-  /** PUT the whole list; the response is server truth (fresh ids). */
-  async function put(next: ButtonInput[]): Promise<boolean> {
+  /**
+   * PUT the whole list; the response is server truth (fresh ids). `onSaved`
+   * re-points index state in the same step the new list lands, so no render
+   * shows it on the wrong row.
+   */
+  async function put(next: ButtonInput[], onSaved?: () => void): Promise<boolean> {
     return run(async () => {
       buttons = await saveButtons(next)
+      onSaved?.()
     })
   }
 
@@ -139,21 +149,31 @@
 
   /**
    * Swap the row at full-list index `i` with the row at `j` (its same-child
-   * neighbour) and PUT. The open edit is an index too, so it follows the
-   * button it was on — but only once the server has taken the new order.
+   * neighbour) and PUT. The open edit and an open delete confirmation are
+   * indices too, so they follow the button they were on — but only once the
+   * server has taken the new order.
    */
   async function move(i: number, j: number) {
     const next = buttons.map(toInput)
     ;[next[i], next[j]] = [next[j], next[i]]
-    const was = editing
-    if (await put(next)) {
-      if (was === i) editing = j
-      else if (was === j) editing = i
-    }
+    const swap = (at: number | null) => (at === i ? j : at === j ? i : at)
+    await put(next, () => {
+      editing = swap(editing)
+      confirming = swap(confirming)
+    })
   }
 
-  function del(i: number) {
-    void put(buttons.filter((_, j) => j !== i).map(toInput))
+  /** Confirm the delete asked on row `i`: PUT the list without it. */
+  async function del(i: number) {
+    await put(
+      buttons.filter((_, j) => j !== i).map(toInput),
+      () => {
+        confirming = null
+        // Rows after the deleted one shift up a place; the open edit goes with them.
+        if (editing === i) resetForm()
+        else if (editing !== null && editing > i) editing -= 1
+      },
+    )
   }
 </script>
 
@@ -180,16 +200,24 @@
                 <strong>{b.label}</strong>
                 <span class="meta">{childName(b.child_id)} · {b.services.map(serviceName).join(', ')} · {formatDuration(b.duration)}</span>
               </div>
-              <div class="actions">
-                <button type="button" aria-label={`Move ${b.label} up`} onclick={() => up !== null && move(i, up)} disabled={pending || up === null}>
-                  Up
-                </button>
-                <button type="button" aria-label={`Move ${b.label} down`} onclick={() => down !== null && move(i, down)} disabled={pending || down === null}>
-                  Down
-                </button>
-                <button type="button" onclick={() => edit(i)} disabled={pending}>Edit</button>
-                <button type="button" onclick={() => del(i)} disabled={pending}>Delete</button>
-              </div>
+              {#if confirming === i}
+                <div class="actions confirm" role="group" aria-label={`Delete ${b.label}?`}>
+                  <span>Delete {b.label}?</span>
+                  <button type="button" class="danger" onclick={() => del(i)} disabled={pending}>Confirm</button>
+                  <button type="button" onclick={() => (confirming = null)} disabled={pending}>Cancel</button>
+                </div>
+              {:else}
+                <div class="actions">
+                  <button type="button" aria-label={`Move ${b.label} up`} onclick={() => up !== null && move(i, up)} disabled={pending || up === null}>
+                    Up
+                  </button>
+                  <button type="button" aria-label={`Move ${b.label} down`} onclick={() => down !== null && move(i, down)} disabled={pending || down === null}>
+                    Down
+                  </button>
+                  <button type="button" onclick={() => edit(i)} disabled={pending}>Edit</button>
+                  <button type="button" onclick={() => (confirming = i)} disabled={pending}>Delete</button>
+                </div>
+              {/if}
             </li>
           {/each}
         </ul>
@@ -278,6 +306,13 @@
   }
   .actions button {
     min-height: 2.75rem;
+  }
+  .confirm {
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .confirm .danger {
+    color: #b00020;
   }
   .none {
     opacity: 0.75;

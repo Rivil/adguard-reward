@@ -205,12 +205,133 @@ describe('Buttons', () => {
     expect(labelInput().value).toBe('')
   })
 
-  it('delete PUTs without the item', async () => {
-    const s = await mount([b1, b2])
-    await fireEvent.click(rowButton(3, 'Delete'))
-    await waitFor(() => expect(rows().length).toBe(1))
-    expect(puts(s.calls)).toEqual([{ buttons: [{ label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 }] }])
-    expect(rows()[0].textContent).toContain('Roblox 1h')
+  describe('delete', () => {
+    const confirmOf = (id: number) => document.querySelector(`li[data-button="${id}"] .confirm`)
+    const confirming = () => [...document.querySelectorAll('li[data-button] .confirm')].map((c) => c.closest('li')?.getAttribute('data-button'))
+
+    it('delete asks first', async () => {
+      const dialog = vi.spyOn(window, 'confirm')
+      const s = await mount([b1, b2])
+      await fireEvent.click(rowButton(3, 'Delete'))
+      expect(puts(s.calls)).toHaveLength(0)
+      expect(confirmOf(3)?.textContent).toContain('Delete YouTube 90m?')
+      expect(rowButton(3, 'Confirm')).toBeTruthy()
+      expect(rowButton(3, 'Cancel')).toBeTruthy()
+      // The row's normal actions give way to the question.
+      expect(() => rowButton(3, 'Delete')).toThrow()
+      expect(confirmOf(4)).toBeNull()
+
+      await fireEvent.click(rowButton(3, 'Cancel'))
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(3, 'Confirm'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(dialog).not.toHaveBeenCalled()
+      dialog.mockRestore()
+    })
+
+    it('cancel delete', async () => {
+      const s = await mount([b1, b2])
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(3, 'Cancel'))
+      expect(puts(s.calls)).toHaveLength(0)
+      expect(rows().map((r) => r.dataset.button)).toEqual(['3', '4'])
+      expect(confirmOf(3)).toBeNull()
+      expect(rowButton(3, 'Delete').disabled).toBe(false)
+    })
+
+    it('delete PUTs without the item', async () => {
+      const s = await mount([b1, b2])
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(3, 'Confirm'))
+      await waitFor(() => expect(rows().length).toBe(1))
+      expect(puts(s.calls)).toEqual([{ buttons: [{ label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 }] }])
+      expect(rows()[0].textContent).toContain('Roblox 1h')
+      expect(confirming()).toEqual([])
+    })
+
+    it('delete in a mixed list', async () => {
+      // [Ada1, Ben1, Ada2] displays as Ada1, Ada2 | Ben1: Ada2 is second on
+      // screen but third in the list the PUT is built from.
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(5, 'Delete'))
+      await fireEvent.click(rowButton(5, 'Confirm'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(puts(s.calls)[0].buttons.map((b) => b.label)).toEqual(['YouTube 90m', 'Roblox 1h'])
+    })
+
+    it('delete in a mixed list, middle of the list', async () => {
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(4, 'Delete'))
+      await fireEvent.click(rowButton(4, 'Confirm'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      expect(puts(s.calls)[0].buttons.map((b) => b.label)).toEqual(['YouTube 90m', 'TikTok 30m'])
+    })
+
+    it('one confirmation at a time', async () => {
+      await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(4, 'Delete'))
+      expect(confirming()).toEqual(['4'])
+      expect(rowButton(3, 'Delete')).toBeTruthy()
+    })
+
+    it('Confirm and Cancel lock while the delete PUT is in flight', async () => {
+      let release!: (r: Response) => void
+      await mount([b1, b2], { put: () => new Promise<Response>((r) => (release = r)) })
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(3, 'Confirm'))
+      expect(rowButton(3, 'Confirm').disabled).toBe(true)
+      expect(rowButton(3, 'Cancel').disabled).toBe(true)
+      release(json(200, { buttons: [b2] }))
+      await waitFor(() => expect(rows().length).toBe(1))
+      expect(confirming()).toEqual([])
+    })
+
+    it('a confirmation follows its button through a reorder', async () => {
+      // Ada1 is asking; Ada2 moves up past it. The question stays on Ada1.
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(5, 'Up'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      // [Ada2, Ben1, Ada1] with fresh ids 100, 101, 102.
+      await waitFor(() => expect(confirming()).toEqual(['102']))
+      expect(confirmOf(102)?.textContent).toContain('Delete YouTube 90m?')
+      await fireEvent.click(rowButton(102, 'Confirm'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(puts(s.calls)[1].buttons.map((b) => b.label)).toEqual(['TikTok 30m', 'Roblox 1h'])
+    })
+
+    it('edit survives delete', async () => {
+      // Editing Ada2 (third in the list) while Ada1 (first) is deleted: the
+      // edit shifts up with Ada2 instead of landing on whatever is now third.
+      const s = await mount([b1, b2, b3])
+      await fireEvent.click(rowButton(5, 'Edit'))
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(3, 'Confirm'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      await waitFor(() => expect(rows().length).toBe(2))
+      expect(document.querySelector('li.editing')?.getAttribute('data-button')).toBe('101')
+      expect(formHeading()).toBe('Edit button')
+
+      await fireEvent.input(labelInput(), { target: { value: 'Renamed' } })
+      await fireEvent.click(saveButton())
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(2))
+      expect(puts(s.calls)[1].buttons).toEqual([
+        { label: 'Roblox 1h', child_id: 2, services: ['roblox'], duration: 3600 },
+        { label: 'Renamed', child_id: 1, services: ['tiktok'], duration: 1800 },
+      ])
+    })
+
+    it('deleting the button being edited resets the form', async () => {
+      const s = await mount([b1, b2])
+      await fireEvent.click(rowButton(3, 'Edit'))
+      await fireEvent.click(rowButton(3, 'Delete'))
+      await fireEvent.click(rowButton(3, 'Confirm'))
+      await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+      await waitFor(() => expect(formHeading()).toBe('New button'))
+      expect(labelInput().value).toBe('')
+      expect(document.querySelector('li.editing')).toBeNull()
+    })
   })
 
   it('422 shows the server message and keeps the draft', async () => {
@@ -239,6 +360,7 @@ describe('Buttons', () => {
   it('a PUT that never reaches the server is the network alert', async () => {
     const s = await mount([b1], { put: () => Promise.reject(new TypeError('Failed to fetch')) })
     await fireEvent.click(rowButton(3, 'Delete'))
+    await fireEvent.click(rowButton(3, 'Confirm'))
     const alert = await screen.findByRole('alert')
     expect(alert.getAttribute('data-error')).toBe('network')
     expect(alert.textContent).toBe("Can't reach the server — check your connection")
@@ -398,6 +520,7 @@ describe('Buttons', () => {
     expect(document.querySelector('[data-unavailable]')).toBeNull()
     s.state.servicesDown = true
     await fireEvent.click(rowButton(3, 'Delete'))
+    await fireEvent.click(rowButton(3, 'Confirm'))
     await screen.findByRole('alert')
     await waitFor(() => expect(getsOf(s.calls, '/api/v1/services')).toBe(2))
     await waitFor(() => expect(document.querySelector('[data-unavailable]')).not.toBeNull())
