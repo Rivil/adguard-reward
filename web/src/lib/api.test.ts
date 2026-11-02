@@ -462,10 +462,10 @@ describe('migrationDismissed', () => {
 })
 
 describe('device endpoints', () => {
-  const view = { name: 'TV', ids: ['192.168.1.9'], use_global_blocked_services: false, child: null, children: [] }
+  const view = { name: 'TV', ids: ['192.168.1.9'], use_global_blocked_services: false, children: [] }
 
   it('createClient sends name, ids and child_id null with the CSRF header', async () => {
-    const calls = mockFetch(json(201, view), json(201, { ...view, child: { id: 1, name: 'Ada' } }))
+    const calls = mockFetch(json(201, view), json(201, { ...view, children: [{ id: 1, name: 'Ada' }] }))
     expect(await createClient('TV', ['192.168.1.9'], null)).toEqual(view)
     expect(calls[0].url).toBe('/api/v1/clients')
     expect(calls[0].init.method).toBe('POST')
@@ -565,16 +565,17 @@ describe('shared-device fields default to []', () => {
   })
 
   it('listDevices fills a missing children and keeps a present one', async () => {
-    const bare = { name: 'TV', ids: [], use_global_blocked_services: false, child: null }
+    const bare = { name: 'TV', ids: [], use_global_blocked_services: false }
     const owned = { ...bare, name: 'Kid phone', children: [{ id: 1, name: 'Ada' }, { id: 2, name: 'Ben' }] }
     mockFetch(json(200, { clients: [bare, owned], unlabelled: [] }))
     const got = await listDevices()
-    expect(got.clients[0].children).toEqual([])
-    expect(got.clients[1].children).toEqual(owned.children)
+    expect(got.clients[0]).toStrictEqual({ ...bare, children: [] })
+    expect(got.clients[1]).toStrictEqual(owned)
+    for (const c of got.clients) expect(c).not.toHaveProperty('child')
   })
 
   it('listClients, createClient and renameClient fill a missing children', async () => {
-    const bare = { name: 'TV', ids: [], use_global_blocked_services: false, child: null }
+    const bare = { name: 'TV', ids: [], use_global_blocked_services: false }
     mockFetch(json(200, { clients: [bare] }), json(201, bare), json(200, bare))
     expect((await listClients())[0].children).toEqual([])
     expect((await createClient('TV', [], null)).children).toEqual([])

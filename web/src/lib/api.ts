@@ -182,8 +182,6 @@ export interface ClientView {
   name: string
   ids: string[]
   use_global_blocked_services: boolean
-  /** @deprecated read `children`; removed once no consumer reads it. */
-  child: ChildRef | null
   /** Every owner, id ASC; [] when unassigned. Always filled by the fetchers below. */
   children?: ChildRef[]
 }

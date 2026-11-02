@@ -33,7 +33,7 @@ const ben: Child = { id: 2, name: 'Ben', clients: [] }
 
 /** A client held by owners (id ASC), as GET /api/v1/clients sends it. */
 function client(name: string, ...owners: ChildRef[]): ClientView {
-  return { name, ids: [], use_global_blocked_services: false, child: owners[0] ?? null, children: owners }
+  return { name, ids: [], use_global_blocked_services: false, children: owners }
 }
 
 function labelOf(f: HTMLElement, name: string): string {
