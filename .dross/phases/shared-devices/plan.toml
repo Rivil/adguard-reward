@@ -28,23 +28,10 @@ task_seq = 17
   id = "t-1"
   wave = 1
   title = "Rebuild child_clients with composite key"
-  files = ["internal/store/migrations/0005_shared_clients.sql", "internal/store/children.go", "internal/store/children_test.go", "internal/store/store_test.go"]
-  description = """
-New migration 0005: create-copy-drop-rename rebuild to PRIMARY KEY (client_name, child_id), keeping FK ON DELETE CASCADE,
-the child_id index and an index on client_name, copying every row. checkConflicts keeps only the name check, so
-Create/UpdateChild accept a client another child holds. UpdateChild and DeleteChild touch only their own child_id rows.
-"""
+  files = ["internal/store/migrations/0005_shared_clients.sql", "internal/store/children.go", "internal/store/children_test.go", "internal/store/store_test.go", "internal/api/children_test.go"]
+  description = "New migration 0005: create-copy-drop-rename rebuild to PRIMARY KEY (client_name, child_id), keeping FK ON DELETE CASCADE, the child_id index and an index on client_name, copying every row. checkConflicts keeps only the name check, so Create/UpdateChild accept a client another child holds. UpdateChild and DeleteChild touch only their own child_id rows. POST /children has no API-level client pre-check, so the \"taken client\" POST case of TestChildren_Conflicts flips here."
   covers = ["c-1", "c-7"]
-  test_contract = [
-    '''if the rebuild drops rows, TestMigrate_0005PreservesClients fails: a DB at 0004 with Ada->[Kid phone], Ben->[Kid tablet] holds exactly those rows after Open, and 0005 applies after 0004_buttons.sql''',
-    '''if the FK/cascade or child_id index is lost, TestSchema_ChildClientsCascade fails: DELETE FROM children leaves no orphan child_clients rows and the index exists''',
-    '''if the composite key is missing, TestSchema_ChildClientsPK fails: a raw duplicate INSERT (Kid phone, 1) errors with a constraint violation''',
-    '''if the client check survives in UpdateChild, TestUpdateChild_SharedClient fails: Ada holds Kid phone; UpdateChild(Ben, "Ben", [Kid phone]) returns nil and ListChildren shows Kid phone under Ada and Ben''',
-    '''if the client check survives in CreateChild, TestCreateChild_SharedClient fails: CreateChild("Cleo", [Kid phone]) while Ada holds it returns Cleo with [Kid phone]''',
-    '''if UpdateChild deletes by client_name, TestUpdateChild_RemoveKeepsOtherOwner fails: Ben saved without Kid phone leaves Ada holding it''',
-    '''if cascade is by client, TestDeleteChild_KeepsOtherOwner fails: DeleteChild(Ben) leaves Ada holding Kid phone and no row for Ben''',
-    '''if the name check is lost, the existing ErrNameTaken cases in children_test.go fail unchanged''',
-  ]
+  test_contract = ["if the rebuild drops rows, TestMigrate_0005PreservesClients fails: a DB at 0004 with Ada->[Kid phone], Ben->[Kid tablet] holds exactly those rows after Open, and 0005 applies after 0004_buttons.sql", "if the FK/cascade or child_id index is lost, TestSchema_ChildClientsCascade fails: DELETE FROM children leaves no orphan child_clients rows and the index exists", "if the composite key is missing, TestSchema_ChildClientsPK fails: a raw duplicate INSERT (Kid phone, 1) errors with a constraint violation", "if the client check survives in UpdateChild, TestUpdateChild_SharedClient fails: Ada holds Kid phone; UpdateChild(Ben, \"Ben\", [Kid phone]) returns nil and ListChildren shows Kid phone under Ada and Ben", "if the client check survives in CreateChild, TestCreateChild_SharedClient fails: CreateChild(\"Cleo\", [Kid phone]) while Ada holds it returns Cleo with [Kid phone]", "if UpdateChild deletes by client_name, TestUpdateChild_RemoveKeepsOtherOwner fails: Ben saved without Kid phone leaves Ada holding it", "if cascade is by client, TestDeleteChild_KeepsOtherOwner fails: DeleteChild(Ben) leaves Ada holding Kid phone and no row for Ben", "if the name check is lost, the existing ErrNameTaken cases in children_test.go fail unchanged", "if POST /children still conflicts on a held client, TestChildren_CreateShared (internal/api/children_test.go) fails: POST /children {Cy, [Kid phone]} while Ada holds it -> 201 and GET /children lists Kid phone under Ada and Cy; the \"taken client\" POST case is removed from TestChildren_Conflicts, whose name-taken and PUT-name cases stay unchanged"]
   status = "pending"
 
 [[task]]
@@ -124,19 +111,7 @@ only. A failed read fails every client: the grant stays active and is retried, n
 loop goes through the same revert, so each expiry sees the statuses the previous one committed.
 """
   covers = ["c-4"]
-  test_contract = [
-    '''if revert is not ref-counted, TestEngine_SharedExpiryKeepsOther fails: G1 (Ada, youtube, [Kid phone, Old laptop]) and G2 (Ben, youtube, [Kid phone]); advance past G1 -> Old laptop blocks youtube, Kid phone does not, G1 expired; advance past G2 -> Kid phone blocks youtube''',
-    '''if End bypasses it, TestEngine_SharedEnd fails: End(G1) with G2 active -> nil, G1 ended, Kid phone still lacks youtube; End(G2) then re-blocks it''',
-    '''if a different service is spared, TestEngine_EndSharedOtherService fails: Ada's grant is tiktok, Ben's is youtube, both on Kid phone; ending Ben's re-blocks youtube''',
-    '''if reconcile uses its snapshot, TestReconcile_BothOverdueShared fails: G1 and G2 both past ends_at, no timer fired -> one Reconcile expires both, Reverted == 2, Kid phone blocks youtube''',
-    '''if reconcile ignores a live owner, TestReconcile_OverdueSharedKeepsOther fails: an overdue Ben grant reverted while Ada's live grant covers Kid phone leaves youtube open there, Reverted == 1''',
-    '''if timers race, TestExpire_SharedTimersSerial fails: both expiry callbacks fired concurrently -> youtube blocked on Kid phone and MaxInFlightUpdates() == 1''',
-    '''if expired/ended grants count as cover, TestEngine_ExpiredGrantNoCover fails: an ended G0 on Kid phone does not keep youtube open when G1 expires''',
-    '''if a fully covered client still gets a POST, TestEngine_CoveredNoWrite fails: G1 on [Kid phone] only with G2 active -> G1's expiry issues 0 /control/clients/update''',
-    '''if the read fails open, TestEnd_ActiveReadFails fails: ListActiveGrants error -> *ErrRevertFailed, zero AdGuard update POSTs, grant still active''',
-    '''if ownership is used, TestExpire_ClientUnassigned fails: Kid phone removed from Ada after her grant; expiry still re-blocks it''',
-    '''if the unshared path regresses, the existing TestEngine_TimerReverts and TestReconcile_DriftRepaired fail unchanged''',
-  ]
+  test_contract = ["if revert is not ref-counted, TestEngine_SharedExpiryKeepsOther fails: G1 (Ada, youtube, [Kid phone, Old laptop]) and G2 (Ben, youtube, [Kid phone]); advance past G1 -> Old laptop blocks youtube, Kid phone does not, G1 expired; advance past G2 -> Kid phone blocks youtube", "if End bypasses it, TestEngine_SharedEnd fails: End(G1) with G2 active -> nil, G1 ended, Kid phone still lacks youtube; End(G2) then re-blocks it", "if a different service is spared, TestEngine_EndSharedOtherService fails: Ada's grant is tiktok, Ben's is youtube, both on Kid phone; ending Ben's re-blocks youtube", "if reconcile uses its snapshot, TestReconcile_BothOverdueShared fails: G1 and G2 both past ends_at, no timer fired -> one Reconcile expires both, Reverted == 2, Kid phone blocks youtube", "if reconcile ignores a live owner, TestReconcile_OverdueSharedKeepsOther fails: an overdue Ben grant reverted while Ada's live grant covers Kid phone leaves youtube open there, Reverted == 1", "if timers race, TestExpire_SharedTimersSerial fails: both expiry callbacks fired concurrently -> youtube blocked on Kid phone and MaxInFlightUpdates() == 1", "if expired/ended grants count as cover, TestEngine_ExpiredGrantNoCover fails: an ended G0 on Kid phone does not keep youtube open when G1 expires", "if a fully covered client still gets a POST, TestEngine_CoveredNoWrite fails: G1 on [Kid phone] only with G2 active -> G1's expiry issues 0 /control/clients/update", "if the read fails open, TestEnd_ActiveReadFails fails: ListActiveGrants error -> *ErrRevertFailed, zero AdGuard update POSTs, grant still active", "if ownership is used, TestExpire_ClientUnassigned fails: Kid phone removed from Ada after her grant; expiry still re-blocks it", "if the unshared path regresses, the existing TestEngine_TimerReverts and TestReconcile_DriftRepaired fail unchanged", "if Writes still counts every stored client, TestReconcile_WritesCountsActual fails: G1 overdue on [Kid phone, Old laptop] while G2 covers youtube on Kid phone -> one Reconcile reports Writes == 1 (Old laptop only)"]
   depends_on = ["t-2"]
   status = "pending"
 
@@ -191,21 +166,9 @@ rule, so AdGuard is renamed exactly once.
   wave = 2
   title = "Children API: share, quiet removal, migration dedupe"
   files = ["internal/api/children.go", "internal/api/children_test.go", "internal/api/migration.go", "internal/api/migration_test.go"]
-  description = """
-updateConflict keeps only the name check. added = in.Clients minus cur.Clients still goes to AdoptClients, shared clients
-included. Removal-only PUTs and DELETE never call AdGuard. computeOffer dedupes mapped names and reports the lowest-id owner.
-Rewrite the client-taken cases of TestChildren_Conflicts / TestChildUpdate_Conflicts.
-"""
+  description = "updateConflict keeps only the name check. added = in.Clients minus cur.Clients still goes to AdoptClients, shared clients included. Removal-only PUTs and DELETE never call AdGuard. computeOffer dedupes mapped names and reports the lowest-id owner. Rewrite the client-taken PUT cases of TestChildUpdate_Conflicts and TestChildren_PutAtomic (the POST case moved to t-1)."
   covers = ["c-1", "c-7"]
-  test_contract = [
-    '''if the pre-check survives, TestChildUpdate_ShareNo409 fails: PUT /children/2 {Ben, [Kid phone]} while Ada holds it -> 200, GET /children lists Kid phone under both''',
-    '''if POST still conflicts, TestChildren_CreateShared fails: POST /children {Cleo, [Kid phone]} -> 201''',
-    '''if a shared add skips adopt, TestChildUpdate_ShareAdopts fails: that PUT issues exactly one /control/clients/update for Kid phone''',
-    '''if removal writes AdGuard, TestChildUpdate_RemoveSharedNoAdGuard fails: PUT Ben without Kid phone -> 200, zero AdGuard requests, Ada still lists it''',
-    '''if delete writes AdGuard, TestChildDelete_SharedNoAdGuard fails: DELETE /children/2 -> 204, zero AdGuard requests, Ada still lists Kid phone''',
-    '''if the name check is lost, TestChildUpdate_NameStill409 fails: PUT Ben {name:"ada"} -> 409 with zero AdGuard requests''',
-    '''if the offer is not deduped, TestMigration_SharedOnce fails: Kid tablet (use_global) held by Ada and Ben -> GET /migration lists it once with child {1, Ada}; POST /migration issues exactly one /control/clients/update for it''',
-  ]
+  test_contract = ["if the pre-check survives, TestChildUpdate_ShareNo409 fails: PUT /children/2 {Ben, [Kid phone]} while Ada holds it -> 200, GET /children lists Kid phone under both", "if a shared add skips adopt, TestChildUpdate_ShareAdopts fails: that PUT issues exactly one /control/clients/update for Kid phone", "if removal writes AdGuard, TestChildUpdate_RemoveSharedNoAdGuard fails: PUT Ben without Kid phone -> 200, zero AdGuard requests, Ada still lists it", "if delete writes AdGuard, TestChildDelete_SharedNoAdGuard fails: DELETE /children/2 -> 204, zero AdGuard requests, Ada still lists Kid phone", "if the name check is lost, TestChildUpdate_NameStill409 fails: PUT Ben {name:\"ada\"} -> 409 with zero AdGuard requests", "if a failed PUT half-applies, TestChildren_PutAtomic fails: with the fake failing /control/clients/update, PUT Ada {name:\"Alicia\", clients:[Kid phone, Old laptop]} returns a non-2xx and GET shows Ada still named \"Ada\" holding exactly [Kid phone]", "if the offer is not deduped, TestMigration_SharedOnce fails: Kid tablet (use_global) held by Ada and Ben -> GET /migration lists it once with child {1, Ada}; POST /migration issues exactly one /control/clients/update for it"]
   depends_on = ["t-1"]
   status = "pending"
 
