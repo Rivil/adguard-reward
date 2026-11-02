@@ -37,6 +37,22 @@
         }
       ]
     },
+    "t-11": {
+      "files": [
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go"
+      ],
+      "commit": "d12d4dc",
+      "completed_at": "2026-11-02T16:45:53.920802Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Engine.End",
+          "loc": "internal/grants/grants.go:406",
+          "what": "grant create/end/expiry split built-in ids (blocked_services) from custom ids (region @@ exceptions, ref-counted by union), region first and fail-closed"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/rules/domain.go",
@@ -231,6 +247,77 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "parseDomains splits on '\\n' and trims each line, so CRLF input is handled too",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-11": {
+      "outcome": "pass",
+      "rounds": 3,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-7",
+          "text": "TestGrant_MixedEndPartialFailure stands in SyncRules for 'the next reconcile pass', but Engine.Reconcile (internal/grants/reconcile.go) never calls syncRules and nothing in main runs SyncRules periodically. In production, a clients/update fault on End after the region write leaves an active grant with its @@ exceptions removed until some unrelated region write. This fails closed, but the stated re-convergence path does not exist yet. The test also never checks that the @@ lines were removed before SyncRules, so the 'restores' assertion is weak.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Create checks custom ids and DeleteService checks grant use under the same engine mutex, so TestDeleteService_RaceGrant is deterministic per round; ErrRevertFailed gains Unwrap, so errors.Is(err, rules.ErrMalformedRegion) works through End.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-7",
+          "text": "test_contract for TestGrant_MixedEndPartialFailure (and the description: 'the reconciler re-converges both halves from intent') says the next reconcile pass restores the @@ lines after a clients/update fault on End; the test calls Engine.SyncRules instead of Reconcile, and Reconcile (internal/grants/reconcile.go) never syncs the managed region for live grants, so no test could fail if the reconciler never restores them, and in production nothing does",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "builtin() and the Create unknown-id check both key on store.IsCustomServiceID, which accepts only the canonical form; a non-canonical 'custom:'-prefixed id (custom:01, custom:abc) skips the unknown-service refusal and is passed to RemoveBlockedServices/AddBlockedServices as if built-in, so it does reach blocked_services unless a caller validates first",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "End/expiry rewrite the region before the built-in revert, so a revert failure leaves the still-active grant with its custom exceptions removed; that is the specified order, but with no periodic region sync the child stays blocked from the custom service for the rest of the grant",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestGrant_CustomNoLeak uses fixture clients 'Kid phone'/'Kid tablet' rather than the contract's kid-phone/tv; equivalent coverage, and the custom-only path never calls the clients API anyway",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "ErrRevertFailed gains Err plus Unwrap, so callers can match errors.Is(err, rules.ErrMalformedRegion) through it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 3,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Create and End share one actx between the built-in unblock/revert and the region sync, so a slow clients pass can use up the deadline for the set_rules write. Either way the outcome is fail-closed (Failed == all clients / ErrRevertFailed), so this is acceptable.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 3,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "When the region sync fails during expiry, expireLocked returns with no timer re-armed (expire already removed it from e.timers). This matches the existing revert-failure behaviour and leaves convergence to the reconciler (t-13).",
           "resolution": "non-blocking, left"
         }
       ]
