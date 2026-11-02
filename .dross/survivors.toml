@@ -62,6 +62,10 @@
   name = "gremlins-switch-case-covered"
   reason = "Case body executes under go test -coverprofile (count >= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
 
+[[category]]
+  name = "dead-array-fallback"
+  reason = "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -1159,3 +1163,102 @@
   line = 95
   accepted_in = "auto-client-labelling"
   reason = "Equivalent to the :95 ConditionalExpression false mutant: comparing childOf(d) to a non-existent value is always false, and 'No child' as the first option is the select's fallback selection either way."
+
+[[accepted]]
+  key = "a5b51c8fe20a4fcd"
+  file = "web/src/lib/Children.svelte"
+  op = "ArrayDeclaration"
+  text = "{@const others = (c.children ?? []).filter((o) => o.id !== child.id)}"
+  line = 131
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "a6d312f12b091b9b"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "if ((out.kind === 'applied' || out.kind === 'partial') && (out.grant.shared ?? []).length > 0) {"
+  line = 118
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "9382694512e2eb73"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "sharedNotes[childId] = sharedText(out.grant.shared ?? [])"
+  line = 119
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "bc76e085b2a98272"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "return v.services.filter((s) => s.state !== 'unblocked' || (s.unblocked_by ?? []).length > 0)"
+  line = 208
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "7f673034875137a4"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "const by = s.unblocked_by ?? []"
+  line = 217
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "8ef387b402aa021d"
+  file = "web/src/lib/Home.svelte"
+  op = "ArrayDeclaration"
+  text = "{(c.shared_with ?? []).length > 0 ? sharedText([{ client: c.name, others: c.shared_with ?? [] }]) : c.name}"
+  line = 306
+  category = "dead-array-fallback"
+  accepted_in = "shared-devices"
+
+[[accepted]]
+  key = "cd169da8a77c2191"
+  file = "web/src/lib/ClientNames.svelte"
+  op = "OptionalChaining"
+  text = "<span class=\"current\">{c.name}{#if c.children?.length}<span class=\"owner\">{` — ${c.children.map((o) => o.name).join(', ')}`}</span>{/if}</span>"
+  line = 46
+  accepted_in = "shared-devices"
+  reason = "Equivalent: clientView (api.ts:262) always sets children to an array, so c.children?.length and c.children.length behave the same."
+
+[[accepted]]
+  key = "5c1a2fb452a2128c"
+  file = "web/src/lib/GrantForm.svelte"
+  op = "ConditionalExpression"
+  text = "const shared = $derived(value.child_id === null ? [] : sharedDevices(value.child_id, children))"
+  line = 52
+  accepted_in = "shared-devices"
+  reason = "Equivalent: with the null guard forced false, sharedDevices(null, children) finds no child with id null and returns [], the same as the guarded branch."
+
+[[accepted]]
+  key = "6451ace12288b160"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "if ((out.kind === 'applied' || out.kind === 'partial') && (out.grant.shared ?? []).length > 0) {"
+  line = 118
+  accepted_in = "shared-devices"
+  reason = "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+
+[[accepted]]
+  key = "abeb67deb0f8d203"
+  file = "web/src/lib/Home.svelte"
+  op = "EqualityOperator"
+  text = "if ((out.kind === 'applied' || out.kind === 'partial') && (out.grant.shared ?? []).length > 0) {"
+  line = 118
+  accepted_in = "shared-devices"
+  reason = "Equivalent: length >= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+
+[[accepted]]
+  key = "84cebad2af320e60"
+  file = "web/src/lib/Home.svelte"
+  op = "ConditionalExpression"
+  text = "const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []"
+  line = 219
+  accepted_in = "shared-devices"
+  reason = "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."

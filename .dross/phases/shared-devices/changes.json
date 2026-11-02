@@ -3,6 +3,14 @@
   "base": "milestone/v0.1",
   "base_commit": "f0388a308965b20329855e466e98a50b63a87053",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "web/stryker.config.mjs"
+      ],
+      "commit": "46c1b74",
+      "completed_at": "2026-11-02T09:52:01.999803Z",
+      "notes": "quick: Stryker concurrency 1 to dodge the vite deps-cache race (recorded late)"
+    },
     "quick-2": {
       "files": [
         "internal/api/children_test.go"
