@@ -19,6 +19,24 @@
         }
       ]
     },
+    "t-10": {
+      "files": [
+        "web/src/lib/Services.svelte",
+        "web/src/lib/Services.test.ts",
+        "web/src/App.svelte",
+        "web/src/App.test.ts"
+      ],
+      "commit": "695cc5a",
+      "completed_at": "2026-11-02T16:19:58.445005Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Services",
+          "loc": "web/src/lib/Services.svelte:1",
+          "what": "Settings page to list, create, edit and confirm-delete custom services; rows render from server responses and applied:false shows a catch-up note"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/rules/domain.go",
@@ -90,6 +108,76 @@
           "what": "renders a catalogue icon or a grapheme-safe letter avatar for icon-less custom services; api.ts adds the custom-services client and /services route"
         }
       ]
+    },
+    "t-6": {
+      "files": [
+        "internal/grants/rules.go",
+        "internal/grants/rules_test.go",
+        "internal/grants/grants.go"
+      ],
+      "commit": "0e8340d",
+      "completed_at": "2026-11-02T16:09:33.534466Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Engine.syncRules",
+          "loc": "internal/grants/rules.go:43",
+          "what": "renders the region from stored custom services, children and active grants and splices it in under the engine mutex; read errors abort before any AdGuard call"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "internal/api/api.go",
+        "internal/api/clients.go",
+        "internal/api/catalogue_test.go",
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "95b3e4f",
+      "completed_at": "2026-11-02T16:13:30.878062Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "API.catalogue",
+          "loc": "internal/api/clients.go:293",
+          "what": "serves AdGuard's built-ins then stored custom services as custom:\u003cn\u003e entries; AdGuard outage 502 before the store is read"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts"
+      ],
+      "commit": "88c75d6",
+      "completed_at": "2026-11-02T16:14:46.573522Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "GrantForm",
+          "loc": "web/src/lib/GrantForm.svelte:139",
+          "what": "renders every catalogue row through ServiceIcon so custom services show a letter avatar in the grant form and button editor"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "6a5eccf",
+      "completed_at": "2026-11-02T16:17:28.53552Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "iconFor",
+          "loc": "web/src/lib/Home.svelte:110",
+          "what": "Home tiles, blocked list and the Buttons icon picker draw custom services via ServiceIcon; Home header links to Services"
+        }
+      ]
     }
   },
   "reviews": {
@@ -116,6 +204,33 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "TestSplice_DoesNotAliasInput and the two-begins and two-ends malformed cases go beyond the contract and are useful.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-10": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Every mutation updates the list from the server's response object rather than refetching the list; this matches the description and the 'renders from the response, not the draft' tests prove it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "edit() clears the error but leaves an earlier catch-up note on screen until the next call; harmless",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "parseDomains splits on '\\n' and trims each line, so CRLF input is handled too",
           "resolution": "non-blocking, left"
         }
       ]
@@ -270,6 +385,88 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "test_contract's 'letter avatar' and 'custom services' cases are split across several it-blocks (blank, emoji, img, endpoints); every listed assertion is present",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-1",
+          "text": "TestCreateService_BlocksChildren asserts dad-laptop appears nowhere, but no client named dad-laptop is ever registered in the fake, so that assertion cannot fail; the scope check actually rests on the exact region equality against the fixture's unmapped clients (Old laptop, printer, Zed-TV)",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "syncAfter logs 'the reconciler will retry' and the doc comments say the reconciler converges later, but no reconciler path calls syncRules yet; the message holds only once a sibling task wires it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Extra coverage beyond the contract: TestSyncRules_Exclude checks the exclude path and that a second pass writes nothing, and a store-conflict subtest checks a refused create sends no POST",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "catalogue() tells AdGuard failures (502) apart from store failures (500) with a typed wrapper error; TestServices_CustomStoreDown and TestServices_NoCustomStore cover the 500 path and the nil-Deps path, which the contract did not require",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "the blocked view and the built-in name-clash check still read AdGuard.Services directly, as the description requires; catalogue() is used only by handleServices so far",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "checkbox('S') matches on the label's text prefix, so it only finds the custom row because the avatar letter comes before the name. This is correct now but tied to the DOM order inside ServiceIcon's label.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "An extra test (search finds a custom service by name) covers the search filter for custom entries; the record did not ask for it.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Tests also confirm built-in services next to custom ones still render their real \u003cimg\u003e, and that a custom icon is never reported as a lost icon in the Buttons form.",
           "resolution": "non-blocking, left"
         }
       ]

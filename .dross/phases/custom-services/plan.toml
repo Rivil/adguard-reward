@@ -93,7 +93,7 @@ task_seq = 18
     '''if delete leaves rules or touches foreign lines, TestDeleteService fails: delete without a grant -> no region line contains its domains and lines outside the markers are byte-identical; delete with an active grant -> ErrServiceInUse and 0 POSTs''',
     '''if a write failure loses the row or errors, TestCreateService_WriteFailure fails: set_rules failure -> service stored, Applied=false, nil error; a malformed region in the fake -> Applied=false, 0 POSTs, user_rules unchanged''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-7"
@@ -108,7 +108,7 @@ task_seq = 18
     '''if custom entries mask an outage, TestServices_CatalogueDown fails: AdGuard catalogue 502 -> /services 502''',
     '''if main.go wiring is missing, a TestRun_ButtonsWired-style boot through run() fails: the stored custom service is absent from /services or the handler panics''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-8"
@@ -122,7 +122,7 @@ task_seq = 18
     '''if custom services are treated as stale, GrantForm.test 'custom service row' fails: a custom:true catalogue entry is selectable with avatar "S" and NOT marked "no longer in catalogue"''',
     '''if selection drops custom ids, GrantForm.test 'custom service selection' fails: ticking it puts 'custom:1' into value.services in tick order''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-9"
@@ -138,7 +138,7 @@ task_seq = 18
     '''if custom icons are not pickable, Buttons.test 'custom icon' fails: selecting icon custom:1 previews "P" and Save sends icon 'custom:1' ''',
     '''if the nav link is missing, Home.test 'services nav' fails: clicking "Services" sets location '/services' ''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-10"
@@ -155,7 +155,7 @@ task_seq = 18
     '''if delete skips confirmation or hides the 409, Services.test 'delete' fails: nothing fires until Confirm; a 409 shows the message naming the grant and the row stays; window.confirm is never called''',
     '''if catch-up state or route is missing, Services.test 'applied false' / App.test 'services route' fail: an applied:false response shows the catch-up note; loading '/services' renders the Services heading''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-11"
