@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte'
   import { ApiError, endGrant, extendGrant, messageFor, type Grant } from './api'
   import { activeGrants, refresh } from './activeGrants'
-  import { formatCountdown, formatDuration, ownDuration, remainingSeconds } from './grants'
+  import { formatCountdown, formatDuration, ownDuration, remainingSeconds, sharedText } from './grants'
 
   let { childNames, serviceNames }: { childNames: Map<number, string>; serviceNames: Record<string, string> } = $props()
 
@@ -90,6 +90,9 @@
           <div class="who">
             <strong>{childName(g.child_id)}</strong>
             <span class="services">{serviceList(g)}</span>
+            {#if g.shared && g.shared.length > 0}
+              <span class="shared">{sharedText(g.shared)}</span>
+            {/if}
           </div>
           <time data-countdown datetime={g.ends_at}>{formatCountdown(remainingSeconds(g.ends_at, now))}</time>
           <div class="actions">
@@ -134,7 +137,8 @@
   .who {
     display: grid;
   }
-  .services {
+  .services,
+  .shared {
     opacity: 0.8;
     font-size: 0.9rem;
   }

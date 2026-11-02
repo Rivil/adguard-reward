@@ -43,7 +43,7 @@
   {#each clients as c (c.name)}
     <form data-client={c.name} onsubmit={(e) => save(e, c)}>
       <label>
-        <span class="current">{c.name}{#if c.child}<span class="owner"> — {c.child.name}</span>{/if}</span>
+        <span class="current">{c.name}{#if c.children?.length}<span class="owner">{` — ${c.children.map((o) => o.name).join(', ')}`}</span>{/if}</span>
         <input
           aria-label="Rename {c.name}"
           type="text"

@@ -306,6 +306,14 @@ describe('ActiveGrants', () => {
     expect(alert()).toBe("Can't reach AdGuard Home — try again in a moment")
   })
 
+  it('sharedRow', async () => {
+    const shared = [{ client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] }]
+    await mount([{ ...grant(1, 600), shared }, { ...grant(2, 600), shared: [] }])
+    expect(row(1).textContent).toContain('Kid phone (shared with Ben)')
+    expect(row(2).textContent).not.toContain('shared with')
+    expect(row(2).querySelector('.shared')).toBeNull()
+  })
+
   it('empty state', async () => {
     await mount([])
     await waitFor(() => expect(screen.getByText('Nothing is unlocked right now')).toBeTruthy())

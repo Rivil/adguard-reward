@@ -58,59 +58,76 @@ func TestChildren_NameUnique(t *testing.T) {
 	}
 }
 
-func TestChildren_ClientOneOwner(t *testing.T) {
-	s, _ := openTemp(t)
-	mustCreate(t, s, "Ada", "Kid phone")
-	_, err := s.CreateChild(ctx, "Ben", []string{"Kid phone", "Old laptop"})
-	var taken *ErrClientTaken
-	if !errors.As(err, &taken) {
-		t.Fatalf("CreateChild(Ben) err = %v, want *ErrClientTaken", err)
-	}
-	if taken.Client != "Kid phone" || taken.ChildName != "Ada" {
-		t.Fatalf("ErrClientTaken = %+v, want Client \"Kid phone\" ChildName \"Ada\"", taken)
-	}
-	all, _ := s.ListChildren(ctx)
-	for _, c := range all {
-		if c.Name == "Ben" {
-			t.Fatal("Ben row exists after rejected create — tx did not roll back")
-		}
-	}
-	if n := countClients(t, s, taken.ChildID); n != 1 {
-		t.Fatalf("Ada has %d client rows, want 1", n)
-	}
-	// The PK on client_name is the safety net behind the SELECT check.
-	rows, err := s.DB().Query(`PRAGMA index_list(child_clients)`)
+// listClients is ListChildren folded to name -> clients.
+func listClients(t *testing.T, s *Store) map[string][]string {
+	t.Helper()
+	all, err := s.ListChildren(ctx)
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer rows.Close()
-	cols, _ := rows.Columns()
-	unique := false
-	for rows.Next() {
-		vals := make([]any, len(cols))
-		ptrs := make([]any, len(cols))
-		for i := range vals {
-			ptrs[i] = &vals[i]
-		}
-		if err := rows.Scan(ptrs...); err != nil {
-			t.Fatal(err)
-		}
-		var origin string
-		var isUnique int64
-		for i, c := range cols {
-			switch c {
-			case "origin":
-				origin, _ = vals[i].(string)
-			case "unique":
-				isUnique, _ = vals[i].(int64)
-			}
-		}
-		if origin == "pk" && isUnique == 1 {
-			unique = true
-		}
+	out := map[string][]string{}
+	for _, c := range all {
+		out[c.Name] = c.Clients
 	}
-	if !unique {
-		t.Fatal("child_clients has no unique primary-key index on client_name")
+	return out
+}
+
+func TestCreateChild_SharedClient(t *testing.T) {
+	s, _ := openTemp(t)
+	mustCreate(t, s, "Ada", "Kid phone")
+	cleo, err := s.CreateChild(ctx, "Cleo", []string{"Kid phone"})
+	if err != nil {
+		t.Fatalf("CreateChild(Cleo, [Kid phone]) while Ada holds it: %v", err)
+	}
+	if cleo.Name != "Cleo" || !reflect.DeepEqual(cleo.Clients, []string{"Kid phone"}) {
+		t.Fatalf("CreateChild = %+v, want Cleo [Kid phone]", cleo)
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}, "Cleo": {"Kid phone"}}
+	if got := listClients(t, s); !reflect.DeepEqual(got, want) {
+		t.Fatalf("ListChildren = %v, want %v", got, want)
+	}
+}
+
+func TestUpdateChild_SharedClient(t *testing.T) {
+	s, _ := openTemp(t)
+	mustCreate(t, s, "Ada", "Kid phone")
+	ben := mustCreate(t, s, "Ben", "Kid tablet")
+	if _, err := s.UpdateChild(ctx, ben.ID, "Ben", []string{"Kid phone"}); err != nil {
+		t.Fatalf("UpdateChild(Ben, [Kid phone]) while Ada holds it: %v", err)
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}, "Ben": {"Kid phone"}}
+	if got := listClients(t, s); !reflect.DeepEqual(got, want) {
+		t.Fatalf("ListChildren = %v, want %v", got, want)
+	}
+}
+
+func TestUpdateChild_RemoveKeepsOtherOwner(t *testing.T) {
+	s, _ := openTemp(t)
+	mustCreate(t, s, "Ada", "Kid phone")
+	ben := mustCreate(t, s, "Ben", "Kid phone", "Kid tablet")
+	if _, err := s.UpdateChild(ctx, ben.ID, "Ben", []string{"Kid tablet"}); err != nil {
+		t.Fatalf("UpdateChild(Ben without Kid phone): %v", err)
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}, "Ben": {"Kid tablet"}}
+	if got := listClients(t, s); !reflect.DeepEqual(got, want) {
+		t.Fatalf("ListChildren = %v, want %v", got, want)
+	}
+}
+
+func TestDeleteChild_KeepsOtherOwner(t *testing.T) {
+	s, _ := openTemp(t)
+	mustCreate(t, s, "Ada", "Kid phone")
+	ben := mustCreate(t, s, "Ben", "Kid phone")
+	ok, err := s.DeleteChild(ctx, ben.ID)
+	if err != nil || !ok {
+		t.Fatalf("DeleteChild(Ben) = (%v, %v), want (true, nil)", ok, err)
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}}
+	if got := listClients(t, s); !reflect.DeepEqual(got, want) {
+		t.Fatalf("ListChildren = %v, want %v", got, want)
+	}
+	if n := countClients(t, s, ben.ID); n != 0 {
+		t.Fatalf("child_clients rows for Ben after delete = %d, want 0", n)
 	}
 }
 
@@ -118,10 +135,9 @@ func TestChildren_UpdateRollsBack(t *testing.T) {
 	s, _ := openTemp(t)
 	ada := mustCreate(t, s, "Ada", "Kid phone")
 	mustCreate(t, s, "Ben", "Old laptop")
-	_, err := s.UpdateChild(ctx, ada.ID, "Renamed", []string{"Old laptop"})
-	var taken *ErrClientTaken
-	if !errors.As(err, &taken) {
-		t.Fatalf("UpdateChild err = %v, want *ErrClientTaken", err)
+	_, err := s.UpdateChild(ctx, ada.ID, "ben", []string{"Old laptop"})
+	if !errors.Is(err, ErrNameTaken) {
+		t.Fatalf("UpdateChild err = %v, want ErrNameTaken", err)
 	}
 	got := mustGet(t, s, ada.ID)
 	if got.Name != "Ada" || !reflect.DeepEqual(got.Clients, []string{"Kid phone"}) {

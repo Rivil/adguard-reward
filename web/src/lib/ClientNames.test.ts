@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Children from './Children.svelte'
 import ClientNames from './ClientNames.svelte'
-import type { Child, ClientView } from './api'
+import type { Child, ChildRef, ClientView } from './api'
 
 type Call = { method: string; url: string; body: string | null }
 type Routes = Record<string, () => Response | Promise<Response>>
@@ -28,8 +28,8 @@ function mockFetch(routes: Routes): Call[] {
   return calls
 }
 
-function client(name: string, child: ClientView['child'] = null): ClientView {
-  return { name, ids: [], use_global_blocked_services: false, child }
+function client(name: string, ...owners: ChildRef[]): ClientView {
+  return { name, ids: [], use_global_blocked_services: false, children: owners }
 }
 
 function row(name: string): HTMLFormElement {
@@ -81,7 +81,17 @@ describe('ClientNames', () => {
     render(ClientNames, { clients: [client('Old laptop'), client('Kid phone', { id: 1, name: 'Ada' })], onRenamed: vi.fn() })
     expect(input('Old laptop')).toBeTruthy()
     expect(save('Old laptop')).toBeTruthy()
-    expect(row('Kid phone').textContent).toContain('Ada')
+    expect(row('Old laptop').querySelector('.current')!.textContent).toBe('Old laptop')
+    expect(row('Kid phone').querySelector('.current')!.textContent).toBe('Kid phone — Ada')
+  })
+
+  it('names every owner of a shared client, in server order', () => {
+    mockFetch({})
+    const ada = { id: 1, name: 'Ada' }
+    const ben = { id: 2, name: 'Ben' }
+    render(ClientNames, { clients: [client('Kid phone', ada, ben), client('TV', ben)], onRenamed: vi.fn() })
+    expect(row('Kid phone').querySelector('.current')!.textContent).toBe('Kid phone — Ada, Ben')
+    expect(row('TV').querySelector('.current')!.textContent).toBe('TV — Ben')
   })
 
   it('blank or unchanged names disable Save and send nothing', async () => {

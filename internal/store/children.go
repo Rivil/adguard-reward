@@ -128,14 +128,15 @@ func getChild(ctx context.Context, q querier, id int64) (Child, error) {
 	return out[0], nil
 }
 
-// CreateChild inserts a child with its clients in one transaction. Conflicts
-// are detected by SELECT first so the caller gets a typed error naming the
-// owner; the UNIQUE and PRIMARY KEY constraints remain the safety net.
+// CreateChild inserts a child with its clients in one transaction. A client
+// another child already holds is shared, not a conflict. A taken name is
+// detected by SELECT first so the caller gets ErrNameTaken; the UNIQUE
+// constraint remains the safety net.
 func (st *Store) CreateChild(ctx context.Context, name string, clients []string) (Child, error) {
 	clients = normaliseClients(clients)
 	var out Child
 	err := st.inTx(ctx, func(tx *sql.Tx) error {
-		if err := checkConflicts(ctx, tx, 0, name, clients); err != nil {
+		if err := checkConflicts(ctx, tx, 0, name); err != nil {
 			return err
 		}
 		res, err := tx.ExecContext(ctx,
@@ -160,8 +161,9 @@ func (st *Store) CreateChild(ctx context.Context, name string, clients []string)
 }
 
 // UpdateChild replaces name and the whole client set atomically. Its own row
-// is excluded from the conflict checks so a same-name save or re-assigning a
-// client it already owns succeeds.
+// is excluded from the name check so a same-name save succeeds. Only this
+// child's client rows are replaced: a client it shares keeps every other
+// owner whether it is added here or removed.
 func (st *Store) UpdateChild(ctx context.Context, id int64, name string, clients []string) (Child, error) {
 	clients = normaliseClients(clients)
 	var out Child
@@ -169,7 +171,7 @@ func (st *Store) UpdateChild(ctx context.Context, id int64, name string, clients
 		if _, err := getChild(ctx, tx, id); err != nil {
 			return err
 		}
-		if err := checkConflicts(ctx, tx, id, name, clients); err != nil {
+		if err := checkConflicts(ctx, tx, id, name); err != nil {
 			return err
 		}
 		if _, err := tx.ExecContext(ctx, `UPDATE children SET name = ? WHERE id = ?`, name, id); err != nil {
@@ -191,8 +193,9 @@ func (st *Store) UpdateChild(ctx context.Context, id int64, name string, clients
 	return out, nil
 }
 
-// DeleteChild removes a child and, via ON DELETE CASCADE, its client rows.
-// It reports whether a row existed.
+// DeleteChild removes a child and, via ON DELETE CASCADE, its own client
+// rows; another owner of a shared client keeps it. It reports whether a row
+// existed.
 func (st *Store) DeleteChild(ctx context.Context, id int64) (bool, error) {
 	res, err := st.db.ExecContext(ctx, `DELETE FROM children WHERE id = ?`, id)
 	if err != nil {
@@ -205,9 +208,10 @@ func (st *Store) DeleteChild(ctx context.Context, id int64) (bool, error) {
 	return n > 0, nil
 }
 
-// checkConflicts returns ErrNameTaken or *ErrClientTaken when another child
-// (not selfID) already holds the name or one of the clients.
-func checkConflicts(ctx context.Context, tx *sql.Tx, selfID int64, name string, clients []string) error {
+// checkConflicts returns ErrNameTaken when another child (not selfID)
+// already has the name. Clients are never a conflict: a client may belong
+// to several children.
+func checkConflicts(ctx context.Context, tx *sql.Tx, selfID int64, name string) error {
 	var other int64
 	err := tx.QueryRowContext(ctx,
 		`SELECT id FROM children WHERE name = ? AND id <> ?`, name, selfID).Scan(&other)
@@ -216,20 +220,6 @@ func checkConflicts(ctx context.Context, tx *sql.Tx, selfID int64, name string, 
 	}
 	if !errors.Is(err, sql.ErrNoRows) {
 		return err
-	}
-	for _, c := range clients {
-		var taken ErrClientTaken
-		err := tx.QueryRowContext(ctx,
-			`SELECT c.id, c.name FROM child_clients cc JOIN children c ON c.id = cc.child_id
-			  WHERE cc.client_name = ? AND cc.child_id <> ?`, c, selfID).
-			Scan(&taken.ChildID, &taken.ChildName)
-		if err == nil {
-			taken.Client = c
-			return &taken
-		}
-		if !errors.Is(err, sql.ErrNoRows) {
-			return err
-		}
 	}
 	return nil
 }

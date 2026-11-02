@@ -41,11 +41,11 @@ const b3: Button = { id: 5, label: 'TikTok 30m', child_id: 1, services: ['tiktok
 type Stored = { label: string; child_id: number; services: string[]; duration: number }
 
 /** A mutable server: PUT replaces the list and hands back fresh ids; `state.servicesDown` flips the catalogue mid-test. */
-function server(buttons: Button[], opts: { services?: Service[] | 'down'; put?: Answer } = {}) {
+function server(buttons: Button[], opts: { services?: Service[] | 'down'; put?: Answer; children?: Child[] } = {}) {
   const state = { buttons, nextId: 100, servicesDown: opts.services === 'down' }
   const routes: Routes = {
     '/api/v1/buttons': () => json(200, { buttons: state.buttons }),
-    '/api/v1/children': () => json(200, { children: [ada, ben] }),
+    '/api/v1/children': () => json(200, { children: opts.children ?? [ada, ben] }),
     '/api/v1/services': () =>
       state.servicesDown
         ? json(502, { error: 'adguard_unavailable', message: 'down' })
@@ -307,6 +307,18 @@ describe('Buttons', () => {
     await fireEvent.click(saveButton())
     await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
     expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400 })
+  })
+
+  it('sharedHint', async () => {
+    const s = await mount([b1, b2], { children: [ada, { ...ben, clients: ['Kid tablet', 'Kid phone'] }] })
+    await fireEvent.click(rowButton(3, 'Edit'))
+    expect(childSelect().value).toBe('1')
+    expect(screen.getByRole('note').textContent).toContain('Kid phone (shared with Ben)')
+
+    await fireEvent.click(saveButton())
+    await waitFor(() => expect(puts(s.calls)).toHaveLength(1))
+    expect(puts(s.calls)[0].buttons[0]).toEqual({ label: 'YouTube 90m', child_id: 1, services: ['youtube'], duration: 5400 })
+    expect(s.calls.filter((c) => c.method === 'PUT' && c.url === '/api/v1/buttons')).toHaveLength(1)
   })
 
   it('Back calls onBack', async () => {

@@ -134,11 +134,33 @@ func (a *API) handleChildrenList(w http.ResponseWriter, r *http.Request) {
 	}{out})
 }
 
-// handleChildCreate is POST /api/v1/children.
+// handleChildCreate is POST /api/v1/children. A name another child has
+// (case-insensitively) is 409 before AdGuard is touched; the store's
+// ErrNameTaken stays the race backstop. Each listed client — shared with
+// another child or not — first gets the new child's baseline in AdGuard: a
+// new child has no grants and no siblings, so that is AdGuard's global list,
+// added to the client's own list minus anything another owner's active grant
+// holds open there (c-3). An adopt failure is 502 naming the client and no
+// child is created. A POST without clients never calls AdGuard.
 func (a *API) handleChildCreate(w http.ResponseWriter, r *http.Request) {
 	in, ok := decodeChild(w, r)
 	if !ok {
 		return
+	}
+	children, err := a.deps.Children.ListChildren(r.Context())
+	if err != nil {
+		a.writeStoreError(w, "create child", in.Name, err)
+		return
+	}
+	if err := updateConflict(children, 0, in); err != nil {
+		a.writeStoreError(w, "create child", in.Name, err)
+		return
+	}
+	if len(in.Clients) > 0 {
+		if err := a.deps.Grants.AdoptClients(r.Context(), 0, nil, in.Clients); err != nil {
+			a.writeAdoptError(w, "create child", err)
+			return
+		}
 	}
 	c, err := a.deps.Children.CreateChild(r.Context(), in.Name, in.Clients)
 	if err != nil {
@@ -166,14 +188,18 @@ func (a *API) handleChildGet(w http.ResponseWriter, r *http.Request) {
 // and client set, atomic in the store. The name conflict is 409 for a
 // different child's name; an unchanged name is not a conflict.
 //
-// Every client the PUT adds gets the child's baseline in AdGuard before the
-// store is written (c-7): what the clients staying with the child
-// effectively block — AdGuard's global list when none stay — plus the
-// services under the child's active grants, added to the client's own list
-// with use_global_blocked_services cleared. Nothing it blocks is removed.
-// The 404 and every 409 are decided before AdGuard is touched; an AdGuard
-// failure is 502 naming the client and leaves the store as it was. A PUT
-// that adds nothing — a rename or removals only — never calls AdGuard.
+// A client another child already holds is shared, not a conflict (c-1).
+// Every client the PUT adds — shared ones included — gets the child's
+// baseline in AdGuard before the store is written: what the clients staying
+// with the child effectively block — AdGuard's global list when none stay —
+// plus the services under the child's active grants and any active grant on
+// a staying client, added to the client's own list with
+// use_global_blocked_services cleared, minus what another owner's active
+// grant holds open on it (c-3). Nothing it blocks is removed. The 404 and
+// the name 409 are decided before AdGuard is touched; an AdGuard failure is
+// 502 naming the client and leaves the store as it was. A PUT that adds
+// nothing — a rename or removals only, a shared client's other owners
+// keeping it — never calls AdGuard (c-7).
 func (a *API) handleChildUpdate(w http.ResponseWriter, r *http.Request) {
 	id, ok := childID(w, r)
 	if !ok {
@@ -207,7 +233,7 @@ func (a *API) handleChildUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 	if len(added) > 0 {
 		if err := a.deps.Grants.AdoptClients(r.Context(), id, siblings, added); err != nil {
-			a.writeAdoptError(w, err)
+			a.writeAdoptError(w, "update child", err)
 			return
 		}
 	}
@@ -219,23 +245,15 @@ func (a *API) handleChildUpdate(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, viewOf(c))
 }
 
-// updateConflict mirrors the store's PUT conflict rules so they are
-// answered before any AdGuard write: another child with the name (compared
-// as the column's COLLATE NOCASE does — ASCII case-folded) is
-// store.ErrNameTaken, another child holding one of the clients is
-// *store.ErrClientTaken. The store re-checks inside its transaction.
+// updateConflict mirrors the store's name rule so it is answered before
+// any AdGuard write: another child (not selfID; 0 for a create) with the
+// name, compared as the column's COLLATE NOCASE does — ASCII case-folded —
+// is store.ErrNameTaken. Clients are never a conflict: a client may belong
+// to several children. The store re-checks inside its transaction.
 func updateConflict(children []store.Child, selfID int64, in childRequest) error {
 	for _, c := range children {
-		if c.ID == selfID {
-			continue
-		}
-		if asciiFold(c.Name) == asciiFold(in.Name) {
+		if c.ID != selfID && asciiFold(c.Name) == asciiFold(in.Name) {
 			return store.ErrNameTaken
-		}
-		for _, name := range in.Clients {
-			if slices.Contains(c.Clients, name) {
-				return &store.ErrClientTaken{Client: name, ChildID: c.ID, ChildName: c.Name}
-			}
 		}
 	}
 	return nil
@@ -252,25 +270,26 @@ func asciiFold(s string) string {
 	return string(b)
 }
 
-// writeAdoptError answers a failed baseline write: 502 naming the client
-// for *grants.ErrAdoptFailed, 502 for an AdGuard read failure, 500 for
-// anything else (a store read inside the engine).
-func (a *API) writeAdoptError(w http.ResponseWriter, err error) {
+// writeAdoptError answers a failed baseline write for op: 502 naming the
+// client for *grants.ErrAdoptFailed, 502 for an AdGuard read failure, 500
+// for anything else (a store read inside the engine).
+func (a *API) writeAdoptError(w http.ResponseWriter, op string, err error) {
 	var af *grants.ErrAdoptFailed
 	switch {
 	case errors.As(err, &af):
-		a.log.Warn("update child: adguard baseline write failed", "client", af.Client, "err", err)
+		a.log.Warn(op+": adguard baseline write failed", "client", af.Client, "err", err)
 		writeError(w, http.StatusBadGateway, CodeAdGuardUnavailable,
 			fmt.Sprintf("could not apply the child's blocked services to %s in AdGuard Home — nothing was saved; try again shortly", af.Client))
 	case adguardDown(err):
-		a.writeAdGuardError(w, "update child", err)
+		a.writeAdGuardError(w, op, err)
 	default:
-		a.log.Error("update child: baseline failed", "err", err)
-		writeError(w, http.StatusInternalServerError, "internal", "could not update child")
+		a.log.Error(op+": baseline failed", "err", err)
+		writeError(w, http.StatusInternalServerError, "internal", "could not "+op)
 	}
 }
 
-// handleChildDelete is DELETE /api/v1/children/{id}.
+// handleChildDelete is DELETE /api/v1/children/{id}. It never calls
+// AdGuard: a shared client stays with its other owners, as it is (c-7).
 func (a *API) handleChildDelete(w http.ResponseWriter, r *http.Request) {
 	id, ok := childID(w, r)
 	if !ok {

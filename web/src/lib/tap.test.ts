@@ -54,6 +54,7 @@ describe('runTap', () => {
       clients: ['Kid phone'],
       started_at: '2026-09-21T10:00:00.000Z',
       ends_at: ENDS,
+      shared: [],
     })
     expect(d.refresh).toHaveBeenCalledTimes(1)
     expect(d.merge.mock.invocationCallOrder[0]).toBeLessThan(d.refresh.mock.invocationCallOrder[0])
@@ -80,6 +81,25 @@ describe('runTap', () => {
     bare.createGrant.mockResolvedValueOnce({ id: 9, ends_at: ENDS, applied: false } as GrantCreated)
     const none = await runTap(b1, bare)
     expect(none).toMatchObject({ kind: 'partial', failed: [] })
+  })
+
+  it('sharedMerged', async () => {
+    const shared = [{ client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] }]
+    const d = fake()
+    d.createGrant.mockResolvedValueOnce(created({ shared }))
+    let resync!: () => void
+    d.refresh.mockImplementationOnce(() => new Promise<void>((r) => (resync = r)))
+
+    const pending = runTap(b1, d)
+    await vi.waitFor(() => expect(d.merge).toHaveBeenCalledTimes(1))
+    expect(d.merge.mock.calls[0][0].shared).toEqual(shared)
+    resync()
+    const out = await pending
+    expect(out).toMatchObject({ kind: 'applied', grant: { shared } })
+
+    const p = fake()
+    p.createGrant.mockResolvedValueOnce(created({ applied: false, failed: ['Kid tablet'], shared }))
+    expect(await runTap(b1, p)).toMatchObject({ kind: 'partial', grant: { shared }, failed: ['Kid tablet'] })
   })
 
   it('errors carry code and message', async () => {
@@ -154,6 +174,15 @@ describe('acceptOffer', () => {
     expect(res.kind).toBe('applied')
     if (res.kind === 'applied') expect(res.grant).toEqual({ ...A, ends_at: '2026-09-21T12:00:00Z' })
     expect(only.merge).toHaveBeenCalledWith({ ...A, ends_at: '2026-09-21T12:00:00Z' })
+  })
+
+  it('acceptKeepsShared', async () => {
+    const shared = [{ client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] }]
+    const target: Grant = { ...A, shared }
+    const d = fake([target])
+    const res = await acceptOffer({ targets: [target], remaining: [] }, { ...spec, services: ['youtube'] }, d)
+    expect(d.merge.mock.calls[0][0].shared).toEqual(shared)
+    expect(res).toMatchObject({ kind: 'applied', grant: { id: target.id, shared } })
   })
 
   it('retries create on 404', async () => {

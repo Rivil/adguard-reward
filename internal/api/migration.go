@@ -21,7 +21,8 @@ type migrationOffer struct {
 }
 
 // computeOffer reads the store and AdGuard fresh and folds every mapped
-// client through blocked.Offer. On failure it writes the error and
+// client through blocked.Offer, once per client: a shared client reports its
+// lowest-id owner. On failure it writes the error and
 // returns false.
 func (a *API) computeOffer(w http.ResponseWriter, r *http.Request, op string) (migrationOffer, []blocked.Step, bool) {
 	children, err := a.deps.Children.ListChildren(r.Context())
@@ -36,8 +37,11 @@ func (a *API) computeOffer(w http.ResponseWriter, r *http.Request, op string) (m
 	}
 	mapped := []string{}
 	owner := map[string]childRef{}
-	for _, c := range children {
+	for _, c := range children { // id ascending: the first owner is the lowest id
 		for _, name := range c.Clients {
+			if _, ok := owner[name]; ok {
+				continue // a shared client is offered once
+			}
 			mapped = append(mapped, name)
 			owner[name] = childRef{ID: c.ID, Name: c.Name}
 		}

@@ -135,6 +135,13 @@ type env struct {
 
 func newEnv(t *testing.T, mod func(*Options)) *env {
 	t.Helper()
+	return newEnvStore(t, mod, nil)
+}
+
+// newEnvStore is newEnv with the engine's Store wrapped by wrap (nil: the
+// real store as is); env.st stays the real store underneath.
+func newEnvStore(t *testing.T, mod func(*Options), wrap func(*store.Store) Store) *env {
+	t.Helper()
 	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
 	ag, err := adguard.New(fake.URL(), svcUser, svcPass)
 	if err != nil {
@@ -155,7 +162,11 @@ func newEnv(t *testing.T, mod func(*Options)) *env {
 	if mod != nil {
 		mod(&opts)
 	}
-	eng := New(st, ag, opts)
+	var engStore Store = st
+	if wrap != nil {
+		engStore = wrap(st)
+	}
+	eng := New(engStore, ag, opts)
 	t.Cleanup(eng.Close)
 	return &env{t: t, fake: fake, st: st, clk: clk, logs: logs, eng: eng}
 }
@@ -593,5 +604,269 @@ func TestEngine_Serialised(t *testing.T) {
 	}
 	if n := e.clk.pending(); n != 0 {
 		t.Errorf("%d timers still armed after every grant ended", n)
+	}
+}
+
+// Shared clients (locked: shared_device_rule). Children 1 and 2 stand for
+// Ada and Ben; the grant rows need no children rows (no FK, locked
+// client_set), so only the ownership tests create them.
+
+// setBlocked replaces name's own blocked_services in the fake.
+func (e *env) setBlocked(name string, ids ...string) {
+	list, _ := json.Marshal(ids)
+	e.fake.MutateClient(name, func(m map[string]json.RawMessage) {
+		m["blocked_services"] = list
+	})
+}
+
+func (e *env) end(id int64) {
+	e.t.Helper()
+	if err := e.eng.End(ctx, id); err != nil {
+		e.t.Fatalf("End(%d): %v", id, err)
+	}
+}
+
+func (e *env) wantStatus(id int64, want string) {
+	e.t.Helper()
+	if got := e.status(id); got != want {
+		e.t.Errorf("grant %d status = %q, want %q", id, got, want)
+	}
+}
+
+func (e *env) wantBlocks(name, svc string, want bool) {
+	e.t.Helper()
+	if got := e.blocked(name); slices.Contains(got, svc) != want {
+		verb := "lack"
+		if want {
+			verb = "block"
+		}
+		e.t.Errorf("%s = %v, want it to %s %s", name, got, verb, svc)
+	}
+}
+
+var (
+	youtube   = []string{"youtube"}
+	kidPhone  = []string{"Kid phone"}
+	phoneLapt = []string{"Kid phone", "Old laptop"}
+)
+
+func TestEngine_SharedExpiryKeepsOther(t *testing.T) {
+	e := newEnv(t, nil)
+	e.setBlocked("Old laptop", "youtube")
+	g1 := e.create(1, youtube, phoneLapt).Grant // ends t0+30m
+	e.clk.Advance(10 * time.Minute)
+	g2 := e.create(2, youtube, kidPhone).Grant // ends t0+40m
+
+	e.clk.Advance(20 * time.Minute)
+	e.wantStatus(g1.ID, store.StatusExpired)
+	e.wantStatus(g2.ID, store.StatusActive)
+	e.wantBlocks("Old laptop", "youtube", true)
+	e.wantBlocks("Kid phone", "youtube", false)
+
+	e.clk.Advance(10 * time.Minute)
+	e.wantStatus(g2.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", true)
+}
+
+func TestEngine_SharedEnd(t *testing.T) {
+	e := newEnv(t, nil)
+	g1 := e.create(1, youtube, kidPhone).Grant
+	g2 := e.create(2, youtube, kidPhone).Grant
+	posts := e.posts()
+
+	if err := e.eng.End(ctx, g1.ID); err != nil {
+		t.Fatalf("End(G1) = %v, want nil", err)
+	}
+	e.wantStatus(g1.ID, store.StatusEnded)
+	e.wantBlocks("Kid phone", "youtube", false)
+	if n := e.posts() - posts; n != 0 {
+		t.Errorf("End(G1) issued %d update POSTs, want 0 (G2 holds youtube open)", n)
+	}
+
+	e.end(g2.ID)
+	e.wantStatus(g2.ID, store.StatusEnded)
+	e.wantBlocks("Kid phone", "youtube", true)
+}
+
+func TestEngine_EndSharedOtherService(t *testing.T) {
+	e := newEnv(t, nil)
+	e.create(1, []string{"tiktok"}, kidPhone)
+	ben := e.create(2, youtube, kidPhone).Grant
+	if got := e.blocked("Kid phone"); len(got) != 0 {
+		t.Fatalf("Kid phone = %v, want [] with both grants applied", got)
+	}
+
+	e.end(ben.ID)
+	if got := e.blocked("Kid phone"); !reflect.DeepEqual(got, youtube) {
+		t.Errorf("Kid phone = %v, want [youtube] (Ada's tiktok grant must not spare youtube)", got)
+	}
+}
+
+func TestEngine_ExpiredGrantNoCover(t *testing.T) {
+	e := newEnv(t, nil)
+	g0 := e.create(1, youtube, kidPhone).Grant   // ended below
+	gExp := e.create(3, youtube, kidPhone).Grant // expires at t0+30m
+	e.clk.Advance(10 * time.Minute)
+	g1 := e.create(2, youtube, kidPhone).Grant // expires at t0+40m
+
+	e.end(g0.ID)
+	e.clk.Advance(20 * time.Minute)
+	e.wantStatus(gExp.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", false) // G1 still live
+
+	e.clk.Advance(10 * time.Minute)
+	e.wantStatus(g1.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", true)
+}
+
+func TestEngine_CoveredNoWrite(t *testing.T) {
+	e := newEnv(t, nil)
+	g1 := e.create(1, youtube, kidPhone).Grant
+	e.clk.Advance(10 * time.Minute)
+	e.create(2, youtube, kidPhone)
+	posts := e.posts()
+
+	e.clk.Advance(20 * time.Minute)
+	e.wantStatus(g1.ID, store.StatusExpired)
+	if n := e.posts() - posts; n != 0 {
+		t.Errorf("G1's expiry issued %d update POSTs, want 0 (Kid phone fully held open by G2)", n)
+	}
+	e.wantBlocks("Kid phone", "youtube", false)
+}
+
+// listFailStore fails ListActiveGrants while err is set.
+type listFailStore struct {
+	*store.Store
+	mu  sync.Mutex
+	err error
+}
+
+func (s *listFailStore) set(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.err = err
+}
+
+func (s *listFailStore) ListActiveGrants(ctx context.Context) ([]store.Grant, error) {
+	s.mu.Lock()
+	err := s.err
+	s.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	return s.Store.ListActiveGrants(ctx)
+}
+
+func TestEnd_ActiveReadFails(t *testing.T) {
+	var fs *listFailStore
+	e := newEnvStore(t, nil, func(st *store.Store) Store {
+		fs = &listFailStore{Store: st}
+		return fs
+	})
+	e.setBlocked("Old laptop", "youtube")
+	g := e.create(1, youtube, phoneLapt).Grant
+	posts := e.posts()
+	fs.set(errors.New("disk on fire"))
+
+	err := e.eng.End(ctx, g.ID)
+	var rf *ErrRevertFailed
+	if !errors.As(err, &rf) || !reflect.DeepEqual(rf.Clients, g.Clients) {
+		t.Fatalf("End err = %v, want *ErrRevertFailed naming every client %v", err, g.Clients)
+	}
+	if n := e.posts() - posts; n != 0 {
+		t.Errorf("End issued %d update POSTs after a failed read, want 0 (never re-block blind)", n)
+	}
+	e.wantStatus(g.ID, store.StatusActive)
+	if n := e.clk.pending(); n != 1 {
+		t.Errorf("%d timers armed, want the grant's timer kept", n)
+	}
+
+	// The timer path fails the same way and leaves the grant for a retry.
+	e.clk.Advance(d)
+	e.wantStatus(g.ID, store.StatusActive)
+	if n := e.posts() - posts; n != 0 {
+		t.Errorf("expiry issued %d update POSTs after a failed read, want 0", n)
+	}
+	e.wantBlocks("Kid phone", "youtube", false)
+
+	fs.set(nil)
+	e.end(g.ID)
+	e.wantStatus(g.ID, store.StatusEnded)
+	e.wantBlocks("Kid phone", "youtube", true)
+	e.wantBlocks("Old laptop", "youtube", true)
+}
+
+func TestExpire_ClientUnassigned(t *testing.T) {
+	e := newEnv(t, nil)
+	ada, err := e.st.CreateChild(ctx, "Ada", kidPhone)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := e.st.CreateChild(ctx, "Ben", kidPhone); err != nil {
+		t.Fatal(err)
+	}
+	g := e.create(ada.ID, youtube, kidPhone).Grant
+	if _, err := e.st.UpdateChild(ctx, ada.ID, "Ada", nil); err != nil {
+		t.Fatal(err)
+	}
+
+	e.clk.Advance(d)
+	e.wantStatus(g.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", true)
+}
+
+func TestExpire_HolderUnassigned(t *testing.T) {
+	e := newEnv(t, nil)
+	ada, err := e.st.CreateChild(ctx, "Ada", kidPhone)
+	if err != nil {
+		t.Fatal(err)
+	}
+	ben, err := e.st.CreateChild(ctx, "Ben", kidPhone)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gBen := e.create(ben.ID, youtube, kidPhone).Grant // ends t0+30m
+	e.clk.Advance(10 * time.Minute)
+	gAda := e.create(ada.ID, youtube, kidPhone).Grant // ends t0+40m
+	if ok, err := e.st.DeleteChild(ctx, ada.ID); err != nil || !ok {
+		t.Fatalf("DeleteChild(Ada) = %v, %v", ok, err)
+	}
+
+	e.clk.Advance(20 * time.Minute)
+	e.wantStatus(gBen.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", false) // Ada's stored grant still holds it
+
+	e.clk.Advance(10 * time.Minute)
+	e.wantStatus(gAda.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", true)
+}
+
+func TestExpire_SharedTimersSerial(t *testing.T) {
+	e := newEnv(t, withNoTimers)
+	e.setBlocked("Old laptop", "youtube")
+	g1 := e.create(1, youtube, phoneLapt).Grant
+	g2 := e.create(2, youtube, kidPhone).Grant
+	e.clk.Advance(d) // both overdue; no timer fires
+	e.fake.Hang("/control/clients/update", 30*time.Millisecond)
+
+	start := make(chan struct{})
+	var wg sync.WaitGroup
+	for _, id := range []int64{g1.ID, g2.ID} {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			<-start
+			e.eng.expire(id)
+		}()
+	}
+	close(start)
+	wg.Wait()
+
+	e.wantStatus(g1.ID, store.StatusExpired)
+	e.wantStatus(g2.ID, store.StatusExpired)
+	e.wantBlocks("Kid phone", "youtube", true)
+	e.wantBlocks("Old laptop", "youtube", true)
+	if n := e.fake.MaxInFlightUpdates(); n != 1 {
+		t.Errorf("MaxInFlightUpdates = %d, want 1", n)
 	}
 }

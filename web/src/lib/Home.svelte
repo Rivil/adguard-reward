@@ -15,12 +15,13 @@
     type Button,
     type Child,
     type Service,
+    type ServiceState,
   } from './api'
   import { merge, refresh, snapshot, start } from './activeGrants'
   import ActiveGrants from './ActiveGrants.svelte'
   import GrantForm, { type GrantFormValue } from './GrantForm.svelte'
   import MigrationBanner from './MigrationBanner.svelte'
-  import { formatDuration, minutesToSeconds } from './grants'
+  import { formatDuration, minutesToSeconds, sharedDevices, sharedText } from './grants'
   import { acceptOffer, runTap, type Offer, type Outcome, type TapDeps, type TapSpec } from './tap'
 
   let { username, onLogout }: { username: string; onLogout: () => void } = $props()
@@ -38,6 +39,9 @@
 
   // Per-child outcome line under its buttons, and which tap keys are out.
   let notes = $state<Record<number, { code: string; text: string } | null>>({})
+  // Per-child post-tap notice naming the shared devices the grant also
+  // unblocked; beside the outcome line, never instead of it.
+  let sharedNotes = $state<Record<number, string>>({})
   let inflight = $state<Record<string, boolean>>({})
   let offer = $state<{ offer: Offer; spec: TapSpec; childId: number } | null>(null)
 
@@ -111,6 +115,9 @@
   // ---- taps ----------------------------------------------------------------
 
   function apply(out: Outcome, spec: TapSpec, childId: number) {
+    if ((out.kind === 'applied' || out.kind === 'partial') && (out.grant.shared ?? []).length > 0) {
+      sharedNotes[childId] = sharedText(out.grant.shared ?? [])
+    }
     switch (out.kind) {
       case 'partial':
         notes[childId] = { code: 'partial', text: `Unlocked, except on ${out.failed.join(', ')}` }
@@ -131,6 +138,7 @@
   async function tap(spec: TapSpec, childId: number, run: (s: TapSpec, d: TapDeps) => Promise<Outcome> = runTap) {
     inflight[spec.key] = true
     notes[childId] = null
+    sharedNotes[childId] = ''
     try {
       apply(await run(spec, deps), spec, childId)
     } finally {
@@ -194,8 +202,23 @@
     for (const [id, open] of Object.entries(opened)) if (open) void openBlocked(Number(id))
   }
 
+  // An unblocked service stays listed while another child's grant is what
+  // holds it open on a shared client, so the owner can see why.
   function shown(v: BlockedView) {
-    return v.services.filter((s) => s.state !== 'unblocked')
+    return v.services.filter((s) => s.state !== 'unblocked' || (s.unblocked_by ?? []).length > 0)
+  }
+
+  /**
+   * Where the service is open: plain client names for a partial service, and
+   * "<client> by <child>'s grant" where another child's grant holds it open.
+   * [] for a plainly blocked service.
+   */
+  function openOn(s: ServiceState): string[] {
+    const by = s.unblocked_by ?? []
+    const attributed = new Set(by.map((u) => u.client))
+    const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []
+    const granted = by.map((u) => `${u.client} by ${u.child.name === '' ? "a removed child's grant" : `${u.child.name}'s grant`}`)
+    return [...plain, ...granted]
   }
 </script>
 
@@ -231,6 +254,8 @@
     {#each children as child (child.id)}
       {@const own = buttonsFor(child.id)}
       {@const entry = blocked[child.id]}
+      {@const shared = sharedDevices(child.id, children)}
+      {@const hintId = `shared-hint-${child.id}`}
       <section data-child={child.id}>
         <h2>{child.name}</h2>
         {#if own.length === 0}
@@ -242,7 +267,14 @@
           <div class="tiles">
             {#each own as b (b.id)}
               {@const icon = iconFor(b)}
-              <button type="button" class="tile" data-button={b.id} onclick={() => tapButton(child, b)} disabled={inflight[`button:${b.id}`] === true}>
+              <button
+                type="button"
+                class="tile"
+                data-button={b.id}
+                aria-describedby={shared.length > 0 ? hintId : undefined}
+                onclick={() => tapButton(child, b)}
+                disabled={inflight[`button:${b.id}`] === true}
+              >
                 {#if icon}
                   <img alt="" src={icon} width="28" height="28" />
                 {/if}
@@ -251,9 +283,16 @@
               </button>
             {/each}
           </div>
+          {#if shared.length > 0}
+            <!-- Passive (locked shared_notice): no control, the tap stays one tap. -->
+            <p class="hint" role="note" id={hintId} data-shared-hint>Also unblocks on {sharedText(shared)}</p>
+          {/if}
         {/if}
         {#if notes[child.id]}
           <p class="error" role="alert" data-error={notes[child.id]?.code}>{notes[child.id]?.text}</p>
+        {/if}
+        {#if sharedNotes[child.id]}
+          <p class="notice" role="status" data-shared-notice>Also unblocked on {sharedNotes[child.id]}</p>
         {/if}
         <details data-blocked={child.id} ontoggle={(e) => toggled(child.id, e.currentTarget.open)}>
           <summary>Blocked services</summary>
@@ -264,7 +303,7 @@
             <p class="clients">
               {#each v.clients as c (c.name)}
                 <span class="client" class:missing={c.missing}>
-                  {c.name}
+                  {(c.shared_with ?? []).length > 0 ? sharedText([{ client: c.name, others: c.shared_with ?? [] }]) : c.name}
                   {#if c.missing}
                     <span class="badge" data-badge="missing">missing</span>
                   {:else if c.uses_global}
@@ -278,10 +317,11 @@
             {:else}
               <ul class="services">
                 {#each shown(v) as s (s.id)}
+                  {@const on = openOn(s)}
                   <li data-state={s.state}>
                     <img alt="" src={iconUrl(s.icon)} width="20" height="20" />
-                    {s.name}{#if s.state === 'partial'}
-                      <span class="partial"> — unblocked on {s.differs.join(', ')}</span>
+                    {s.name}{#if on.length > 0}
+                      <span class="partial"> — unblocked on {on.join(', ')}</span>
                     {/if}
                   </li>
                 {/each}
@@ -415,7 +455,8 @@
   }
   .partial,
   .none,
-  .hint {
+  .hint,
+  .notice {
     color: #666;
   }
   .error {

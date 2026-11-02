@@ -4,6 +4,7 @@
 package blocked
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
@@ -19,31 +20,66 @@ const (
 // Input is everything Compute needs, read from AdGuard and the store by the
 // caller: the live persistent clients, the global list, the catalogue, and
 // the child's mapped client names in stored order.
+//
+// Self is the viewing child's id. Owners maps a client name to every child
+// that holds it; Grants are the active grants of every child, each with the
+// clients stored on it. Both may be nil — the view then carries no
+// shared/unblocked-by annotations.
 type Input struct {
 	Clients  []adguard.PersistentClient
 	Global   []string
 	Services []adguard.Service
 	Mapped   []string
+	Self     int64
+	Owners   map[string][]ChildRef
+	Grants   []GrantCover
+}
+
+// ChildRef names a child.
+type ChildRef struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+// GrantCover is an active grant as the fold needs it: who it is for, and
+// which services it opened on which (stored) clients.
+type GrantCover struct {
+	ID       int64
+	Child    ChildRef
+	Services []string
+	Clients  []string
+}
+
+// Unblock attributes an open service on a client to another child's grant.
+type Unblock struct {
+	Client  string   `json:"client"`
+	GrantID int64    `json:"grant_id"`
+	Child   ChildRef `json:"child"`
 }
 
 // ClientState is one mapped client's presence in AdGuard. A missing client
 // is reported, never dropped (locked: dangling_client); a client on the
 // global list is flagged rather than hidden (locked: global_list_clients).
+// SharedWith lists the client's other owners, id ascending, never nil.
 type ClientState struct {
 	Name       string
 	Missing    bool
 	UsesGlobal bool
+	SharedWith []ChildRef
 }
 
 // ServiceState is one catalogue service's fold. Differs lists the present
 // clients on which the service is NOT blocked, sorted; it is empty (never
-// nil) unless State is partial.
+// nil) unless State is partial. UnblockedBy names, per present client that
+// does not block the service, each active grant of ANOTHER child covering
+// the service on that client — sorted by (client, grant id), never nil.
 type ServiceState struct {
-	ID      string
-	Name    string
-	Icon    string
-	State   string
-	Differs []string
+	ID          string
+	Name        string
+	Icon        string
+	State       string
+	Differs     []string
+	UnblockedBy []Unblock
 }
 
 // View is Compute's result; both slices are never nil.
@@ -73,10 +109,12 @@ func Compute(in Input) View {
 	for _, name := range in.Mapped {
 		pc, ok := byName[name]
 		if !ok {
-			view.Clients = append(view.Clients, ClientState{Name: name, Missing: true})
+			view.Clients = append(view.Clients, ClientState{Name: name, Missing: true, SharedWith: sharedWith(in, name)})
 			continue
 		}
-		view.Clients = append(view.Clients, ClientState{Name: name, UsesGlobal: pc.UseGlobalBlockedServices})
+		view.Clients = append(view.Clients, ClientState{
+			Name: name, UsesGlobal: pc.UseGlobalBlockedServices, SharedWith: sharedWith(in, name),
+		})
 		set := globalSet
 		if !pc.UseGlobalBlockedServices {
 			set = toSet(pc.BlockedServices)
@@ -85,15 +123,23 @@ func Compute(in Input) View {
 	}
 
 	for _, svc := range in.Services {
-		st := ServiceState{ID: svc.ID, Name: svc.Name, Icon: svc.Icon, Differs: []string{}}
+		st := ServiceState{ID: svc.ID, Name: svc.Name, Icon: svc.Icon, Differs: []string{}, UnblockedBy: []Unblock{}}
 		blockedOn := 0
 		for _, p := range presents {
 			if p.set[svc.ID] {
 				blockedOn++
-			} else {
-				st.Differs = append(st.Differs, p.name)
+				continue
 			}
+			st.Differs = append(st.Differs, p.name)
+			st.UnblockedBy = append(st.UnblockedBy, unblockedBy(in, p.name, svc.ID)...)
 		}
+		sort.Slice(st.UnblockedBy, func(i, j int) bool {
+			a, b := st.UnblockedBy[i], st.UnblockedBy[j]
+			if a.Client != b.Client {
+				return a.Client < b.Client
+			}
+			return a.GrantID < b.GrantID
+		})
 		switch {
 		case len(presents) > 0 && blockedOn == len(presents):
 			st.State = StateBlocked
@@ -148,6 +194,31 @@ func Offer(clients []adguard.PersistentClient, global, mapped []string) []Step {
 		steps = append(steps, Step{Client: name, Gains: sortedUnique(gains), Target: keys(target)})
 	}
 	return steps
+}
+
+// sharedWith returns client's owners other than in.Self, id ascending.
+func sharedWith(in Input, client string) []ChildRef {
+	out := []ChildRef{}
+	for _, o := range in.Owners[client] {
+		if o.ID != in.Self {
+			out = append(out, o)
+		}
+	}
+	sort.Slice(out, func(i, j int) bool { return out[i].ID < out[j].ID })
+	return out
+}
+
+// unblockedBy returns the active grants of other children that cover
+// service on client (per the grant's stored clients).
+func unblockedBy(in Input, client, service string) []Unblock {
+	var out []Unblock
+	for _, g := range in.Grants {
+		if g.Child.ID == in.Self || !slices.Contains(g.Services, service) || !slices.Contains(g.Clients, client) {
+			continue
+		}
+		out = append(out, Unblock{Client: client, GrantID: g.ID, Child: g.Child})
+	}
+	return out
 }
 
 func toSet(ids []string) map[string]bool {

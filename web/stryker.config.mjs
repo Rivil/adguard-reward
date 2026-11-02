@@ -10,7 +10,8 @@ export default {
   jsonReporter: { fileName: 'reports/mutation/mutation.json' },
   tempDirName: '.stryker-tmp',
   ignoreStatic: true,
-  // More runners race on the sandbox's shared vite deps cache
-  // (ENOTEMPTY rename under node_modules/.vite/vitest).
-  concurrency: 2,
+  // Two or more runners race on the sandbox's shared vite deps cache
+  // (ENOTEMPTY rename under node_modules/.vite/vitest); 2 still raced on
+  // 2026-11-02 (shared-devices verify), so run one.
+  concurrency: 1,
 }

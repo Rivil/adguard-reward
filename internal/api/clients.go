@@ -1,6 +1,7 @@
 package api
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
 	"errors"
@@ -8,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
@@ -26,12 +28,13 @@ type childRef struct {
 }
 
 // clientView is one row of GET /api/v1/clients: a live AdGuard persistent
-// client plus the child it is assigned to, or null.
+// client plus every child holding it, id ascending. children is never null:
+// an unassigned client has [].
 type clientView struct {
-	Name                     string    `json:"name"`
-	IDs                      []string  `json:"ids"`
-	UseGlobalBlockedServices bool      `json:"use_global_blocked_services"`
-	Child                    *childRef `json:"child"`
+	Name                     string     `json:"name"`
+	IDs                      []string   `json:"ids"`
+	UseGlobalBlockedServices bool       `json:"use_global_blocked_services"`
+	Children                 []childRef `json:"children"`
 }
 
 // unlabelledView is one row of GET /api/v1/clients' unlabelled list: an
@@ -58,19 +61,31 @@ func (a *API) writeAdGuardError(w http.ResponseWriter, op string, err error) {
 	writeError(w, http.StatusBadGateway, CodeAdGuardUnavailable, adguardDownMsg)
 }
 
-// ownerIndex maps client name → owning child.
-func ownerIndex(children []store.Child) map[string]childRef {
-	owner := map[string]childRef{}
+// ownerIndex maps client name → every child holding it, id ascending. A
+// shared client lists all its holders; none is dropped.
+func ownerIndex(children []store.Child) map[string][]childRef {
+	owners := map[string][]childRef{}
 	for _, c := range children {
 		for _, name := range c.Clients {
-			owner[name] = childRef{ID: c.ID, Name: c.Name}
+			owners[name] = append(owners[name], childRef{ID: c.ID, Name: c.Name})
 		}
 	}
-	return owner
+	for _, refs := range owners {
+		slices.SortFunc(refs, func(a, b childRef) int { return cmp.Compare(a.ID, b.ID) })
+	}
+	return owners
 }
 
-// handleClients is GET /api/v1/clients: the persistent clients with their
-// child, plus every auto client none of them covers (locked:
+// holders is owners' entry for name, never nil.
+func holders(owners map[string][]childRef, name string) []childRef {
+	if refs := owners[name]; refs != nil {
+		return refs
+	}
+	return []childRef{}
+}
+
+// handleClients is GET /api/v1/clients: the persistent clients with every
+// child holding them, plus every auto client none of them covers (locked:
 // unlabelled_listing). Every call reads AdGuard — one /control/clients
 // read and one lease read; nothing is memoised. A failed lease read only
 // costs the MAC suggestions: devices are still listed, IP-only.
@@ -90,15 +105,13 @@ func (a *API) handleClients(w http.ResponseWriter, r *http.Request) {
 		a.log.Warn("list clients: dhcp leases unavailable, suggesting ip only", "err", err)
 		leases = nil
 	}
-	owner := ownerIndex(children)
+	owners := ownerIndex(children)
 	out := make([]clientView, 0, len(res.Persistent))
 	for _, pc := range res.Persistent {
-		v := clientView{Name: pc.Name, IDs: pc.IDs, UseGlobalBlockedServices: pc.UseGlobalBlockedServices}
+		v := clientView{Name: pc.Name, IDs: pc.IDs, UseGlobalBlockedServices: pc.UseGlobalBlockedServices,
+			Children: holders(owners, pc.Name)}
 		if v.IDs == nil {
 			v.IDs = []string{}
-		}
-		if ref, ok := owner[pc.Name]; ok {
-			v.Child = &ref
 		}
 		out = append(out, v)
 	}
@@ -173,9 +186,10 @@ func decodeCreateClient(w http.ResponseWriter, r *http.Request) (createClientReq
 
 // handleClientCreate is POST /api/v1/clients: create an AdGuard persistent
 // client and, with child_id, assign it to that child in the same action.
-// An unknown child (404) and a name another child's mapping already holds
-// (409) are refused before AdGuard is written; the same child holding the
-// name — a stale self-mapping — is allowed and collapses in the store.
+// An unknown child (404) and a name any other child's mapping already holds
+// (409, naming that child) are refused before AdGuard is written; only when
+// every holder is child_id itself — a stale self-mapping — is it allowed,
+// and it collapses in the store.
 func (a *API) handleClientCreate(w http.ResponseWriter, r *http.Request) {
 	in, ok := decodeCreateClient(w, r)
 	if !ok {
@@ -195,20 +209,26 @@ func (a *API) handleClientCreate(w http.ResponseWriter, r *http.Request) {
 		a.writeStoreError(w, "list children", "", err)
 		return
 	}
-	if ref, held := ownerIndex(children)[in.Name]; held && (child == nil || ref.ID != child.ID) {
-		writeError(w, http.StatusConflict, CodeConflict,
-			fmt.Sprintf("client %s is already assigned to %s", in.Name, ref.Name))
-		return
+	for _, ref := range ownerIndex(children)[in.Name] {
+		if child == nil || ref.ID != child.ID {
+			writeError(w, http.StatusConflict, CodeConflict,
+				fmt.Sprintf("client %s is already assigned to %s", in.Name, ref.Name))
+			return
+		}
 	}
 	if err := a.deps.Grants.CreateClient(r.Context(), in.Name, in.IDs, in.ChildID); err != nil {
 		a.writeCreateClientError(w, in.Name, err)
 		return
 	}
+	owners := []childRef{}
+	if child != nil {
+		owners = append(owners, *child)
+	}
 	writeJSON(w, http.StatusCreated, clientView{
 		Name:                     in.Name,
 		IDs:                      in.IDs,
 		UseGlobalBlockedServices: child == nil,
-		Child:                    child,
+		Children:                 owners,
 	})
 }
 

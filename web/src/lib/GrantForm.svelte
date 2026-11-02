@@ -12,6 +12,7 @@
 
 <script lang="ts">
   import { iconUrl, type Child, type Service } from './api'
+  import { sharedDevices, sharedText } from './grants'
 
   let {
     children,
@@ -45,6 +46,10 @@
   $effect(() => {
     valid = isValid
   })
+
+  // The selected child's devices other children also hold (locked
+  // shared_notice): a passive note only — no control, no effect on valid.
+  const shared = $derived(value.child_id === null ? [] : sharedDevices(value.child_id, children))
 
   // Ids the stored value names that the catalogue does not: shown, never
   // dropped behind the parent's back.
@@ -97,6 +102,9 @@
       {/each}
     </select>
   </label>
+  {#if shared.length > 0}
+    <p class="hint" role="note" data-shared-hint>Also unblocks on {sharedText(shared)}</p>
+  {/if}
 
   <div class="field">
     <span>Services</span>

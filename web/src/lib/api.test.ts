@@ -268,11 +268,12 @@ describe('grants and buttons endpoints', () => {
       clients: ['Kid phone'],
       started_at: '2026-09-21T10:00:00Z',
       ends_at: '2026-09-21T10:30:00Z',
+      shared: [],
     }
     const button = { id: 9, label: 'TikTok 30', child_id: 1, services: ['tiktok'], duration: 1800 }
     const input = { label: 'TikTok 30', child_id: 1, services: ['tiktok'], duration: 1800 }
     const calls = mockFetch(
-      json(201, { id: 4, ends_at: grant.ends_at, applied: true, failed: [] }),
+      json(201, { id: 4, ends_at: grant.ends_at, applied: true, failed: [], shared: [] }),
       json(200, { id: 4, ends_at: '2026-09-21T10:40:00Z' }),
       new Response(null, { status: 204 }),
       json(200, { grants: [grant] }),
@@ -280,7 +281,13 @@ describe('grants and buttons endpoints', () => {
       json(200, { buttons: [button] }),
     )
 
-    expect(await createGrant(1, ['tiktok'], 1800)).toEqual({ id: 4, ends_at: grant.ends_at, applied: true, failed: [] })
+    expect(await createGrant(1, ['tiktok'], 1800)).toEqual({
+      id: 4,
+      ends_at: grant.ends_at,
+      applied: true,
+      failed: [],
+      shared: [],
+    })
     expect(await extendGrant(4, 600)).toEqual({ id: 4, ends_at: '2026-09-21T10:40:00Z' })
     expect(await endGrant(4)).toBeUndefined()
     expect(await listGrants()).toEqual([grant])
@@ -455,10 +462,10 @@ describe('migrationDismissed', () => {
 })
 
 describe('device endpoints', () => {
-  const view = { name: 'TV', ids: ['192.168.1.9'], use_global_blocked_services: false, child: null }
+  const view = { name: 'TV', ids: ['192.168.1.9'], use_global_blocked_services: false, children: [] }
 
   it('createClient sends name, ids and child_id null with the CSRF header', async () => {
-    const calls = mockFetch(json(201, view), json(201, { ...view, child: { id: 1, name: 'Ada' } }))
+    const calls = mockFetch(json(201, view), json(201, { ...view, children: [{ id: 1, name: 'Ada' }] }))
     expect(await createClient('TV', ['192.168.1.9'], null)).toEqual(view)
     expect(calls[0].url).toBe('/api/v1/clients')
     expect(calls[0].init.method).toBe('POST')
@@ -505,5 +512,73 @@ describe('device endpoints', () => {
     expect(calls[0].init.method).toBe('POST')
     expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
     expect(JSON.parse(calls[0].init.body as string)).toEqual({ from: 'a/b%c', to: 'x' })
+  })
+})
+
+describe('shared-device fields default to []', () => {
+  const kidPhone = { client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] }
+  const row = {
+    id: 4,
+    child_id: 1,
+    services: ['youtube'],
+    clients: ['Kid phone'],
+    started_at: '2026-09-21T10:00:00Z',
+    ends_at: '2026-09-21T10:30:00Z',
+  }
+
+  it('listGrants fills a missing shared and keeps a present one', async () => {
+    mockFetch(json(200, { grants: [row, { ...row, id: 5, shared: [kidPhone] }] }))
+    const got = await listGrants()
+    expect(got[0].shared).toEqual([])
+    expect(got[1].shared).toEqual([kidPhone])
+  })
+
+  it('createGrant fills a missing shared and keeps a present one', async () => {
+    mockFetch(
+      json(201, { id: 4, ends_at: row.ends_at, applied: true, failed: [] }),
+      json(201, { id: 5, ends_at: row.ends_at, applied: false, failed: ['Kid tablet'], shared: [kidPhone] }),
+    )
+    expect((await createGrant(1, ['youtube'], 1800)).shared).toEqual([])
+    const g = await createGrant(1, ['youtube'], 1800)
+    expect(g.shared).toEqual([kidPhone])
+    expect(g.failed).toEqual(['Kid tablet'])
+  })
+
+  it('childBlocked fills shared_with and unblocked_by', async () => {
+    const svc = { id: 'youtube', name: 'YouTube', icon: '', state: 'unblocked', differs: [] }
+    const by = { client: 'Kid phone', grant_id: 7, child: { id: 1, name: 'Ada' } }
+    mockFetch(
+      json(200, {
+        child: { id: 2, name: 'Ben' },
+        clients: [
+          { name: 'Kid phone', missing: false, uses_global: false },
+          { name: 'TV', missing: false, uses_global: false, shared_with: [{ id: 1, name: 'Ada' }] },
+        ],
+        services: [svc, { ...svc, id: 'tiktok', unblocked_by: [by] }],
+      }),
+    )
+    const v = await childBlocked(2)
+    expect(v.child).toEqual({ id: 2, name: 'Ben' })
+    expect(v.clients.map((c) => c.shared_with)).toEqual([[], [{ id: 1, name: 'Ada' }]])
+    expect(v.services.map((s) => s.unblocked_by)).toEqual([[], [by]])
+    expect(v.services[0].state).toBe('unblocked')
+  })
+
+  it('listDevices fills a missing children and keeps a present one', async () => {
+    const bare = { name: 'TV', ids: [], use_global_blocked_services: false }
+    const owned = { ...bare, name: 'Kid phone', children: [{ id: 1, name: 'Ada' }, { id: 2, name: 'Ben' }] }
+    mockFetch(json(200, { clients: [bare, owned], unlabelled: [] }))
+    const got = await listDevices()
+    expect(got.clients[0]).toStrictEqual({ ...bare, children: [] })
+    expect(got.clients[1]).toStrictEqual(owned)
+    for (const c of got.clients) expect(c).not.toHaveProperty('child')
+  })
+
+  it('listClients, createClient and renameClient fill a missing children', async () => {
+    const bare = { name: 'TV', ids: [], use_global_blocked_services: false }
+    mockFetch(json(200, { clients: [bare] }), json(201, bare), json(200, bare))
+    expect((await listClients())[0].children).toEqual([])
+    expect((await createClient('TV', [], null)).children).toEqual([])
+    expect((await renameClient('A', 'TV')).children).toEqual([])
   })
 })

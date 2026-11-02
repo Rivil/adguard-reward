@@ -221,3 +221,74 @@ func TestAddChildClient_SelfStale(t *testing.T) {
 		t.Errorf("Ada has %d client rows, want 1", n)
 	}
 }
+
+func TestRenameClient_Shared(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	ben := mustCreate(t, s, "Ben", "Kid phone")
+	ga := mustGrant(t, s, ada.ID, []string{"youtube"}, []string{"Kid phone"})
+	gb := mustGrant(t, s, ben.ID, []string{"tiktok"}, []string{"Kid phone"})
+
+	mustRename(t, s, "Kid phone", "Family TV")
+
+	for _, c := range []Child{ada, ben} {
+		if got := mustGet(t, s, c.ID).Clients; !reflect.DeepEqual(got, []string{"Family TV"}) {
+			t.Errorf("%s clients = %v, want [Family TV]", c.Name, got)
+		}
+	}
+	for _, g := range []Grant{ga, gb} {
+		if got := activeClients(t, s, g.ID); !reflect.DeepEqual(got, []string{"Family TV"}) {
+			t.Errorf("grant %d clients = %v, want [Family TV]", g.ID, got)
+		}
+	}
+}
+
+func TestRenameClient_SharedSelfStale(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone", "TV")
+	ben := mustCreate(t, s, "Ben", "Kid phone")
+
+	if err := s.RenameClient(ctx, "Kid phone", "TV"); err != nil {
+		t.Fatalf("RenameClient: %v", err)
+	}
+	if got := mustGet(t, s, ada.ID).Clients; !reflect.DeepEqual(got, []string{"TV"}) {
+		t.Errorf("Ada clients = %v, want [TV]", got)
+	}
+	if n := countClients(t, s, ada.ID); n != 1 {
+		t.Errorf("Ada has %d client rows, want 1", n)
+	}
+	if got := mustGet(t, s, ben.ID).Clients; !reflect.DeepEqual(got, []string{"TV"}) {
+		t.Errorf("Ben clients = %v, want [TV]", got)
+	}
+}
+
+func TestRenameClient_ForeignStale(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone", "TV")
+	mustCreate(t, s, "Ben", "Kid phone")
+	cleo := mustCreate(t, s, "Cleo", "TV")
+	mustGrant(t, s, ada.ID, []string{"youtube"}, ada.Clients)
+	before := dumpClientTables(t, s)
+
+	err := s.RenameClient(ctx, "Kid phone", "TV")
+	var taken *ErrClientTaken
+	if !errors.As(err, &taken) || taken.ChildID != cleo.ID || taken.ChildName != "Cleo" || taken.Client != "TV" {
+		t.Fatalf("err = %v, want *ErrClientTaken naming Cleo holding TV", err)
+	}
+	if after := dumpClientTables(t, s); after != before {
+		t.Errorf("tables changed on a rejected rename:\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+}
+
+func TestAddChildClient_SharedSelf(t *testing.T) {
+	s, _ := openTemp(t)
+	mustCreate(t, s, "Ada", "Kid phone")
+	ben := mustCreate(t, s, "Ben", "Kid phone")
+
+	if err := s.AddChildClient(ctx, ben.ID, "Kid phone"); err != nil {
+		t.Fatalf("re-adding a shared client Ben holds: %v", err)
+	}
+	if n := countClients(t, s, ben.ID); n != 1 {
+		t.Errorf("Ben has %d client rows, want 1", n)
+	}
+}

@@ -128,16 +128,16 @@
       <fieldset>
         <legend>Devices</legend>
         {#each clients as c (c.name)}
-          {@const other = c.child !== null && c.child.id !== child.id ? c.child : null}
+          {@const others = (c.children ?? []).filter((o) => o.id !== child.id)}
           <label>
             <input
               type="checkbox"
               checked={drafts[child.id].clients.includes(c.name)}
-              disabled={pending || other !== null}
+              disabled={pending}
               onchange={(e) => toggle(child.id, c.name, e.currentTarget.checked)}
             />
-            {c.name}{#if other}
-              <span class="assigned"> — assigned to {other.name}</span>
+            {c.name}{#if others.length > 0}
+              <span class="shared"> — shared with {others.map((o) => o.name).join(', ')}</span>
             {/if}
           </label>
         {/each}
@@ -199,7 +199,7 @@
     display: flex;
     gap: 0.5rem;
   }
-  .assigned,
+  .shared,
   .hint {
     color: #666;
     font-size: 0.9em;

@@ -56,6 +56,12 @@ func fixtureServices(t *testing.T) []adguard.Service {
 
 var fixtureGlobal = []string{"tiktok", "roblox"}
 
+// none and noUnblock are the never-nil empty annotations.
+var (
+	none      = []ChildRef{}
+	noUnblock = []Unblock{}
+)
+
 func fixtureInput(t *testing.T, mapped ...string) Input {
 	t.Helper()
 	return Input{
@@ -92,7 +98,7 @@ func serviceIDs(v View) []string {
 func TestCompute_Fixture(t *testing.T) {
 	v := Compute(fixtureInput(t, "Kid phone", "Kid tablet"))
 
-	wantClients := []ClientState{{Name: "Kid phone"}, {Name: "Kid tablet", UsesGlobal: true}}
+	wantClients := []ClientState{{Name: "Kid phone", SharedWith: none}, {Name: "Kid tablet", UsesGlobal: true, SharedWith: none}}
 	if !reflect.DeepEqual(v.Clients, wantClients) {
 		t.Errorf("Clients = %+v, want %+v", v.Clients, wantClients)
 	}
@@ -100,9 +106,9 @@ func TestCompute_Fixture(t *testing.T) {
 		t.Errorf("service order = %v, want catalogue order", got)
 	}
 	want := []ServiceState{
-		{ID: "youtube", Name: "YouTube", Icon: "PHN2Zy8+", State: StatePartial, Differs: []string{"Kid tablet"}},
-		{ID: "tiktok", Name: "TikTok", Icon: "PHN2Zy8+", State: StateBlocked, Differs: []string{}},
-		{ID: "roblox", Name: "Roblox", Icon: "PHN2Zy8+", State: StatePartial, Differs: []string{"Kid phone"}},
+		{ID: "youtube", Name: "YouTube", Icon: "PHN2Zy8+", State: StatePartial, Differs: []string{"Kid tablet"}, UnblockedBy: noUnblock},
+		{ID: "tiktok", Name: "TikTok", Icon: "PHN2Zy8+", State: StateBlocked, Differs: []string{}, UnblockedBy: noUnblock},
+		{ID: "roblox", Name: "Roblox", Icon: "PHN2Zy8+", State: StatePartial, Differs: []string{"Kid phone"}, UnblockedBy: noUnblock},
 	}
 	if !reflect.DeepEqual(v.Services, want) {
 		t.Errorf("Services = %+v\nwant %+v", v.Services, want)
@@ -134,7 +140,7 @@ func TestCompute_MissingExcluded(t *testing.T) {
 	if st["roblox"] != StateUnblocked {
 		t.Errorf("roblox = %s, want unblocked", st["roblox"])
 	}
-	wantClients := []ClientState{{Name: "Kid phone"}, {Name: "Ghost", Missing: true}}
+	wantClients := []ClientState{{Name: "Kid phone", SharedWith: none}, {Name: "Ghost", Missing: true, SharedWith: none}}
 	if !reflect.DeepEqual(v.Clients, wantClients) {
 		t.Errorf("Clients = %+v, want %+v", v.Clients, wantClients)
 	}
@@ -248,5 +254,160 @@ func TestOffer_Union(t *testing.T) {
 	want = []Step{{Client: "Full", Gains: []string{}, Target: []string{"roblox", "tiktok"}}}
 	if !reflect.DeepEqual(steps, want) {
 		t.Errorf("Full: steps = %+v, want %+v (a step with nothing to gain still flips the flag)", steps, want)
+	}
+}
+
+var (
+	ada  = ChildRef{ID: 1, Name: "Ada"}
+	ben  = ChildRef{ID: 2, Name: "Ben"}
+	cleo = ChildRef{ID: 3, Name: "Cleo"}
+)
+
+// sharedInput is Ben's view of Kid phone (own [tiktok], so youtube is open)
+// with Ada's active youtube grant 7 stored on Kid phone.
+func sharedInput(t *testing.T) Input {
+	t.Helper()
+	return Input{
+		Clients:  []adguard.PersistentClient{client("Kid phone", false, "tiktok")},
+		Global:   fixtureGlobal,
+		Services: fixtureServices(t),
+		Mapped:   []string{"Kid phone"},
+		Self:     ben.ID,
+		Owners:   map[string][]ChildRef{"Kid phone": {ada, ben}},
+		Grants:   []GrantCover{{ID: 7, Child: ada, Services: []string{"youtube"}, Clients: []string{"Kid phone"}}},
+	}
+}
+
+func service(t *testing.T, v View, id string) ServiceState {
+	t.Helper()
+	for _, s := range v.Services {
+		if s.ID == id {
+			return s
+		}
+	}
+	t.Fatalf("service %q not in view", id)
+	return ServiceState{}
+}
+
+func TestCompute_UnblockedByOther(t *testing.T) {
+	yt := service(t, Compute(sharedInput(t)), "youtube")
+	if yt.State != StateUnblocked {
+		t.Errorf("youtube state = %s, want unblocked", yt.State)
+	}
+	want := []Unblock{{Client: "Kid phone", GrantID: 7, Child: ada}}
+	if !reflect.DeepEqual(yt.UnblockedBy, want) {
+		t.Errorf("UnblockedBy = %+v, want %+v", yt.UnblockedBy, want)
+	}
+}
+
+func TestCompute_OwnGrantNotNamed(t *testing.T) {
+	in := sharedInput(t)
+	in.Self = ada.ID
+	yt := service(t, Compute(in), "youtube")
+	if !reflect.DeepEqual(yt.UnblockedBy, noUnblock) {
+		t.Errorf("Ada's own grant named in her view: UnblockedBy = %+v, want []", yt.UnblockedBy)
+	}
+}
+
+func TestCompute_ReblockedNotNamed(t *testing.T) {
+	in := sharedInput(t)
+	in.Clients = []adguard.PersistentClient{client("Kid phone", false, "youtube", "tiktok")}
+	yt := service(t, Compute(in), "youtube")
+	if yt.State != StateBlocked || !reflect.DeepEqual(yt.UnblockedBy, noUnblock) {
+		t.Errorf("drifted back to blocked: state = %s, UnblockedBy = %+v; want blocked, []", yt.State, yt.UnblockedBy)
+	}
+}
+
+func TestCompute_OtherClientGrant(t *testing.T) {
+	in := sharedInput(t)
+	in.Grants = []GrantCover{{ID: 7, Child: ada, Services: []string{"youtube"}, Clients: []string{"Kid tablet"}}}
+	yt := service(t, Compute(in), "youtube")
+	if !reflect.DeepEqual(yt.UnblockedBy, noUnblock) {
+		t.Errorf("grant stored on Kid tablet attributed on Kid phone: %+v", yt.UnblockedBy)
+	}
+}
+
+func TestCompute_PartialShared(t *testing.T) {
+	in := sharedInput(t)
+	in.Clients = append(in.Clients, client("Old laptop", false, "youtube"))
+	in.Mapped = []string{"Kid phone", "Old laptop"}
+	yt := service(t, Compute(in), "youtube")
+	if yt.State != StatePartial || !reflect.DeepEqual(yt.Differs, []string{"Kid phone"}) {
+		t.Errorf("state = %s, Differs = %v; want partial, [Kid phone]", yt.State, yt.Differs)
+	}
+	want := []Unblock{{Client: "Kid phone", GrantID: 7, Child: ada}}
+	if !reflect.DeepEqual(yt.UnblockedBy, want) {
+		t.Errorf("UnblockedBy = %+v, want %+v", yt.UnblockedBy, want)
+	}
+}
+
+func TestCompute_MissingClient(t *testing.T) {
+	in := sharedInput(t)
+	in.Mapped = []string{"Kid phone", "Ghost"}
+	in.Grants = append(in.Grants, GrantCover{ID: 8, Child: ada, Services: []string{"roblox"}, Clients: []string{"Ghost"}})
+	rb := service(t, Compute(in), "roblox")
+	if !reflect.DeepEqual(rb.UnblockedBy, noUnblock) {
+		t.Errorf("grant on a client AdGuard lacks was attributed: %+v", rb.UnblockedBy)
+	}
+}
+
+func TestCompute_SharedWith(t *testing.T) {
+	in := sharedInput(t)
+	in.Clients = append(in.Clients, client("Old laptop", false))
+	in.Mapped = []string{"Kid phone", "Old laptop", "Ghost"}
+	in.Owners["Old laptop"] = []ChildRef{ben}
+	in.Owners["Ghost"] = []ChildRef{cleo, ben, ada}
+	v := Compute(in)
+	want := map[string][]ChildRef{
+		"Kid phone":  {ada},
+		"Old laptop": {},
+		"Ghost":      {ada, cleo},
+	}
+	for _, c := range v.Clients {
+		if c.SharedWith == nil {
+			t.Errorf("%s SharedWith is nil", c.Name)
+		}
+		if !reflect.DeepEqual(c.SharedWith, want[c.Name]) {
+			t.Errorf("%s SharedWith = %+v, want %+v", c.Name, c.SharedWith, want[c.Name])
+		}
+	}
+}
+
+func TestCompute_UnblockedByNeverNil(t *testing.T) {
+	in := fixtureInput(t, "Kid phone", "Kid tablet", "Old laptop", "Ghost")
+	v := Compute(in)
+	for _, s := range v.Services {
+		b, err := json.Marshal(s.UnblockedBy)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(b) != "[]" {
+			t.Errorf("%s UnblockedBy marshals as %s, want []", s.ID, b)
+		}
+	}
+	for _, c := range v.Clients {
+		if b, _ := json.Marshal(c.SharedWith); string(b) != "[]" {
+			t.Errorf("%s SharedWith marshals as %s, want []", c.Name, b)
+		}
+	}
+}
+
+func TestCompute_UnblockedByOrder(t *testing.T) {
+	in := sharedInput(t)
+	in.Self = cleo.ID
+	in.Clients = append(in.Clients, client("A tv", false))
+	in.Mapped = []string{"Kid phone", "A tv"}
+	in.Grants = []GrantCover{
+		{ID: 9, Child: ben, Services: []string{"youtube"}, Clients: []string{"Kid phone"}},
+		{ID: 7, Child: ada, Services: []string{"youtube"}, Clients: []string{"Kid phone", "A tv"}},
+	}
+	yt := service(t, Compute(in), "youtube")
+	want := []Unblock{
+		{Client: "A tv", GrantID: 7, Child: ada},
+		{Client: "Kid phone", GrantID: 7, Child: ada},
+		{Client: "Kid phone", GrantID: 9, Child: ben},
+	}
+	if !reflect.DeepEqual(yt.UnblockedBy, want) {
+		t.Errorf("UnblockedBy = %+v, want %+v", yt.UnblockedBy, want)
 	}
 }

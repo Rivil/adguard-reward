@@ -1,7 +1,8 @@
 // Pure helpers behind the active-grant panel and the tap flow: countdowns,
-// duration formatting, the extend amount and overlap grouping. No DOM, no
-// fetch — everything here is a function of its arguments.
-import type { Grant } from './api'
+// duration formatting, the extend amount, overlap grouping and the
+// shared-device wording. No DOM, no fetch — everything here is a function of
+// its arguments.
+import type { Child, Grant, SharedRef } from './api'
 
 /** Bounds mirror internal/grants: MinDuration = 1 min, MaxDuration = 24 h. */
 export const MIN_DURATION = 60
@@ -66,4 +67,31 @@ export function minutesToSeconds(minutes: number): number {
 
 export function secondsToMinutes(seconds: number): number {
   return Math.round(seconds / 60)
+}
+
+/**
+ * The child's clients that other children also hold, client ASC, each with
+ * those other owners in id order. [] for an unknown or unshared child.
+ */
+export function sharedDevices(childId: number, children: Child[]): SharedRef[] {
+  const self = children.find((c) => c.id === childId)
+  if (!self) return []
+  const byId = [...children].sort((a, b) => a.id - b.id)
+  const out: SharedRef[] = []
+  for (const client of [...new Set(self.clients)].sort()) {
+    const others = byId
+      .filter((c) => c.id !== childId && c.clients.includes(client))
+      .map((c) => ({ id: c.id, name: c.name }))
+    if (others.length > 0) out.push({ client, others })
+  }
+  return out
+}
+
+/**
+ * The one wording for shared devices — the pre-tap hint, the post-tap notice
+ * and the active-grant row all use it: "Kid phone (shared with Ben, Cleo)",
+ * several devices joined by ", ". "" when refs is empty.
+ */
+export function sharedText(refs: SharedRef[]): string {
+  return refs.map((r) => `${r.client} (shared with ${r.others.map((o) => o.name).join(', ')})`).join(', ')
 }

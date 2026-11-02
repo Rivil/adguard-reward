@@ -55,6 +55,44 @@ async function typeMinutes(v: string) {
   await fireEvent.input(minutes(), { target: { value: v } })
 }
 
+describe('GrantForm shared hint', () => {
+  const kidPhone = (c: Child): Child => ({ ...c, clients: ['Kid phone'] })
+  const cleo: Child = { id: 3, name: 'Cleo', clients: ['Kid tablet'] }
+
+  it('hintFollowsChild', async () => {
+    const { rerender } = mount({ children: [ada, kidPhone(ben), cleo] })
+    expect(screen.queryByRole('note')).toBeNull()
+
+    await pickChild(1)
+    expect(screen.getByRole('note').textContent).toContain('Kid phone (shared with Ben)')
+    await pickChild(3)
+    expect(screen.queryByRole('note')).toBeNull()
+    await pickChild('')
+    expect(screen.queryByRole('note')).toBeNull()
+
+    // Ada stays selected while the children prop changes; the hint follows it.
+    const v: GrantFormValue = { child_id: 1, services: [], minutes: 60 }
+    await rerender({ children: [ada, kidPhone(ben), cleo], value: v })
+    expect(screen.getByRole('note').textContent).toContain('Kid phone (shared with Ben)')
+    await rerender({ children: [ada, ben, cleo], value: v })
+    expect(value().child_id).toBe(1)
+    expect(screen.queryByRole('note')).toBeNull()
+    await rerender({ children: [ada, kidPhone(ben), kidPhone(cleo)], value: v })
+    expect(value().child_id).toBe(1)
+    expect(screen.getByRole('note').textContent).toContain('Kid phone (shared with Ben, Cleo)')
+  })
+
+  it('hintPassive', async () => {
+    mount({ children: [ada, kidPhone(ben)] })
+    await pickChild(1)
+    await fireEvent.click(checkbox('YouTube'))
+    await typeMinutes('30')
+    const note = screen.getByRole('note')
+    expect(valid()).toBe(true)
+    expect(note.querySelector('button, input, select')).toBeNull()
+  })
+})
+
 describe('GrantForm', () => {
   it('binds child, services and minutes', async () => {
     mount()

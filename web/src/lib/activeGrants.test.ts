@@ -13,6 +13,7 @@ function grant(id: number, endsAt = '2026-09-21T11:00:00Z'): Grant {
     clients: ['Kid phone'],
     started_at: '2026-09-21T10:00:00Z',
     ends_at: endsAt,
+    shared: [],
   }
 }
 

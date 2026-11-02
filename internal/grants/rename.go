@@ -16,8 +16,9 @@ import (
 // engine mutex, so no grant apply, End or expiry reads the store between
 // the two writes.
 //
-// A newName another child already maps (a stale mapping AdGuard no longer
-// knows) is *store.ErrClientTaken before AdGuard is touched. AdGuard's own
+// A newName mapped by a child that does not also hold oldName (a stale
+// mapping AdGuard no longer knows) is *store.ErrClientTaken before AdGuard is
+// touched. A shared client moves for every owner. AdGuard's own
 // refusals — adguard.ErrClientExists, adguard.ErrClientNotFound — come back
 // as they are, with nothing written. When the store write fails after
 // AdGuard renamed, the client is renamed back in AdGuard and the returned
@@ -51,26 +52,20 @@ func (e *Engine) RenameClient(ctx context.Context, oldName, newName string) erro
 	return fmt.Errorf("grants: rename %q to %q: store failed, AdGuard renamed back: %w", oldName, newName, serr)
 }
 
-// checkRename mirrors the store's ownership rule before any write: newName
-// held by a child other than oldName's owner is *store.ErrClientTaken. The
-// same child holding both (a stale self-mapping) is allowed — the store
-// rename collapses it. Caller holds mu.
+// checkRename mirrors the store's ownership rule before any write: a child
+// that holds newName but not oldName is *store.ErrClientTaken (the first such
+// child in ListChildren order). Owners holding both (stale self-mappings) are
+// allowed — the store rename collapses each — so a shared client is renamed
+// in AdGuard exactly once for all its owners. Caller holds mu.
 func (e *Engine) checkRename(ctx context.Context, oldName, newName string) error {
 	children, err := e.store.ListChildren(ctx)
 	if err != nil {
 		return err
 	}
-	var oldOwner, newOwner *store.Child
-	for i := range children {
-		if slices.Contains(children[i].Clients, oldName) {
-			oldOwner = &children[i]
+	for _, c := range children {
+		if slices.Contains(c.Clients, newName) && !slices.Contains(c.Clients, oldName) {
+			return &store.ErrClientTaken{Client: newName, ChildID: c.ID, ChildName: c.Name}
 		}
-		if slices.Contains(children[i].Clients, newName) {
-			newOwner = &children[i]
-		}
-	}
-	if newOwner != nil && (oldOwner == nil || newOwner.ID != oldOwner.ID) {
-		return &store.ErrClientTaken{Client: newName, ChildID: newOwner.ID, ChildName: newOwner.Name}
 	}
 	return nil
 }

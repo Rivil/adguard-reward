@@ -1,14 +1,23 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
+
+	"github.com/Rivil/adguard-reward/internal/adguard"
+	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
+	"github.com/Rivil/adguard-reward/internal/grants"
+	"github.com/Rivil/adguard-reward/internal/store"
 )
 
 type childrenBody struct {
@@ -48,6 +57,18 @@ func (h *harness) createOK(cookie, name string, clients ...string) childView {
 		h.t.Fatalf("POST %q: status %d body %s", name, w.Code, w.Body.String())
 	}
 	return h.decodeChild(w)
+}
+
+// seedChild creates a child with its clients straight in the store,
+// bypassing POST's AdGuard adopt, for tests that need the fake's fixture
+// lists untouched.
+func (h *harness) seedChild(name string, clients ...string) childView {
+	h.t.Helper()
+	c, err := h.store.CreateChild(context.Background(), name, clients)
+	if err != nil {
+		h.t.Fatalf("seed child %q: %v", name, err)
+	}
+	return viewOf(c)
 }
 
 // storeNames is the store's view, bypassing the API.
@@ -162,12 +183,6 @@ func TestChildren_Conflicts(t *testing.T) {
 		t.Errorf("duplicate name: %d %s, want 409 conflict naming Ada", w.Code, w.Body.String())
 	}
 
-	w = h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "Cy", "clients": []string{"Kid phone"}}, withCookie(cookie))
-	if e := decodeErr(t, w); w.Code != http.StatusConflict || e.Error != CodeConflict ||
-		!strings.Contains(e.Message, "Kid phone") || !strings.Contains(e.Message, "Ada") {
-		t.Errorf("taken client: %d %s, want 409 conflict naming Kid phone and Ada", w.Code, w.Body.String())
-	}
-
 	w = h.do(http.MethodPut, childPath(ben.ID), map[string]any{"name": "Ada", "clients": []string{}}, withCookie(cookie))
 	if w.Code != http.StatusConflict {
 		t.Errorf("PUT ben as Ada: %d, want 409", w.Code)
@@ -180,15 +195,39 @@ func TestChildren_Conflicts(t *testing.T) {
 	}
 }
 
+func TestChildren_CreateShared(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.createOK(cookie, "Ada", "Kid phone")
+
+	w := h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "Cy", "clients": []string{"Kid phone"}}, withCookie(cookie))
+	if w.Code != http.StatusCreated {
+		t.Fatalf("POST Cy with Ada's client: %d %s, want 201", w.Code, w.Body.String())
+	}
+	if cy := h.decodeChild(w); cy.Name != "Cy" || !reflect.DeepEqual(cy.Clients, []string{"Kid phone"}) {
+		t.Fatalf("POST body = %+v, want Cy [Kid phone]", cy)
+	}
+
+	_, list := h.listChildren(cookie)
+	got := map[string][]string{}
+	for _, c := range list.Children {
+		got[c.Name] = c.Clients
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}, "Cy": {"Kid phone"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("GET /children = %v, want %v", got, want)
+	}
+}
+
 func TestChildren_PutAtomic(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
-	h.createOK(cookie, "Ben", "Old laptop")
+	ada := h.seedChild("Ada", "Kid phone")
+	h.fake.SetStatus("/control/clients/update", 500)
 
-	w := h.do(http.MethodPut, childPath(ada.ID), map[string]any{"name": "Alicia", "clients": []string{"Old laptop"}}, withCookie(cookie))
-	if w.Code != http.StatusConflict {
-		t.Fatalf("PUT with Ben's client: %d, want 409", w.Code)
+	w := h.do(http.MethodPut, childPath(ada.ID), map[string]any{"name": "Alicia", "clients": []string{"Kid phone", "Old laptop"}}, withCookie(cookie))
+	if w.Code >= 200 && w.Code < 300 {
+		t.Fatalf("PUT with AdGuard failing the adopt: %d, want non-2xx", w.Code)
 	}
 	w = h.do(http.MethodGet, childPath(ada.ID), nil, withCookie(cookie))
 	if got := h.decodeChild(w); got.Name != "Ada" || !reflect.DeepEqual(got.Clients, []string{"Kid phone"}) {
@@ -258,7 +297,7 @@ func TestChildren_NoAdGuard(t *testing.T) {
 	cookie := h.loginOK()
 	h.fake.SetStatus("/control/clients", 500)
 
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.createOK(cookie, "Ada") // a POST without clients never needs AdGuard
 	if w, list := h.listChildren(cookie); w.Code != http.StatusOK || len(list.Children) != 1 {
 		t.Fatalf("list: %d %+v", w.Code, list)
 	}
@@ -319,7 +358,7 @@ func ownList(h *harness, name string, ids ...string) {
 func TestChildUpdate_AddBaseline(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 	h.grantOK(cookie, ada.ID, []string{"youtube"}, 1800)
 
 	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Old laptop"); w.Code != http.StatusOK {
@@ -334,7 +373,7 @@ func TestChildUpdate_AddBaseline(t *testing.T) {
 func TestChildUpdate_AddInherited(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 
 	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Kid tablet"); w.Code != http.StatusOK {
 		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
@@ -346,7 +385,7 @@ func TestChildUpdate_KeepsOwn(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
 	ownList(h, "Old laptop", "steam")
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 
 	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Old laptop"); w.Code != http.StatusOK {
 		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
@@ -358,7 +397,7 @@ func TestChildUpdate_FullSwap(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
 	ownList(h, "Kid phone", "steam", "youtube")
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 	h.grantOK(cookie, ada.ID, []string{"youtube"}, 1800)
 
 	// Kid phone leaves, so its steam is not part of the baseline: no
@@ -372,7 +411,7 @@ func TestChildUpdate_FullSwap(t *testing.T) {
 func TestChildUpdate_RemoveOnly(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone", "Old laptop")
+	ada := h.seedChild("Ada", "Kid phone", "Old laptop")
 
 	if w := h.putChild(cookie, ada.ID, "Ada", "Old laptop"); w.Code != http.StatusOK {
 		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
@@ -402,20 +441,16 @@ func TestChildUpdate_RenameOnlyOffline(t *testing.T) {
 func TestChildUpdate_Conflicts(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
-	h.createOK(cookie, "Ben", "Old laptop")
+	ada := h.seedChild("Ada", "Kid phone")
+	h.seedChild("Ben", "Old laptop")
 	before := len(h.fake.Requests())
 
-	w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Old laptop")
-	if e := decodeErr(t, w); w.Code != http.StatusConflict || !strings.Contains(e.Message, "Ben") {
-		t.Errorf("adding Ben's client: %d %s, want 409 naming Ben", w.Code, w.Body.String())
-	}
-	w = h.putChild(cookie, ada.ID, "ben", "Kid phone", "Kid tablet")
+	w := h.putChild(cookie, ada.ID, "ben", "Kid phone", "Kid tablet")
 	if w.Code != http.StatusConflict || decodeErr(t, w).Error != CodeConflict {
 		t.Errorf("renaming Ada to ben while adding: %d %s, want 409", w.Code, w.Body.String())
 	}
 	if n := len(h.fake.Requests()) - before; n != 0 {
-		t.Errorf("conflicting PUTs made %d AdGuard requests, want 0", n)
+		t.Errorf("conflicting PUT made %d AdGuard requests, want 0", n)
 	}
 	if got := h.childClients(cookie, ada.ID); !reflect.DeepEqual(got, []string{"Kid phone"}) {
 		t.Errorf("Ada clients = %v, want unchanged [Kid phone]", got)
@@ -425,7 +460,7 @@ func TestChildUpdate_Conflicts(t *testing.T) {
 func TestChildUpdate_AdGuardFails(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 	h.fake.SetUpdateStatus("Old laptop", 500)
 
 	w := h.putChild(cookie, ada.ID, "Ada M", "Kid phone", "Old laptop")
@@ -448,7 +483,7 @@ func TestChildUpdate_AdGuardFails(t *testing.T) {
 func TestChildUpdate_Ghost(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
-	ada := h.createOK(cookie, "Ada", "Kid phone")
+	ada := h.seedChild("Ada", "Kid phone")
 
 	if w := h.putChild(cookie, ada.ID, "Ada", "Kid phone", "Ghost"); w.Code != http.StatusOK {
 		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
@@ -470,5 +505,251 @@ func TestChildUpdate_UnknownChild(t *testing.T) {
 	}
 	if n := len(h.fake.Requests()) - before; n != 0 {
 		t.Errorf("unknown child made %d AdGuard requests, want 0", n)
+	}
+}
+
+// updatesNaming returns the blocked_services of every update POST the fake
+// saw for name, in order.
+func (h *harness) updatesNaming(name string) [][]string {
+	var out [][]string
+	for _, r := range h.fake.Requests() {
+		if r.Method != http.MethodPost || r.Path != "/control/clients/update" {
+			continue
+		}
+		var u struct {
+			Name string `json:"name"`
+			Data struct {
+				BlockedServices []string `json:"blocked_services"`
+			} `json:"data"`
+		}
+		_ = json.Unmarshal(r.Body, &u)
+		if u.Name == name {
+			out = append(out, u.Data.BlockedServices)
+		}
+	}
+	return out
+}
+
+// adguardSince counts the fake's requests after mark, login excluded.
+func (h *harness) adguardSince(mark int) int {
+	n := 0
+	for _, r := range h.fake.Requests()[mark:] {
+		if r.Path != "/control/login" {
+			n++
+		}
+	}
+	return n
+}
+
+// owners maps each child name to its clients from GET /children.
+func (h *harness) owners(cookie string) map[string][]string {
+	h.t.Helper()
+	_, list := h.listChildren(cookie)
+	got := map[string][]string{}
+	for _, c := range list.Children {
+		got[c.Name] = c.Clients
+	}
+	return got
+}
+
+func TestChildUpdate_ShareNo409(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+	ben := h.seedChild("Ben")
+
+	if w := h.putChild(cookie, ben.ID, "Ben", "Kid phone"); w.Code != http.StatusOK {
+		t.Fatalf("PUT Ben [Kid phone] while Ada holds it: %d %s, want 200", w.Code, w.Body.String())
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}, "Ben": {"Kid phone"}}
+	if got := h.owners(cookie); !reflect.DeepEqual(got, want) {
+		t.Errorf("GET /children = %v, want %v", got, want)
+	}
+}
+
+func TestChildUpdate_ShareAdopts(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+	ben := h.seedChild("Ben")
+
+	if w := h.putChild(cookie, ben.ID, "Ben", "Kid phone"); w.Code != http.StatusOK {
+		t.Fatalf("PUT: %d %s", w.Code, w.Body.String())
+	}
+	if got := h.updatesNaming("Kid phone"); len(got) != 1 {
+		t.Errorf("update POSTs for Kid phone = %v, want exactly 1", got)
+	}
+	if n := h.updatePosts(); n != 1 {
+		t.Errorf("update POSTs = %d, want 1", n)
+	}
+}
+
+func TestChildUpdate_RemoveSharedNoAdGuard(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+	ben := h.seedChild("Ben", "Kid phone")
+	mark := len(h.fake.Requests())
+
+	if w := h.putChild(cookie, ben.ID, "Ben"); w.Code != http.StatusOK {
+		t.Fatalf("PUT Ben without Kid phone: %d %s", w.Code, w.Body.String())
+	}
+	if n := h.adguardSince(mark); n != 0 {
+		t.Errorf("removal made %d AdGuard requests, want 0", n)
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}, "Ben": {}}
+	if got := h.owners(cookie); !reflect.DeepEqual(got, want) {
+		t.Errorf("GET /children = %v, want %v", got, want)
+	}
+}
+
+func TestChildDelete_SharedNoAdGuard(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+	ben := h.seedChild("Ben", "Kid phone")
+	mark := len(h.fake.Requests())
+
+	if w := h.do(http.MethodDelete, childPath(ben.ID), nil, withCookie(cookie)); w.Code != http.StatusNoContent {
+		t.Fatalf("DELETE Ben: %d %s, want 204", w.Code, w.Body.String())
+	}
+	if n := h.adguardSince(mark); n != 0 {
+		t.Errorf("DELETE made %d AdGuard requests, want 0", n)
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}}
+	if got := h.owners(cookie); !reflect.DeepEqual(got, want) {
+		t.Errorf("GET /children = %v, want %v", got, want)
+	}
+}
+
+func TestChildUpdate_NameStill409(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+	ben := h.seedChild("Ben")
+	mark := len(h.fake.Requests())
+
+	w := h.putChild(cookie, ben.ID, "ada", "Kid phone")
+	if w.Code != http.StatusConflict || decodeErr(t, w).Error != CodeConflict {
+		t.Errorf("PUT Ben as ada: %d %s, want 409", w.Code, w.Body.String())
+	}
+	if n := h.adguardSince(mark); n != 0 {
+		t.Errorf("name conflict made %d AdGuard requests, want 0", n)
+	}
+}
+
+func TestChildCreate_SharedAdopts(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+
+	h.createOK(cookie, "Cy", "Kid phone")
+	got := h.updatesNaming("Kid phone")
+	if len(got) != 1 {
+		t.Fatalf("update POSTs for Kid phone = %v, want exactly 1", got)
+	}
+	list := slices.Clone(got[0])
+	slices.Sort(list)
+	if want := []string{"roblox", "tiktok", "youtube"}; !reflect.DeepEqual(list, want) {
+		t.Errorf("Kid phone blocked_services = %v, want %v (global list unioned in)", list, want)
+	}
+
+	mark := len(h.fake.Requests())
+	h.createOK(cookie, "Dee")
+	if n := h.adguardSince(mark); n != 0 {
+		t.Errorf("POST without clients made %d AdGuard requests, want 0", n)
+	}
+}
+
+func TestChildCreate_AdoptFailNoChild(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.fake.SetStatus("/control/clients/update", 500)
+
+	w := h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "Cy", "clients": []string{"Kid phone"}}, withCookie(cookie))
+	e := decodeErr(t, w)
+	if w.Code != http.StatusBadGateway || !strings.Contains(e.Message, "Kid phone") {
+		t.Errorf("POST Cy with adopt failing: %d %s, want 502 naming Kid phone", w.Code, w.Body.String())
+	}
+	if got := h.owners(cookie); len(got) != 0 {
+		t.Errorf("GET /children = %v, want no Cy", got)
+	}
+}
+
+func TestChildCreate_NameTakenNoAdGuard(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+	mark := len(h.fake.Requests())
+
+	w := h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "ada", "clients": []string{"Kid phone"}}, withCookie(cookie))
+	if w.Code != http.StatusConflict || decodeErr(t, w).Error != CodeConflict {
+		t.Errorf("POST ada: %d %s, want 409", w.Code, w.Body.String())
+	}
+	if n := h.adguardSince(mark); n != 0 {
+		t.Errorf("name conflict made %d AdGuard requests, want 0", n)
+	}
+}
+
+// activeReadFails is the real store with ListActiveGrants failing: the
+// engine's baseline read during adopt errors after AdGuard answered.
+type activeReadFails struct{ *store.Store }
+
+func (activeReadFails) ListActiveGrants(context.Context) ([]store.Grant, error) {
+	return nil, errors.New("database is locked")
+}
+
+// A store read failing inside adopt is neither *ErrAdoptFailed nor an
+// AdGuard outage: writeAdoptError answers 500 internal, logs it, and the
+// share is not saved.
+func TestChildUpdate_AdoptStoreReadFails(t *testing.T) {
+	logs := &lockedBuffer{}
+	log := slog.New(slog.NewTextHandler(logs, nil))
+	fake := adguardtest.New(t, adguardtest.Options{User: fakeUser, Pass: fakePass})
+	client, err := adguard.New(fake.URL(), fakeUser, fakePass, adguard.WithLogger(log))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(t.TempDir(), log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	eng := grants.New(activeReadFails{st}, client, grants.Options{Now: (&clock{t: t0}).Now, ApplyTimeout: harnessApplyTimeout, Log: log})
+	t.Cleanup(eng.Close)
+	a := New(Deps{AdGuard: client, Log: log, Children: st, Grants: eng})
+
+	ctx := context.Background()
+	if _, err := st.CreateChild(ctx, "Ada", []string{"Kid phone"}); err != nil {
+		t.Fatal(err)
+	}
+	ben, err := st.CreateChild(ctx, "Ben", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, _ := json.Marshal(map[string]any{"name": "Ben", "clients": []string{"Kid phone"}})
+	r := httptest.NewRequest(http.MethodPut, childPath(ben.ID), bytes.NewReader(body))
+	r.SetPathValue("id", strconv.FormatInt(ben.ID, 10))
+	w := httptest.NewRecorder()
+	a.handleChildUpdate(w, r)
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("PUT Ben [Kid phone]: %d %s, want 500", w.Code, w.Body.String())
+	}
+	if e := decodeErr(t, w); e.Error != "internal" || e.Message != "could not update child" {
+		t.Errorf("error = %+v, want internal / could not update child", e)
+	}
+	if !strings.Contains(logs.String(), "update child: baseline failed") {
+		t.Errorf("log %q lacks the baseline failure", logs.String())
+	}
+	if n := fake.CountRequests("POST", "/control/clients/update"); n != 0 {
+		t.Errorf("fake saw %d update POSTs, want 0", n)
+	}
+	got, err := st.GetChild(ctx, ben.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got.Clients) != 0 {
+		t.Errorf("Ben clients = %v, want [] (nothing saved)", got.Clients)
 	}
 }
