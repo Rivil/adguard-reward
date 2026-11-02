@@ -162,12 +162,6 @@ func TestChildren_Conflicts(t *testing.T) {
 		t.Errorf("duplicate name: %d %s, want 409 conflict naming Ada", w.Code, w.Body.String())
 	}
 
-	w = h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "Cy", "clients": []string{"Kid phone"}}, withCookie(cookie))
-	if e := decodeErr(t, w); w.Code != http.StatusConflict || e.Error != CodeConflict ||
-		!strings.Contains(e.Message, "Kid phone") || !strings.Contains(e.Message, "Ada") {
-		t.Errorf("taken client: %d %s, want 409 conflict naming Kid phone and Ada", w.Code, w.Body.String())
-	}
-
 	w = h.do(http.MethodPut, childPath(ben.ID), map[string]any{"name": "Ada", "clients": []string{}}, withCookie(cookie))
 	if w.Code != http.StatusConflict {
 		t.Errorf("PUT ben as Ada: %d, want 409", w.Code)
@@ -177,6 +171,30 @@ func TestChildren_Conflicts(t *testing.T) {
 	after, _ := h.store.ListChildren(context.Background())
 	if !reflect.DeepEqual(before, after) {
 		t.Fatalf("store changed by conflicting requests:\nbefore %+v\nafter  %+v", before, after)
+	}
+}
+
+func TestChildren_CreateShared(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.createOK(cookie, "Ada", "Kid phone")
+
+	w := h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "Cy", "clients": []string{"Kid phone"}}, withCookie(cookie))
+	if w.Code != http.StatusCreated {
+		t.Fatalf("POST Cy with Ada's client: %d %s, want 201", w.Code, w.Body.String())
+	}
+	if cy := h.decodeChild(w); cy.Name != "Cy" || !reflect.DeepEqual(cy.Clients, []string{"Kid phone"}) {
+		t.Fatalf("POST body = %+v, want Cy [Kid phone]", cy)
+	}
+
+	_, list := h.listChildren(cookie)
+	got := map[string][]string{}
+	for _, c := range list.Children {
+		got[c.Name] = c.Clients
+	}
+	want := map[string][]string{"Ada": {"Kid phone"}, "Cy": {"Kid phone"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("GET /children = %v, want %v", got, want)
 	}
 }
 
