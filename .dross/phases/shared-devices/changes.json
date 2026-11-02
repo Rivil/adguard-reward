@@ -22,6 +22,139 @@
         }
       ]
     },
+    "t-10": {
+      "files": [
+        "internal/api/grants.go",
+        "internal/api/grants_test.go"
+      ],
+      "commit": "a0de076",
+      "completed_at": "2026-11-02T08:40:39.176639Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "sharedOf",
+          "loc": "internal/api/grants.go:69",
+          "what": "grant 201 and GET /grants name each shared client and its other current owners; children read precedes any AdGuard write, list degrades to shared []"
+        }
+      ]
+    },
+    "t-11": {
+      "files": [
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go"
+      ],
+      "commit": "c1e0a91",
+      "completed_at": "2026-11-02T08:43:01.972472Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "sharedInputs",
+          "loc": "internal/api/blocked.go:92",
+          "what": "blocked view annotates clients with shared_with and services with unblocked_by from current mapping and active grants, degrading to [] on read failure"
+        }
+      ]
+    },
+    "t-12": {
+      "files": [
+        "web/src/lib/Children.svelte",
+        "web/src/lib/Children.test.ts"
+      ],
+      "commit": "cceda5c",
+      "completed_at": "2026-11-02T08:45:05.843271Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "Children.svelte others",
+          "loc": "web/src/lib/Children.svelte:131",
+          "what": "children settings keep another child's client enabled and label it 'shared with \u003cowners\u003e'; ticking and saving shares it"
+        }
+      ]
+    },
+    "t-13": {
+      "files": [
+        "web/src/lib/tap.ts",
+        "web/src/lib/tap.test.ts",
+        "web/src/lib/ActiveGrants.svelte",
+        "web/src/lib/ActiveGrants.panel.test.ts"
+      ],
+      "commit": "e5bc4a3",
+      "completed_at": "2026-11-02T08:46:27.468548Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "grantFrom",
+          "loc": "web/src/lib/tap.ts:49",
+          "what": "tap merges carry the 201's shared list and each active-grant row renders sharedText"
+        }
+      ]
+    },
+    "t-14": {
+      "files": [
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts",
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "f32f1db",
+      "completed_at": "2026-11-02T08:48:10.146026Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "GrantForm shared",
+          "loc": "web/src/lib/GrantForm.svelte:52",
+          "what": "grant form shows a passive role=note naming the selected child's shared devices and other owners; no effect on valid"
+        }
+      ]
+    },
+    "t-15": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "754bf5a",
+      "completed_at": "2026-11-02T08:51:25.322482Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "sharedNotes",
+          "loc": "web/src/lib/Home.svelte:44",
+          "what": "home buttons carry a passive shared-device note via aria-describedby, taps show a shared status line beside partial alerts, blocked view attributes services unblocked by another child's grant"
+        }
+      ]
+    },
+    "t-16": {
+      "files": [
+        "web/src/lib/ClientNames.svelte",
+        "web/src/lib/ClientNames.test.ts",
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/Children.test.ts"
+      ],
+      "commit": "e199c43",
+      "completed_at": "2026-11-02T09:02:55.488079Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "ClientView",
+          "loc": "web/src/lib/api.ts:181",
+          "what": "ClientView carries only children[]; the client-name list shows every owner"
+        }
+      ]
+    },
+    "t-17": {
+      "files": [
+        "internal/api/shared_test.go"
+      ],
+      "commit": "fdffe18",
+      "completed_at": "2026-11-02T09:04:37.722655Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "TestShared_Lifecycle",
+          "loc": "internal/api/shared_test.go:31",
+          "what": "end-to-end HTTP test of sharing, two-owner grants, blocked attribution and ref-counted revert"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/grants/shared.go",
@@ -145,6 +278,24 @@
           "what": "name 409 before AdGuard, then adopts every listed client (shared ones included) before creating the child; PUT shares without 409, removal and DELETE never call AdGuard"
         }
       ]
+    },
+    "t-9": {
+      "files": [
+        "internal/api/clients.go",
+        "internal/api/clients_test.go",
+        "internal/api/rename.go",
+        "internal/api/rename_test.go"
+      ],
+      "commit": "1286c73",
+      "completed_at": "2026-11-02T08:37:58.73314Z",
+      "landmarks": [
+        {
+          "feature": "shared devices",
+          "symbol": "ownerIndex",
+          "loc": "internal/api/clients.go:66",
+          "what": "client views list every holding child as children[] (never null) and create refuses a name any other child holds"
+        }
+      ]
     }
   },
   "reviews": {
@@ -180,6 +331,179 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "TestChildren_UpdateRollsBack now fails on the name check, which happens before any write, so it shows a rejected update leaves the child unchanged rather than exercising a mid-transaction rollback. The old client-check version had the same limitation.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-10": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestGrants_ChildrenReadFails and TestGrants_ListChildrenReadFails call the handlers directly through newGrantsDirect, so the session and CSRF middleware are not covered on those paths; the comment on the helper says so.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "No test checks the warning logged on the degraded GET /grants path. The test_contract does not require one, and the code does log it.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-11": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "sharedInputs drops grant covers as well when the children read fails, even though the deleted-granter path shows covers could still be built with empty names; this matches the test_contract (unblocked_by [] everywhere on a ListChildren error) and the doc comment explains it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "blockedVia also checks that the degraded body contains no ':null', which goes beyond the contract and is a useful guard on the never-null shape",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-12": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "share502 asserts the extra GET /api/v1/children reload before checking the box is unticked, so it would fail on an optimistic tick that survives a failed PUT",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-13": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "acceptOffer needed no code change: the existing { ...target, ends_at } spread already carries shared, so acceptKeepsShared is a regression guard rather than a test of new code",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "the 409 fallback stub grant in runTap has no shared field; it is only an offer target and is never rendered as a row, so this is harmless",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-14": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-8",
+          "text": "hintPassive asserts valid is true with the note shown but never compares against the same inputs without the note; it is enough here only because the hint is outside isValid by construction",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "the data-shared-hint attribute on the note is not used by any test or selector",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-15": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "tap() resets sharedNotes[childId] to '' before the run, so a double tap that comes back 'ignored' clears the previous tap's shared notice. notes[childId] was already reset the same way, so this follows the existing pattern.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "When acceptOffer only extends, it returns the listed target grant, and that grant carries its stored shared list. An extend can therefore show 'Also unblocked on …'. The text is accurate but goes beyond the 201-only notice the record describes.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-6",
+          "text": "openOn removes attributed clients from the partial service's differs list, so a shared client appears once with its granter. unblockedBy checks this for the partial TikTok case.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-16": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "web/src/lib/Children.test.ts is edited but not in the task's files list; the edit (dropping child from the typed client() fixture) is what the description asks for, but the file is undeclared",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "web/src/lib/UnlabelledDevices.test.ts:38 still mocks a ClientView response with a stale `child: null` key; it is untyped so typecheck passes and the description only covers typed fixtures, but it no longer matches the wire shape",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "the listDevices no-child assertion relies on the input fixtures having no child; clientView() spreads the server payload, so a server that still sent child would pass it through. The Go ClientView no longer emits it, so this is fine today",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-17": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "TestShared_Lifecycle does not check that both children list Kid phone after the PUT; this task's test_contract claims only the 200 (no 409) for c-1, so this is not a spec gap",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "TestShared_ShareDuringGrant's final assertion only checks that youtube is back on Kid phone, not the exact list; that is enough for the contract's 'until Ada's grant ends' clause",
           "resolution": "non-blocking, left"
         }
       ]
@@ -348,6 +672,34 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "adguardSince leaves out /control/login when counting 'zero AdGuard requests'. That is harmless, since a login only happens alongside another request.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-2",
+          "text": "The API response now uses children[] instead of child, but the web frontend still reads child (web/src/lib/api.ts:186 type, Children.svelte:131, ClientNames.svelte:46, api.test.ts:561). Until the frontend is updated, the settings and client-name views will misread GET /clients and the rename response.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestClientCreate_StaleShared also covers a stale name held by two children, so any holder other than child_id conflicts, not just the last one listed.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRename_OwnersReadFails calls handleClientRename directly with stub dependencies and skips the session middleware. That is fine for checking the response, but it does not test routing.",
           "resolution": "non-blocking, left"
         }
       ]

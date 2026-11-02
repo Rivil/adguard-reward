@@ -170,7 +170,7 @@ rule, so AdGuard is renamed exactly once.
   covers = ["c-1", "c-2", "c-7"]
   test_contract = ["if last-writer-wins remains, TestClients_SharedOwners fails: Ada and Ben hold Kid phone -> children [{1,\"Ada\"},{2,\"Ben\"}] and the JSON has no \"child\" key", "if the empty case marshals null, TestClients_UnassignedEmpty fails: the Old laptop row has \"children\": []", "if the create guard regresses, TestClientCreate_StaleForeign fails: name held by Ben's stale mapping with child_id 1 -> 409 naming Ben, 0 /control/clients/add; with child_id 2 -> 201, children [{2,\"Ben\"}]", "if the rename read-back is single-owner, TestRename_SharedView fails: rename shared Kid phone -> Family TV -> 200 body children lists Ada and Ben", "if the degraded read-back leaves a nil slice, TestRename_OwnersReadFails fails: rename succeeds, ListChildren then errors -> 200 with \"children\": [] (not null)"]
   depends_on = ["t-1"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-10"
@@ -181,7 +181,7 @@ rule, so AdGuard is renamed exactly once.
   covers = ["c-4", "c-5"]
   test_contract = ["if shared is not computed, TestGrants_CreateShared fails: Ada [Kid phone, Kid tablet], Ben [Kid phone]; POST {child_id:1, services:[youtube]} -> 201 shared exactly [{\"client\":\"Kid phone\",\"others\":[{\"id\":2,\"name\":\"Ben\"}]}]", "if the grant skips the shared client, TestGrants_SharedApplied fails on the fake: Ben's youtube grant over [Kid phone] removes youtube from Kid phone", "if the granter is not excluded or order drifts, TestGrants_SharedThreeOwners fails: Ada, Ben, Cleo hold Kid phone; Ben's grant -> others [{1,Ada},{3,Cleo}]", "if overlap is per-client, TestGrantCreate_SecondOwnerSameService fails: Ben's youtube grant while Ada's covers Kid phone -> 201, not 409", "if the slice can be nil, TestGrants_UnsharedEmpty fails: an unshared grant's 201 and GET row carry \"shared\": []", "if the list uses creation-time owners, TestGrants_ListSharedLive fails: Ben added to Kid phone after Ada's grant -> GET /grants lists Ben in shared", "if the children read is after apply, TestGrants_ChildrenReadFails fails: ListChildren error -> 500 and zero /control/clients/update", "if the view shape drifts, TestGrants_ViewShape fails: keys exactly (id, child_id, services, clients, shared, started_at, ends_at)", "if the list read failure is fatal, TestGrants_ListChildrenReadFails fails: two active grants, ListChildren error -> GET /grants 200 with both rows present (ids, ends_at unchanged) and shared [] on each"]
   depends_on = ["t-1"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-11"
@@ -192,7 +192,7 @@ rule, so AdGuard is renamed exactly once.
   covers = ["c-6"]
   test_contract = ["if wiring is missing, TestBlocked_SharedUnblockedBy fails: Ada and Ben hold Kid phone, Ada's active youtube grant -> GET /children/2/blocked lists Kid phone with shared_with [{id:1,name:\"Ada\"}] and youtube unblocked_by [{client:\"Kid phone\", grant_id:<G>, child:{id:1,name:\"Ada\"}}]", "if Self is not passed, TestBlocked_OwnGrantUnnamed fails: GET /children/1/blocked -> youtube unblocked_by []", "if both owners don't list it, TestBlocked_BothOwnersListShared fails: Ada's and Ben's views both include Kid phone in clients", "if a row can omit a key, TestBlocked_AnnotationShape fails: every service row has \"unblocked_by\" and every client row has \"shared_with\" as arrays", "if a grants read failure is fatal, TestBlocked_GrantsReadFails fails: 200 with unblocked_by [] everywhere and states unchanged", "if the 404 path changes, the existing TestBlocked_NotFound fails: unknown child is 404 with 0 AdGuard requests", "if a children read failure is fatal, TestBlocked_ChildrenReadFails fails: ListChildren error -> 200 with shared_with [] on every client row, unblocked_by [] everywhere and states unchanged", "if a deleted granter is dropped or crashes the lookup, TestBlocked_DeletedGranter fails: Ada and Ben hold Kid phone, Ada's youtube grant G is active, Ada is deleted -> GET /children/2/blocked 200 with youtube unblocked_by [{client:\"Kid phone\", grant_id:G, child:{id:1,name:\"\"}}]"]
   depends_on = ["t-1", "t-3"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-12"
@@ -213,7 +213,7 @@ optimistically ticked.
     '''if the old wording lingers, Children.test noAssignedTo fails on any "assigned to" text''',
   ]
   depends_on = ["t-4"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-13"
@@ -231,7 +231,7 @@ target's shared. ActiveGrants renders sharedText(grant.shared) per row.
     '''if the row ignores shared, ActiveGrants.panel.test sharedRow fails: that grant's row contains "Kid phone (shared with Ben)"; shared [] renders nothing extra''',
   ]
   depends_on = ["t-4"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-14"
@@ -250,7 +250,7 @@ inherit it through GrantForm.
     '''if Buttons bypasses it, Buttons.test sharedHint fails: editing a button for Ada shows the note and Save issues one PUT /api/v1/buttons''',
   ]
   depends_on = ["t-4"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-15"
@@ -261,7 +261,7 @@ inherit it through GrantForm.
   covers = ["c-5", "c-6", "c-8"]
   test_contract = ["if the hint is missing or unlinked, Home.test sharedHint fails: Ada (with a button) and Ben both hold Kid phone -> before any tap Ada's button has an accessible description containing \"Kid phone (shared with Ben)\"; Cleo's has none", "if a confirm step creeps in, Home.test noConfirm fails: one click on a hinted tile -> exactly one POST /api/v1/grants, window.confirm never called, no role=dialog", "if the notice is missing, Home.test sharedNotice fails: 201 with shared [{Kid phone,[Ben]}] -> role=status contains \"Kid phone (shared with Ben)\"; shared [] -> no status line", "if partial overwrites it, Home.test partialShared fails: applied:false + shared -> both the \"except on\" alert and the shared status are present", "if the ad-hoc path skips it, Home.test adhocShared fails: the ad-hoc form for Ada shows the GrantForm note and its 201 shows the same status line", "if the filter hides it, Home.test unblockedBy fails: Ben's view with youtube state unblocked and unblocked_by [{Kid phone, 7, Ada}] lists youtube with \"unblocked on Kid phone by Ada's grant\"; unblocked with unblocked_by [] stays hidden", "if shared_with is not rendered, Home.test sharedWithLabel fails: Ben's blocked view with client Kid phone shared_with [{1,Ada}] shows \"Kid phone (shared with Ada)\"; a client with shared_with [] shows no \"(shared with\"", "if an empty granter name renders blank, Home.test unblockedByRemoved fails: Ben's view with youtube unblocked and unblocked_by [{Kid phone, 7, {1, \"\"}}] shows \"unblocked on Kid phone by a removed child's grant\" and no \"by 's grant\""]
   depends_on = ["t-4", "t-13", "t-14"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-16"
@@ -279,7 +279,7 @@ ClientNames reads children[]. ClientView.child is deleted from api.ts and typed 
     '''if the rename leaves a stale key, api.test listDevices fails: the parsed ClientView has children and no child''',
   ]
   depends_on = ["t-12"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-17"
@@ -296,4 +296,4 @@ service, check the 201 shared and Ben's blocked view, End Ada, End Ben. Plus a s
     '''if the HTTP path re-blocks a covered service, TestShared_ShareDuringGrant fails: Ada's youtube grant left Kid phone [tiktok]; Ben holds Kid tablet with own [youtube, roblox]; PUT Ben adding Kid phone -> fake Kid phone blocked exactly [roblox, tiktok] until Ada's grant ends''',
   ]
   depends_on = ["t-5", "t-6", "t-8", "t-10", "t-11"]
-  status = "pending"
+  status = "done"
