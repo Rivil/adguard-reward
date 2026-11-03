@@ -37,9 +37,15 @@
         "web/src/lib/activeGrants.ts",
         "web/src/lib/activeGrants.test.ts"
       ],
-      "commit": "ced8522",
-      "completed_at": "2026-11-03T16:46:52.618253Z",
+      "commit": "ccc715a",
+      "completed_at": "2026-11-03T20:11:25.515605Z",
       "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "setToggle",
+          "loc": "web/src/lib/Home.svelte:237",
+          "what": "Home rows offer Unblock/Block per controlFor plus a Block-a-service picker; one in-flight toggle per child, refetch blocked view and grants, alert on partial apply naming every failed client, notice on shared devices"
+        },
         {
           "feature": "active grants panel",
           "symbol": "refresh",
@@ -248,16 +254,9 @@
         {
           "round": 1,
           "kind": "quality",
-          "severity": "FLAG",
-          "criterion": "c-2",
-          "text": "setToggle's post-toggle refresh() returns any in-flight poll promise (activeGrants dedup), so a poll started before the toggle response can deliver pre-toggle grants; a block that trims or ends a grant (block_during_grant) would then show stale until the next poll. Untested race.",
-          "resolution": "non-blocking, left"
-        },
-        {
-          "round": 1,
-          "kind": "quality",
           "severity": "NOTE",
-          "text": "Two existing assertions were updated to include the new row control text ('YouTube Unblock', 'P Portal Unblock'); a consequence of the added buttons, not a regression.",
+          "criterion": "c-1",
+          "text": "New 'toggle outcome' step kills the join('') mutant at Home.svelte:254: the two-client partial response must render 'except on tablet, tv', and the waitFor keys off data-error changing from 'network' to 'partial', so it cannot match the previous alert.",
           "resolution": "non-blocking, left"
         }
       ]
