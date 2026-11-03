@@ -1,6 +1,6 @@
 {
   "phase": "custom-services",
-  "generated_at": "2026-11-02T20:41:00.394329Z",
+  "generated_at": "2026-11-03T07:08:35.264979Z",
   "languages": [
     {
       "name": "go",
@@ -353,14 +353,14 @@
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
-            "Line": 105,
+            "Line": 115,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "fbcbc76509425f22",
+            "Origin": "inherited",
+            "Key": "96ff237bdd4c77ba",
             "Lifecycle": "accepted",
-            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -375,14 +375,14 @@
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
-            "Line": 115,
+            "Line": 105,
             "Op": "ARITHMETIC_BASE",
             "Snippet": "",
             "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "96ff237bdd4c77ba",
+            "Origin": "in-hunk",
+            "Key": "fbcbc76509425f22",
             "Lifecycle": "accepted",
-            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
           },
           {
             "File": "internal/adguard/adguardtest/server.go",
@@ -799,88 +799,6 @@
         "Score": 0.9464285714285714,
         "Surviving": [
           {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 57,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "9d3b09a97aead0f5",
-            "Lifecycle": "accepted",
-            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 65,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "8b4f0513f10ed864",
-            "Lifecycle": "accepted",
-            "Note": "equivalent: the [] arm is only reachable with a null catalogue, where nothing reads shown (lazy $derived, template null branch never renders the list)"
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 22,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "286edbfec9fcea7e",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 53,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "inherited",
-            "Key": "5c1a2fb452a2128c",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: with the null guard forced false, sharedDevices(null, children) finds no child with id null and returns [], the same as the guarded branch."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 57,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "inherited",
-            "Key": "9f8c19698c217d12",
-            "Lifecycle": "accepted",
-            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 64,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "inherited",
-            "Key": "511b6f39daef4909",
-            "Lifecycle": "accepted",
-            "Note": "equivalent: shown is a lazy $derived read only inside the template's services!==null branch; the null guard exists for the type checker and is never evaluated with a null catalogue"
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 66,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "inherited",
-            "Key": "46f8922b47508734",
-            "Lifecycle": "accepted",
-            "Note": "equivalent: with an empty needle the filter path returns every service because x.includes('') is always true; the early return is an optimisation"
-          },
-          {
-            "File": "web/src/lib/GrantForm.svelte",
-            "Line": 66,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "inherited",
-            "Key": "969ac8ba8b79e0da",
-            "Lifecycle": "accepted",
-            "Note": "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
-          },
-          {
             "File": "web/src/lib/Home.svelte",
             "Line": 122,
             "Op": "ArrayDeclaration",
@@ -1057,6 +975,118 @@
             "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
           },
           {
+            "File": "web/src/lib/Services.svelte",
+            "Line": 22,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "6fac435270d9bb93",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: pending's initial false -\u003e true is unobservable because onMount's run() sets pending = true before any test or user can see the DOM, and finally resets it, so every observable state is identical."
+          },
+          {
+            "File": "web/src/lib/Services.svelte",
+            "Line": 55,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "98d03b837dfb088c",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return true -\u003e false is unobservable."
+          },
+          {
+            "File": "web/src/lib/Services.svelte",
+            "Line": 61,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "74abd16500e92203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return false -\u003e true is unobservable."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 57,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9d3b09a97aead0f5",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 65,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8b4f0513f10ed864",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: the [] arm is only reachable with a null catalogue, where nothing reads shown (lazy $derived, template null branch never renders the list)"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 22,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "286edbfec9fcea7e",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 53,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "5c1a2fb452a2128c",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: with the null guard forced false, sharedDevices(null, children) finds no child with id null and returns [], the same as the guarded branch."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 57,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "9f8c19698c217d12",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 64,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "511b6f39daef4909",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: shown is a lazy $derived read only inside the template's services!==null branch; the null guard exists for the type checker and is never evaluated with a null catalogue"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 66,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "46f8922b47508734",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: with an empty needle the filter path returns every service because x.includes('') is always true; the early return is an optimisation"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 66,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "inherited",
+            "Key": "969ac8ba8b79e0da",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
+          },
+          {
             "File": "web/src/lib/Buttons.svelte",
             "Line": 26,
             "Op": "BooleanLiteral",
@@ -1187,36 +1217,6 @@
             "Note": "Equivalent mutant: letterOf returns '?' for a blank trimmed name before segmenting (line 11), so the first segment's value is never undefined and dropping ?. cannot throw."
           },
           {
-            "File": "web/src/lib/Services.svelte",
-            "Line": 22,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "6fac435270d9bb93",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent mutant: pending's initial false -\u003e true is unobservable because onMount's run() sets pending = true before any test or user can see the DOM, and finally resets it, so every observable state is identical."
-          },
-          {
-            "File": "web/src/lib/Services.svelte",
-            "Line": 55,
-            "Op": "BooleanLiteral",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "98d03b837dfb088c",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return true -\u003e false is unobservable."
-          },
-          {
-            "File": "web/src/lib/Services.svelte",
-            "Line": 61,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "74abd16500e92203",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return false -\u003e true is unobservable."
-          },
-          {
             "File": "web/src/lib/api.ts",
             "Line": 21,
             "Op": "StringLiteral",
@@ -1300,7 +1300,7 @@
           },
           {
             "start": 991,
-            "end": 1062,
+            "end": 1098,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1708,6 +1708,8 @@
       ".dross/phases/custom-services/panel/verification.md",
       ".dross/phases/custom-services/plan.toml",
       ".dross/phases/custom-services/spec.toml",
+      ".dross/phases/custom-services/tests.json",
+      ".dross/phases/custom-services/verify.toml",
       ".dross/project.toml",
       ".dross/survivors.toml",
       "cmd/adguard-reward/main.go",
@@ -1783,7 +1785,7 @@
       ".dross/phases/custom-services/changes.json": [
         {
           "start": 1,
-          "end": 926
+          "end": 935
         }
       ],
       ".dross/phases/custom-services/panel/mvp.md": [
@@ -1820,6 +1822,18 @@
         {
           "start": 1,
           "end": 82
+        }
+      ],
+      ".dross/phases/custom-services/tests.json": [
+        {
+          "start": 1,
+          "end": 2616
+        }
+      ],
+      ".dross/phases/custom-services/verify.toml": [
+        {
+          "start": 1,
+          "end": 142
         }
       ],
       ".dross/project.toml": [
@@ -2099,7 +2113,7 @@
       "internal/api/custom_services_test.go": [
         {
           "start": 1,
-          "end": 383
+          "end": 416
         }
       ],
       "internal/api/grants.go": [
@@ -2519,7 +2533,7 @@
       "web/src/lib/Home.test.ts": [
         {
           "start": 990,
-          "end": 1062
+          "end": 1098
         }
       ],
       "web/src/lib/ServiceIcon.svelte": [
@@ -2611,6 +2625,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "8e4ab805b9bdd660c82d6d01e4c11f7b2a559470",
-  "measured_tree": "22b27064fe3464876a8c68f95c7a8d09b32a6b50"
+  "measured_commit": "ccb0c7af22dfbf93cb382afacf828920397d6feb",
+  "measured_tree": "eec2ec17dc4a4d3d6a3bae749552c1a797872f0d"
 }

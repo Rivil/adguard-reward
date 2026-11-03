@@ -1,11 +1,11 @@
 [verify]
   phase = "custom-services"
-  generated_at = 2026-11-02T20:41:00.394329Z
-  verdict = "partial"
+  generated_at = 2026-11-03T07:08:35.264979Z
+  verdict = "pass"
   finalized = true
-  finalized_at = 2026-11-03T06:42:45.459018Z
-  measured_commit = "8e4ab805b9bdd660c82d6d01e4c11f7b2a559470"
-  measured_tree = "22b27064fe3464876a8c68f95c7a8d09b32a6b50"
+  finalized_at = 2026-11-03T07:28:12.118329Z
+  measured_commit = "ccb0c7af22dfbf93cb382afacf828920397d6feb"
+  measured_tree = "eec2ec17dc4a4d3d6a3bae749552c1a797872f0d"
 
 [summary]
   mutation_status = "measured"
@@ -44,7 +44,7 @@
     score = 0.9464285714285714
     file_count = 14
     measured_on = "local"
-    ranges = ["web/src/App.test.ts:323-323 (hunk)", "web/src/App.test.ts:324-389 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:110-860 (ExpressionStatement)", "web/src/lib/GrantForm.test.ts:336-336 (hunk)", "web/src/lib/GrantForm.test.ts:337-371 (ExpressionStatement)", "web/src/lib/Home.test.ts:990-990 (hunk)", "web/src/lib/Home.test.ts:991-1062 (ExpressionStatement)", "web/src/lib/ServiceIcon.test.ts:1-2 (hunk)", "web/src/lib/ServiceIcon.test.ts:10-10 (hunk)", "web/src/lib/ServiceIcon.test.ts:11-59 (ExpressionStatement)", "web/src/lib/ServiceIcon.test.ts:3-3 (ImportDeclaration)", "web/src/lib/ServiceIcon.test.ts:4-4 (ImportDeclaration)", "web/src/lib/ServiceIcon.test.ts:5-5 (ImportDeclaration)", "web/src/lib/ServiceIcon.test.ts:6-6 (hunk)", "web/src/lib/ServiceIcon.test.ts:7-9 (FunctionDeclaration avatar)", "web/src/lib/Services.test.ts:1-2 (hunk)", "web/src/lib/Services.test.ts:10-10 (hunk)", "web/src/lib/Services.test.ts:11-13 (FunctionDeclaration json)", "web/src/lib/Services.test.ts:14-15 (hunk)", "web/src/lib/Services.test.ts:16-31 (FunctionDeclaration mockFetch)", "web/src/lib/Services.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Services.test.ts:32-32 (hunk)", "web/src/lib/Services.test.ts:33-33 (VariableDeclaration portal)", "web/src/lib/Services.test.ts:34-34 (VariableDeclaration school)", "web/src/lib/Services.test.ts:35-35 (VariableDeclaration noContent)", "web/src/lib/Services.test.ts:36-36 (hunk)", "web/src/lib/Services.test.ts:37-39 (FunctionDeclaration nameInput)", "web/src/lib/Services.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Services.test.ts:40-42 (FunctionDeclaration domainsInput)", "web/src/lib/Services.test.ts:43-45 (FunctionDeclaration rows)", "web/src/lib/Services.test.ts:46-50 (FunctionDeclaration row)", "web/src/lib/Services.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Services.test.ts:51-54 (FunctionDeclaration fill)", "web/src/lib/Services.test.ts:55-62 (FunctionDeclaration mount)", "web/src/lib/Services.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Services.test.ts:63-63 (hunk)", "web/src/lib/Services.test.ts:64-67 (ExpressionStatement)", "web/src/lib/Services.test.ts:68-68 (hunk)", "web/src/lib/Services.test.ts:69-321 (ExpressionStatement)", "web/src/lib/Services.test.ts:7-7 (hunk)", "web/src/lib/Services.test.ts:8-8 (TSTypeAliasDeclaration Call)", "web/src/lib/Services.test.ts:9-9 (TSTypeAliasDeclaration Answer)", "web/src/lib/api.test.ts:5-41 (ImportDeclaration)", "web/src/lib/api.test.ts:589-589 (hunk)", "web/src/lib/api.test.ts:590-649 (ExpressionStatement)", "web/src/lib/api.test.ts:650-650 (hunk)", "web/src/lib/api.test.ts:651-670 (ExpressionStatement)", "web/src/lib/api.ts:11-27 (ClassDeclaration ApiError)", "web/src/lib/api.ts:195-203 (TSInterfaceDeclaration Service)", "web/src/lib/api.ts:31-31 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:314-317 (FunctionDeclaration listServices)", "web/src/lib/api.ts:319-326 (FunctionDeclaration childBlocked)", "web/src/lib/api.ts:328-330 (hunk)", "web/src/lib/api.ts:33-39 (VariableDeclaration PATHS)", "web/src/lib/api.ts:331-339 (TSInterfaceDeclaration CustomService)", "web/src/lib/api.ts:340-340 (hunk)", "web/src/lib/api.ts:341-341 (VariableDeclaration CUSTOM_SERVICES)", "web/src/lib/api.ts:342-342 (hunk)", "web/src/lib/api.ts:343-346 (FunctionDeclaration listCustomServices)", "web/src/lib/api.ts:347-348 (hunk)", "web/src/lib/api.ts:349-351 (FunctionDeclaration createCustomService)", "web/src/lib/api.ts:352-352 (hunk)", "web/src/lib/api.ts:353-355 (FunctionDeclaration updateCustomService)", "web/src/lib/api.ts:356-357 (hunk)", "web/src/lib/api.ts:358-360 (FunctionDeclaration deleteCustomService)", "web/src/lib/api.ts:361-361 (hunk)"]
+    ranges = ["web/src/App.test.ts:323-323 (hunk)", "web/src/App.test.ts:324-389 (ExpressionStatement)", "web/src/lib/Buttons.test.ts:110-860 (ExpressionStatement)", "web/src/lib/GrantForm.test.ts:336-336 (hunk)", "web/src/lib/GrantForm.test.ts:337-371 (ExpressionStatement)", "web/src/lib/Home.test.ts:990-990 (hunk)", "web/src/lib/Home.test.ts:991-1098 (ExpressionStatement)", "web/src/lib/ServiceIcon.test.ts:1-2 (hunk)", "web/src/lib/ServiceIcon.test.ts:10-10 (hunk)", "web/src/lib/ServiceIcon.test.ts:11-59 (ExpressionStatement)", "web/src/lib/ServiceIcon.test.ts:3-3 (ImportDeclaration)", "web/src/lib/ServiceIcon.test.ts:4-4 (ImportDeclaration)", "web/src/lib/ServiceIcon.test.ts:5-5 (ImportDeclaration)", "web/src/lib/ServiceIcon.test.ts:6-6 (hunk)", "web/src/lib/ServiceIcon.test.ts:7-9 (FunctionDeclaration avatar)", "web/src/lib/Services.test.ts:1-2 (hunk)", "web/src/lib/Services.test.ts:10-10 (hunk)", "web/src/lib/Services.test.ts:11-13 (FunctionDeclaration json)", "web/src/lib/Services.test.ts:14-15 (hunk)", "web/src/lib/Services.test.ts:16-31 (FunctionDeclaration mockFetch)", "web/src/lib/Services.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Services.test.ts:32-32 (hunk)", "web/src/lib/Services.test.ts:33-33 (VariableDeclaration portal)", "web/src/lib/Services.test.ts:34-34 (VariableDeclaration school)", "web/src/lib/Services.test.ts:35-35 (VariableDeclaration noContent)", "web/src/lib/Services.test.ts:36-36 (hunk)", "web/src/lib/Services.test.ts:37-39 (FunctionDeclaration nameInput)", "web/src/lib/Services.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Services.test.ts:40-42 (FunctionDeclaration domainsInput)", "web/src/lib/Services.test.ts:43-45 (FunctionDeclaration rows)", "web/src/lib/Services.test.ts:46-50 (FunctionDeclaration row)", "web/src/lib/Services.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Services.test.ts:51-54 (FunctionDeclaration fill)", "web/src/lib/Services.test.ts:55-62 (FunctionDeclaration mount)", "web/src/lib/Services.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Services.test.ts:63-63 (hunk)", "web/src/lib/Services.test.ts:64-67 (ExpressionStatement)", "web/src/lib/Services.test.ts:68-68 (hunk)", "web/src/lib/Services.test.ts:69-321 (ExpressionStatement)", "web/src/lib/Services.test.ts:7-7 (hunk)", "web/src/lib/Services.test.ts:8-8 (TSTypeAliasDeclaration Call)", "web/src/lib/Services.test.ts:9-9 (TSTypeAliasDeclaration Answer)", "web/src/lib/api.test.ts:5-41 (ImportDeclaration)", "web/src/lib/api.test.ts:589-589 (hunk)", "web/src/lib/api.test.ts:590-649 (ExpressionStatement)", "web/src/lib/api.test.ts:650-650 (hunk)", "web/src/lib/api.test.ts:651-670 (ExpressionStatement)", "web/src/lib/api.ts:11-27 (ClassDeclaration ApiError)", "web/src/lib/api.ts:195-203 (TSInterfaceDeclaration Service)", "web/src/lib/api.ts:31-31 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:314-317 (FunctionDeclaration listServices)", "web/src/lib/api.ts:319-326 (FunctionDeclaration childBlocked)", "web/src/lib/api.ts:328-330 (hunk)", "web/src/lib/api.ts:33-39 (VariableDeclaration PATHS)", "web/src/lib/api.ts:331-339 (TSInterfaceDeclaration CustomService)", "web/src/lib/api.ts:340-340 (hunk)", "web/src/lib/api.ts:341-341 (VariableDeclaration CUSTOM_SERVICES)", "web/src/lib/api.ts:342-342 (hunk)", "web/src/lib/api.ts:343-346 (FunctionDeclaration listCustomServices)", "web/src/lib/api.ts:347-348 (hunk)", "web/src/lib/api.ts:349-351 (FunctionDeclaration createCustomService)", "web/src/lib/api.ts:352-352 (hunk)", "web/src/lib/api.ts:353-355 (FunctionDeclaration updateCustomService)", "web/src/lib/api.ts:356-357 (hunk)", "web/src/lib/api.ts:358-360 (FunctionDeclaration deleteCustomService)", "web/src/lib/api.ts:361-361 (hunk)"]
     whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/Buttons.svelte — ast-unavailable", "web/src/lib/GrantForm.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable", "web/src/lib/ServiceIcon.svelte — ast-unavailable", "web/src/lib/Services.svelte — ast-unavailable"]
 
 [[criterion]]
@@ -57,13 +57,13 @@
   id = "c-2"
   status = "covered"
   tests = ["internal/api/custom_services_test.go:TestCustomServices_BadDomain", "internal/rules/domain_test.go:TestNormalizeDomain", "web/src/lib/Services.test.ts:it('invalid domain')"]
-  notes = "13 bad shapes (scheme, path, port, wildcard, space, newline, ||, ^, $, /regex/, @@, bare TLD, empty), alone and after a good domain -> 400 naming domain and index; list stays empty and zero set_rules POSTs."
+  notes = "All 13 bad shapes (scheme, path, port, wildcard, space, newline, ||, ^, $, /regex/, @@, bare TLD, empty) now refused on POST and PUT -> 400 naming domain and index; stored list unchanged and zero set_rules POSTs (run-1 PUT FLAG closed by 75c0176)."
 
 [[criterion]]
   id = "c-3"
   status = "covered"
   tests = ["internal/grants/rules_test.go:TestUpdateService_Domains", "internal/api/custom_services_test.go:TestCustomServices_Update", "web/src/lib/Services.test.ts:it('edit')"]
-  notes = "a,b -> b,c: region is exactly the b/c block and b/c exception lines and no user_rules line mentions a.com. Run-1 weakness (Services.svelte :83/:106 survivors) killed in 4a70a20."
+  notes = "a,b -> b,c: region is exactly the b/c block and b/c exception lines and no user_rules line mentions a.com."
 
 [[criterion]]
   id = "c-4"
@@ -74,8 +74,8 @@
 [[criterion]]
   id = "c-5"
   status = "covered"
-  tests = ["web/src/lib/GrantForm.test.ts:describe('GrantForm custom services')", "web/src/lib/Buttons.test.ts:it('custom icon')", "internal/api/buttons_test.go:TestButtons_Custom", "web/src/lib/Home.test.ts:it('custom blocked entry')", "internal/blocked/blocked_test.go:TestFold_Custom", "internal/api/blocked_test.go:TestBlocked_CustomJSON", "internal/api/catalogue_test.go:TestServices_IncludesCustom"]
-  notes = "Button editor picks services through GrantForm, so GrantForm's custom-selection tests cover it; API stores custom:N as a button service and icon. Blocked view asserted for blocked and partial states (unblocked: see FLAG)."
+  tests = ["web/src/lib/GrantForm.test.ts:describe('GrantForm custom services')", "web/src/lib/Buttons.test.ts:it('custom icon')", "internal/api/buttons_test.go:TestButtons_Custom", "web/src/lib/Home.test.ts:it('custom blocked entry')", "web/src/lib/Home.test.ts:it('custom unblocked entry')", "internal/blocked/blocked_test.go:TestFold_Custom", "internal/api/blocked_test.go:TestBlocked_CustomJSON", "internal/api/catalogue_test.go:TestServices_IncludesCustom"]
+  notes = "Grant form and button editor list custom services (button editor picks through GrantForm); API stores custom:N as button service/icon. Blocked view now asserted for blocked, partial and unblocked (held by another child's grant: listed with avatar and holder; plainly unblocked: not listed)."
 
 [[criterion]]
   id = "c-6"
@@ -118,18 +118,6 @@
   text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Buttons.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/ServiceIcon.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Services.svelte (no parser for .svelte); mutating the whole file"
 
 [[finding]]
-  severity = "FLAG"
-  text = "no unauthenticated (401) test on POST/PUT/DELETE /api/v1/custom-services; TestCustomServices_Edges checks only GET without a session"
-
-[[finding]]
-  severity = "FLAG"
-  text = "PUT domain validation is tested only with a path (b.com/x) in TestCustomServices_BadDomain; the other c-2 shapes are exercised on POST only"
-
-[[finding]]
-  severity = "FLAG"
-  text = "no Home test renders a custom service in the unblocked state; Home.test.ts 'custom blocked entry' covers blocked and partial only (c-5)"
-
-[[finding]]
   severity = "NOTE"
   text = "c-7 expiry-with-overlap is only tested in the End-then-expiry order (TestGrant_CustomShared); no custom-service test has one grant expire while another still covers the shared client"
 
@@ -139,4 +127,8 @@
 
 [[finding]]
   severity = "NOTE"
-  text = "mutation: score 0.93 over 1471 in-scope mutants; all 106 survivors (77 distinct keys) carry an accepted disposition, unclassified_in_scope = 0; 68 NOT COVERED test-gap mutants counted as reachable"
+  text = "mutation: score 0.93 over 1471 in-scope mutants; all 106 survivors (37 in-hunk, 69 inherited) carry an accepted disposition, unclassified_in_scope = 0; 68 NOT COVERED test-gap mutants counted as reachable"
+
+[[finding]]
+  severity = "NOTE"
+  text = "run-1 FLAGs closed by 75c0176: 401 on unauthenticated POST/PUT/DELETE (TestCustomServices_Edges), all c-2 shapes on PUT (TestCustomServices_BadDomain), Home custom unblocked entry (Home.test.ts)"
