@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -1052,6 +1053,83 @@ func TestRun_StartupAdGuardDown(t *testing.T) {
 	}
 	if code := r.stop(t); code == 1 {
 		t.Fatalf("exit = 1; an unreachable AdGuard at boot must not be fatal:\n%s", r.stderr.String())
+	}
+}
+
+// clientBlocks reports whether the fake's named client blocks service id.
+func clientBlocks(fake *adguardtest.Server, name, id string) bool {
+	ids, _ := fake.BlockedServices(name)
+	return slices.Contains(ids, id)
+}
+
+// TestRun_ToggleEndToEnd boots run() and toggles youtube for a child on two
+// clients through the API: proof main wires the engine's Toggle and that
+// each response lands on AdGuard within the 5 s promise (c-1, c-2). The
+// reconciler is parked so only the request itself can have written.
+func TestRun_ToggleEndToEnd(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = time.Hour
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+	ck := loginOK(t, c, base)
+
+	resp := call(t, c, http.MethodPost, base, "/api/v1/children",
+		map[string]any{"name": "Ada", "clients": []string{"Kid phone", "Old laptop"}}, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST child: %d %s", resp.StatusCode, b)
+	}
+	var child struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&child); err != nil {
+		t.Fatal(err)
+	}
+	fake.MutateClient("Old laptop", func(m map[string]json.RawMessage) {
+		m["blocked_services"] = json.RawMessage(`["youtube","roblox"]`)
+	})
+	clients := []string{"Kid phone", "Old laptop"}
+	for _, name := range clients {
+		if !clientBlocks(fake, name, "youtube") {
+			t.Fatalf("precondition: %s does not block youtube", name)
+		}
+	}
+
+	path := fmt.Sprintf("/api/v1/children/%d/toggles", child.ID)
+	for _, step := range []struct {
+		state string
+		want  bool
+	}{{"unblocked", false}, {"blocked", true}} {
+		begin := time.Now()
+		resp := call(t, c, http.MethodPost, base, path,
+			map[string]any{"service_id": "youtube", "state": step.state}, withCookie(ck.Value))
+		b, _ := io.ReadAll(resp.Body)
+		if took := time.Since(begin); took >= 5*time.Second {
+			t.Errorf("%s took %v, want < 5 s", step.state, took)
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("%s: %d %s, want 200", step.state, resp.StatusCode, b)
+		}
+		var got struct {
+			Applied bool     `json:"applied"`
+			Failed  []string `json:"failed"`
+		}
+		if err := json.Unmarshal(b, &got); err != nil {
+			t.Fatal(err)
+		}
+		if !got.Applied || len(got.Failed) != 0 {
+			t.Errorf("%s: body %s, want applied true failed []", step.state, b)
+		}
+		for _, name := range clients {
+			if clientBlocks(fake, name, "youtube") != step.want {
+				ids, _ := fake.BlockedServices(name)
+				t.Errorf("after %s %s = %v, want youtube blocked=%v", step.state, name, ids, step.want)
+			}
+		}
 	}
 }
 

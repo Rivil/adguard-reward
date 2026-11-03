@@ -41,8 +41,8 @@ type ChildStore interface {
 	ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error)
 }
 
-// Grants is the slice of *grants.Engine the grant and client-write handlers
-// need. It speaks store.Grant and the engine's sentinels (ErrGrantNotFound,
+// Grants is the slice of *grants.Engine the grant, toggle and client-write
+// handlers need. It speaks store.Grant and the engine's sentinels (ErrGrantNotFound,
 // *ErrRevertFailed, *ErrAdoptFailed) plus the store's *ErrGrantOverlap and
 // the AdGuard client's write errors.
 type Grants interface {
@@ -57,6 +57,7 @@ type Grants interface {
 	UpdateService(ctx context.Context, id int64, name string, domains []string) (grants.ServiceResult, error)
 	DeleteService(ctx context.Context, id int64) (grants.ServiceResult, error)
 	SyncRules(ctx context.Context) error
+	Toggle(ctx context.Context, childID int64, serviceID, state string) (grants.ToggleResult, error)
 }
 
 // ButtonStore is the slice of *store.Store the buttons handlers need. It
@@ -126,6 +127,7 @@ func (a *API) routes() {
 	a.mux.Handle("PUT /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildUpdate)))
 	a.mux.Handle("DELETE /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildDelete)))
 	a.mux.Handle("GET /api/v1/children/{id}/blocked", a.requireSession(http.HandlerFunc(a.handleBlocked)))
+	a.mux.Handle("POST /api/v1/children/{id}/toggles", a.requireSession(http.HandlerFunc(a.handleToggle)))
 	a.mux.Handle("GET /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClients)))
 	a.mux.Handle("POST /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClientCreate)))
 	a.mux.Handle("POST /api/v1/clients/rename", a.requireSession(http.HandlerFunc(a.handleClientRename)))
