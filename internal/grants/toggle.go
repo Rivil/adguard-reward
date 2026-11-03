@@ -49,8 +49,8 @@ type ToggleResult struct {
 //     failure there is reported but never retried).
 //
 // A failed read of the children, toggles or active grants fails every
-// target client without a write. Custom ids store the intent and the trim
-// only.
+// target client without a write. Custom ids converge the managed user_rules
+// region instead, inside the same ApplyTimeout (see toggleCustom).
 func (e *Engine) Toggle(ctx context.Context, childID int64, serviceID, state string) (ToggleResult, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -85,13 +85,11 @@ func (e *Engine) Toggle(ctx context.Context, childID int64, serviceID, state str
 			e.log.Info("grant ended by permanent block", "grant", change.Trimmed.ID, "child", childID, "service", serviceID)
 		}
 	}
-	if custom {
-		res.Applied = true
-		return res, nil
-	}
-
 	actx, cancel := e.applyContext(ctx)
 	defer cancel()
+	if custom {
+		return e.toggleCustom(ctx, actx, child, serviceID, state, res), nil
+	}
 	plan, governed, err := e.togglePlanFor(ctx, child, serviceID, state, change.Trimmed)
 	if err != nil {
 		targets := slices.Clone(child.Clients)
