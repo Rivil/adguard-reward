@@ -360,3 +360,93 @@ func TestIndexOfChild(t *testing.T) {
 		t.Errorf("indexOfChild(nil, 1) = %d, want 0", got)
 	}
 }
+
+// TestButtons_Custom accepts a stored custom service as a button service and
+// as its icon, echoed as given; a custom id with no stored service is a 422
+// naming the field, and the stored list is left alone.
+func TestButtons_Custom(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	createCustom(t, h, cookie, "Portal", "a.com")
+
+	item := buttonItem("Portal", ada.ID, []string{"custom:1"}, 1800)
+	item["icon"] = "custom:1"
+	got := h.putOK(cookie, item, buttonItem("Mixed", ada.ID, []string{"youtube", "custom:1"}, 3600))
+	if len(got) != 2 || !reflect.DeepEqual(got[0].Services, []string{"custom:1"}) || got[0].Icon != "custom:1" ||
+		!reflect.DeepEqual(got[1].Services, []string{"youtube", "custom:1"}) {
+		t.Fatalf("PUT body = %+v, want custom:1 echoed as service and icon", got)
+	}
+	if listed := decodeButtons(t, h.getButtons(cookie)); !reflect.DeepEqual(listed, got) {
+		t.Fatalf("GET = %+v, want %+v", listed, got)
+	}
+
+	for _, tc := range []struct {
+		name  string
+		item  map[string]any
+		field string
+	}{
+		{"service custom:99", buttonItem("X", ada.ID, []string{"custom:99"}, 1800), "buttons[0].services"},
+		{"service custom:abc", buttonItem("X", ada.ID, []string{"custom:abc"}, 1800), "buttons[0].services"},
+		{"icon custom:99", func() map[string]any {
+			m := buttonItem("X", ada.ID, []string{"custom:1"}, 1800)
+			m["icon"] = "custom:99"
+			return m
+		}(), "buttons[0].icon"},
+	} {
+		w := h.putButtons(cookie, buttonsReq(tc.item))
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("%s: %d %s, want 422", tc.name, w.Code, w.Body.String())
+			continue
+		}
+		if e := decodeErr(t, w); !strings.HasPrefix(e.Message, tc.field) {
+			t.Errorf("%s: message %q, want it to name %s", tc.name, e.Message, tc.field)
+		}
+	}
+	if listed := decodeButtons(t, h.getButtons(cookie)); !reflect.DeepEqual(listed, got) {
+		t.Errorf("list after refused PUTs = %+v, want %+v", listed, got)
+	}
+}
+
+// TestCustomServices_DeleteAfterGrant walks locked delete_refs over HTTP
+// with the real engine: a grant made through POST /grants holds the service
+// (409), and once it ends the delete goes through, the custom-only button is
+// deleted, the mixed one keeps its other service and loses the icon, and the
+// region carries nothing for the service's domain.
+func TestCustomServices_DeleteAfterGrant(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	cs := createCustom(t, h, cookie, "Portal", "a.com")
+	only := buttonItem("Portal", ada.ID, []string{cs.ServiceID}, 1800)
+	mixed := buttonItem("Mixed", ada.ID, []string{"youtube", cs.ServiceID}, 3600)
+	mixed["icon"] = cs.ServiceID
+	stored := h.putOK(cookie, only, mixed)
+	g := h.grantOK(cookie, ada.ID, []string{cs.ServiceID}, 1800)
+	path := customPath + "/" + itoa(cs.ID)
+
+	w := h.do(http.MethodDelete, path, nil, withCookie(cookie))
+	if w.Code != http.StatusConflict {
+		t.Fatalf("DELETE under an active grant = %d %s, want 409", w.Code, w.Body.String())
+	}
+	var body struct {
+		GrantID int64 `json:"grant_id"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil || body.GrantID != g.ID {
+		t.Fatalf("409 body %s, want grant_id %d", w.Body.String(), g.ID)
+	}
+	if listed := decodeButtons(t, h.getButtons(cookie)); !reflect.DeepEqual(listed, stored) {
+		t.Fatalf("buttons after a refused delete = %+v, want %+v", listed, stored)
+	}
+
+	h.endGrant(cookie, g.ID)
+	if w := h.do(http.MethodDelete, path, nil, withCookie(cookie)); w.Code != http.StatusNoContent {
+		t.Fatalf("DELETE after End = %d %s, want 204", w.Code, w.Body.String())
+	}
+	listed := decodeButtons(t, h.getButtons(cookie))
+	if len(listed) != 1 || listed[0].ID != stored[1].ID || !reflect.DeepEqual(listed[0].Services, []string{"youtube"}) ||
+		listed[0].Icon != "" {
+		t.Errorf("buttons after delete = %+v, want only Mixed (id %d) on [youtube] with no icon", listed, stored[1].ID)
+	}
+	noRegionLine(t, h, "a.com")
+}

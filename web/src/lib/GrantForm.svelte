@@ -11,8 +11,9 @@
 </script>
 
 <script lang="ts">
-  import { iconUrl, type Child, type Service } from './api'
+  import { type Child, type Service } from './api'
   import { sharedDevices, sharedText } from './grants'
+  import ServiceIcon from './ServiceIcon.svelte'
 
   let {
     children,
@@ -135,7 +136,7 @@
                 onchange={(e) => toggle(s.id, e.currentTarget.checked)}
                 {disabled}
               />
-              <img alt="" src={iconUrl(s.icon)} width="20" height="20" />
+              <ServiceIcon name={s.name} icon={s.icon} size={20} />
               {s.name}
             </label>
           </li>

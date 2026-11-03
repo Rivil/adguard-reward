@@ -1,0 +1,12 @@
+phases = ["custom-services", "permanent-toggles", "grant-history", "pin-unlock", "export-import"]
+
+[milestone]
+  version = "v0.2"
+  title = "Manage"
+  status = "active"
+  started = "2026-11-02"
+  base = "main"
+
+[scope]
+  success_criteria = ["A parent can create a custom service (name + manually entered domains) that blocks and grants like a built-in one — a grant adds @@||domain^$client exception rules and expiry removes them — and every user_rules line outside the managed marker region is byte-for-byte unchanged after any create, grant, or revert.", "From a child's page a parent can permanently block or unblock any built-in or custom service without opening AdGuard; the change is visible in AdGuard within 5 s, and an expiring timed grant never re-blocks a service that was permanently unblocked.", "Every grant start, extend, early end, and expiry is recorded (child, services, start/end times, how it ended) and a parent can view that history per child; it survives restarts.", "After logging in on a device a parent can set a 4–6 digit PIN and later unlock with the PIN alone; 5 wrong PINs revoke that device's token and force a full AdGuard login, and the PIN is stored only as an Argon2id hash.", "A parent can export children, buttons, and custom services as a single JSON file and import it into a fresh install to reproduce the same setup; a malformed or incompatible file is rejected whole with nothing half-applied, and the export never contains sessions, PINs, or AdGuard credentials."]
+  non_goals = ["No AI service discovery — custom-service domains are manual entry only; no provider adapters or query-log candidate gathering (M3)", "No Docker/GHCR release, goreleaser, or CI (M4)", "No passkeys/WebAuthn — PIN is the only quick-unlock method this milestone"]

@@ -408,3 +408,100 @@ func TestBlocked_ChildrenReadFails(t *testing.T) {
 		t.Errorf("states = %v, want unchanged %v", got, want)
 	}
 }
+
+// blockedCustomVia is blockedVia with Deps.CustomServices set to cs; it also
+// returns the raw body so the wire shape can be checked key by key.
+func blockedCustomVia(t *testing.T, d grantsDirect, cs CustomServiceStore, g Grants, id int64) (blockedBody, string) {
+	t.Helper()
+	deps := d.a.deps
+	deps.Children, deps.Grants, deps.CustomServices = d.store, g, cs
+	r := httptest.NewRequest(http.MethodGet, childPath(id)+"/blocked", nil)
+	r.SetPathValue("id", itoa(id))
+	w := httptest.NewRecorder()
+	New(deps).handleBlocked(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("blocked view: %d %s, want 200", w.Code, w.Body.String())
+	}
+	var body blockedBody
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	return body, w.Body.String()
+}
+
+// customFixture seeds Ada on Kid phone and a custom service Portal.
+func customFixture(t *testing.T, d grantsDirect) store.Child {
+	t.Helper()
+	ctx := context.Background()
+	ada, err := d.store.CreateChild(ctx, "Ada", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.eng.CreateService(ctx, "Portal", []string{"a.com"}); err != nil {
+		t.Fatal(err)
+	}
+	return ada
+}
+
+func TestBlocked_CustomReadFailure(t *testing.T) {
+	d := newGrantsDirect(t)
+	ada := customFixture(t, d)
+
+	healthy, _ := blockedCustomVia(t, d, d.store, d.eng, ada.ID)
+	if p := serviceRow(healthy, "custom:1"); p == nil || p.State != "blocked" {
+		t.Fatalf("precondition: healthy custom:1 = %+v, want blocked", p)
+	}
+
+	for name, run := range map[string]func() blockedBody{
+		"custom list": func() blockedBody {
+			b, _ := blockedCustomVia(t, d, &countingCustom{inner: d.store, err: errors.New("database is locked")}, d.eng, ada.ID)
+			return b
+		},
+		"grants": func() blockedBody {
+			b, _ := blockedCustomVia(t, d, d.store, listFailingGrants{d.eng}, ada.ID)
+			return b
+		},
+	} {
+		body := run()
+		if p := serviceRow(body, "custom:1"); p != nil {
+			t.Errorf("%s read failed: custom:1 still reported as %+v", name, p)
+		}
+		if yt := serviceRow(body, "youtube"); yt == nil {
+			t.Errorf("%s read failed: built-ins missing", name)
+		}
+	}
+}
+
+func TestBlocked_CustomJSON(t *testing.T) {
+	d := newGrantsDirect(t)
+	ada := customFixture(t, d)
+	if _, err := d.eng.Create(context.Background(), ada.ID, []string{"custom:1"}, ada.Clients, 30*time.Minute); err != nil {
+		t.Fatal(err)
+	}
+	_, raw := blockedCustomVia(t, d, d.store, d.eng, ada.ID)
+	var doc struct {
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.Unmarshal([]byte(raw), &doc); err != nil {
+		t.Fatal(err)
+	}
+	var custom, builtin map[string]any
+	for _, s := range doc.Services {
+		switch s["id"] {
+		case "custom:1":
+			custom = s
+		case "youtube":
+			builtin = s
+		}
+	}
+	want := map[string]any{
+		"id": "custom:1", "name": "Portal", "icon": "", "custom": true,
+		"state": "unblocked", "differs": []any{}, "unblocked_by": []any{},
+	}
+	if !reflect.DeepEqual(custom, want) {
+		t.Fatalf("custom entry %v, want %v", custom, want)
+	}
+	if builtin == nil || builtin["custom"] != false {
+		t.Fatalf("built-in entry %v, want custom:false", builtin)
+	}
+}

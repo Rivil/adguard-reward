@@ -41,6 +41,8 @@ func (e *Engine) RenameClient(ctx context.Context, oldName, newName string) erro
 	// AdGuard has the new name; record it even if the request has gone.
 	serr := e.store.RenameClient(context.WithoutCancel(ctx), oldName, newName)
 	if serr == nil {
+		// $client rules name the persistent client: follow the rename now.
+		e.resyncRules(context.WithoutCancel(ctx), actx, "client rename", newName)
 		return nil
 	}
 	if aerr := e.ag.RenameClient(actx, newName, oldName); aerr != nil {

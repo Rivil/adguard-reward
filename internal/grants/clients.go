@@ -66,6 +66,9 @@ func (e *Engine) CreateClient(ctx context.Context, name string, ids []string, ch
 	if err := e.store.AddChildClient(context.WithoutCancel(ctx), child.ID, name); err != nil {
 		return fmt.Errorf("client %q created in AdGuard but not assigned to %q: %w", name, child.Name, err)
 	}
+	// The new device is a child client now: block the custom services on it
+	// before returning. A failure leaves it to the reconciler.
+	e.resyncRules(context.WithoutCancel(ctx), actx, "client create", name)
 	return nil
 }
 
@@ -142,7 +145,8 @@ func (e *Engine) baseline(ctx, actx context.Context, childID int64, siblings []s
 // plus every service under the child's active grants and under any active
 // grant (of any child) stored on a known sibling — those grants unblocked
 // the services on the siblings, and their revert will never touch the new
-// device. It also returns the active grants it read. Sorted, never nil.
+// device. Custom service ids are never part of it. It also returns the
+// active grants it read. Sorted, never nil.
 // Caller holds mu.
 func (e *Engine) baselineFrom(ctx context.Context, res adguard.ClientsResult, childID int64, siblings []string) ([]string, []store.Grant, error) {
 	byName := make(map[string]adguard.PersistentClient, len(res.Persistent))
@@ -172,9 +176,20 @@ func (e *Engine) baselineFrom(ctx context.Context, res adguard.ClientsResult, ch
 	}
 	for _, g := range grants {
 		if g.ChildID == childID || slices.ContainsFunc(known, func(s string) bool { return slices.Contains(g.Clients, s) }) {
-			out = append(out, g.Services...)
+			// Only built-in ids belong in blocked_services; custom ones are
+			// enforced by the managed region.
+			out = append(out, builtin(g.Services)...)
 		}
 	}
 	slices.Sort(out)
 	return slices.Compact(out), grants, nil
+}
+
+// resyncRules converges the managed region after a committed client write,
+// logging rather than returning a failure: the store already holds the
+// intent and the reconciler converges it. Caller holds mu.
+func (e *Engine) resyncRules(ctx, actx context.Context, op, client string) {
+	if _, err := e.syncRules(ctx, actx, 0); err != nil {
+		e.log.Warn(op+": managed rules not updated; the reconciler will retry", "client", client, "err", err)
+	}
 }

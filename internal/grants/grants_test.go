@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"reflect"
 	"slices"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
 	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
+	"github.com/Rivil/adguard-reward/internal/rules"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
 
@@ -868,5 +870,320 @@ func TestExpire_SharedTimersSerial(t *testing.T) {
 	e.wantBlocks("Old laptop", "youtube", true)
 	if n := e.fake.MaxInFlightUpdates(); n != 1 {
 		t.Errorf("MaxInFlightUpdates = %d, want 1", n)
+	}
+}
+
+// exceptions returns the @@ lines of the managed region.
+func (e *env) exceptions() []string {
+	e.t.Helper()
+	var out []string
+	for _, l := range e.region() {
+		if strings.HasPrefix(l, "@@") {
+			out = append(out, l)
+		}
+	}
+	return out
+}
+
+// noCustomInClientWrites fails if any clients/update or clients/add body
+// names a custom service.
+func (e *env) noCustomInClientWrites() {
+	e.t.Helper()
+	for _, r := range e.fake.Requests() {
+		if r.Method == "POST" && (r.Path == "/control/clients/update" || r.Path == "/control/clients/add") &&
+			strings.Contains(string(r.Body), "custom:") {
+			e.t.Fatalf("%s body leaks a custom id: %s", r.Path, r.Body)
+		}
+	}
+}
+
+func TestGrant_CustomNoLeak(t *testing.T) {
+	e := newEnv(t, nil)
+	// Real fixture clients, each on its own list: a custom id leaking into
+	// the blocked_services path would show up as a clients/update POST.
+	e.offGlobal("youtube")
+	kid := e.child("Ann", "Kid phone", "Kid tablet")
+	svc := e.createService("Portal", "a.com", "b.com").Service.ServiceID()
+
+	res := e.create(kid.ID, []string{svc}, both)
+	if !res.Applied || len(res.Failed) != 0 {
+		t.Fatalf("create: %+v", res)
+	}
+	want := []string{"@@||a.com^$client='Kid phone'|'Kid tablet'", "@@||b.com^$client='Kid phone'|'Kid tablet'"}
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions %q, want %q", got, want)
+	}
+	if n := e.posts(); n != 0 {
+		t.Fatalf("%d clients/update POSTs on create", n)
+	}
+
+	e.end(res.Grant.ID)
+	e.wantStatus(res.Grant.ID, store.StatusEnded)
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("exceptions after End: %q", got)
+	}
+
+	res2 := e.create(kid.ID, []string{svc}, both)
+	e.clk.Advance(d)
+	e.wantStatus(res2.Grant.ID, store.StatusExpired)
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("exceptions after expiry: %q", got)
+	}
+	if n := e.posts(); n != 0 {
+		t.Fatalf("%d clients/update POSTs across create, end and expiry", n)
+	}
+	e.noCustomInClientWrites()
+}
+
+func TestGrant_Mixed(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "Kid phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+
+	res := e.create(kid.ID, []string{"youtube", svc}, []string{"Kid phone"})
+	if !res.Applied {
+		t.Fatalf("create: %+v", res)
+	}
+	e.wantBlocks("Kid phone", "youtube", false)
+	if got, want := e.exceptions(), []string{"@@||a.com^$client='Kid phone'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions %q, want %q", got, want)
+	}
+
+	e.end(res.Grant.ID)
+	e.wantBlocks("Kid phone", "youtube", true)
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("exceptions after End: %q", got)
+	}
+	e.noCustomInClientWrites()
+}
+
+func TestGrant_CustomShared(t *testing.T) {
+	e := newEnv(t, nil)
+	a := e.child("Ann", "a-phone", "tv")
+	b := e.child("Ben", "b-phone", "tv")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+
+	ga := e.create(a.ID, []string{svc}, []string{"a-phone", "tv"})
+	gb := e.create(b.ID, []string{svc}, []string{"b-phone", "tv"})
+	if got, want := e.exceptions(), []string{"@@||a.com^$client='a-phone'|'b-phone'|'tv'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("both: %q, want %q", got, want)
+	}
+
+	e.end(ga.Grant.ID)
+	if got, want := e.exceptions(), []string{"@@||a.com^$client='b-phone'|'tv'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("after End A: %q, want %q", got, want)
+	}
+
+	e.clk.Advance(d)
+	e.wantStatus(gb.Grant.ID, store.StatusExpired)
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("after B expired: %q", got)
+	}
+	if n := e.posts(); n != 0 {
+		t.Fatalf("%d clients/update POSTs", n)
+	}
+}
+
+func TestGrant_CustomPreservesOutside(t *testing.T) {
+	e := newEnv(t, nil)
+	seed := []string{"! mine", "||x^", "@@||y^"}
+	e.fake.SetUserRules(seed)
+	kid := e.child("Ann", "kid-phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	check := func(step string) {
+		t.Helper()
+		if got := e.outside(); !reflect.DeepEqual(got, seed) {
+			t.Fatalf("after %s, outside the markers %q, want %q", step, got, seed)
+		}
+	}
+	check("service create")
+
+	res := e.create(kid.ID, []string{svc}, []string{"kid-phone"})
+	check("grant create")
+
+	posts := e.setRulesPosts()
+	if _, err := e.eng.Extend(ctx, res.Grant.ID, d); err != nil {
+		t.Fatal(err)
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("Extend issued %d set_rules POSTs", n)
+	}
+	check("extend")
+
+	e.end(res.Grant.ID)
+	check("end")
+
+	res2 := e.create(kid.ID, []string{svc}, []string{"kid-phone"})
+	e.clk.Advance(2 * d)
+	e.wantStatus(res2.Grant.ID, store.StatusExpired)
+	check("expiry")
+}
+
+func TestGrant_CustomWriteFailure(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "kid-phone", "tv")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+
+	e.fake.SetStatus(setRulesPath, 500)
+	res := e.create(kid.ID, []string{svc}, []string{"tv", "kid-phone"})
+	if res.Applied || !reflect.DeepEqual(res.Failed, res.Grant.Clients) {
+		t.Fatalf("create under a set_rules fault: %+v, want Failed == %v", res, res.Grant.Clients)
+	}
+	e.wantStatus(res.Grant.ID, store.StatusActive)
+
+	e.fake.SetResponse(setRulesPath, 0, nil)
+	if err := e.eng.SyncRules(ctx); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"@@||a.com^$client='kid-phone'|'tv'"}
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions %q", got)
+	}
+
+	e.fake.SetStatus(setRulesPath, 500)
+	err := e.eng.End(ctx, res.Grant.ID)
+	var rf *ErrRevertFailed
+	if !errors.As(err, &rf) || !reflect.DeepEqual(rf.Clients, res.Grant.Clients) {
+		t.Fatalf("End: %v, want *ErrRevertFailed over every client", err)
+	}
+	e.wantStatus(res.Grant.ID, store.StatusActive)
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions after a failed End: %q, want %q", got, want)
+	}
+}
+
+func TestGrant_UnknownCustom(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "kid-phone")
+	e.createService("Portal", "a.com")
+	for _, id := range []string{"custom:99", "custom:01", "custom:abc", "custom:"} {
+		_, err := e.eng.Create(ctx, kid.ID, []string{"youtube", id}, []string{"kid-phone"}, d)
+		var unknown *ErrUnknownService
+		if !errors.As(err, &unknown) || unknown.ID != id {
+			t.Fatalf("%s: err = %v, want *ErrUnknownService{%s}", id, err, id)
+		}
+	}
+	if got := builtin([]string{"youtube", "custom:1", "custom:01", "custom:abc", "tiktok"}); !reflect.DeepEqual(got, []string{"youtube", "tiktok"}) {
+		t.Fatalf("builtin kept a custom-namespace id: %q", got)
+	}
+	if gs, err := e.st.ListActiveGrants(ctx); err != nil || len(gs) != 0 {
+		t.Fatalf("grants stored: %+v %v", gs, err)
+	}
+	if n := e.posts() + e.setRulesPosts(); n != 1 { // the one set_rules from createService
+		t.Fatalf("AdGuard writes after a refused create: %d", n)
+	}
+}
+
+func TestDeleteService_RaceGrant(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "kid-phone")
+	for i := range 20 {
+		svc := e.createService(fmt.Sprintf("S%d", i), fmt.Sprintf("s%d.example", i)).Service
+		var (
+			wg      sync.WaitGroup
+			delErr  error
+			grantEr error
+		)
+		wg.Add(2)
+		go func() { defer wg.Done(); _, delErr = e.eng.DeleteService(ctx, svc.ID) }()
+		go func() {
+			defer wg.Done()
+			_, grantEr = e.eng.Create(ctx, kid.ID, []string{svc.ServiceID()}, []string{"kid-phone"}, d)
+		}()
+		wg.Wait()
+
+		var inUse *store.ErrServiceInUse
+		var unknown *ErrUnknownService
+		_, getErr := e.st.GetCustomService(ctx, svc.ID)
+		switch {
+		case grantEr == nil && errors.As(delErr, &inUse) && getErr == nil:
+		case delErr == nil && errors.As(grantEr, &unknown) && errors.Is(getErr, store.ErrCustomServiceNotFound):
+		default:
+			t.Fatalf("round %d: delete=%v grant=%v service-read=%v", i, delErr, grantEr, getErr)
+		}
+	}
+	active, err := e.st.ListActiveGrants(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range active {
+		for _, id := range g.Services {
+			n, _ := store.ParseCustomID(id)
+			if _, err := e.st.GetCustomService(ctx, n); err != nil {
+				t.Fatalf("grant %d covers deleted service %s", g.ID, id)
+			}
+		}
+	}
+}
+
+func TestGrant_MixedEndPartialFailure(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "Kid phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	res := e.create(kid.ID, []string{"youtube", svc}, []string{"Kid phone"})
+	want := []string{"@@||a.com^$client='Kid phone'"}
+
+	// The region write fails first: nothing else is attempted.
+	e.fake.SetStatus(setRulesPath, 500)
+	posts := e.posts()
+	var rf *ErrRevertFailed
+	if err := e.eng.End(ctx, res.Grant.ID); !errors.As(err, &rf) {
+		t.Fatalf("End under a set_rules fault: %v", err)
+	}
+	e.wantStatus(res.Grant.ID, store.StatusActive)
+	e.wantBlocks("Kid phone", "youtube", false)
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions %q, want %q", got, want)
+	}
+	if n := e.posts() - posts; n != 0 {
+		t.Fatalf("%d clients/update POSTs after the region write failed", n)
+	}
+	e.fake.SetResponse(setRulesPath, 0, nil)
+
+	// The region write succeeds, the built-in revert fails.
+	e.fake.SetUpdateStatus("Kid phone", 500)
+	if err := e.eng.End(ctx, res.Grant.ID); !errors.As(err, &rf) {
+		t.Fatalf("End under a clients/update fault: %v", err)
+	}
+	e.wantStatus(res.Grant.ID, store.StatusActive)
+	e.fake.SetUpdateStatus("Kid phone", 0)
+	// The region was rewritten without the grant before the revert failed.
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("exceptions after the region write: %q, want none", got)
+	}
+
+	// The grant is still active, so the next convergence pass (the
+	// reconciler's SyncRules) restores its exceptions from intent.
+	if err := e.eng.SyncRules(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions after re-convergence %q, want %q", got, want)
+	}
+}
+
+func TestGrant_EndMalformedRegion(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "kid-phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	res := e.create(kid.ID, []string{svc}, []string{"kid-phone"})
+
+	broken := []string{"||x^", rules.BeginMarker, "@@||a.com^$client='kid-phone'"}
+	e.fake.SetUserRules(broken)
+	posts := e.setRulesPosts()
+	err := e.eng.End(ctx, res.Grant.ID)
+	var rf *ErrRevertFailed
+	if !errors.As(err, &rf) {
+		t.Fatalf("err = %v, want *ErrRevertFailed", err)
+	}
+	if !strings.Contains(err.Error(), "managed rules region is malformed") || !errors.Is(err, rules.ErrMalformedRegion) {
+		t.Fatalf("message %q does not name the malformed region", err)
+	}
+	e.wantStatus(res.Grant.ID, store.StatusActive)
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("%d set_rules POSTs into a malformed region", n)
+	}
+	if !reflect.DeepEqual(e.fake.UserRules(), broken) {
+		t.Fatalf("user_rules changed: %q", e.fake.UserRules())
 	}
 }

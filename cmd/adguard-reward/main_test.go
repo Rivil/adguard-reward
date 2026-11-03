@@ -1359,6 +1359,292 @@ func TestRun_ButtonsWired(t *testing.T) {
 	}
 }
 
+// TestRun_CustomServicesWired boots run() on a data_dir holding a custom
+// service, as a previous process left it, and expects /services to list it
+// after the built-ins: proof main hands the store to api.Deps.
+func TestRun_CustomServicesWired(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	portal, err := st.CreateCustomService(context.Background(), "Portal", []string{"portal.example.com"})
+	_ = st.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+	ck := loginOK(t, c, base)
+
+	resp := call(t, c, http.MethodGet, base, "/api/v1/services", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("GET /api/v1/services = %d %s, want 200", resp.StatusCode, b)
+	}
+	var body struct {
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	n := len(body.Services)
+	if n < 2 {
+		t.Fatalf("services = %v, want the built-ins then Portal", body.Services)
+	}
+	want := map[string]any{"id": store.CustomServiceID(portal.ID), "name": "Portal", "icon": "", "custom": true}
+	if !reflect.DeepEqual(body.Services[n-1], want) {
+		t.Errorf("last service = %v, want %v", body.Services[n-1], want)
+	}
+	if body.Services[0]["custom"] != false {
+		t.Errorf("first service = %v, want a built-in with custom:false", body.Services[0])
+	}
+}
+
+// ---- custom services: persistence and region convergence ----------------
+
+// The managed region's markers, spelled out rather than imported so these
+// tests pin the locked marker_format as well as exercise it.
+const (
+	beginMarker = "! adguard-reward begin"
+	endMarker   = "! adguard-reward end"
+)
+
+// seedCustomService stores a custom service straight into the store at
+// dataDir, as a previous process would have left it.
+func seedCustomService(t *testing.T, dataDir, name string, domains []string) store.CustomService {
+	t.Helper()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	cs, err := st.CreateCustomService(context.Background(), name, domains)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cs
+}
+
+// seedChild stores a child owning clients, with no grant.
+func seedChild(t *testing.T, dataDir string, clients []string) {
+	t.Helper()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	if _, err := st.CreateChild(context.Background(), "Ada", clients); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// splitRegion returns the user_rules lines outside the managed markers, in
+// order, and the lines between them. ok is false unless exactly one begin
+// marker precedes exactly one end marker.
+func splitRegion(lines []string) (outside, inside []string, ok bool) {
+	b, e := -1, -1
+	for i, l := range lines {
+		switch l {
+		case beginMarker:
+			if b != -1 {
+				return nil, nil, false
+			}
+			b = i
+		case endMarker:
+			if e != -1 {
+				return nil, nil, false
+			}
+			e = i
+		}
+	}
+	if b == -1 || e < b {
+		return nil, nil, false
+	}
+	outside = append(append([]string{}, lines[:b]...), lines[e+1:]...)
+	inside = append([]string{}, lines[b+1:e]...)
+	return outside, inside, true
+}
+
+// concat joins line groups into one fresh slice.
+func concat(groups ...[]string) []string {
+	var out []string
+	for _, g := range groups {
+		out = append(out, g...)
+	}
+	return out
+}
+
+type customServiceWire struct {
+	ID        int64    `json:"id"`
+	ServiceID string   `json:"service_id"`
+	Name      string   `json:"name"`
+	Domains   []string `json:"domains"`
+	Applied   bool     `json:"applied"`
+}
+
+func TestRun_CustomServicesSurviveRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	resp := call(t, c, http.MethodPost, base, "/api/v1/custom-services",
+		map[string]any{"name": "Portal", "domains": []string{"portal.example.com", "cdn.portal.example.com"}},
+		withCookie(loginOK(t, c, base).Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST custom service: %d %s", resp.StatusCode, b)
+	}
+	var created customServiceWire
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		t.Fatal(err)
+	}
+	if created.ServiceID != store.CustomServiceID(created.ID) {
+		t.Fatalf("created = %+v, want service_id %q", created, store.CustomServiceID(created.ID))
+	}
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base2 := "http://" + r2.addr
+	ck := loginOK(t, c, base2)
+
+	resp = call(t, c, http.MethodGet, base2, "/api/v1/custom-services", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("GET /api/v1/custom-services after restart: %d %s", resp.StatusCode, b)
+	}
+	var list struct {
+		CustomServices []customServiceWire `json:"custom_services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		t.Fatal(err)
+	}
+	if len(list.CustomServices) != 1 {
+		t.Fatalf("after restart custom services = %+v, want only %+v", list.CustomServices, created)
+	}
+	if got := list.CustomServices[0]; got.ID != created.ID || got.ServiceID != created.ServiceID ||
+		got.Name != "Portal" || !reflect.DeepEqual(got.Domains, created.Domains) {
+		t.Errorf("after restart custom service = %+v, want %+v", got, created)
+	}
+
+	resp = call(t, c, http.MethodGet, base2, "/api/v1/services", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("GET /api/v1/services after restart: %d %s", resp.StatusCode, b)
+	}
+	var cat struct {
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&cat); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]any{"id": created.ServiceID, "name": "Portal", "icon": "", "custom": true}
+	if n := len(cat.Services); n == 0 || !reflect.DeepEqual(cat.Services[n-1], want) {
+		t.Errorf("after restart /services = %v, want it to end with %v", cat.Services, want)
+	}
+}
+
+func TestRun_CustomRulesRestoredAtStartup(t *testing.T) {
+	// An hour-long tick: anything converged by the first /healthz answer was
+	// converged by the startup pass, not the reconciler loop.
+	old := reconcileInterval
+	reconcileInterval = time.Hour
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	portal := seedCustomService(t, dataDir, "Portal", []string{"portal.example.com"})
+	id := seedGrant(t, dataDir, []string{"Kid phone"}, []string{portal.ServiceID()}, time.Now().Add(-time.Minute))
+
+	// The region as the previous process left it, mid-grant: the exception
+	// only. The foreign lines include whitespace and modifiers a normaliser
+	// would be tempted to touch.
+	before := []string{"! parent's own rules", "||ads.example^", "  @@||spaced.example^  "}
+	after := []string{"@@||allowed.example^$important", "", "! last line"}
+	fake.SetUserRules(concat(before,
+		[]string{beginMarker, "@@||portal.example.com^$client='Kid phone'", endMarker},
+		after))
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	healthz(t, r.addr)
+
+	got := fake.UserRules()
+	outside, inside, ok := splitRegion(got)
+	if !ok {
+		t.Fatalf("user_rules after startup have no well-formed region: %q", got)
+	}
+	if want := concat(before, after); !reflect.DeepEqual(outside, want) {
+		t.Errorf("lines outside the markers = %q, want them byte-identical: %q", outside, want)
+	}
+	if want := []string{"||portal.example.com^$client='Kid phone'"}; !reflect.DeepEqual(inside, want) {
+		t.Errorf("region after startup = %q, want exactly the block lines %q and no @@ line", inside, want)
+	}
+	if got := grantStatus(t, dataDir, id); got != store.StatusExpired {
+		t.Errorf("grant status = %q, want expired: it ended while the process was down", got)
+	}
+}
+
+func TestRun_CustomRulesReconcilerTick(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = 50 * time.Millisecond
+	t.Cleanup(func() { reconcileInterval = old })
+
+	const block = "||portal.example.com^$client='Kid phone'"
+	before := []string{"! mine", "||x.example^"}
+	after := []string{"@@||y.example^"}
+	// A parent's hand edit inside the markers: the block line deleted and an
+	// exception added that no grant backs.
+	tampered := concat(before, []string{beginMarker, "@@||portal.example.com^$client='Kid phone'", endMarker}, after)
+	converged := concat(before, []string{beginMarker, block, endMarker}, after)
+
+	seed := func(fake *adguardtest.Server) string {
+		dataDir := t.TempDir()
+		seedCustomService(t, dataDir, "Portal", []string{"portal.example.com"})
+		seedChild(t, dataDir, []string{"Kid phone"})
+		fake.SetUserRules(concat(before, after))
+		return dataDir
+	}
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	start(t, []string{"--config", writeConfigIn(t, seed(fake), fake.URL(), "")}, nil)
+	// The startup pass appends the missing region after the foreign lines.
+	if got, want := fake.UserRules(), concat(before, after, []string{beginMarker, block, endMarker}); !reflect.DeepEqual(got, want) {
+		t.Fatalf("user_rules after startup = %q, want %q", got, want)
+	}
+
+	posts := fake.CountRequests(http.MethodPost, "/control/filtering/set_rules")
+	fake.SetUserRules(tampered)
+	if !waitFor(2*time.Second, func() bool { return reflect.DeepEqual(fake.UserRules(), converged) }) {
+		t.Fatalf("manual edit inside the markers not undone within 2 s at a 50 ms tick; user_rules = %q, want %q",
+			fake.UserRules(), converged)
+	}
+	// Further ticks find the region converged and write nothing.
+	time.Sleep(300 * time.Millisecond)
+	if n := fake.CountRequests(http.MethodPost, "/control/filtering/set_rules") - posts; n != 1 {
+		t.Errorf("reconciler issued %d set_rules POSTs undoing one edit, want exactly 1", n)
+	}
+	if got := fake.UserRules(); !reflect.DeepEqual(got, converged) {
+		t.Errorf("user_rules drifted after convergence: %q, want %q", got, converged)
+	}
+
+	// At the production cadence the same edit is still there half a second on.
+	reconcileInterval = 60 * time.Second
+	fake2 := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	start(t, []string{"--config", writeConfigIn(t, seed(fake2), fake2.URL(), "")}, nil)
+	fake2.SetUserRules(tampered)
+	time.Sleep(500 * time.Millisecond)
+	if got := fake2.UserRules(); !reflect.DeepEqual(got, tampered) {
+		t.Errorf("edit undone within 500 ms at a 60 s interval (%q); something other than the reconciler tick wrote", got)
+	}
+}
+
 // TestRun_NoraConfig boots the process on the *shipped* nora template, with
 // only what cannot be committed supplied from the environment, and simulates
 // tailscale serve: requests arrive from 127.0.0.1 carrying the phone's tailnet

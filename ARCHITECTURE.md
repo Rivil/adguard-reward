@@ -160,6 +160,22 @@ YAML file plus `ADGUARD_REWARD_*` env overrides (defaults < file < env; a blank 
 
 _introduced 01-config-adguard-client · f7db57d · extended 02-auth-sessions · a7b630a · extended 06-deploy-nora · a724814_
 
+### Custom services
+
+Parents define their own services (a unique name plus manually entered plain hostnames) in Settings → Services. `/api/v1/custom-services` validates each domain (400 naming `domains[i]`), returns 409 on a name clash with a built-in or custom service, on a domain owned by another custom service, or on deleting a service an active grant holds, and a delete strips the service from buttons. Stored services surface as never-reused `custom:<n>` ids merged after AdGuard's built-ins in the catalogue, so they are grantable, pickable as button services and icons, folded into the child's blocked view from intent, and drawn with a letter avatar. Grants split built-in ids (blocked_services) from custom ids (ref-counted `@@` exceptions in the managed rules region).
+
+- decodeCustomService — internal/api/custom_services.go:55
+- API.handleCustomServiceCreate — internal/api/custom_services.go:180
+- Store.CreateCustomService — internal/store/custom_services.go:97
+- Store.DeleteCustomService — internal/store/custom_services.go:191
+- API.catalogue — internal/api/clients.go:293
+- Engine.End — internal/grants/grants.go:406
+- covered — internal/blocked/blocked.go:257
+- ServiceIcon — web/src/lib/ServiceIcon.svelte:1
+- Services — web/src/lib/Services.svelte:1
+
+_introduced custom-services · 2c41430 · 89fbea5 · d12d4dc_
+
 ### Device labelling
 
 A device AdGuard sees but no persistent client covers (by IP, CIDR or a MAC AdGuard's DHCP leased that IP to) is listed as unlabelled on `GET /api/v1/clients`, whatever its source, sorted by hostname with `[ip]` or `[ip, mac]` suggested ids. `POST /api/v1/clients` creates it as a named AdGuard client (locked add with name and canonical-id pre-checks, an AdGuard 400 surfaced as `InputRejectedError`; 400 / 409 / 502 to the caller) and can assign it to a child in the same action, giving it that child's baseline (siblings' effective list or the global list ∪ active-grant services) so a device added mid-grant never inherits the temporary unblock. The children page prefills name and ids and reloads without a page refresh.
@@ -288,6 +304,20 @@ Failed logins are budgeted per client IP (5/min, lockout doubling 1m → 1h on e
 - api.ClientIP — internal/api/clientip.go:19
 
 _introduced 02-auth-sessions · 6835089_
+
+### Managed rules region
+
+The app owns only the AdGuard user_rules lines between `! adguard-reward begin` and `! adguard-reward end`. The region is rendered from intent: one `||domain^$client=...` block line per custom-service domain covering every mapped child client, and `@@` exceptions for the union of active grants, with urlfilter-faithful `$client` quoting. It is spliced in under the engine mutex by a locked read-modify-write that writes only on change, leaves every outside line byte-identical, appends a missing region, and refuses malformed markers. Service CRUD, grant lifecycle and child/client changes resync it, and every startup and tick reconcile pass converges it, undoing manual edits inside the markers.
+
+- Splice — internal/rules/region.go:30
+- Render — internal/rules/render.go:71
+- QuoteClient — internal/rules/render.go:38
+- Client.EditUserRules — internal/adguard/rules.go:19
+- Engine.syncRules — internal/grants/rules.go:45
+- Engine.Reconcile — internal/grants/reconcile.go:42
+- API.resyncRules — internal/api/children.go:321
+
+_introduced custom-services · 2ef485b · b0307d0 · 0e8340d · e0e25c2_
 
 ### Per-child blocked view
 

@@ -411,3 +411,73 @@ func TestCompute_UnblockedByOrder(t *testing.T) {
 		t.Errorf("UnblockedBy = %+v, want %+v", yt.UnblockedBy, want)
 	}
 }
+
+// customInput is Ada's view of a custom service on her clients c1 and c2;
+// c2 is shared with Ben.
+func customInput(grants ...GrantCover) Input {
+	return Input{
+		Clients: []adguard.PersistentClient{client("c1", false), client("c2", false)},
+		Custom:  []CustomService{{ID: "custom:1", Name: "Portal"}},
+		Mapped:  []string{"c1", "c2"},
+		Self:    ada.ID,
+		Owners:  map[string][]ChildRef{"c1": {ada}, "c2": {ada, ben}},
+		Grants:  grants,
+	}
+}
+
+func TestFold_Custom(t *testing.T) {
+	v := Compute(customInput())
+	portal := service(t, v, "custom:1")
+	if portal.State != StateBlocked || !portal.Custom || portal.Icon != "" || portal.Name != "Portal" {
+		t.Fatalf("no grant: %+v, want blocked custom with no icon", portal)
+	}
+	if !reflect.DeepEqual(portal.Differs, []string{}) || !reflect.DeepEqual(portal.UnblockedBy, noUnblock) {
+		t.Fatalf("no grant: differs %v unblocked_by %v", portal.Differs, portal.UnblockedBy)
+	}
+
+	own := service(t, Compute(customInput(GrantCover{ID: 3, Child: ada, Services: []string{"custom:1"}, Clients: []string{"c1", "c2"}})), "custom:1")
+	if own.State != StateUnblocked || !reflect.DeepEqual(own.UnblockedBy, noUnblock) {
+		t.Fatalf("own grant on both: %+v, want unblocked and unattributed", own)
+	}
+
+	sib := service(t, Compute(customInput(GrantCover{ID: 9, Child: ben, Services: []string{"youtube", "custom:1"}, Clients: []string{"c2", "b-phone"}})), "custom:1")
+	if sib.State != StatePartial || !reflect.DeepEqual(sib.Differs, []string{"c2"}) {
+		t.Fatalf("sibling grant on c2: %+v, want partial differing on c2", sib)
+	}
+	if want := []Unblock{{Client: "c2", GrantID: 9, Child: ben}}; !reflect.DeepEqual(sib.UnblockedBy, want) {
+		t.Fatalf("UnblockedBy %+v, want %+v", sib.UnblockedBy, want)
+	}
+
+	// A grant on another custom service, or on c1 for a built-in, opens nothing here.
+	other := service(t, Compute(customInput(
+		GrantCover{ID: 4, Child: ada, Services: []string{"custom:2"}, Clients: []string{"c1", "c2"}},
+		GrantCover{ID: 5, Child: ada, Services: []string{"youtube"}, Clients: []string{"c1"}},
+	)), "custom:1")
+	if other.State != StateBlocked {
+		t.Fatalf("unrelated grants: %+v, want blocked", other)
+	}
+}
+
+func TestFold_CustomMissingClient(t *testing.T) {
+	in := customInput(GrantCover{ID: 9, Child: ben, Services: []string{"custom:1"}, Clients: []string{"c2"}})
+	in.Clients = []adguard.PersistentClient{client("c1", false)} // c2 is gone from AdGuard
+	portal := service(t, Compute(in), "custom:1")
+	if portal.State != StateBlocked || !reflect.DeepEqual(portal.Differs, []string{}) {
+		t.Fatalf("missing c2 counted: %+v, want blocked on the one present client", portal)
+	}
+}
+
+func TestFold_CustomAfterCatalogue(t *testing.T) {
+	in := sharedInput(t)
+	in.Custom = []CustomService{{ID: "custom:2", Name: "B"}, {ID: "custom:1", Name: "A"}}
+	v := Compute(in)
+	n := len(v.Services)
+	if n < 3 || v.Services[n-2].ID != "custom:2" || v.Services[n-1].ID != "custom:1" {
+		t.Fatalf("custom entries not appended in given order: %+v", v.Services)
+	}
+	for _, s := range v.Services[:n-2] {
+		if s.Custom {
+			t.Fatalf("built-in %s marked custom", s.ID)
+		}
+	}
+}

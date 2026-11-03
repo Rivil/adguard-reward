@@ -313,7 +313,7 @@ func TestChildren_NoAdGuard(t *testing.T) {
 		t.Fatalf("DELETE: %d", w.Code)
 	}
 	for _, r := range h.fake.Requests() {
-		if r.Path != "/control/login" {
+		if r.Path != "/control/login" && !isRulesRead(r) {
 			t.Errorf("CRUD hit AdGuard: %s %s", r.Method, r.Path)
 		}
 	}
@@ -420,7 +420,7 @@ func TestChildUpdate_RemoveOnly(t *testing.T) {
 		t.Errorf("remove-only PUT made %d update POSTs, want 0", n)
 	}
 	for _, r := range h.fake.Requests() {
-		if r.Path != "/control/login" {
+		if r.Path != "/control/login" && !isRulesRead(r) {
 			t.Errorf("remove-only PUT hit AdGuard: %s %s", r.Method, r.Path)
 		}
 	}
@@ -534,11 +534,18 @@ func (h *harness) updatesNaming(name string) [][]string {
 func (h *harness) adguardSince(mark int) int {
 	n := 0
 	for _, r := range h.fake.Requests()[mark:] {
-		if r.Path != "/control/login" {
+		if r.Path != "/control/login" && !isRulesRead(r) {
 			n++
 		}
 	}
 	return n
+}
+
+// isRulesRead is the managed-rules resync's user_rules read, which every
+// child write now makes; with no custom services it never leads to a write,
+// so the "child write makes no client writes" checks ignore it.
+func isRulesRead(r adguardtest.Request) bool {
+	return r.Method == http.MethodGet && r.Path == "/control/filtering/status"
 }
 
 // owners maps each child name to its clients from GET /children.
@@ -654,10 +661,14 @@ func TestChildCreate_SharedAdopts(t *testing.T) {
 		t.Errorf("Kid phone blocked_services = %v, want %v (global list unioned in)", list, want)
 	}
 
+	// No adoption for a child without clients: the only AdGuard call is the
+	// managed-rules resync's read, and with nothing to manage it writes nothing.
 	mark := len(h.fake.Requests())
 	h.createOK(cookie, "Dee")
-	if n := h.adguardSince(mark); n != 0 {
-		t.Errorf("POST without clients made %d AdGuard requests, want 0", n)
+	for _, req := range h.fake.Requests()[mark:] {
+		if req.Method != http.MethodGet || req.Path != "/control/filtering/status" {
+			t.Errorf("POST without clients made %s %s, want only the user_rules read", req.Method, req.Path)
+		}
 	}
 }
 
@@ -751,5 +762,92 @@ func TestChildUpdate_AdoptStoreReadFails(t *testing.T) {
 	}
 	if len(got.Clients) != 0 {
 		t.Errorf("Ben clients = %v, want [] (nothing saved)", got.Clients)
+	}
+}
+
+// blockLine returns the managed region's ||domain^ block line, or "".
+func blockLine(h *harness, domain string) string {
+	for _, l := range managedRegion(h) {
+		if strings.HasPrefix(l, "||"+domain+"^") {
+			return l
+		}
+	}
+	return ""
+}
+
+func TestChildUpdate_ResyncsRules(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "kid-phone")
+	createCustom(t, h, cookie, "Portal", "a.com")
+	if got := blockLine(h, "a.com"); got != "||a.com^$client='kid-phone'" {
+		t.Fatalf("setup block line %q", got)
+	}
+
+	w := h.do(http.MethodPut, childPath(ada.ID), map[string]any{"name": "Ada", "clients": []string{"kid-phone", "kid-tablet"}}, withCookie(cookie))
+	if w.Code != http.StatusOK {
+		t.Fatalf("PUT = %d %s", w.Code, w.Body)
+	}
+	if got, want := blockLine(h, "a.com"), "||a.com^$client='kid-phone'|'kid-tablet'"; got != want {
+		t.Fatalf("block line after adding kid-tablet %q, want %q", got, want)
+	}
+}
+
+func TestChildUpdate_RemovalResyncs(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "kid-phone", "kid-tablet")
+	createCustom(t, h, cookie, "Portal", "a.com")
+	if got := blockLine(h, "a.com"); !strings.Contains(got, "'kid-tablet'") {
+		t.Fatalf("setup block line %q", got)
+	}
+
+	w := h.do(http.MethodPut, childPath(ada.ID), map[string]any{"name": "Ada", "clients": []string{"kid-phone"}}, withCookie(cookie))
+	if w.Code != http.StatusOK {
+		t.Fatalf("PUT = %d %s", w.Code, w.Body)
+	}
+	if got, want := blockLine(h, "a.com"), "||a.com^$client='kid-phone'"; got != want {
+		t.Fatalf("block line after removing kid-tablet %q, want %q", got, want)
+	}
+}
+
+func TestChildDelete_ResyncsRules(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "kid-phone", "kid-tablet")
+	h.createOK(cookie, "Ben", "Zed-TV")
+	createCustom(t, h, cookie, "Portal", "a.com")
+
+	if w := h.do(http.MethodDelete, childPath(ada.ID), nil, withCookie(cookie)); w.Code != http.StatusNoContent {
+		t.Fatalf("DELETE = %d %s", w.Code, w.Body)
+	}
+	for _, c := range []string{"'kid-phone'", "'kid-tablet'"} {
+		noRegionLine(t, h, c)
+	}
+	if got, want := blockLine(h, "a.com"), "||a.com^$client='Zed-TV'"; got != want {
+		t.Fatalf("block line after delete %q, want %q", got, want)
+	}
+}
+
+func TestChildCreate_SyncFailure(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	createCustom(t, h, cookie, "Portal", "a.com")
+	h.fake.SetStatus(setRulesPath, http.StatusInternalServerError)
+
+	posts := h.fake.CountRequests("POST", setRulesPath)
+	w := h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "Ada", "clients": []string{"kid-phone"}}, withCookie(cookie))
+	if w.Code != http.StatusCreated {
+		t.Fatalf("POST /children under a set_rules fault = %d %s, want 201", w.Code, w.Body)
+	}
+	if n := h.fake.CountRequests("POST", setRulesPath) - posts; n != 1 {
+		t.Fatalf("%d set_rules attempts, want the one failed resync", n)
+	}
+	kids, err := h.store.ListChildren(context.Background())
+	if err != nil || len(kids) != 1 || kids[0].Name != "Ada" {
+		t.Fatalf("child not stored: %+v %v", kids, err)
+	}
+	if !strings.Contains(h.logs.String(), "reconciler will retry") {
+		t.Errorf("sync failure not logged")
 	}
 }

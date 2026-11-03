@@ -1,0 +1,265 @@
+task_seq = 18
+
+[phase]
+  id = "custom-services"
+
+# Wire conventions (agreed in panel synthesis, panel/synthesis.md):
+# - custom catalogue id is "custom:<n>"; resource {id:n, service_id:"custom:n", name, domains[], applied}
+#   at /api/v1/custom-services[/{n}]; applied=false = stored but region write failed (reconciler converges)
+# - GET /api/v1/services entries gain custom:bool; custom entries carry icon ""
+# - AdGuard: GET /control/filtering/status -> user_rules[]; POST /control/filtering/set_rules {"rules":[...]}
+# - region order: begin marker, all ||d^$client=... block lines, all @@||d^$client=... exception lines
+#   (each sorted by service id, domain), end marker; one @@ line per domain over the union of covered clients
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Splice managed region into user_rules"
+  files = ["internal/rules/region.go", "internal/rules/region_test.go"]
+  description = '''Pure Splice(current, managed []string) ([]string, error): replaces lines between `! adguard-reward begin` / `! adguard-reward end` (markers kept) with managed; no region -> appends begin+managed+end at the tail. Lone begin, lone end, end-before-begin or a second pair -> ErrMalformedRegion, nil slice, no repair.'''
+  covers = ["c-9"]
+  test_contract = [
+    '''if lines outside the markers are altered, TestSplice_PreservesOutside fails: a table of inputs with blank lines, duplicate lines, trailing spaces, ! and # comments, unicode, and a line containing "adguard-reward begin" as a substring (not the exact marker) keeps prefix and suffix reflect.DeepEqual; a version that trims, dedupes, sorts or substring-matches the marker fails''',
+    '''if a missing region is not appended at the end, TestSplice_AppendsWhenAbsent fails: output == current ++ [begin, managed..., end]; prepending or inserting after the first comment fails''',
+    '''if malformed markers are repaired instead of refused, TestSplice_Malformed fails: each of lone begin, lone end, end-before-begin and two pairs returns ErrMalformedRegion and a nil slice''',
+    '''if Splice is not idempotent, TestSplice_Idempotent fails: Splice(Splice(x, m), m) == Splice(x, m)''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Validate domains and render region rules"
+  files = ["internal/rules/domain.go", "internal/rules/domain_test.go", "internal/rules/render.go", "internal/rules/render_test.go"]
+  description = "NormalizeDomain lowercases, strips one trailing dot, accepts only ASCII LDH labels (<=253 chars, >=2 labels, punycode ok, non-ASCII rejected). QuoteClient single-quotes a client name and backslash-escapes ' , | $ only. Amended 2026-11-02 (user-approved during execute) after reading urlfilter@347285f3f046's $client decoding: the options delimiter is the last `$` not preceded by `\\`; `\\,` and `\\|` are unescaped by the option and client splits; inside single quotes only `\\'` is unescaped, so `\"` and `\\` stay bare (escaping them leaves a literal backslash and the rule never matches). Names that are empty, contain a newline/CR, or have a backslash before ' , | $ or at the end are refused: dropped from the line and logged. Render(services, childClients, covers) returns deterministic body lines (no markers): per domain one block line over the union of mapped child clients and one @@ line over the union of clients any active grant covers that service on."
+  covers = ["c-2", "c-6", "c-7"]
+  test_contract = ["if any domain check is dropped, TestNormalizeDomain fails its row: https://a.com, a.com/x, a.com:443, *.a.com, \"a .com\", \" a.com\", \"a.com\\n\", ||a.com^, a.com^, a.com$important, /a\\.com/, @@a.com, com, \"\" and ä.com each return an error; Example.COM. -> example.com", "if client quoting is wrong, TestQuoteClient fails: QuoteClient(`Ann's \"tab\", |x`) == `'Ann\\'s \"tab\"\\, \\|x'` exactly (amended: \" stays bare per urlfilter) and every accepted name decodes back to itself through a decoder mirroring urlfilter@347285f3f046; a client name containing a newline is dropped from the line (and logged), never split across lines", "if backslash or dollar handling in client names is wrong, TestQuoteClient fails: QuoteClient(`a\\b`) == `'a\\b'` exactly (amended: urlfilter never unescapes \\\\), QuoteClient(`a$b`) == `'a\\$b'` (urlfilter skips \\$ when finding the options delimiter), and `a\\'b`, `a\\,b`, `a\\|b`, `a\\$b` and a trailing backslash are refused", "if block lines are mis-scoped, TestRender_Block fails: 1 service [a.com,b.com], child clients [kid-phone,tv], no covers -> exactly ||a.com^$client='kid-phone'|'tv' and the b.com twin; no adult client present", "if an empty client set yields an unscoped rule, TestRender_NoClients fails: zero mapped child clients -> no block line at all (an unscoped ||d^ would block adults)", "if grant exceptions are missing or duplicated, TestRender_Cover fails: cover {custom:1,[kid-phone,tv]} adds exactly one @@ line per domain", "if ref-counting by union breaks, TestRender_SharedCover fails: covers A{custom:1,[a-phone,tv]} + B{custom:1,[b-phone,tv]} then only B -> the a.com exception is 'b-phone'|'tv' (tv kept, a-phone gone); dropping both removes the line", "if output is order-dependent, TestRender_Deterministic fails: 100 shuffled-input runs produce byte-identical output"]
+  status = "done"
+
+[[task]]
+  id = "t-3"
+  wave = 1
+  title = "AdGuard user_rules locked read-modify-write + fake"
+  files = ["internal/adguard/rules.go", "internal/adguard/rules_test.go", "internal/adguard/adguardtest/server.go", "internal/adguard/adguardtest/testdata/filtering_status.json", "internal/adguard/client.go"]
+  description = '''Client.EditUserRules(ctx, fn) runs under a dedicated mutex: GET /control/filtering/status .user_rules, apply fn, POST /control/filtering/set_rules only when the result differs. Confirm endpoint shapes against AdGuard's OpenAPI before coding. The fake serves both from mutable state with SetUserRules/UserRules knobs and an in-flight counter on the filtering paths; faults via SetStatus.'''
+  covers = ["c-8", "c-9"]
+  test_contract = [
+    '''if a no-op edit still writes, TestEditUserRules_NoOp fails: fn returning identical lines -> 0 CountRequests("POST","/control/filtering/set_rules")''',
+    '''if a read or fn failure still writes, TestEditUserRules_FailClosed fails: GET 502 -> fn never called, 0 POSTs, error returned; fn error -> 0 POSTs, error returned''',
+    '''if null handling breaks, TestEditUserRules_Null fails: user_rules null decodes to []; appending a region posts {"rules":[...]}, never null''',
+    '''if the mutex is removed, TestEditUserRules_Concurrent fails: 20 concurrent EditUserRules each appending a distinct line -> all 20 present and filtering in-flight max == 1''',
+    '''if the body mangles existing lines, TestEditUserRules_Verbatim fails: set_rules body carries every original line byte-for-byte including blank lines and trailing whitespace''',
+    '''if write errors are swallowed, TestEditUserRules_WriteError fails: set_rules 500 -> *StatusError''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-4"
+  wave = 1
+  title = "Store custom services with ownership constraints"
+  files = ["internal/store/migrations/0007_custom_services.sql", "internal/store/custom_services.go", "internal/store/custom_services_test.go"]
+  description = '''custom_services(id, name, name_key UNIQUE) + custom_service_domains(service_id FK CASCADE, position, domain UNIQUE). Create/Get/List; Update replaces name and whole domain set in one tx. Delete in one tx: an active grant listing custom:<id> -> *ErrServiceInUse{GrantID}; else strip the id from button services, delete buttons left empty, clear any button icon equal to the id, delete the row. Exports CustomServiceID, ParseCustomID, IsCustomServiceID.'''
+  covers = ["c-1", "c-3", "c-4"]
+  test_contract = ["if custom services do not persist, TestCustomServices_Persist fails: create, Close, store.Open same dir -> same name and domains in original order", "if uniqueness is not enforced, TestCustomServices_Unique fails: \"TikTok Web\" then \"tiktok web\" -> ErrNameTaken with one row; a domain owned by A -> *ErrDomainTaken{Owner:A} and nothing inserted; Update B to take A's domain -> same error and B's old domains intact", "if update is not atomic, TestCustomServices_Update fails: {a,b}->{b,c} yields exactly {b,c}; an injected failure after the delete step rolls back to {a,b}", "if delete ignores active grants, TestCustomServices_DeleteInUse fails: active grant 7 on custom:1 -> *ErrServiceInUse{GrantID:7} with service, domains and buttons untouched; an ended or expired grant does not block delete", "if delete leaves dangling button refs, TestCustomServices_DeleteStripsButtons fails: [custom:1, youtube] -> [youtube] with position kept, a [custom:1]-only button is gone, icon \"custom:1\" reads back \"\"", "if id parsing is loose, TestIsCustomServiceID fails: \"youtube\" -> false, \"custom:7\" -> true, \"custom:\" -> false; TestMigrate_Order lists 0007 last", "if a same-service duplicate domain causes a partial insert, TestCustomServices_SelfDuplicate fails: Create with [a.com, a.com] returns an error and inserts no row or domains (the API dedupes first, so this is the store's backstop)"]
+  status = "done"
+
+[[task]]
+  id = "t-5"
+  wave = 1
+  title = "SPA custom-service client, route, letter avatar"
+  files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts", "web/src/lib/ServiceIcon.svelte", "web/src/lib/ServiceIcon.test.ts"]
+  description = '''Service gains custom: boolean; adds CustomService type, list/create/update/deleteCustomService, and Route 'services' <-> '/services'. ServiceIcon renders the data-URL <img> when icon is non-empty, else a span with the uppercased first grapheme of the name ('?' when blank).'''
+  covers = ["c-1", "c-5"]
+  test_contract = [
+    '''if the avatar falls back to a broken image, ServiceIcon.test 'letter avatar' fails: {name:'school portal', icon:''} renders "S" and no <img>; "  " -> "?"; a leading emoji renders whole, not half a surrogate pair; a non-empty icon renders the <img>''',
+    '''if the client hits the wrong endpoint, api.test 'custom services' fails: createCustomService('Portal',['a.com']) -> POST /api/v1/custom-services {name,domains} with CSRF header; update(3,...) -> PUT .../3; delete(3) -> DELETE .../3''',
+    '''if error details are lost, api.test 'custom service errors' fails: 400 -> messageFor names the bad domain; 409 {message, grant_id:7} -> ApiError carrying grantId 7''',
+    '''if routing is not wired, api.test 'services route' fails: navigate('services') pushes '/services'; popstate on '/services' sets route 'services' ''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-6"
+  wave = 2
+  title = "Engine-owned region sync and custom-service CRUD"
+  files = ["internal/grants/rules.go", "internal/grants/rules_test.go", "internal/grants/grants.go"]
+  description = "syncRules(ctx, actx, exclude int64) under e.mu: reads custom services, children and active grants (dropping exclude), Render -> EditUserRules(Splice); any store read error aborts with no AdGuard call. Exported Engine.SyncRules(ctx) takes e.mu and calls it for API callers. Engine.CreateService/UpdateService/DeleteService do the store op then syncRules under e.mu and return {Service, Applied}; a region-write failure gives Applied=false and keeps the row. Store and AdGuard interfaces extended."
+  covers = ["c-1", "c-3", "c-4", "c-9"]
+  depends_on = ["t-1", "t-2", "t-3", "t-4"]
+  test_contract = [
+    '''if a read failure renders an empty region, TestSyncRules_ReadFailure fails: ListActiveGrants or custom-list read failure -> 0 set_rules POSTs (an empty region would unblock every kid)''',
+    '''if block scope is wrong, TestCreateService_BlocksChildren fails: Create [a.com] with children on [kid-phone,kid-tablet] and unmapped adult dad-laptop -> ||a.com^$client='kid-phone'|'kid-tablet' and dad-laptop appears nowhere''',
+    '''if edits leave stale rules, TestUpdateService_Domains fails: Update {a,b}->{b,c} under an active grant -> block and @@ lines name only b.com and c.com; no line contains a.com''',
+    '''if delete leaves rules or touches foreign lines, TestDeleteService fails: delete without a grant -> no region line contains its domains and lines outside the markers are byte-identical; delete with an active grant -> ErrServiceInUse and 0 POSTs''',
+    '''if a write failure loses the row or errors, TestCreateService_WriteFailure fails: set_rules failure -> service stored, Applied=false, nil error; a malformed region in the fake -> Applied=false, 0 POSTs, user_rules unchanged''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-7"
+  wave = 2
+  title = "Merge custom services into API catalogue; wire main"
+  files = ["internal/api/api.go", "internal/api/clients.go", "internal/api/catalogue_test.go", "cmd/adguard-reward/main.go", "cmd/adguard-reward/main_test.go"]
+  description = '''Deps gains CustomServices (List), wired to the store in main. a.catalogue(ctx) returns AdGuard.Services plus custom services as {id:"custom:n", name, icon:"", custom:true}; handleServices serves it. The raw AdGuard catalogue stays reachable for built-in-only paths (blocked.go, the built-in name-clash check).'''
+  covers = ["c-5"]
+  depends_on = ["t-4"]
+  test_contract = [
+    '''if custom services are missing from the catalogue, TestServices_IncludesCustom fails: with "Portal" stored, GET /api/v1/services lists catalogue entries (custom:false) then {id:"custom:1",name:"Portal",icon:"",custom:true}''',
+    '''if custom entries mask an outage, TestServices_CatalogueDown fails: AdGuard catalogue 502 -> /services 502''',
+    '''if main.go wiring is missing, a TestRun_ButtonsWired-style boot through run() fails: the stored custom service is absent from /services or the handler panics''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-8"
+  wave = 2
+  title = "Letter avatar in grant form / button editor"
+  files = ["web/src/lib/GrantForm.svelte", "web/src/lib/GrantForm.test.ts"]
+  description = '''GrantForm renders every service row through ServiceIcon. The button editor embeds GrantForm (Buttons.svelte), so this also delivers c-5's "button service".'''
+  covers = ["c-5"]
+  depends_on = ["t-5"]
+  test_contract = [
+    '''if custom services are treated as stale, GrantForm.test 'custom service row' fails: a custom:true catalogue entry is selectable with avatar "S" and NOT marked "no longer in catalogue"''',
+    '''if selection drops custom ids, GrantForm.test 'custom service selection' fails: ticking it puts 'custom:1' into value.services in tick order''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-9"
+  wave = 2
+  title = "Custom services on Home and Buttons; Services nav"
+  files = ["web/src/lib/Home.svelte", "web/src/lib/Home.test.ts", "web/src/lib/Buttons.svelte", "web/src/lib/Buttons.test.ts"]
+  description = '''Home's button tiles and blocked list use ServiceIcon (iconFor no longer returns null for a custom first service). Buttons' icon preview uses ServiceIcon and its select includes custom services. Home's header gains "Services" next to "Buttons".'''
+  covers = ["c-5"]
+  depends_on = ["t-5"]
+  test_contract = [
+    '''if the blocked list ignores custom services, Home.test 'custom blocked entry' fails: {id:'custom:1',name:'Portal',icon:'',state:'blocked'} -> avatar "P" plus the blocked label; partial state shows the partial badge''',
+    '''if a custom button renders a broken image, Home.test 'custom button tile' fails: a button [custom:1] renders avatar "P" with no broken <img>''',
+    '''if custom icons are not pickable, Buttons.test 'custom icon' fails: selecting icon custom:1 previews "P" and Save sends icon 'custom:1' ''',
+    '''if the nav link is missing, Home.test 'services nav' fails: clicking "Services" sets location '/services' ''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-10"
+  wave = 2
+  title = "Services settings page"
+  files = ["web/src/lib/Services.svelte", "web/src/lib/Services.test.ts", "web/src/App.svelte", "web/src/App.test.ts"]
+  description = '''Route 'services' renders Services.svelte: list of custom services (avatar, name, domains); create/edit form with name + one-domain-per-line textarea (trimmed, blanks dropped); inline Confirm/Cancel delete. Every mutation re-renders from the server response; applied:false shows "saved — AdGuard will catch up".'''
+  covers = ["c-1", "c-2", "c-3", "c-4"]
+  depends_on = ["t-5"]
+  test_contract = [
+    '''if domain parsing is wrong, Services.test 'create' fails: "Portal" + "a.com\n\n b.com " -> createCustomService('Portal',['a.com','b.com']) and the row rendered from the response''',
+    '''if a 400 loses input, Services.test 'invalid domain' fails: 400 -> server message inline naming the domain, textarea text kept, list unchanged''',
+    '''if edit renders the local draft, Services.test 'edit' fails: Edit prefills the form, Save calls updateCustomService, the row is replaced from the response''',
+    '''if delete skips confirmation or hides the 409, Services.test 'delete' fails: nothing fires until Confirm; a 409 shows the message naming the grant and the row stays; window.confirm is never called''',
+    '''if catch-up state or route is missing, Services.test 'applied false' / App.test 'services route' fail: an applied:false response shows the catch-up note; loading '/services' renders the Services heading''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-11"
+  wave = 3
+  title = "Apply grant lifecycle to custom services"
+  files = ["internal/grants/grants.go", "internal/grants/grants_test.go"]
+  description = "Create, unblock, revert, End and expireLocked partition services: built-in ids keep the blocked_services path; custom ids never reach it. Create refuses an unknown custom id under mu, then syncs with the new grant included. End and expiry order: region sync with the grant excluded, then built-in revert, then the status CAS; any failure leaves the grant active (*ErrRevertFailed on End) and the reconciler re-converges both halves from intent (its region sync is t-13's). A malformed region makes End return ErrRevertFailed whose message names the malformed managed region. Extend writes nothing. Any custom:-prefixed id that is not canonical is refused as unknown, never treated as built-in."
+  covers = ["c-6", "c-7", "c-9"]
+  depends_on = ["t-6"]
+  test_contract = ["if custom ids leak to blocked_services, TestGrant_CustomNoLeak fails: grant [custom:1] on [kid-phone,tv] -> @@||a.com^$client='kid-phone'|'tv' per domain and 0 POST /control/clients/update on create, end and expiry; any custom: in a clients/update body fails", "if mixed grants miss a half, TestGrant_Mixed fails: [youtube, custom:1] -> youtube removed from blocked_services AND the @@ lines written", "if shared-client ref-counting breaks, TestGrant_CustomShared fails: grants A and B on custom:1 sharing tv; End A -> exception keeps tv and B's phone, drops A's phone; expiring B via the fake clock -> no @@ line remains", "if lifecycle writes touch foreign lines, TestGrant_CustomPreservesOutside fails: seed [\"! mine\",\"||x^\",\"@@||y^\"] is identical outside the markers after Create, Extend, End and expiry; Extend issues 0 set_rules POSTs", "if a region-write failure is not fail-closed, TestGrant_CustomWriteFailure fails: set_rules fault on Create -> Result.Failed == the grant's clients; on End -> *ErrRevertFailed, grant still active, @@ lines still present", "if unknown custom ids are accepted, TestGrant_UnknownCustom fails: Create with custom:99 -> error and no grant row stored", "if delete can race a grant create, TestDeleteService_RaceGrant (-race) fails: concurrent DeleteService and grant Create on the same service end in exactly one of {grant exists + ErrServiceInUse, service gone + Create refused}, never a grant on a deleted service", "if a mixed grant half-ends, TestGrant_MixedEndPartialFailure fails: grant [youtube, custom:1]; set_rules fault on End -> ErrRevertFailed, grant active, youtube still unblocked and @@ lines present; clients/update fault on End after the region write -> ErrRevertFailed, grant active, the @@ lines are gone from the region, and a region convergence from intent (Engine.SyncRules) restores them while the grant stays active (amended 2026-11-02, user-approved: the Reconcile pass itself is proven by t-13's TestReconcile_HalfEndedGrant)", "if broken markers fail silently on End, TestGrant_EndMalformedRegion fails: fake user_rules with only a begin marker -> End returns ErrRevertFailed whose message contains \"managed rules region is malformed\", the grant stays active, 0 set_rules POSTs", "if non-canonical custom ids slip through as built-ins, TestGrant_UnknownCustom fails: custom:99, custom:01 and custom:abc each -> *ErrUnknownService and no grant stored; builtin() never passes any custom:-prefixed id to blocked_services"]
+  status = "done"
+
+[[task]]
+  id = "t-12"
+  wave = 3
+  title = "Keep custom ids out of adoption; resync on rename"
+  files = ["internal/grants/clients.go", "internal/grants/rename.go", "internal/grants/clients_test.go", "internal/grants/rename_test.go"]
+  description = "baselineFrom filters custom ids out of the set handed to AdoptBlockedServices and NewClient.Blocked (confirmed leak: clients.go appends g.Services of active grants). CreateClient (with a child) and RenameClient call syncRules after their store write so $client rules follow immediately. AdoptClients does NOT resync — it runs before the child store write; child create/update/delete resync in t-18."
+  covers = ["c-6", "c-8"]
+  depends_on = ["t-6"]
+  test_contract = [
+    '''if adoption leaks custom ids, TestAdoptClients_NoCustomLeak fails: AdoptClients while the child holds a [custom:1] grant -> no clients/update or clients/add body contains custom:''',
+    '''if rename leaves stale $client rules, TestRenameClient_ResyncsRules fails: rename "Tab" -> "Tablet" mid-grant -> region has no 'Tab' and both block and @@ lines name 'Tablet' before the call returns''',
+    '''if a new device is not blocked immediately, TestCreateClient_ResyncsRules fails: a device added to a child via CreateClient is in the custom block lines before the call returns''',
+    '''if a rolled-back rename rewrites the region, TestRenameClient_StoreFailure fails: AdGuard rename succeeds but store fails (existing rollback path) -> region not rewritten''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-13"
+  wave = 4
+  title = "Converge region in every reconcile pass"
+  files = ["internal/grants/reconcile.go", "internal/grants/reconcile_test.go", "internal/grants/rules.go", "internal/api/custom_services_test.go"]
+  description = "Drop the zero-grants early return (reconcile.go:41). Every pass ends with syncRules after the overdue loop, including when the clients read fails. Stats gains RulesWritten; a rewritten region logs at info, a malformed region logs at error with no write. Amended 2026-11-02 (user-approved): syncRules writes nothing when the desired region is empty and no markers exist yet, so a fresh install gets no AdGuard write until a custom service has a child client to block; internal/grants/rules.go and the stale Edges fixture in internal/api/custom_services_test.go were added to this task's files for it."
+  covers = ["c-8", "c-9"]
+  depends_on = ["t-6", "t-11"]
+  test_contract = ["if the zero-grants early return survives, TestReconcile_RegionNoGrants fails: zero grants, one custom service, empty user_rules -> one pass appends the region", "if tampering is not undone, TestReconcile_RegionTamper fails: deleting a block line and adding @@||a.com^$client='kid-phone' inside the markers -> next pass restores exact Render output; a line added outside the markers survives; a second pass issues 0 set_rules POSTs", "if a clients outage blocks convergence, TestReconcile_RegionClientsDown fails: /control/clients failing still lets the region converge", "if a restart gap is not repaired, TestReconcile_OverdueCustom fails: overdue grant on custom:1 -> after one pass no @@ line remains and the grant is expired", "if an unapplied service is never written, TestReconcile_AppliedFalse fails: a service stored with Applied=false (set_rules fault) gets its block lines on the next pass", "if malformed markers abort the pass or get rewritten, TestReconcile_Malformed fails: only a begin marker -> error logged, 0 POSTs, grant repair continues", "if a half-ended grant's exceptions are not restored, TestReconcile_HalfEndedGrant fails: grant [youtube, custom:1]; a clients/update fault on End after the region write -> ErrRevertFailed with the @@ lines gone; one Reconcile pass with the fault cleared restores the @@ lines and the grant stays active (moved from t-11's contract, user-approved 2026-11-02)"]
+  status = "done"
+
+[[task]]
+  id = "t-14"
+  wave = 3
+  title = "Custom services CRUD endpoints"
+  files = ["internal/api/custom_services.go", "internal/api/custom_services_test.go", "internal/api/api.go"]
+  description = "GET/POST /api/v1/custom-services, PUT/DELETE /{n}, behind the session gate. Validation cheapest-first: body bound; name 1-64 runes (422); 1-50 domains each through NormalizeDomain (400 naming domains[i]), then dedupe after normalising keeping first occurrence; one raw-catalogue read for a case-insensitive built-in name clash (409; read failure 502 before any write); then the engine. Store conflicts -> 409; in use -> 409 {grant_id}; unknown -> 404. The api.Grants interface gains the engine service methods and SyncRules."
+  covers = ["c-1", "c-2", "c-3", "c-4"]
+  depends_on = ["t-6", "t-7"]
+  test_contract = ["if a bad domain is stored, TestCustomServices_BadDomain fails: POST each c-2 form (scheme, path, port, *., space, newline, ||, ^, $, /re/), alone and as [\"ok.com\", bad] -> 400 naming the bad domain, GET stays [] and 0 set_rules POSTs; PUT with a bad domain -> 400 and stored domains unchanged", "if create does not block children, TestCustomServices_Create fails: POST {Portal,[a.com]} -> 201 {id, service_id:\"custom:1\", ...} and the fake region carries ||a.com^$client= naming every mapped child client and no unmapped one", "if name/domain conflicts slip through, TestCustomServices_Conflicts fails: \"youtube\" vs fixture \"YouTube\" -> 409; catalogue 502 -> 502 and nothing stored; duplicate custom name in any case -> 409; a domain owned elsewhere -> 409 naming the owner", "if edit leaves removed domains, TestCustomServices_Update fails: PUT [a,b]->[b,c] -> 200 and no region line contains a.com", "if delete ignores an active grant, TestCustomServices_Delete fails: with active grant 7 -> 409, body grant_id 7 and \"7\" in the message, still listed; without a grant -> 204 and no region line for its domains", "if write failures or auth are mishandled, TestCustomServices_Edges fails: set_rules failing on POST -> 201 with applied:false; no session -> 401; missing CSRF -> 403", "if rename clashes slip through or a self case-change is refused, TestCustomServices_Rename fails: PUT renaming to \"YouTube\" (built-in) -> 409; to another custom service's name in any case -> 409; changing only the case of its own name (\"portal\" -> \"Portal\") -> 200", "if normalised duplicates are not deduped, TestCustomServices_DedupeDomains fails: POST [\"a.com\",\"A.com.\",\"b.com\"] -> 201 with domains [a.com,b.com] and exactly one ||a.com^ block line in the region"]
+  status = "done"
+
+[[task]]
+  id = "t-15"
+  wave = 3
+  title = "Fold custom services into child blocked view"
+  files = ["internal/blocked/blocked.go", "internal/blocked/blocked_test.go", "internal/api/blocked.go", "internal/api/blocked_test.go"]
+  description = "blocked.Input gains Custom. Each custom service state is derived from intent (stored services + active grants), not read back from AdGuard user_rules — accepted: after a failed set_rules the view can lead AdGuard by up to one reconcile tick. On each present mapped client it is unblocked iff an active GrantCover covers (id, client), else blocked; partial, differs and unblocked_by as for built-ins. If the custom list or grants read fails, custom entries are omitted (never a false \"blocked\"), no 500."
+  covers = ["c-5"]
+  depends_on = ["t-7"]
+  test_contract = [
+    '''if custom state derivation is wrong, TestFold_Custom fails: child on [c1,c2] with no grant -> "blocked"; own grant on both -> "unblocked"; a sibling's grant on shared c2 only -> "partial", differs ["c2"], unblocked_by names that grant''',
+    '''if absent clients count, TestFold_CustomMissingClient fails: a client missing from AdGuard does not count toward partial''',
+    '''if a read failure reports false state or 500s, TestBlocked_CustomReadFailure fails: custom-list read failing -> 200 with built-ins only; grants read failing -> custom entries absent, built-ins present''',
+    '''if the wire shape drifts, TestBlocked_CustomJSON fails: custom entries carry icon "" and custom:true''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-16"
+  wave = 4
+  title = "Accept custom ids in grant and button APIs"
+  files = ["internal/api/grants.go", "internal/api/grants_test.go", "internal/api/buttons.go", "internal/api/buttons_test.go"]
+  description = '''POST /grants and PUT /buttons (services and icon) validate against a.catalogue instead of AdGuard.Services. Held until t-11 so custom: ids can never reach the unpatched blocked_services path.'''
+  covers = ["c-5", "c-6"]
+  depends_on = ["t-11", "t-14"]
+  test_contract = [
+    '''if grants reject custom ids, TestGrants_Custom fails: POST /grants {services:["custom:1"]} -> 201 through the real engine and fake, and the region gains the @@ lines (422 before the change)''',
+    '''if any custom: prefix is accepted, TestGrants_UnknownCustom fails: ["custom:99"] -> 422 naming it''',
+    '''if buttons reject custom ids, TestButtons_Custom fails: PUT /buttons services ["custom:1"], icon "custom:1" -> 200 and echoed; ["custom:99"] -> 422 buttons[0].services''',
+    '''if delete_refs is not honoured end-to-end, TestCustomServices_DeleteAfterGrant fails: grant on custom:1 then DELETE /custom-services/1 -> 409; after End -> 204 and the custom:1-only button is gone from GET /buttons''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-17"
+  wave = 4
+  title = "Prove restart persistence and startup/tick convergence"
+  files = ["cmd/adguard-reward/main_test.go"]
+  description = '''End-to-end through run() against adguardtest. Tests only — t-7 does the main.go wiring.'''
+  covers = ["c-1", "c-8", "c-9"]
+  depends_on = ["t-11", "t-13", "t-14"]
+  test_contract = [
+    '''if custom services do not survive a restart, TestRun_CustomServicesSurviveRestart fails: POST via the API, stop, run() on the same data_dir -> GET /custom-services and GET /services both list it''',
+    '''if startup does not converge, TestRun_CustomRulesRestoredAtStartup fails: a stored service, a grant whose ends_at passed while down, and a fake holding a stale @@ region wrapped in foreign lines -> by the first /healthz answer block lines are present, no @@ remains, the grant is expired, and foreign lines are byte-identical''',
+    '''if the tick does not converge, TestRun_CustomRulesReconcilerTick fails: with reconcileInterval overridden, a manual edit inside the markers is undone within one tick''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-18"
+  wave = 4
+  title = "Resync rules after child create/update/delete"
+  files = ["internal/api/children.go", "internal/api/children_test.go"]
+  description = "handleChildCreate, handleChildUpdate and handleChildDelete call Grants.SyncRules after the store write succeeds (AdoptClients runs before the store write, so it cannot resync). A SyncRules failure is logged and does not fail the request — the reconciler converges within one tick."
+  covers = ["c-8"]
+  test_contract = ["if a newly added device is not blocked at once, TestChildUpdate_ResyncsRules fails: with custom service [a.com] stored, PUT /children/{id} adding kid-tablet -> by the time the response returns the fake region's ||a.com^ line names 'kid-tablet'", "if a removed device stays blocked, TestChildUpdate_RemovalResyncs fails: removing kid-tablet from the child -> the ||a.com^ line no longer names 'kid-tablet' when the response returns", "if deleting a child leaves its devices blocked, TestChildDelete_ResyncsRules fails: DELETE /children/{id} -> no region line names any of its clients when the response returns", "if a sync failure breaks the child write, TestChildCreate_SyncFailure fails: set_rules 500 -> POST /children still 201 and the child is stored"]
+  status = "done"
+  depends_on = ["t-14"]

@@ -141,7 +141,8 @@ func (a *API) handleChildrenList(w http.ResponseWriter, r *http.Request) {
 // new child has no grants and no siblings, so that is AdGuard's global list,
 // added to the client's own list minus anything another owner's active grant
 // holds open there (c-3). An adopt failure is 502 naming the client and no
-// child is created. A POST without clients never calls AdGuard.
+// child is created. A POST without clients adopts nothing in AdGuard. After
+// the store write the managed rules region is resynced (resyncRules).
 func (a *API) handleChildCreate(w http.ResponseWriter, r *http.Request) {
 	in, ok := decodeChild(w, r)
 	if !ok {
@@ -167,6 +168,7 @@ func (a *API) handleChildCreate(w http.ResponseWriter, r *http.Request) {
 		a.writeStoreError(w, "create child", in.Name, err)
 		return
 	}
+	a.resyncRules(r, "create child")
 	writeJSON(w, http.StatusCreated, viewOf(c))
 }
 
@@ -199,7 +201,8 @@ func (a *API) handleChildGet(w http.ResponseWriter, r *http.Request) {
 // the name 409 are decided before AdGuard is touched; an AdGuard failure is
 // 502 naming the client and leaves the store as it was. A PUT that adds
 // nothing — a rename or removals only, a shared client's other owners
-// keeping it — never calls AdGuard (c-7).
+// keeping it — writes no client in AdGuard (c-7). After the store write the
+// managed rules region is resynced (resyncRules).
 func (a *API) handleChildUpdate(w http.ResponseWriter, r *http.Request) {
 	id, ok := childID(w, r)
 	if !ok {
@@ -242,6 +245,7 @@ func (a *API) handleChildUpdate(w http.ResponseWriter, r *http.Request) {
 		a.writeStoreError(w, "update child", in.Name, err)
 		return
 	}
+	a.resyncRules(r, "update child")
 	writeJSON(w, http.StatusOK, viewOf(c))
 }
 
@@ -288,8 +292,9 @@ func (a *API) writeAdoptError(w http.ResponseWriter, op string, err error) {
 	}
 }
 
-// handleChildDelete is DELETE /api/v1/children/{id}. It never calls
+// handleChildDelete is DELETE /api/v1/children/{id}. It writes no client in
 // AdGuard: a shared client stays with its other owners, as it is (c-7).
+// After the delete the managed rules region is resynced (resyncRules).
 func (a *API) handleChildDelete(w http.ResponseWriter, r *http.Request) {
 	id, ok := childID(w, r)
 	if !ok {
@@ -304,5 +309,20 @@ func (a *API) handleChildDelete(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, CodeNotFound, noSuchChild)
 		return
 	}
+	a.resyncRules(r, "delete child")
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// resyncRules converges the managed user_rules region after a committed
+// child write, so custom-service block lines follow the child's devices
+// before the response. AdoptClients runs before the store write and cannot
+// do it. A failure is logged, never returned: the child write stands and the
+// reconciler converges the region within one tick.
+func (a *API) resyncRules(r *http.Request, op string) {
+	if a.deps.Grants == nil {
+		return
+	}
+	if err := a.deps.Grants.SyncRules(r.Context()); err != nil {
+		a.log.Warn(op+": managed rules not updated; the reconciler will retry", "err", err)
+	}
 }

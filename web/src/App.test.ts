@@ -320,3 +320,70 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
   })
 })
+
+describe('services route', () => {
+  it('loading /services renders the Services heading', async () => {
+    history.replaceState(null, '', '/services')
+    route.set('services')
+    const calls = mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/custom-services': () => json(200, { custom_services: [] }),
+    })
+    render(App)
+    expect(await screen.findByRole('heading', { name: 'Services' })).toBeTruthy()
+    expect(location.pathname).toBe('/services')
+    expect(get(route)).toBe('services')
+    expect(calls.map((c) => c.url)).toContain('/api/v1/custom-services')
+  })
+
+  it('services needs a session', async () => {
+    history.replaceState(null, '', '/services')
+    route.set('services')
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+    await tick()
+    expect(location.pathname).toBe('/login')
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+    expect(screen.queryByRole('heading', { name: 'Services' })).toBeNull()
+  })
+
+  it('back to /services while signed out stays on login', async () => {
+    // The route alone must not open Services: username is still null, so the
+    // page (and its /api/v1/custom-services load) never mounts.
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+
+    history.pushState(null, '', '/services')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    await tick()
+
+    expect(get(route)).toBe('services')
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Services' })).toBeNull()
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+  })
+
+  it('Back from Services returns home', async () => {
+    history.replaceState(null, '', '/services')
+    route.set('services')
+    mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/custom-services': () => json(200, { custom_services: [] }),
+      '/api/v1/buttons': () => json(200, { buttons: [] }),
+      '/api/v1/children': noChildren,
+      '/api/v1/services': () => json(200, { services: [] }),
+      '/api/v1/migration': () => json(200, { global: [], clients: [] }),
+    })
+    render(App)
+    await screen.findByRole('heading', { name: 'Services' })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(await screen.findByText(/Signed in as/)).toBeTruthy()
+    expect(location.pathname).toBe('/')
+    expect(get(route)).toBe('home')
+    expect(screen.queryByRole('heading', { name: 'Services' })).toBeNull()
+  })
+})

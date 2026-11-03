@@ -2,7 +2,6 @@
   import { onMount } from 'svelte'
   import {
     ApiError,
-    iconUrl,
     listButtons,
     listChildren,
     listServices,
@@ -14,6 +13,7 @@
     type Service,
   } from './api'
   import GrantForm, { type GrantFormValue } from './GrantForm.svelte'
+  import ServiceIcon from './ServiceIcon.svelte'
   import { formatDuration, minutesToSeconds, secondsToMinutes } from './grants'
 
   let { onBack }: { onBack: () => void } = $props()
@@ -288,7 +288,7 @@
           {/if}
         </select>
         {#if preview}
-          <img alt="" src={iconUrl(preview.icon)} width="24" height="24" data-icon-preview={preview.id} />
+          <span class="preview" data-icon-preview={preview.id}><ServiceIcon name={preview.name} icon={preview.icon} size={24} /></span>
         {/if}
       </div>
       {#if formLost !== null && icon === ''}
@@ -370,6 +370,9 @@
     font: inherit;
     padding: 0.5rem;
     min-height: 2.75rem;
+  }
+  .preview {
+    display: inline-flex;
   }
   .hint {
     margin: 0;

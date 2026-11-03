@@ -25,14 +25,29 @@ const (
 // that holds it; Grants are the active grants of every child, each with the
 // clients stored on it. Both may be nil — the view then carries no
 // shared/unblocked-by annotations.
+//
+// Custom are the stored custom services, folded after the catalogue. Their
+// state comes from intent, not from AdGuard's user_rules: on each present
+// client a custom service is unblocked iff an active grant in Grants (of any
+// child) covers it there, else blocked. So Custom needs Grants to be the
+// complete set of active grants; a caller that could not read them passes no
+// Custom rather than report a false "blocked".
 type Input struct {
 	Clients  []adguard.PersistentClient
 	Global   []string
 	Services []adguard.Service
+	Custom   []CustomService
 	Mapped   []string
 	Self     int64
 	Owners   map[string][]ChildRef
 	Grants   []GrantCover
+}
+
+// CustomService is a stored custom service as the fold needs it: its
+// catalogue id ("custom:<n>") and name. It has no icon.
+type CustomService struct {
+	ID   string
+	Name string
 }
 
 // ChildRef names a child.
@@ -77,6 +92,7 @@ type ServiceState struct {
 	ID          string
 	Name        string
 	Icon        string
+	Custom      bool
 	State       string
 	Differs     []string
 	UnblockedBy []Unblock
@@ -122,16 +138,18 @@ func Compute(in Input) View {
 		presents = append(presents, present{name: name, set: set})
 	}
 
-	for _, svc := range in.Services {
-		st := ServiceState{ID: svc.ID, Name: svc.Name, Icon: svc.Icon, Differs: []string{}, UnblockedBy: []Unblock{}}
+	// fold computes one service's state over the present clients;
+	// blocked reports whether p blocks it.
+	fold := func(st ServiceState, blocked func(p present) bool) ServiceState {
+		st.Differs, st.UnblockedBy = []string{}, []Unblock{}
 		blockedOn := 0
 		for _, p := range presents {
-			if p.set[svc.ID] {
+			if blocked(p) {
 				blockedOn++
 				continue
 			}
 			st.Differs = append(st.Differs, p.name)
-			st.UnblockedBy = append(st.UnblockedBy, unblockedBy(in, p.name, svc.ID)...)
+			st.UnblockedBy = append(st.UnblockedBy, unblockedBy(in, p.name, st.ID)...)
 		}
 		sort.Slice(st.UnblockedBy, func(i, j int) bool {
 			a, b := st.UnblockedBy[i], st.UnblockedBy[j]
@@ -151,7 +169,20 @@ func Compute(in Input) View {
 			st.State = StatePartial
 			sort.Strings(st.Differs)
 		}
-		view.Services = append(view.Services, st)
+		return st
+	}
+
+	for _, svc := range in.Services {
+		view.Services = append(view.Services, fold(
+			ServiceState{ID: svc.ID, Name: svc.Name, Icon: svc.Icon},
+			func(p present) bool { return p.set[svc.ID] },
+		))
+	}
+	for _, svc := range in.Custom {
+		view.Services = append(view.Services, fold(
+			ServiceState{ID: svc.ID, Name: svc.Name, Custom: true},
+			func(p present) bool { return !covered(in.Grants, svc.ID, p.name) },
+		))
 	}
 	return view
 }
@@ -219,6 +250,17 @@ func unblockedBy(in Input, client, service string) []Unblock {
 		out = append(out, Unblock{Client: client, GrantID: g.ID, Child: g.Child})
 	}
 	return out
+}
+
+// covered reports whether any active grant (of any child) covers service on
+// client, per the grant's stored clients.
+func covered(grants []GrantCover, service, client string) bool {
+	for _, g := range grants {
+		if slices.Contains(g.Services, service) && slices.Contains(g.Clients, client) {
+			return true
+		}
+	}
+	return false
 }
 
 func toSet(ids []string) map[string]bool {

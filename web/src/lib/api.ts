@@ -13,7 +13,7 @@ export class ApiError extends Error {
   readonly code: string
   /** Seconds from the Retry-After header, present on 429 only. */
   readonly retryAfter?: number
-  /** The active grant a 409 on grant creation names, when the envelope carries a numeric grant_id. */
+  /** The active grant a 409 names (grant creation, custom-service delete), when the envelope carries a numeric grant_id. */
   readonly grantId?: number
 
   constructor(status: number, code: string, message: string, retryAfter?: number, grantId?: number) {
@@ -28,9 +28,15 @@ export class ApiError extends Error {
 
 // ---- routing -------------------------------------------------------------
 
-export type Route = 'login' | 'home' | 'children' | 'buttons'
+export type Route = 'login' | 'home' | 'children' | 'buttons' | 'services'
 
-const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children', buttons: '/buttons' }
+const PATHS: Record<Route, string> = {
+  login: '/login',
+  home: '/',
+  children: '/children',
+  buttons: '/buttons',
+  services: '/services',
+}
 
 function routeFor(pathname: string): Route {
   for (const r of Object.keys(PATHS) as Route[]) {
@@ -187,10 +193,13 @@ export interface ClientView {
 }
 
 export interface Service {
+  /** A built-in AdGuard id, or "custom:<n>" for a parent-defined service. */
   id: string
   name: string
-  /** icon_svg as AdGuard serves it: base64 SVG. */
+  /** icon_svg as AdGuard serves it: base64 SVG; "" for a custom service. */
   icon: string
+  /** True for a custom service. Always filled by the fetchers below. */
+  custom?: boolean
 }
 
 export type ServiceStateName = 'blocked' | 'partial' | 'unblocked'
@@ -304,7 +313,7 @@ export async function renameClient(from: string, to: string): Promise<ClientView
 
 export async function listServices(): Promise<Service[]> {
   const res = await request<{ services: Service[] }>('GET', '/api/v1/services')
-  return res.services
+  return res.services.map((s) => ({ ...s, custom: s.custom ?? false }))
 }
 
 export async function childBlocked(id: number): Promise<BlockedView> {
@@ -312,8 +321,42 @@ export async function childBlocked(id: number): Promise<BlockedView> {
   return {
     ...v,
     clients: v.clients.map((c) => ({ ...c, shared_with: c.shared_with ?? [] })),
-    services: v.services.map((s) => ({ ...s, unblocked_by: s.unblocked_by ?? [] })),
+    services: v.services.map((s) => ({ ...s, custom: s.custom ?? false, unblocked_by: s.unblocked_by ?? [] })),
   }
+}
+
+// ---- custom services -----------------------------------------------------
+
+/** A parent-defined service: a name and the plain hostnames it blocks for the children. */
+export interface CustomService {
+  id: number
+  /** The catalogue id grants and buttons use: "custom:<id>". */
+  service_id: string
+  name: string
+  domains: string[]
+  /** False when it was stored but AdGuard's rules were not updated yet; the reconciler catches up. */
+  applied: boolean
+}
+
+const CUSTOM_SERVICES = '/api/v1/custom-services'
+
+export async function listCustomServices(): Promise<CustomService[]> {
+  const res = await request<{ custom_services: CustomService[] }>('GET', CUSTOM_SERVICES)
+  return res.custom_services
+}
+
+/** A 400 names the offending domain in its message. */
+export function createCustomService(name: string, domains: string[]): Promise<CustomService> {
+  return request<CustomService>('POST', CUSTOM_SERVICES, { name, domains })
+}
+
+export function updateCustomService(id: number, name: string, domains: string[]): Promise<CustomService> {
+  return request<CustomService>('PUT', `${CUSTOM_SERVICES}/${id}`, { name, domains })
+}
+
+/** A 409 while an active grant covers it rejects with grantId naming that grant. */
+export function deleteCustomService(id: number): Promise<void> {
+  return request<void>('DELETE', `${CUSTOM_SERVICES}/${id}`)
 }
 
 export function migrationOffer(): Promise<MigrationOffer> {
