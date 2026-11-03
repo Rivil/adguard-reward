@@ -19,7 +19,7 @@ import (
 type Stats struct {
 	Grants       int // active grants examined
 	Reverted     int // overdue grants reverted and marked expired
-	Repaired     int // clients whose drifted blocked_services were re-unblocked
+	Repaired     int // clients whose drifted blocked_services were converged, counted once per half
 	Writes       int
 	RulesWritten int
 }
@@ -34,11 +34,21 @@ type Stats struct {
 // inside each Add/Remove; a pass that finds nothing to do issues no writes.
 // A failed clients read skips the grant half with no status change.
 //
+// The toggle half follows (locked drift_enforcement): every built-in
+// service a child's owner toggled is converged on that child's clients to
+// the stored intent — open-wins against live grants and co-owners, as in
+// togglePlan — so a parent undoing a permanent toggle in AdGuard's UI, or a
+// toggle write that failed part-way, is corrected in one pass. Services no
+// one toggled stay AdGuard's. It re-reads the active grants, since the grant
+// half may just have expired some; any failed read skips it with nothing
+// written.
+//
 // Every pass — with or without grants, and even when the clients read
 // failed — then converges the managed user_rules region to intent (stored
-// custom services, children and active grants), undoing a restart gap, a
-// lagging write or a manual edit inside the markers. A malformed region is
-// logged at error and left untouched; the grant half still ran.
+// custom services, children, toggles and active grants), undoing a restart
+// gap, a lagging write or a manual edit inside the markers. A malformed
+// region is logged at error and left untouched; the grant and toggle halves
+// still ran.
 func (e *Engine) Reconcile(ctx context.Context) (Stats, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -58,6 +68,12 @@ func (e *Engine) Reconcile(ctx context.Context) (Stats, error) {
 	var passErr error
 	if len(grants) > 0 {
 		if err := e.reconcileGrants(ctx, actx, grants, &st); err != nil {
+			passErr = err
+		}
+	}
+	if err := e.reconcileToggles(ctx, actx, &st); err != nil {
+		e.log.Warn("reconcile: permanent toggles not converged", "err", err)
+		if passErr == nil {
 			passErr = err
 		}
 	}
@@ -130,6 +146,70 @@ func (e *Engine) reconcileGrants(ctx, actx context.Context, grants []store.Grant
 		if _, armed := e.timers[g.ID]; !armed {
 			e.arm(g)
 		}
+	}
+	return nil
+}
+
+// reconcileToggles is the toggle half of a pass. It reads the children,
+// toggles and — afresh, after the grant half — the active grants, plans
+// with togglePlan, and diffs the plan against one read of AdGuard's clients
+// so that only drifted clients reach applyPlan; a converged pass issues no
+// write and, with nothing toggled, no AdGuard request at all. A client
+// AdGuard does not know, or one inheriting the global blocked-services list
+// (the toggle reported it failed; it converges once migrated), is skipped
+// without a write. A failed read returns the error with nothing written; a
+// failed client write is logged and retried next pass. Caller holds mu.
+func (e *Engine) reconcileToggles(ctx, actx context.Context, st *Stats) error {
+	children, toggles, err := e.readToggles(ctx)
+	if err != nil {
+		return fmt.Errorf("reconcile: toggles: %w", err)
+	}
+	active, err := e.store.ListActiveGrants(ctx)
+	if err != nil {
+		return fmt.Errorf("reconcile: toggles: read active grants: %w", err)
+	}
+	plan := togglePlan(children, toggles, active)
+	if len(plan) == 0 {
+		return nil
+	}
+	res, err := e.ag.Clients(actx)
+	if err != nil {
+		return fmt.Errorf("reconcile: toggles: read clients: %w", err)
+	}
+	byName := make(map[string]adguard.PersistentClient, len(res.Persistent))
+	for _, pc := range res.Persistent {
+		byName[pc.Name] = pc
+	}
+	drifted := map[string]clientPlan{}
+	for name, p := range plan {
+		pc, ok := byName[name]
+		switch {
+		case !ok:
+			e.log.Debug("reconcile: toggled client not in AdGuard, skipped", "client", name)
+			continue
+		case pc.UseGlobalBlockedServices:
+			e.log.Debug("reconcile: toggled client uses the global blocked-services list, skipped", "client", name)
+			continue
+		}
+		d := clientPlan{
+			remove: intersect(p.remove, pc.BlockedServices),
+			add:    slices.DeleteFunc(slices.Clone(p.add), func(s string) bool { return slices.Contains(pc.BlockedServices, s) }),
+		}
+		if len(d.remove) > 0 || len(d.add) > 0 {
+			drifted[name] = d
+		}
+	}
+	failed, writes := e.applyPlan(actx, drifted)
+	st.Writes += writes
+	for name, d := range drifted {
+		if slices.Contains(failed, name) {
+			continue
+		}
+		st.Repaired++
+		e.log.Info("reconcile: permanent toggles converged", "client", name, "unblocked", d.remove, "blocked", d.add)
+	}
+	if len(failed) > 0 {
+		e.log.Warn("reconcile: permanent toggles not converged on some clients; retried next pass", "clients", failed)
 	}
 	return nil
 }

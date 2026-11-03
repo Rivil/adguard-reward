@@ -683,3 +683,242 @@ func TestReconcile_HalfEndedGrant(t *testing.T) {
 	}
 	e.wantStatus(res.Grant.ID, store.StatusActive)
 }
+
+// Permanent toggles (locked drift_enforcement): the toggle half of a pass
+// converges every toggled built-in service to intent.
+
+func TestReconcile_ToggleDrift(t *testing.T) {
+	t.Run("unblocked re-added", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.fakeClient("kid-phone", "tiktok")
+		kid := e.child("Ann", "kid-phone")
+		e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+		e.fake.MutateClient("kid-phone", func(m map[string]json.RawMessage) {
+			m["blocked_services"] = json.RawMessage(`["tiktok","youtube"]`)
+		})
+
+		st := e.reconcile()
+		if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"tiktok"}) {
+			t.Errorf("kid-phone = %v, want [tiktok] (youtube permanently unblocked)", got)
+		}
+		if st.Repaired != 1 || st.Writes != 1 {
+			t.Errorf("Stats = %+v, want Repaired 1 Writes 1", st)
+		}
+	})
+
+	t.Run("blocked removed", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.fakeClient("kid-phone", "tiktok", "youtube")
+		kid := e.child("Ann", "kid-phone")
+		e.seedToggle(kid.ID, "tiktok", store.ToggleBlocked)
+		e.setBlocked("kid-phone", "youtube")
+
+		st := e.reconcile()
+		if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"tiktok", "youtube"}) {
+			t.Errorf("kid-phone = %v, want [tiktok youtube] (tiktok permanently blocked)", got)
+		}
+		if st.Repaired != 1 || st.Writes != 1 {
+			t.Errorf("Stats = %+v, want Repaired 1 Writes 1", st)
+		}
+	})
+}
+
+func TestReconcile_ToggleNoop(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "youtube", "netflix")
+	e.fakeClient("tv", "tiktok")
+	kid := e.child("Ann", "kid-phone", "tv")
+	e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+	e.seedToggle(kid.ID, "tiktok", store.ToggleBlocked)
+
+	if st := e.reconcile(); st.Writes != 2 {
+		t.Fatalf("first pass Stats = %+v, want Writes 2 (youtube off kid-phone, tiktok on)", st)
+	}
+	posts, rulesPosts := e.posts(), e.setRulesPosts()
+	st := e.reconcile()
+	if n := e.posts() - posts + e.setRulesPosts() - rulesPosts; n != 0 {
+		t.Errorf("converged pass issued %d POSTs, want 0", n)
+	}
+	if st.Writes != 0 || st.Repaired != 0 {
+		t.Errorf("converged pass Stats = %+v, want Writes 0 Repaired 0", st)
+	}
+	if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"netflix", "tiktok"}) {
+		t.Errorf("kid-phone = %v, want [netflix tiktok]", got)
+	}
+}
+
+func TestReconcile_UntoggledUntouched(t *testing.T) {
+	for name, toggled := range map[string]bool{"no toggle rows": false, "another service toggled": true} {
+		t.Run(name, func(t *testing.T) {
+			e := newEnv(t, nil)
+			e.fakeClient("kid-phone", "tiktok")
+			kid := e.child("Ann", "kid-phone")
+			if toggled {
+				e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+			}
+			// The parent blocks netflix in AdGuard's UI: AdGuard owns it.
+			e.setBlocked("kid-phone", "netflix", "tiktok")
+			posts := e.posts()
+
+			e.reconcile()
+			if n := e.posts() - posts; n != 0 {
+				t.Errorf("pass issued %d update POSTs, want 0", n)
+			}
+			if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"netflix", "tiktok"}) {
+				t.Errorf("kid-phone = %v, want the parent's [netflix tiktok] untouched", got)
+			}
+		})
+	}
+}
+
+func TestReconcile_BlockYieldsToGrant(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("a-phone")
+	e.fakeClient("tv", "youtube")
+	e.fakeClient("c-phone", "youtube")
+	a := e.child("Ann", "a-phone", "tv")
+	c := e.child("Cal", "c-phone", "tv")
+	e.create(c.ID, youtube, []string{"c-phone", "tv"})
+	e.seedToggle(a.ID, "youtube", store.ToggleBlocked)
+	tvUpdates := e.updatesTo("tv")
+
+	for pass := 1; pass <= 3; pass++ {
+		e.reconcile()
+		if e.blocks("tv", "youtube") {
+			t.Fatalf("pass %d: tv = %v, want youtube absent (Cal's live grant holds it open)", pass, e.blocked("tv"))
+		}
+		if !e.blocks("a-phone", "youtube") {
+			t.Fatalf("pass %d: a-phone = %v, want youtube blocked (Ann's permanent block)", pass, e.blocked("a-phone"))
+		}
+	}
+	if n := e.updatesTo("tv") - tvUpdates; n != 0 {
+		t.Errorf("3 passes wrote tv %d times, want 0 (no fight with the grant)", n)
+	}
+}
+
+func TestReconcile_OverdueThenBlock(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "youtube") // tiktok open: the grant below unblocked it
+	kid := e.child("Ann", "kid-phone")
+	e.seedToggle(kid.ID, "tiktok", store.ToggleBlocked)
+	g := e.seedOverdue(kid.ID, []string{"tiktok"}, []string{"kid-phone"})
+
+	st := e.reconcile()
+	e.wantStatus(g.ID, store.StatusExpired)
+	if st.Reverted != 1 {
+		t.Errorf("Stats = %+v, want Reverted 1", st)
+	}
+	if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"tiktok", "youtube"}) {
+		t.Errorf("kid-phone = %v, want [tiktok youtube] (the expired grant no longer holds tiktok open)", got)
+	}
+}
+
+func TestReconcile_ConvergesToggle(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "tiktok")
+	e.fakeClient("kid-tablet", "tiktok", "youtube")
+	kid := e.child("Ann", "kid-phone", "kid-tablet")
+	// A toggle whose write did not land on kid-tablet.
+	e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+	e.fake.SetUpdateStatus("kid-tablet", http.StatusInternalServerError)
+
+	if st := e.reconcile(); st.Repaired != 0 || st.Writes != 1 {
+		t.Fatalf("faulted pass Stats = %+v, want Repaired 0 Writes 1", st)
+	}
+	e.wantBlocks("kid-tablet", "youtube", true)
+
+	e.fake.SetUpdateStatus("kid-tablet", 0)
+	st := e.reconcile()
+	if got := e.blocked("kid-tablet"); !reflect.DeepEqual(got, []string{"tiktok"}) {
+		t.Errorf("kid-tablet = %v, want [tiktok] after the fault cleared", got)
+	}
+	if st.Repaired != 1 {
+		t.Errorf("Stats = %+v, want Repaired 1", st)
+	}
+}
+
+// togglesFailAfter fails ListServiceToggles once armed, after letting ok
+// more calls through.
+type togglesFailAfter struct {
+	*store.Store
+	mu  sync.Mutex
+	ok  int
+	err error
+}
+
+func (s *togglesFailAfter) arm(ok int, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ok, s.err = ok, err
+}
+
+func (s *togglesFailAfter) ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error) {
+	s.mu.Lock()
+	fail := s.err != nil && s.ok == 0
+	if s.err != nil && s.ok > 0 {
+		s.ok--
+	}
+	err := s.err
+	s.mu.Unlock()
+	if fail {
+		return nil, err
+	}
+	return s.Store.ListServiceToggles(ctx)
+}
+
+func TestReconcile_ToggleReadFailure(t *testing.T) {
+	boom := errors.New("database is locked")
+	for _, tc := range []struct {
+		name string
+		// ok is how many toggle reads succeed first. The overdue grant's
+		// revert is the pass's first read: with 1 it expires and the toggle
+		// half's read is the one that fails; with 0 the revert fails closed
+		// too (locked revert_baseline_v2) and the grant waits.
+		ok      int
+		overdue string
+	}{
+		{"toggle half's read", 1, store.StatusExpired},
+		{"every read", 0, store.StatusActive},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var fs *togglesFailAfter
+			e := newEnvStore(t, nil, func(st *store.Store) Store {
+				fs = &togglesFailAfter{Store: st}
+				return fs
+			})
+			e.fakeClient("kid-phone", "tiktok")
+			e.fakeClient("tv")
+			ann := e.child("Ann", "kid-phone")
+			ben := e.child("Ben", "tv")
+			svc := e.createService("Portal", "a.com").Service.ServiceID()
+			e.seedToggle(ann.ID, svc, store.ToggleUnblocked)
+			e.seedToggle(ann.ID, "youtube", store.ToggleUnblocked)
+			if err := e.eng.SyncRules(ctx); err != nil {
+				t.Fatal(err)
+			}
+			// Toggle drift on kid-phone; a live grant drifted and an overdue
+			// one on tv.
+			e.create(ben.ID, []string{"roblox"}, []string{"tv"})
+			g := e.seedOverdue(ben.ID, []string{"steam"}, []string{"tv"})
+			e.setBlocked("kid-phone", "tiktok", "youtube")
+			e.setBlocked("tv", "roblox")
+			phone, rulesPosts := e.updatesTo("kid-phone"), e.setRulesPosts()
+			fs.arm(tc.ok, boom)
+
+			if _, err := e.eng.Reconcile(ctx); !errors.Is(err, boom) {
+				t.Fatalf("Reconcile err = %v, want the toggle read error", err)
+			}
+			if n := e.updatesTo("kid-phone") - phone; n != 0 {
+				t.Errorf("%d toggle writes to kid-phone after a failed read, want 0", n)
+			}
+			e.wantBlocks("kid-phone", "youtube", true)
+			if n := e.setRulesPosts() - rulesPosts; n != 0 {
+				t.Errorf("%d set_rules POSTs after a failed read, want 0 (region fail-closed)", n)
+			}
+			// The grant half still ran.
+			e.wantBlocks("tv", "roblox", false)
+			e.wantStatus(g.ID, tc.overdue)
+			e.wantBlocks("tv", "steam", tc.overdue == store.StatusExpired)
+		})
+	}
+}
