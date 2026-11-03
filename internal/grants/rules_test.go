@@ -8,6 +8,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"time"
 
 	"github.com/Rivil/adguard-reward/internal/rules"
 	"github.com/Rivil/adguard-reward/internal/store"
@@ -315,5 +316,92 @@ func TestSyncRules_Exclude(t *testing.T) {
 	e.eng.mu.Unlock()
 	if err != nil || changed || e.setRulesPosts() != posts {
 		t.Fatalf("idempotent pass: changed=%v err=%v posts=%d", changed, err, e.setRulesPosts()-posts)
+	}
+}
+
+func TestSyncRules_PermanentCover(t *testing.T) {
+	e := newEnv(t, nil)
+	a := e.child("Ann", "kid-phone", "tv")
+	b := e.child("Ben", "b-phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	e.seedToggle(a.ID, svc, store.ToggleUnblocked)
+	e.seedToggle(b.ID, svc, store.ToggleBlocked)         // a block adds nothing
+	e.seedToggle(a.ID, "youtube", store.ToggleUnblocked) // a built-in is never a cover
+	if err := e.eng.SyncRules(ctx); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"||a.com^$client='b-phone'|'kid-phone'|'tv'",
+		"@@||a.com^$client='kid-phone'|'tv'",
+	}
+	if got := e.region(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q", got, want)
+	}
+	noLineContains(t, e.region(), "youtube")
+
+	// Ann's grant on the same service comes and goes without touching it.
+	before, posts := e.fake.UserRules(), e.setRulesPosts()
+	res := e.create(a.ID, []string{svc}, []string{"kid-phone", "tv"})
+	e.clk.Advance(d + time.Second)
+	e.wantStatus(res.Grant.ID, store.StatusExpired)
+	if got := e.fake.UserRules(); !reflect.DeepEqual(got, before) {
+		t.Fatalf("user_rules after the grant expired %q, want byte-identical %q", got, before)
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("%d set_rules POSTs across the grant, want 0", n)
+	}
+}
+
+func TestSyncRules_ToggleReadFailure(t *testing.T) {
+	boom := errors.New("database is locked")
+	var tf *toggleFailStore
+	e := newEnvStore(t, nil, func(st *store.Store) Store { tf = &toggleFailStore{Store: st}; return tf })
+	a := e.child("Ann", "kid-phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	e.seedToggle(a.ID, svc, store.ToggleUnblocked)
+	if err := e.eng.SyncRules(ctx); err != nil {
+		t.Fatal(err)
+	}
+	before, posts := e.fake.UserRules(), e.setRulesPosts()
+
+	tf.set(boom)
+	if err := e.eng.SyncRules(ctx); !errors.Is(err, boom) {
+		t.Fatalf("SyncRules err = %v, want the read error", err)
+	}
+	if _, err := e.eng.Reconcile(ctx); !errors.Is(err, boom) {
+		t.Fatalf("Reconcile err = %v, want the read error", err)
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("%d set_rules POSTs after a failed toggles read, want 0", n)
+	}
+	if !reflect.DeepEqual(e.fake.UserRules(), before) {
+		t.Fatalf("user_rules changed after a failed read: %q", e.fake.UserRules())
+	}
+}
+
+func TestSyncRules_ToggleSurvivesEdit(t *testing.T) {
+	e := newEnv(t, nil)
+	a := e.child("Ann", "kid-phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	e.seedToggle(a.ID, svc, store.ToggleUnblocked)
+	if err := e.eng.SyncRules(ctx); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{"@@||a.com^$client='kid-phone'"}
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions %q, want %q", got, want)
+	}
+
+	edited := slices.DeleteFunc(e.fake.UserRules(), func(l string) bool { return strings.HasPrefix(l, "@@") })
+	e.fake.SetUserRules(edited)
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("setup: exceptions %q after the edit, want none", got)
+	}
+
+	if st := e.reconcile(); st.RulesWritten != 1 {
+		t.Errorf("RulesWritten = %d, want 1", st.RulesWritten)
+	}
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions after reconcile %q, want %q", got, want)
 	}
 }

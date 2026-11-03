@@ -35,9 +35,11 @@ func (e *Engine) SyncRules(ctx context.Context) error {
 // syncRules rewrites the managed region from intent: every stored custom
 // service blocked on every mapped child client, with an exception per
 // domain over the clients an active grant (other than exclude; 0 excludes
-// none) covers that service on. Store reads go through ctx and come first:
-// any read error aborts before AdGuard is called, since a region rendered
-// from a partial read could unblock every child. The AdGuard
+// none) covers that service on and over the current clients of every child
+// who has it permanently unblocked. Store reads go through ctx and come
+// first: any read error aborts before AdGuard is called, since a region
+// rendered from a partial read could unblock every child — or, without the
+// toggles, drop a permanent unblock. The AdGuard
 // read-modify-write goes through actx and writes only when the region
 // changes; a malformed region is refused (rules.ErrMalformedRegion) with no
 // write. An empty desired region with no markers present writes nothing.
@@ -47,15 +49,15 @@ func (e *Engine) syncRules(ctx, actx context.Context, exclude int64) (changed bo
 	if err != nil {
 		return false, fmt.Errorf("sync rules: read custom services: %w", err)
 	}
-	children, err := e.store.ListChildren(ctx)
+	children, toggles, err := e.readToggles(ctx)
 	if err != nil {
-		return false, fmt.Errorf("sync rules: read children: %w", err)
+		return false, fmt.Errorf("sync rules: %w", err)
 	}
 	active, err := e.store.ListActiveGrants(ctx)
 	if err != nil {
 		return false, fmt.Errorf("sync rules: read active grants: %w", err)
 	}
-	desired := desiredRegion(svcs, children, active, exclude, e.log)
+	desired := desiredRegion(svcs, children, toggles, active, exclude, e.log)
 	changed, err = e.ag.EditUserRules(actx, func(current []string) ([]string, error) {
 		// Nothing to manage and no region yet: leave the parent's rules
 		// untouched rather than append an empty marker pair.
@@ -72,18 +74,28 @@ func (e *Engine) syncRules(ctx, actx context.Context, exclude int64) (changed bo
 
 // desiredRegion renders the region body from intent. Child clients are the
 // union over every child; adults are never mapped, so never blocked (locked
-// block_scope). Only custom ids in a grant become covers: built-in ids are
-// the blocked_services path's business.
-func desiredRegion(svcs []store.CustomService, children []store.Child, active []store.Grant, exclude int64, log *slog.Logger) []string {
+// block_scope). Only custom ids become covers — a grant's, and a child's
+// permanent unblock over the child's current clients (locked
+// shared_client_scope: a shared client is open if any owner unblocked it);
+// built-in ids are the blocked_services path's business. A permanent block
+// adds nothing: every child client is blocked already.
+func desiredRegion(svcs []store.CustomService, children []store.Child, toggles []toggle, active []store.Grant, exclude int64, log *slog.Logger) []string {
 	in := make([]rules.Service, 0, len(svcs))
 	for _, s := range svcs {
 		in = append(in, rules.Service{ID: s.ServiceID(), Domains: s.Domains})
 	}
 	var kids []string
+	clientsOf := make(map[int64][]string, len(children))
 	for _, c := range children {
 		kids = append(kids, c.Clients...)
+		clientsOf[c.ID] = c.Clients
 	}
 	var covers []rules.Cover
+	for _, t := range toggles {
+		if t.state == store.ToggleUnblocked && store.IsCustomServiceID(t.serviceID) {
+			covers = append(covers, rules.Cover{ServiceID: t.serviceID, Clients: clientsOf[t.childID]})
+		}
+	}
 	for _, g := range active {
 		if g.ID == exclude {
 			continue
