@@ -176,7 +176,8 @@ export interface ChildRef {
 // unblocked_by) are optional in the types only so object literals built
 // before the server sent them still type-check; every fetcher in this module
 // fills an absent one with [], so a value read from the API is never
-// undefined.
+// undefined. The permanent-toggle fields (ServiceState.toggle,
+// Unblock.permanent) follow the same rule, filled with null and false.
 
 /** A client a child shares with other children: the other owners, id ASC. */
 export interface SharedRef {
@@ -204,19 +205,27 @@ export interface Service {
 
 export type ServiceStateName = 'blocked' | 'partial' | 'unblocked'
 
+/** A parent's permanent intent for one (child, service). */
+export type ToggleState = 'blocked' | 'unblocked'
+
 export interface ServiceState extends Service {
   state: ServiceStateName
   /** Present clients on which a partial service is NOT blocked. */
   differs: string[]
-  /** Another child's active grant holding the service open on one of this child's clients. */
+  /** Another child's grant or permanent unblock holding the service open on one of this child's clients. */
   unblocked_by?: Unblock[]
+  /** This child's own permanent toggle; null when never toggled. Always filled by childBlocked. */
+  toggle?: ToggleState | null
 }
 
 export interface Unblock {
   client: string
+  /** 0 for a permanent unblock. */
   grant_id: number
   /** name is "" when the granting child has since been deleted. */
   child: ChildRef
+  /** True when the other child's permanent unblock, not a grant, holds it open. Always filled by childBlocked. */
+  permanent?: boolean
 }
 
 export interface BlockedClient {
@@ -321,8 +330,33 @@ export async function childBlocked(id: number): Promise<BlockedView> {
   return {
     ...v,
     clients: v.clients.map((c) => ({ ...c, shared_with: c.shared_with ?? [] })),
-    services: v.services.map((s) => ({ ...s, custom: s.custom ?? false, unblocked_by: s.unblocked_by ?? [] })),
+    services: v.services.map((s) => ({
+      ...s,
+      custom: s.custom ?? false,
+      unblocked_by: (s.unblocked_by ?? []).map((u) => ({ ...u, permanent: u.permanent ?? false })),
+      toggle: s.toggle ?? null,
+    })),
   }
+}
+
+// ---- permanent toggles ---------------------------------------------------
+
+/** What a toggle did. applied=false names the clients AdGuard refused in failed; the reconciler catches up. */
+export interface ToggleResult {
+  service_id: string
+  state: ToggleState
+  applied: boolean
+  failed: string[]
+  /** Shared clients the toggle reached and their other owners; client ASC. */
+  shared: SharedRef[]
+  /** The active grant a block trimmed the service from; ended when that left it empty. null when no grant was touched. */
+  grant: { id: number; ended: boolean } | null
+}
+
+/** Permanently block or unblock one service (built-in or "custom:<n>") on every client of the child. */
+export async function toggleService(childId: number, serviceId: string, state: ToggleState): Promise<ToggleResult> {
+  const r = await request<ToggleResult>('POST', `${CHILDREN}/${childId}/toggles`, { service_id: serviceId, state })
+  return { ...r, failed: r.failed ?? [], shared: r.shared ?? [], grant: r.grant ?? null }
 }
 
 // ---- custom services -----------------------------------------------------
