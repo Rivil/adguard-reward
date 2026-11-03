@@ -555,6 +555,24 @@ func TestCompute_PermanentUnblockedBy(t *testing.T) {
 	}
 }
 
+// Two co-owners' permanent unblocks on one shared client (same client, no
+// grant) are ordered by child ID, whatever order Owners lists them in.
+func TestCompute_UnblockedByChildOrder(t *testing.T) {
+	in := tvInput(t,
+		Toggle{ChildID: cleo.ID, ServiceID: "youtube", State: "unblocked"},
+		Toggle{ChildID: ben.ID, ServiceID: "youtube", State: "unblocked"},
+	)
+	in.Owners["tv"] = []ChildRef{ada, cleo, ben}
+	yt := service(t, Compute(in), "youtube")
+	want := []Unblock{
+		{Client: "tv", Child: ben, Permanent: true},
+		{Client: "tv", Child: cleo, Permanent: true},
+	}
+	if !reflect.DeepEqual(yt.UnblockedBy, want) {
+		t.Fatalf("UnblockedBy = %+v, want %+v (ordered by child ID)", yt.UnblockedBy, want)
+	}
+}
+
 func TestCompute_PermanentAndGrant(t *testing.T) {
 	in := tvInput(t, Toggle{ChildID: ben.ID, ServiceID: "youtube", State: "unblocked"})
 	in.Grants = []GrantCover{{ID: 5, Child: ben, Services: []string{"youtube"}, Clients: []string{"tv"}}}

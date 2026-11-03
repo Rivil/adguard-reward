@@ -1136,7 +1136,12 @@ describe('Home permanent toggles', () => {
         { id: 'roblox', name: 'Roblox', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [], toggle: 'unblocked' },
       ],
     })
-    const s = server({}, { '/api/v1/children/1/blocked': () => json(200, adaView), [`POST ${TOGGLES}`]: () => stored() })
+    const answers: Answer[] = [
+      () => stored(),
+      () =>
+        stored({ service_id: 'tiktok', state: 'blocked', applied: false, failed: ['tablet'], shared: [{ client: 'tv', others: [{ id: 2, name: 'B' }] }] }),
+    ]
+    const s = server({}, { '/api/v1/children/1/blocked': () => json(200, adaView), [`POST ${TOGGLES}`]: () => answers.shift()!() })
     const d1 = await openAda()
     await waitFor(() => expect(d1.querySelectorAll('li[data-row]').length).toBe(3))
 
@@ -1148,15 +1153,24 @@ describe('Home permanent toggles', () => {
     expect(flat(roblox.querySelector('.partial'))).toBe('— unblocked')
     expect(controls(roblox)).toEqual(['Block'])
     expect(screen.getByRole('button', { name: 'Unblock YouTube' })).toBe(control(row(d1, 'youtube'), 'Unblock'))
+    expect(screen.getByRole('button', { name: 'Block TikTok' })).toBe(control(row(d1, 'tiktok'), 'Block'))
 
     await fireEvent.click(control(row(d1, 'youtube'), 'Unblock'))
     await waitFor(() => expect(toggleCalls(s.calls)).toHaveLength(1))
     expect(toggleCalls(s.calls)[0].body).toBe('{"service_id":"youtube","state":"unblocked"}')
 
     await waitFor(() => expect(control(row(d1, 'tiktok'), 'Block').disabled).toBe(false))
+    // Applied with nothing shared: no alert, no shared notice.
+    expect(d1.querySelector('[data-toggle-error]')).toBeNull()
+    expect(d1.querySelector('[data-toggle-shared]')).toBeNull()
+
     await fireEvent.click(control(row(d1, 'tiktok'), 'Block'))
     await waitFor(() => expect(toggleCalls(s.calls)).toHaveLength(2))
     expect(toggleCalls(s.calls)[1].body).toBe('{"service_id":"tiktok","state":"blocked"}')
+    // A block's outcome is worded as a block.
+    await waitFor(() => expect(d1.querySelector('[data-toggle-error]')).not.toBeNull())
+    expect(flat(d1.querySelector('[data-toggle-error]'))).toBe('Blocked TikTok, except on tablet')
+    expect(flat(d1.querySelector('[data-toggle-shared]'))).toBe('Also blocked on tv (shared with B)')
   })
 
   it('untoggled unblocked hidden', async () => {
@@ -1287,6 +1301,7 @@ describe('Home permanent toggles', () => {
     await waitFor(() => expect(control(row(d1, 'tiktok'), 'Unblock').disabled).toBe(false))
     await fireEvent.click(control(row(d1, 'tiktok'), 'Unblock'))
     await waitFor(() => expect(alert()?.getAttribute('data-error')).toBe('network'))
+    expect(flat(alert())).toBe("Can't reach the server — check your connection")
     expect(toggleCalls(s.calls)).toHaveLength(3)
   })
 
