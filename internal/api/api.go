@@ -37,6 +37,8 @@ type ChildStore interface {
 	CreateChild(ctx context.Context, name string, clients []string) (store.Child, error)
 	UpdateChild(ctx context.Context, id int64, name string, clients []string) (store.Child, error)
 	DeleteChild(ctx context.Context, id int64) (bool, error)
+	// ListServiceToggles feeds the blocked view's permanent toggle state.
+	ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error)
 }
 
 // Grants is the slice of *grants.Engine the grant and client-write handlers

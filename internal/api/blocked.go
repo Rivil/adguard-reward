@@ -16,12 +16,14 @@ type blockedClientView struct {
 }
 
 // blockedServiceView is one catalogue service's fold; unblocked_by names
-// each other child's active grant holding it open on a mapped client,
-// never null.
+// each other child's active grant or permanent unblock holding it open on a
+// mapped client, never null. toggle is the child's own permanent intent
+// ("blocked" / "unblocked"), null when never toggled.
 type blockedServiceView struct {
 	serviceView
 	Custom      bool              `json:"custom"`
 	State       string            `json:"state"`
+	Toggle      *string           `json:"toggle"`
 	Differs     []string          `json:"differs"`
 	UnblockedBy []blocked.Unblock `json:"unblocked_by"`
 }
@@ -33,7 +35,10 @@ type blockedServiceView struct {
 // them to [] with a warn, never an error status. Custom services follow the
 // catalogue with a state derived from intent (stored services + active
 // grants); when either read fails they are left out with a warn — never
-// reported as blocked on a guess, never a 500.
+// reported as blocked on a guess, never a 500. Permanent toggles feed each
+// service's toggle and the permanent unblocked_by entries; when they cannot
+// be read every toggle is null and custom services are left out (their
+// state depends on toggles), with a warn.
 func (a *API) handleBlocked(w http.ResponseWriter, r *http.Request) {
 	id, ok := childID(w, r)
 	if !ok {
@@ -45,7 +50,11 @@ func (a *API) handleBlocked(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	owners, covers, coversOK := a.sharedInputs(r)
-	custom := a.customInputs(r, coversOK)
+	toggles, togglesOK := a.toggleInputs(r)
+	var custom []blocked.CustomService
+	if togglesOK {
+		custom = a.customInputs(r, coversOK)
+	}
 	res, err := a.deps.AdGuard.Clients(r.Context())
 	if err != nil {
 		a.writeAdGuardError(w, "blocked view", err)
@@ -65,6 +74,7 @@ func (a *API) handleBlocked(w http.ResponseWriter, r *http.Request) {
 		Self:     child.ID,
 		Owners:   owners,
 		Grants:   covers,
+		Toggles:  toggles,
 	})
 
 	clients := make([]blockedClientView, 0, len(view.Clients))
@@ -79,6 +89,7 @@ func (a *API) handleBlocked(w http.ResponseWriter, r *http.Request) {
 			serviceView: serviceView{ID: s.ID, Name: s.Name, Icon: s.Icon},
 			Custom:      s.Custom,
 			State:       s.State,
+			Toggle:      nullIfEmpty(s.Toggle),
 			Differs:     s.Differs,
 			UnblockedBy: nonNil(s.UnblockedBy),
 		})
@@ -128,6 +139,29 @@ func (a *API) sharedInputs(r *http.Request) (owners map[string][]blocked.ChildRe
 		})
 	}
 	return owners, covers, true
+}
+
+// toggleInputs reads every child's permanent toggles for the fold. ok is
+// false when the read failed; the view then carries no toggle state.
+func (a *API) toggleInputs(r *http.Request) (out []blocked.Toggle, ok bool) {
+	list, err := a.deps.Children.ListServiceToggles(r.Context())
+	if err != nil {
+		a.log.Warn("blocked view: toggles unavailable, toggle state and custom services left out", "err", err)
+		return nil, false
+	}
+	out = make([]blocked.Toggle, 0, len(list))
+	for _, t := range list {
+		out = append(out, blocked.Toggle{ChildID: t.ChildID, ServiceID: t.ServiceID, State: t.State})
+	}
+	return out, true
+}
+
+// nullIfEmpty marshals "" as null.
+func nullIfEmpty(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 // customInputs reads the stored custom services for the fold. Their state
