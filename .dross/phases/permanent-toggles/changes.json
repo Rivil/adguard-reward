@@ -33,16 +33,18 @@
     "t-10": {
       "files": [
         "web/src/lib/Home.svelte",
-        "web/src/lib/Home.test.ts"
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/activeGrants.ts",
+        "web/src/lib/activeGrants.test.ts"
       ],
-      "commit": "be1e1d9",
-      "completed_at": "2026-11-03T14:14:31.746947Z",
+      "commit": "ced8522",
+      "completed_at": "2026-11-03T16:46:52.618253Z",
       "landmarks": [
         {
-          "feature": "permanent service toggles",
-          "symbol": "setToggle",
-          "loc": "web/src/lib/Home.svelte:237",
-          "what": "Home rows offer Unblock/Block per controlFor plus a Block-a-service picker; one in-flight toggle per child, refetch blocked view and grants, alert on partial apply, notice on shared devices"
+          "feature": "active grants panel",
+          "symbol": "refresh",
+          "loc": "web/src/lib/activeGrants.ts:29",
+          "what": "fresh mode waits out an in-flight poll and polls again so a toggle never shows a pre-toggle grant list"
         }
       ]
     },
@@ -202,19 +204,16 @@
     },
     "t-9": {
       "files": [
-        "internal/grants/reconcile.go",
-        "internal/grants/reconcile_test.go",
-        "internal/grants/clients.go",
-        "internal/grants/clients_test.go"
+        "internal/grants/reconcile.go"
       ],
-      "commit": "fed9367",
-      "completed_at": "2026-11-03T14:08:35.662396Z",
+      "commit": "71d537f",
+      "completed_at": "2026-11-03T16:40:04.388175Z",
       "landmarks": [
         {
-          "feature": "drift reconciliation",
+          "feature": "permanent toggles",
           "symbol": "Engine.reconcileToggles",
-          "loc": "internal/grants/reconcile.go:162",
-          "what": "each reconcile pass converges toggled built-ins via applyPlan after the grant half (fail-closed on reads); new/adopted devices get a toggle-aware baseline per new_client_blocked_set_v2"
+          "loc": "internal/grants/reconcile.go:165",
+          "what": "documents the drift pass's deliberate second clients read before applyPlan writes"
         }
       ]
     }
