@@ -1577,3 +1577,12 @@
   line = 399
   accepted_in = "permanent-toggles"
   reason = "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
+
+[[accepted]]
+  key = "69e5de68ee929324"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "return a.Child.ID < b.Child.ID"
+  line = 187
+  accepted_in = "permanent-toggles"
+  reason = "Equivalent: the final tie-break in the UnblockedBy sort.Slice less func. Two entries reach it only with equal Client and GrantID; with distinct Child.ID, < and <= agree. With equal Child.ID the two Unblock values are identical (same client, grant, child, Permanent), so a swap cannot change the slice. Verified 2026-11-03: <= passes go test ./internal/blocked while >= (NEGATION) fails TestCompute_UnblockedByChildOrder."

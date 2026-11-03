@@ -3,6 +3,15 @@
   "base": "milestone/v0.2",
   "base_commit": "210c74b2b08e52b44f72f3c2f8f76c3600aa0bc1",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "internal/blocked/blocked_test.go",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "453970f",
+      "completed_at": "2026-11-03T14:57:22.571787Z",
+      "notes": "quick: kill the 10 open survivors with tests"
+    },
     "t-1": {
       "files": [
         "internal/store/migrations/0008_service_toggles.sql",
