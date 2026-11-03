@@ -1323,6 +1323,7 @@ describe('Home permanent toggles', () => {
       () => stored({ applied: false, failed: ['tablet'], shared: [{ client: 'tv', others: [{ id: 2, name: 'B' }] }] }),
       () => json(502, { error: 'adguard_unavailable', message: 'down' }),
       () => Promise.reject(new TypeError('Failed to fetch')),
+      () => stored({ service_id: 'tiktok', applied: false, failed: ['tablet', 'tv'] }),
     ]
     const s = server({}, { [`POST ${TOGGLES}`]: () => answers.shift()!() })
     const d1 = await openAda()
@@ -1355,6 +1356,14 @@ describe('Home permanent toggles', () => {
     await waitFor(() => expect(alert()?.getAttribute('data-error')).toBe('network'))
     expect(flat(alert())).toBe("Can't reach the server — check your connection")
     expect(toggleCalls(s.calls)).toHaveLength(3)
+
+    // Several refused clients are listed comma-separated.
+    await waitFor(() => expect(control(row(d1, 'tiktok'), 'Unblock').disabled).toBe(false))
+    await fireEvent.click(control(row(d1, 'tiktok'), 'Unblock'))
+    await waitFor(() => expect(alert()?.getAttribute('data-error')).toBe('partial'))
+    expect(alert()?.getAttribute('role')).toBe('alert')
+    expect(flat(alert())).toContain('except on tablet, tv')
+    expect(toggleCalls(s.calls)).toHaveLength(4)
   })
 
   it('picker blocks', async () => {
