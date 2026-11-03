@@ -280,14 +280,15 @@ func TestIsCustomServiceID(t *testing.T) {
 	}
 }
 
-func TestMigrate_CustomServicesLast(t *testing.T) {
+func TestMigrate_ServiceTogglesLast(t *testing.T) {
 	s, _ := openTemp(t)
 	names := s.Migrations()
-	if len(names) == 0 || names[len(names)-1] != "0007_custom_services.sql" {
-		t.Fatalf("migrations = %v, want 0007_custom_services.sql last", names)
+	const last = "0008_service_toggles.sql"
+	if len(names) < 2 || names[len(names)-1] != last || names[len(names)-2] != "0007_custom_services.sql" {
+		t.Fatalf("migrations = %v, want 0007_custom_services.sql then %s last", names, last)
 	}
 	applied := queryStrings(t, s.DB(), `SELECT name FROM schema_migrations ORDER BY rowid`)
-	if applied[len(applied)-1] != "0007_custom_services.sql" {
+	if applied[len(applied)-1] != last {
 		t.Fatalf("applied = %v", applied)
 	}
 }
