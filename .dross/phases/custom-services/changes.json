@@ -21,6 +21,15 @@
       "completed_at": "2026-11-02T19:47:29.682311Z",
       "notes": "quick: test-only kills for 20 custom-services Stryker survivors (Services/App/ServiceIcon); 2 more equivalents accepted"
     },
+    "quick-3": {
+      "files": [
+        "internal/api/custom_services_test.go",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "75c0176",
+      "completed_at": "2026-11-03T07:04:06.727884Z",
+      "notes": "quick: cover custom-services verify FLAGs (401 on custom-services POST/PUT/DELETE, PUT bad-domain shapes, Home custom service in unblocked state)"
+    },
     "t-1": {
       "files": [
         "internal/rules/region.go",
