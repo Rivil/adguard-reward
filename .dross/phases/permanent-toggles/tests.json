@@ -1,0 +1,1705 @@
+{
+  "phase": "permanent-toggles",
+  "generated_at": "2026-11-03T14:32:12.258762Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main_test.go",
+        "internal/api/api.go",
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go",
+        "internal/api/toggles.go",
+        "internal/api/toggles_test.go",
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go",
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go",
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go",
+        "internal/grants/intent.go",
+        "internal/grants/intent_test.go",
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go",
+        "internal/grants/rules.go",
+        "internal/grants/rules_test.go",
+        "internal/grants/shared.go",
+        "internal/grants/shared_test.go",
+        "internal/grants/toggle.go",
+        "internal/grants/toggle_custom.go",
+        "internal/grants/toggle_custom_test.go",
+        "internal/grants/toggle_test.go",
+        "internal/store/custom_services_test.go",
+        "internal/store/toggles.go",
+        "internal/store/toggles_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 203,
+        "Survived": 13,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9398148148148148,
+        "Surviving": [
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 187,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "69e5de68ee929324",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 187,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "37bdf3205fe05648",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 190,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "d80e2d09b950a6b5",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 190,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 190,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 193,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "55673a2b65311747",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 345,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "bc02b0686e411159",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 404,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6bbce7448c751d07",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 115,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "ec84ab086867857b",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 220,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "5a75225dd24910cc",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 222,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "d829dbd8a124561a",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 259,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37db173ea9b8e0ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 85,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "cccf33fd143b660e",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -\u003e err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          }
+        ],
+        "NotCovered": 13
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/blocked.go": "adapter-lacks-range-runner",
+        "internal/api/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/api/toggles.go": "adapter-lacks-range-runner",
+        "internal/api/toggles_test.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/grants/clients.go": "adapter-lacks-range-runner",
+        "internal/grants/clients_test.go": "adapter-lacks-range-runner",
+        "internal/grants/grants.go": "adapter-lacks-range-runner",
+        "internal/grants/grants_test.go": "adapter-lacks-range-runner",
+        "internal/grants/intent.go": "adapter-lacks-range-runner",
+        "internal/grants/intent_test.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile_test.go": "adapter-lacks-range-runner",
+        "internal/grants/rules.go": "adapter-lacks-range-runner",
+        "internal/grants/rules_test.go": "adapter-lacks-range-runner",
+        "internal/grants/shared.go": "adapter-lacks-range-runner",
+        "internal/grants/shared_test.go": "adapter-lacks-range-runner",
+        "internal/grants/toggle.go": "adapter-lacks-range-runner",
+        "internal/grants/toggle_custom.go": "adapter-lacks-range-runner",
+        "internal/grants/toggle_custom_test.go": "adapter-lacks-range-runner",
+        "internal/grants/toggle_test.go": "adapter-lacks-range-runner",
+        "internal/store/custom_services_test.go": "adapter-lacks-range-runner",
+        "internal/store/toggles.go": "adapter-lacks-range-runner",
+        "internal/store/toggles_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/lib/BlockPicker.svelte",
+        "web/src/lib/BlockPicker.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts",
+        "web/src/lib/toggles.test.ts",
+        "web/src/lib/toggles.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 400,
+        "Survived": 29,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9324009324009324,
+        "Surviving": [
+          {
+            "File": "web/src/lib/BlockPicker.svelte",
+            "Line": 21,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "8507d03bf1699d5f",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/BlockPicker.svelte",
+            "Line": 37,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "49ec100d567c86ad",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/toggles.ts",
+            "Line": 30,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "ff2992988b4c7e63",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "a6d312f12b091b9b",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 135,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9382694512e2eb73",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 357,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 357,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 35,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "9e7b970f78a207cf",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 36,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "332725e64d242d98",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 67,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4a2c7171134bef4f",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "6451ace12288b160",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "EqualityOperator",
+            "Snippet": "(out.grant.shared ?? []).length \u003e= 0",
+            "Origin": "inherited",
+            "Key": "abeb67deb0f8d203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: length \u003e= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 147,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "inherited",
+            "Key": "6232b0be4db10034",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 181,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "85c805b4f0c4fa20",
+            "Lifecycle": "accepted",
+            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 248,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "4880de71e6284cd2",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 251,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "cee5ad5a336179b3",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 251,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "3b49a286fd244e44",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 251,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "3b49a286fd244e44",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 254,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "cbb1c5fa7324921e",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 255,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "8a62bd25a31b3d06",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 255,
+            "Op": "EqualityOperator",
+            "Snippet": "r.shared.length \u003e= 0",
+            "Origin": "in-hunk",
+            "Key": "be94028d1bece6fc",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 271,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "c8067c4b53b4a89d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 343,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].code",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 343,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].text",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 387,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "fcd25796b45a5a02",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 387,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "b3169795fcd4dd11",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 399,
+            "Op": "OptionalChaining",
+            "Snippet": "toggleNotes[child.id].code",
+            "Origin": "in-hunk",
+            "Key": "e59f02659c1e10ad",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 399,
+            "Op": "OptionalChaining",
+            "Snippet": "toggleNotes[child.id].text",
+            "Origin": "in-hunk",
+            "Key": "e59f02659c1e10ad",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 94,
+            "Op": "OptionalChaining",
+            "Snippet": "stopPolling()",
+            "Origin": "inherited",
+            "Key": "6c8255537ab76c28",
+            "Lifecycle": "accepted",
+            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+          }
+        ],
+        "NotCovered": 4
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/lib/BlockPicker.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 13,
+            "construct": "VariableDeclaration catalogue"
+          },
+          {
+            "start": 14,
+            "end": 14,
+            "construct": "hunk"
+          },
+          {
+            "start": 15,
+            "end": 18,
+            "construct": "FunctionDeclaration row"
+          },
+          {
+            "start": 19,
+            "end": 19,
+            "construct": "hunk"
+          },
+          {
+            "start": 20,
+            "end": 24,
+            "construct": "VariableDeclaration view"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 29,
+            "construct": "FunctionDeclaration setup"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 33,
+            "construct": "FunctionDeclaration openPicker"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "hunk"
+          },
+          {
+            "start": 35,
+            "end": 37,
+            "construct": "FunctionDeclaration optionIds"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "hunk"
+          },
+          {
+            "start": 39,
+            "end": 41,
+            "construct": "FunctionDeclaration search"
+          },
+          {
+            "start": 42,
+            "end": 42,
+            "construct": "hunk"
+          },
+          {
+            "start": 43,
+            "end": 108,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Home.test.ts": [
+          {
+            "start": 170,
+            "end": 989,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 991,
+            "end": 1098,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1099,
+            "end": 1099,
+            "construct": "hunk"
+          },
+          {
+            "start": 1100,
+            "end": 1350,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 5,
+            "end": 42,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 523,
+            "end": 589,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 672,
+            "end": 672,
+            "construct": "hunk"
+          },
+          {
+            "start": 673,
+            "end": 752,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 179,
+            "end": 180,
+            "construct": "hunk"
+          },
+          {
+            "start": 208,
+            "end": 208,
+            "construct": "hunk"
+          },
+          {
+            "start": 209,
+            "end": 209,
+            "construct": "TSTypeAliasDeclaration ToggleState"
+          },
+          {
+            "start": 210,
+            "end": 210,
+            "construct": "hunk"
+          },
+          {
+            "start": 211,
+            "end": 219,
+            "construct": "TSInterfaceDeclaration ServiceState"
+          },
+          {
+            "start": 221,
+            "end": 229,
+            "construct": "TSInterfaceDeclaration Unblock"
+          },
+          {
+            "start": 328,
+            "end": 340,
+            "construct": "FunctionDeclaration childBlocked"
+          },
+          {
+            "start": 342,
+            "end": 344,
+            "construct": "hunk"
+          },
+          {
+            "start": 345,
+            "end": 354,
+            "construct": "TSInterfaceDeclaration ToggleResult"
+          },
+          {
+            "start": 355,
+            "end": 356,
+            "construct": "hunk"
+          },
+          {
+            "start": 357,
+            "end": 360,
+            "construct": "FunctionDeclaration toggleService"
+          },
+          {
+            "start": 361,
+            "end": 361,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/lib/toggles.test.ts": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "hunk"
+          },
+          {
+            "start": 6,
+            "end": 14,
+            "construct": "FunctionDeclaration svc"
+          },
+          {
+            "start": 15,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 18,
+            "construct": "FunctionDeclaration view"
+          },
+          {
+            "start": 19,
+            "end": 19,
+            "construct": "hunk"
+          },
+          {
+            "start": 20,
+            "end": 20,
+            "construct": "VariableDeclaration bGrant"
+          },
+          {
+            "start": 21,
+            "end": 21,
+            "construct": "VariableDeclaration bPermanent"
+          },
+          {
+            "start": 22,
+            "end": 22,
+            "construct": "hunk"
+          },
+          {
+            "start": 23,
+            "end": 45,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 46,
+            "end": 46,
+            "construct": "hunk"
+          },
+          {
+            "start": 47,
+            "end": 73,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 74,
+            "end": 74,
+            "construct": "hunk"
+          },
+          {
+            "start": 75,
+            "end": 91,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 92,
+            "end": 92,
+            "construct": "hunk"
+          },
+          {
+            "start": 93,
+            "end": 117,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/toggles.ts": [
+          {
+            "start": 1,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "TSTypeAliasDeclaration Control"
+          },
+          {
+            "start": 9,
+            "end": 16,
+            "construct": "hunk"
+          },
+          {
+            "start": 17,
+            "end": 19,
+            "construct": "FunctionDeclaration shown"
+          },
+          {
+            "start": 20,
+            "end": 26,
+            "construct": "hunk"
+          },
+          {
+            "start": 27,
+            "end": 36,
+            "construct": "FunctionDeclaration openOn"
+          },
+          {
+            "start": 37,
+            "end": 43,
+            "construct": "hunk"
+          },
+          {
+            "start": 44,
+            "end": 51,
+            "construct": "FunctionDeclaration controlFor"
+          },
+          {
+            "start": 52,
+            "end": 57,
+            "construct": "hunk"
+          },
+          {
+            "start": 58,
+            "end": 62,
+            "construct": "FunctionDeclaration pickerOptions"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/lib/BlockPicker.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/store/migrations/0008_service_toggles.sql",
+      "reason": "no mutation adapter for .sql"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "cmd/adguard-reward/main.go",
+      "line": 43,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "f46f6aab3d37fc49",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/clients.go",
+      "line": 284,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "e39161b598da64d9",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 157,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 158,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/permanent-toggles/REVIEW.md",
+      ".dross/phases/permanent-toggles/REVIEW.round1.md",
+      ".dross/phases/permanent-toggles/REVIEW.round2.md",
+      ".dross/phases/permanent-toggles/changes.json",
+      ".dross/phases/permanent-toggles/panel/mvp.md",
+      ".dross/phases/permanent-toggles/panel/risk.md",
+      ".dross/phases/permanent-toggles/panel/synthesis.md",
+      ".dross/phases/permanent-toggles/panel/verification.md",
+      ".dross/phases/permanent-toggles/plan.toml",
+      ".dross/phases/permanent-toggles/spec.toml",
+      ".dross/project.toml",
+      "cmd/adguard-reward/main_test.go",
+      "internal/api/api.go",
+      "internal/api/blocked.go",
+      "internal/api/blocked_test.go",
+      "internal/api/toggles.go",
+      "internal/api/toggles_test.go",
+      "internal/blocked/blocked.go",
+      "internal/blocked/blocked_test.go",
+      "internal/grants/clients.go",
+      "internal/grants/clients_test.go",
+      "internal/grants/grants.go",
+      "internal/grants/grants_test.go",
+      "internal/grants/intent.go",
+      "internal/grants/intent_test.go",
+      "internal/grants/reconcile.go",
+      "internal/grants/reconcile_test.go",
+      "internal/grants/rules.go",
+      "internal/grants/rules_test.go",
+      "internal/grants/shared.go",
+      "internal/grants/shared_test.go",
+      "internal/grants/toggle.go",
+      "internal/grants/toggle_custom.go",
+      "internal/grants/toggle_custom_test.go",
+      "internal/grants/toggle_test.go",
+      "internal/store/custom_services_test.go",
+      "internal/store/migrations/0008_service_toggles.sql",
+      "internal/store/toggles.go",
+      "internal/store/toggles_test.go",
+      "web/package.json",
+      "web/src/lib/BlockPicker.svelte",
+      "web/src/lib/BlockPicker.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Home.test.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts",
+      "web/src/lib/toggles.test.ts",
+      "web/src/lib/toggles.ts"
+    ],
+    "hunks": {
+      ".dross/phases/permanent-toggles/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 31
+        }
+      ],
+      ".dross/phases/permanent-toggles/REVIEW.round1.md": [
+        {
+          "start": 1,
+          "end": 39
+        }
+      ],
+      ".dross/phases/permanent-toggles/REVIEW.round2.md": [
+        {
+          "start": 1,
+          "end": 42
+        }
+      ],
+      ".dross/phases/permanent-toggles/changes.json": [
+        {
+          "start": 1,
+          "end": 504
+        }
+      ],
+      ".dross/phases/permanent-toggles/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 190
+        }
+      ],
+      ".dross/phases/permanent-toggles/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 330
+        }
+      ],
+      ".dross/phases/permanent-toggles/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 370
+        }
+      ],
+      ".dross/phases/permanent-toggles/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 294
+        }
+      ],
+      ".dross/phases/permanent-toggles/plan.toml": [
+        {
+          "start": 1,
+          "end": 181
+        }
+      ],
+      ".dross/phases/permanent-toggles/spec.toml": [
+        {
+          "start": 1,
+          "end": 88
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 1059,
+          "end": 1135
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 40,
+          "end": 41
+        },
+        {
+          "start": 44,
+          "end": 45
+        },
+        {
+          "start": 60,
+          "end": 60
+        },
+        {
+          "start": 130,
+          "end": 130
+        }
+      ],
+      "internal/api/blocked.go": [
+        {
+          "start": 19,
+          "end": 21
+        },
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 38,
+          "end": 41
+        },
+        {
+          "start": 53,
+          "end": 57
+        },
+        {
+          "start": 77,
+          "end": 77
+        },
+        {
+          "start": 92,
+          "end": 92
+        },
+        {
+          "start": 144,
+          "end": 166
+        }
+      ],
+      "internal/api/blocked_test.go": [
+        {
+          "start": 343,
+          "end": 344
+        },
+        {
+          "start": 500,
+          "end": 500
+        },
+        {
+          "start": 509,
+          "end": 648
+        }
+      ],
+      "internal/api/toggles.go": [
+        {
+          "start": 1,
+          "end": 149
+        }
+      ],
+      "internal/api/toggles_test.go": [
+        {
+          "start": 1,
+          "end": 355
+        }
+      ],
+      "internal/blocked/blocked.go": [
+        {
+          "start": 35,
+          "end": 42
+        },
+        {
+          "start": 52,
+          "end": 59
+        },
+        {
+          "start": 62,
+          "end": 64
+        },
+        {
+          "start": 87,
+          "end": 88
+        },
+        {
+          "start": 90,
+          "end": 93
+        },
+        {
+          "start": 111,
+          "end": 114
+        },
+        {
+          "start": 121,
+          "end": 121
+        },
+        {
+          "start": 184,
+          "end": 187
+        },
+        {
+          "start": 200,
+          "end": 200
+        },
+        {
+          "start": 213,
+          "end": 215
+        },
+        {
+          "start": 283,
+          "end": 287
+        },
+        {
+          "start": 291,
+          "end": 320
+        }
+      ],
+      "internal/blocked/blocked_test.go": [
+        {
+          "start": 484,
+          "end": 611
+        }
+      ],
+      "internal/grants/clients.go": [
+        {
+          "start": 29,
+          "end": 35
+        },
+        {
+          "start": 55,
+          "end": 55
+        },
+        {
+          "start": 77,
+          "end": 84
+        },
+        {
+          "start": 101,
+          "end": 101
+        },
+        {
+          "start": 113,
+          "end": 113
+        },
+        {
+          "start": 134,
+          "end": 136
+        },
+        {
+          "start": 141,
+          "end": 157
+        },
+        {
+          "start": 160,
+          "end": 181
+        },
+        {
+          "start": 186,
+          "end": 186
+        },
+        {
+          "start": 192,
+          "end": 192
+        },
+        {
+          "start": 194,
+          "end": 194
+        },
+        {
+          "start": 196,
+          "end": 196
+        },
+        {
+          "start": 199,
+          "end": 200
+        },
+        {
+          "start": 202,
+          "end": 206
+        },
+        {
+          "start": 208,
+          "end": 208
+        },
+        {
+          "start": 210,
+          "end": 212
+        },
+        {
+          "start": 215,
+          "end": 249
+        },
+        {
+          "start": 251,
+          "end": 251
+        }
+      ],
+      "internal/grants/clients_test.go": [
+        {
+          "start": 431,
+          "end": 512
+        }
+      ],
+      "internal/grants/grants.go": [
+        {
+          "start": 18,
+          "end": 18
+        },
+        {
+          "start": 107,
+          "end": 133
+        },
+        {
+          "start": 305,
+          "end": 317
+        },
+        {
+          "start": 328,
+          "end": 333
+        },
+        {
+          "start": 338,
+          "end": 339
+        },
+        {
+          "start": 356,
+          "end": 414
+        },
+        {
+          "start": 497,
+          "end": 502
+        }
+      ],
+      "internal/grants/grants_test.go": [
+        {
+          "start": 1190,
+          "end": 1534
+        }
+      ],
+      "internal/grants/intent.go": [
+        {
+          "start": 1,
+          "end": 131
+        }
+      ],
+      "internal/grants/intent_test.go": [
+        {
+          "start": 1,
+          "end": 100
+        }
+      ],
+      "internal/grants/reconcile.go": [
+        {
+          "start": 22,
+          "end": 22
+        },
+        {
+          "start": 37,
+          "end": 45
+        },
+        {
+          "start": 48,
+          "end": 51
+        },
+        {
+          "start": 74,
+          "end": 79
+        },
+        {
+          "start": 153,
+          "end": 216
+        }
+      ],
+      "internal/grants/reconcile_test.go": [
+        {
+          "start": 686,
+          "end": 924
+        }
+      ],
+      "internal/grants/rules.go": [
+        {
+          "start": 38,
+          "end": 42
+        },
+        {
+          "start": 52,
+          "end": 52
+        },
+        {
+          "start": 54,
+          "end": 54
+        },
+        {
+          "start": 60,
+          "end": 60
+        },
+        {
+          "start": 77,
+          "end": 82
+        },
+        {
+          "start": 88,
+          "end": 88
+        },
+        {
+          "start": 91,
+          "end": 91
+        },
+        {
+          "start": 94,
+          "end": 98
+        }
+      ],
+      "internal/grants/rules_test.go": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 321,
+          "end": 407
+        }
+      ],
+      "internal/grants/shared.go": [
+        {
+          "start": 37,
+          "end": 58
+        }
+      ],
+      "internal/grants/shared_test.go": [
+        {
+          "start": 107,
+          "end": 159
+        }
+      ],
+      "internal/grants/toggle.go": [
+        {
+          "start": 1,
+          "end": 166
+        }
+      ],
+      "internal/grants/toggle_custom.go": [
+        {
+          "start": 1,
+          "end": 67
+        }
+      ],
+      "internal/grants/toggle_custom_test.go": [
+        {
+          "start": 1,
+          "end": 147
+        }
+      ],
+      "internal/grants/toggle_test.go": [
+        {
+          "start": 1,
+          "end": 454
+        }
+      ],
+      "internal/store/custom_services_test.go": [
+        {
+          "start": 283,
+          "end": 283
+        },
+        {
+          "start": 286,
+          "end": 288
+        },
+        {
+          "start": 291,
+          "end": 291
+        }
+      ],
+      "internal/store/migrations/0008_service_toggles.sql": [
+        {
+          "start": 1,
+          "end": 20
+        }
+      ],
+      "internal/store/toggles.go": [
+        {
+          "start": 1,
+          "end": 144
+        }
+      ],
+      "internal/store/toggles_test.go": [
+        {
+          "start": 1,
+          "end": 237
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        }
+      ],
+      "web/src/lib/BlockPicker.svelte": [
+        {
+          "start": 1,
+          "end": 111
+        }
+      ],
+      "web/src/lib/BlockPicker.test.ts": [
+        {
+          "start": 1,
+          "end": 108
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 12,
+          "end": 12
+        },
+        {
+          "start": 14,
+          "end": 14
+        },
+        {
+          "start": 19,
+          "end": 20
+        },
+        {
+          "start": 24,
+          "end": 24
+        },
+        {
+          "start": 30,
+          "end": 30
+        },
+        {
+          "start": 58,
+          "end": 64
+        },
+        {
+          "start": 197,
+          "end": 197
+        },
+        {
+          "start": 203,
+          "end": 210
+        },
+        {
+          "start": 227,
+          "end": 227
+        },
+        {
+          "start": 230,
+          "end": 235
+        },
+        {
+          "start": 237,
+          "end": 271
+        },
+        {
+          "start": 372,
+          "end": 372
+        },
+        {
+          "start": 374,
+          "end": 393
+        },
+        {
+          "start": 398,
+          "end": 407
+        },
+        {
+          "start": 534,
+          "end": 541
+        }
+      ],
+      "web/src/lib/Home.test.ts": [
+        {
+          "start": 615,
+          "end": 615
+        },
+        {
+          "start": 1020,
+          "end": 1020
+        },
+        {
+          "start": 1099,
+          "end": 1350
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 40,
+          "end": 40
+        },
+        {
+          "start": 568,
+          "end": 568
+        },
+        {
+          "start": 672,
+          "end": 752
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 179,
+          "end": 180
+        },
+        {
+          "start": 208,
+          "end": 210
+        },
+        {
+          "start": 215,
+          "end": 215
+        },
+        {
+          "start": 217,
+          "end": 218
+        },
+        {
+          "start": 223,
+          "end": 223
+        },
+        {
+          "start": 227,
+          "end": 228
+        },
+        {
+          "start": 333,
+          "end": 338
+        },
+        {
+          "start": 342,
+          "end": 361
+        }
+      ],
+      "web/src/lib/toggles.test.ts": [
+        {
+          "start": 1,
+          "end": 117
+        }
+      ],
+      "web/src/lib/toggles.ts": [
+        {
+          "start": 1,
+          "end": 62
+        }
+      ]
+    },
+    "base": "210c74b2b08e52b44f72f3c2f8f76c3600aa0bc1",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/lib/BlockPicker.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local",
+  "measured_commit": "c641597dd04922331c79a9ed8842927a776bf6cd",
+  "measured_tree": "f337a4fb98a0778d5228460d782d10dbc8428760"
+}
