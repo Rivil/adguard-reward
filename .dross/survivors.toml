@@ -1525,15 +1525,6 @@
   accepted_in = "permanent-toggles"
 
 [[accepted]]
-  key = "cbb1c5fa7324921e"
-  file = "web/src/lib/Home.svelte"
-  op = "StringLiteral"
-  text = "if (!r.applied) toggleNotes[childId] = { code: 'partial', text: `${done} ${s.name}, except on ${r.failed.join(', ')}` }"
-  line = 254
-  category = "stryker-whole-file-attribution"
-  accepted_in = "permanent-toggles"
-
-[[accepted]]
   key = "8507d03bf1699d5f"
   file = "web/src/lib/BlockPicker.svelte"
   op = "StringLiteral"

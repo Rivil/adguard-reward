@@ -1,6 +1,6 @@
 {
   "phase": "permanent-toggles",
-  "generated_at": "2026-11-03T15:17:10.87504Z",
+  "generated_at": "2026-11-03T19:29:19.962639Z",
   "languages": [
     {
       "name": "go",
@@ -205,6 +205,8 @@
         "web/src/lib/BlockPicker.test.ts",
         "web/src/lib/Home.svelte",
         "web/src/lib/Home.test.ts",
+        "web/src/lib/activeGrants.test.ts",
+        "web/src/lib/activeGrants.ts",
         "web/src/lib/api.test.ts",
         "web/src/lib/api.ts",
         "web/src/lib/toggles.test.ts",
@@ -212,22 +214,12 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 408,
+        "Killed": 428,
         "Survived": 21,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.951048951048951,
+        "Score": 0.9532293986636972,
         "Surviving": [
-          {
-            "File": "web/src/lib/toggles.ts",
-            "Line": 30,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "ff2992988b4c7e63",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent (carried over from the retired Home.svelte acceptance 84cebad2 when openOn moved to toggles.ts): the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:191,194), so filtering differs unconditionally yields [] there too."
-          },
           {
             "File": "web/src/lib/Home.svelte",
             "Line": 134,
@@ -252,7 +244,7 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 357,
+            "Line": 358,
             "Op": "ArrayDeclaration",
             "Snippet": "[\"Stryker was here\"]",
             "NotCovered": true,
@@ -263,7 +255,7 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 357,
+            "Line": 358,
             "Op": "ArrayDeclaration",
             "Snippet": "[\"Stryker was here\"]",
             "NotCovered": true,
@@ -349,12 +341,12 @@
             "Snippet": "\"\"",
             "Origin": "in-hunk",
             "Key": "cbb1c5fa7324921e",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+            "Lifecycle": "in-diff",
+            "Note": ""
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 271,
+            "Line": 272,
             "Op": "StringLiteral",
             "Snippet": "\"\"",
             "Origin": "in-hunk",
@@ -364,7 +356,7 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 343,
+            "Line": 344,
             "Op": "OptionalChaining",
             "Snippet": "notes[child.id].code",
             "Origin": "inherited",
@@ -374,7 +366,7 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 343,
+            "Line": 344,
             "Op": "OptionalChaining",
             "Snippet": "notes[child.id].text",
             "Origin": "inherited",
@@ -384,7 +376,7 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 399,
+            "Line": 400,
             "Op": "OptionalChaining",
             "Snippet": "toggleNotes[child.id].code",
             "Origin": "in-hunk",
@@ -394,7 +386,7 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 399,
+            "Line": 400,
             "Op": "OptionalChaining",
             "Snippet": "toggleNotes[child.id].text",
             "Origin": "in-hunk",
@@ -431,6 +423,16 @@
             "Key": "49ec100d567c86ad",
             "Lifecycle": "accepted",
             "Note": "The post-pick query reset is unobservable: the same pick sets open = false, which unmounts the panel, and reopening goes through toggleOpen(), which sets query = '' again before the panel renders."
+          },
+          {
+            "File": "web/src/lib/toggles.ts",
+            "Line": 30,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "ff2992988b4c7e63",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent (carried over from the retired Home.svelte acceptance 84cebad2 when openOn moved to toggles.ts): the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:191,194), so filtering differs unconditionally yields [] there too."
           }
         ],
         "NotCovered": 4
@@ -546,24 +548,48 @@
         ],
         "web/src/lib/Home.test.ts": [
           {
-            "start": 170,
-            "end": 989,
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 171,
+            "end": 990,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 991,
-            "end": 1098,
-            "construct": "ExpressionStatement"
-          },
-          {
-            "start": 1099,
+            "start": 992,
             "end": 1099,
-            "construct": "hunk"
+            "construct": "ExpressionStatement"
           },
           {
             "start": 1100,
-            "end": 1365,
+            "end": 1100,
+            "construct": "hunk"
+          },
+          {
+            "start": 1101,
+            "end": 1417,
             "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/activeGrants.test.ts": [
+          {
+            "start": 63,
+            "end": 213,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/activeGrants.ts": [
+          {
+            "start": 23,
+            "end": 28,
+            "construct": "hunk"
+          },
+          {
+            "start": 29,
+            "end": 44,
+            "construct": "FunctionDeclaration refresh"
           }
         ],
         "web/src/lib/api.test.ts": [
@@ -837,24 +863,6 @@
       "note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
     },
     {
-      "file": "internal/api/custom_services.go",
-      "line": 153,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "d6679638cc1e6564",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
-      "file": "internal/api/custom_services.go",
-      "line": 154,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "476fdd58ed2fe273",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
       "file": "internal/api/grants.go",
       "line": 157,
       "op": "ARITHMETIC_BASE",
@@ -887,6 +895,24 @@
       "op": "ARITHMETIC_BASE",
       "language": "go",
       "key": "e39161b598da64d9",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
       "lifecycle": "accepted",
       "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
     },
@@ -958,6 +984,8 @@
       "web/src/lib/BlockPicker.test.ts",
       "web/src/lib/Home.svelte",
       "web/src/lib/Home.test.ts",
+      "web/src/lib/activeGrants.test.ts",
+      "web/src/lib/activeGrants.ts",
       "web/src/lib/api.test.ts",
       "web/src/lib/api.ts",
       "web/src/lib/toggles.test.ts",
@@ -985,7 +1013,7 @@
       ".dross/phases/permanent-toggles/changes.json": [
         {
           "start": 1,
-          "end": 513
+          "end": 512
         }
       ],
       ".dross/phases/permanent-toggles/panel/mvp.md": [
@@ -1027,13 +1055,13 @@
       ".dross/phases/permanent-toggles/tests.json": [
         {
           "start": 1,
-          "end": 1705
+          "end": 1624
         }
       ],
       ".dross/phases/permanent-toggles/verify.toml": [
         {
           "start": 1,
-          "end": 158
+          "end": 106
         }
       ],
       ".dross/project.toml": [
@@ -1322,8 +1350,8 @@
           "end": 22
         },
         {
-          "start": 37,
-          "end": 45
+          "start": 33,
+          "end": 44
         },
         {
           "start": 48,
@@ -1335,7 +1363,7 @@
         },
         {
           "start": 153,
-          "end": 216
+          "end": 219
         }
       ],
       "internal/grants/reconcile_test.go": [
@@ -1517,37 +1545,53 @@
         },
         {
           "start": 237,
-          "end": 271
+          "end": 272
         },
         {
-          "start": 372,
-          "end": 372
+          "start": 373,
+          "end": 373
         },
         {
-          "start": 374,
-          "end": 393
+          "start": 375,
+          "end": 394
         },
         {
-          "start": 398,
-          "end": 407
+          "start": 399,
+          "end": 408
         },
         {
-          "start": 534,
-          "end": 541
+          "start": 535,
+          "end": 542
         }
       ],
       "web/src/lib/Home.test.ts": [
         {
-          "start": 615,
-          "end": 615
+          "start": 7,
+          "end": 7
         },
         {
-          "start": 1020,
-          "end": 1020
+          "start": 616,
+          "end": 616
         },
         {
-          "start": 1099,
-          "end": 1365
+          "start": 1021,
+          "end": 1021
+        },
+        {
+          "start": 1100,
+          "end": 1417
+        }
+      ],
+      "web/src/lib/activeGrants.test.ts": [
+        {
+          "start": 169,
+          "end": 191
+        }
+      ],
+      "web/src/lib/activeGrants.ts": [
+        {
+          "start": 23,
+          "end": 30
         }
       ],
       "web/src/lib/api.test.ts": [
@@ -1619,6 +1663,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "f5fab6839be227afcd9feb451212ca02109dc29b",
-  "measured_tree": "e4f2262f4451ecb9d88964b4c0c2234d043feb38"
+  "measured_commit": "df13b9993412389e74517813d91eeac5fdb5d063",
+  "measured_tree": "1fdf367f3ad5cc447cadac63118039957e40a4fe"
 }
