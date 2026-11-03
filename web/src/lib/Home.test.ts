@@ -1032,6 +1032,42 @@ describe('Home custom services', () => {
     expect(avatarIn(yt)).toBeNull()
   })
 
+  it('custom unblocked entry', async () => {
+    const flat = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+    server(
+      {},
+      {
+        '/api/v1/children/1/blocked': () =>
+          json(
+            200,
+            view(1, 'Ada', {
+              services: [
+                {
+                  id: 'custom:1', name: 'Portal', icon: '', custom: true, state: 'unblocked', differs: [],
+                  unblocked_by: [{ client: 'Kid phone', grant_id: 7, child: { id: 2, name: 'Ben' } }],
+                },
+                { id: 'custom:2', name: 'homework hub', icon: '', custom: true, state: 'unblocked', differs: [], unblocked_by: [] },
+                { id: 'youtube', name: 'YouTube', icon: ICON, state: 'blocked', differs: [] },
+              ],
+            }),
+          ),
+      },
+    )
+    await mountLoaded()
+    const d1 = details('details[data-blocked="1"]')
+    await open(d1)
+    await waitFor(() => expect(d1.querySelectorAll('li').length).toBe(2))
+
+    // Held open by another child's grant: listed, with its letter avatar and who holds it.
+    const li = d1.querySelector('li[data-state="unblocked"]')!
+    expect(avatarIn(li)?.textContent).toBe('P')
+    expect(li.querySelector('img')).toBeNull()
+    expect(flat(li)).toContain('Portal')
+    expect(flat(li.querySelector('.partial'))).toBe("— unblocked on Kid phone by Ben's grant")
+    // Plainly unblocked with nobody else holding it: not listed.
+    expect(d1.textContent).not.toContain('homework hub')
+  })
+
   it('custom button tile', async () => {
     server({
       buttons: [{ ...b1, services: ['custom:1'], icon: '' }, { ...b2, services: ['roblox'], icon: 'custom:1' }, { ...b3, services: ['youtube', 'custom:1'] }],

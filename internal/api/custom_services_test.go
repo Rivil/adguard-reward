@@ -147,12 +147,22 @@ func TestCustomServices_BadDomain(t *testing.T) {
 	}
 
 	cs := createCustom(t, h, cookie, "Portal", "a.com")
-	w := h.do(http.MethodPut, customPath+"/"+strconv.FormatInt(cs.ID, 10), customBody{"Portal", []string{"b.com", "b.com/x"}}, withCookie(cookie))
-	if w.Code != http.StatusBadRequest {
-		t.Fatalf("PUT bad domain = %d %s", w.Code, w.Body)
+	posts := h.fake.CountRequests("POST", setRulesPath)
+	item := customPath + "/" + strconv.FormatInt(cs.ID, 10)
+	for _, d := range bad {
+		w := h.do(http.MethodPut, item, customBody{"Portal", []string{"b.com", d}}, withCookie(cookie))
+		if w.Code != http.StatusBadRequest {
+			t.Fatalf("PUT %q = %d %s, want 400", d, w.Code, w.Body)
+		}
+		if msg := message(t, w.Body.Bytes()); !strings.Contains(msg, fmt.Sprintf("%q", d)) || !strings.Contains(msg, "domains[1]") {
+			t.Errorf("PUT %q: message %q does not name the domain and its index", d, msg)
+		}
 	}
 	if got := listCustom(t, h, cookie); len(got) != 1 || !reflect.DeepEqual(got[0].Domains, []string{"a.com"}) {
-		t.Fatalf("domains after a refused PUT: %+v", got)
+		t.Fatalf("domains after refused PUTs: %+v", got)
+	}
+	if n := h.fake.CountRequests("POST", setRulesPath) - posts; n != 0 {
+		t.Fatalf("%d set_rules POSTs after refused PUTs", n)
 	}
 
 	for name, body := range map[string]customBody{
@@ -330,13 +340,36 @@ func TestCustomServices_Edges(t *testing.T) {
 	if w.Code != http.StatusCreated {
 		t.Fatalf("POST under a set_rules fault = %d %s, want 201", w.Code, w.Body)
 	}
-	if got := decodeCustom(t, w.Body.Bytes()); got.Applied {
-		t.Fatalf("applied = true under a set_rules fault: %+v", got)
+	created := decodeCustom(t, w.Body.Bytes())
+	if created.Applied {
+		t.Fatalf("applied = true under a set_rules fault: %+v", created)
 	}
 	h.fake.SetResponse(setRulesPath, 0, nil)
 
 	if w := h.do(http.MethodGet, customPath, nil); w.Code != http.StatusUnauthorized {
 		t.Errorf("no session: %d, want 401", w.Code)
+	}
+	// Every write without a session is refused before it reaches the store
+	// or AdGuard; the CSRF header is present, so only the session is missing.
+	posts := h.fake.CountRequests(http.MethodPost, setRulesPath)
+	item := customPath + "/" + strconv.FormatInt(created.ID, 10)
+	for _, tc := range []struct {
+		method, path string
+		body         any
+	}{
+		{http.MethodPost, customPath, customBody{"X", []string{"x.com"}}},
+		{http.MethodPut, item, customBody{"Renamed", []string{"b.com"}}},
+		{http.MethodDelete, item, nil},
+	} {
+		if w := h.do(tc.method, tc.path, tc.body); w.Code != http.StatusUnauthorized {
+			t.Errorf("no session %s %s: %d, want 401", tc.method, tc.path, w.Code)
+		}
+	}
+	if got := listCustom(t, h, cookie); len(got) != 1 || got[0].Name != "Portal" || !reflect.DeepEqual(got[0].Domains, []string{"a.com"}) {
+		t.Errorf("after unauthenticated writes: %+v, want only Portal [a.com]", got)
+	}
+	if n := h.fake.CountRequests(http.MethodPost, setRulesPath) - posts; n != 0 {
+		t.Errorf("%d set_rules POSTs from unauthenticated writes", n)
 	}
 	if w := h.do(http.MethodPost, customPath, customBody{"X", []string{"x.com"}}, withCookie(cookie), noCSRF()); w.Code != http.StatusForbidden {
 		t.Errorf("missing CSRF: %d, want 403", w.Code)
