@@ -104,3 +104,56 @@ func TestHeldOpen(t *testing.T) {
 		t.Fatalf("heldOpen(nil) = %#v, want []string{}", got)
 	}
 }
+
+func TestRevertPlan_PermanentOpen(t *testing.T) {
+	children := []store.Child{{ID: 1, Name: "A", Clients: []string{"kid-phone"}}}
+	toggles := []toggle{{childID: 1, serviceID: "youtube", state: store.ToggleUnblocked}}
+	g := grantOn(1, []string{"youtube", "tiktok"}, "kid-phone")
+	got := dropOpen(revertPlan(g, []store.Grant{g}), permanentOpen(children, toggles))
+	want := map[string][]string{"kid-phone": {"tiktok"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("plan = %v, want %v", got, want)
+	}
+}
+
+func TestRevertPlan_SharedOwner(t *testing.T) {
+	// tv is shared by A and B. A's grant covers tv and a-phone; B (not the
+	// grant's child) has youtube permanently unblocked, so tv stays open.
+	toggles := []toggle{{childID: 2, serviceID: "youtube", state: store.ToggleUnblocked}}
+	g := grantOn(1, []string{"youtube"}, "a-phone", "tv")
+	children := []store.Child{
+		{ID: 1, Name: "A", Clients: []string{"a-phone", "tv"}},
+		{ID: 2, Name: "B", Clients: []string{"tv"}},
+	}
+	got := dropOpen(revertPlan(g, []store.Grant{g}), permanentOpen(children, toggles))
+	if want := map[string][]string{"a-phone": {"youtube"}}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("plan = %v, want %v", got, want)
+	}
+
+	// Ownership is current, not stored: B no longer owns tv, so B's
+	// unblock no longer holds it open.
+	children[1].Clients = nil
+	got = dropOpen(revertPlan(g, []store.Grant{g}), permanentOpen(children, toggles))
+	want := map[string][]string{"a-phone": {"youtube"}, "tv": {"youtube"}}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("plan after unmapping = %v, want %v", got, want)
+	}
+}
+
+func TestDropOpen_EmptiesClient(t *testing.T) {
+	plan := map[string][]string{"tv": {"youtube"}, "kid-phone": {"youtube", "tiktok"}}
+	open := map[string][]string{"tv": {"youtube"}, "kid-phone": {"netflix"}}
+	got := dropOpen(plan, open)
+	if _, ok := got["tv"]; ok {
+		t.Fatalf("tv present in %v, want key absent", got)
+	}
+	if want := map[string][]string{"kid-phone": {"youtube", "tiktok"}}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("dropOpen = %v, want %v", got, want)
+	}
+	if len(plan["tv"]) != 1 {
+		t.Fatalf("input plan mutated: %v", plan)
+	}
+	if got := dropOpen(plan, nil); !reflect.DeepEqual(got, plan) {
+		t.Fatalf("dropOpen(nil open) = %v, want %v", got, plan)
+	}
+}

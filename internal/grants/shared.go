@@ -34,6 +34,28 @@ func revertPlan(g store.Grant, active []store.Grant) map[string][]string {
 	return plan
 }
 
+// dropOpen removes from plan, per client, the services open lists for that
+// client — the permanent unblocks of its current owners (locked
+// revert_baseline_v2: revert re-blocks a grant's services except those
+// permanently unblocked for an owner of that client). A client left with
+// nothing drops out, so the caller issues no write for it. Order is kept;
+// plan is not modified.
+func dropOpen(plan, open map[string][]string) map[string][]string {
+	out := make(map[string][]string, len(plan))
+	for client, svcs := range plan {
+		var keep []string
+		for _, s := range svcs {
+			if !slices.Contains(open[client], s) {
+				keep = append(keep, s)
+			}
+		}
+		if len(keep) > 0 {
+			out[client] = keep
+		}
+	}
+	return out
+}
+
 // heldOpen returns the services that any active grant other than exclude
 // covers on client — sorted, deduplicated, and [] (never nil) when none.
 // Pass exclude 0 to count every grant (grant ids start at 1).
