@@ -30,9 +30,9 @@ type Stats struct {
 // and for every live grant each stored client is read live and any granted
 // id that has reappeared in its blocked_services — a parent re-blocked it in
 // AdGuard's UI — is removed again. Live grants without an armed timer get
-// one (post-restart). The pass reads AdGuard once for itself plus one re-read
-// inside each Add/Remove; a pass that finds nothing to do issues no writes.
-// A failed clients read skips the grant half with no status change.
+// one (post-restart). The grant half reads AdGuard's clients once plus one
+// re-read inside each Add/Remove; a pass that finds nothing to do issues no
+// writes. A failed clients read skips the grant half with no status change.
 //
 // The toggle half follows (locked drift_enforcement): every built-in
 // service a child's owner toggled is converged on that child's clients to
@@ -154,11 +154,14 @@ func (e *Engine) reconcileGrants(ctx, actx context.Context, grants []store.Grant
 // toggles and — afresh, after the grant half — the active grants, plans
 // with togglePlan, and diffs the plan against one read of AdGuard's clients
 // so that only drifted clients reach applyPlan; a converged pass issues no
-// write and, with nothing toggled, no AdGuard request at all. A client
-// AdGuard does not know, or one inheriting the global blocked-services list
-// (the toggle reported it failed; it converges once migrated), is skipped
-// without a write. A failed read returns the error with nothing written; a
-// failed client write is logged and retried next pass. Caller holds mu.
+// write and, with nothing toggled, no AdGuard request at all. A pass with
+// drift reads the clients twice — applyPlan re-reads just before writing,
+// exactly as Toggle does — which is accepted: drift is rare and the second
+// read only precedes a write. A client AdGuard does not know, or one
+// inheriting the global blocked-services list (the toggle reported it
+// failed; it converges once migrated), is skipped without a write. A failed
+// read returns the error with nothing written; a failed client write is
+// logged and retried next pass. Caller holds mu.
 func (e *Engine) reconcileToggles(ctx, actx context.Context, st *Stats) error {
 	children, toggles, err := e.readToggles(ctx)
 	if err != nil {
