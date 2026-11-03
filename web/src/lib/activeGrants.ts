@@ -20,9 +20,14 @@ export const activeGrants = { subscribe: state.subscribe }
 
 let inFlight: Promise<void> | null = null
 
-/** Poll once. A call while one is in flight joins it rather than overlapping. */
-export function refresh(): Promise<void> {
-  if (inFlight) return inFlight
+/**
+ * Poll once. A call while one is in flight joins it rather than overlapping —
+ * unless `fresh`: a caller that has just changed server state (a toggle that
+ * trimmed or ended a grant) needs an answer read after its change, so it
+ * waits out the in-flight poll and then polls again.
+ */
+export function refresh(opts: { fresh?: boolean } = {}): Promise<void> {
+  if (inFlight) return opts.fresh ? inFlight.then(() => refresh(opts)) : inFlight
   inFlight = listGrants()
     .then((grants) => {
       state.set({ grants, unreachable: false, loaded: true })

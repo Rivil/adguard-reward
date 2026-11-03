@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.svelte'
+import { refresh } from './activeGrants'
 import { route, setOnUnauthorized, type BlockedView, type Button, type Child, type Grant, type Service } from './api'
 
 type Call = { method: string; url: string; body: string | null }
@@ -1264,6 +1265,57 @@ describe('Home permanent toggles', () => {
     hold!(stored())
     await waitFor(() => expect(blockedGets(s.calls)).toBe(2))
     await waitFor(() => expect(grantGets(s.calls)).toBe(grants0 + 1))
+  })
+
+  it('toggle refresh after a stale poll', async () => {
+    // A poll that left before the block answers with the grant the block
+    // ended; the toggle's refresh must poll again rather than join it.
+    const now = Date.now()
+    const g7: Grant = {
+      id: 7,
+      child_id: 1,
+      services: ['youtube'],
+      clients: ['Kid phone'],
+      started_at: new Date(now - 60_000).toISOString(),
+      ends_at: new Date(now + 3_600_000).toISOString(),
+      shared: [],
+    }
+    const adaView = view(1, 'Ada', {
+      services: [{ id: 'youtube', name: 'YouTube', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [], toggle: 'unblocked' }],
+    })
+    let grants: Grant[] = [g7]
+    let holdNext = false
+    let release: (() => void) | null = null
+    const s = server(
+      {},
+      {
+        '/api/v1/children/1/blocked': () => json(200, adaView),
+        '/api/v1/grants': () => {
+          if (!holdNext) return json(200, { grants })
+          holdNext = false
+          const leftWith = grants
+          return new Promise<Response>((r) => (release = () => r(json(200, { grants: leftWith }))))
+        },
+        [`POST ${TOGGLES}`]: () => {
+          grants = []
+          return stored({ state: 'blocked', grant: { id: 7, ended: true } })
+        },
+      },
+    )
+    const d1 = await openAda()
+    await waitFor(() => expect(document.querySelector('li[data-grant="7"]')).not.toBeNull())
+
+    holdNext = true
+    void refresh()
+    await waitFor(() => expect(release).not.toBeNull())
+    const before = grantGets(s.calls)
+
+    await fireEvent.click(control(row(d1, 'youtube'), 'Block'))
+    await waitFor(() => expect(toggleCalls(s.calls)).toHaveLength(1))
+    release!()
+
+    await waitFor(() => expect(grantGets(s.calls)).toBe(before + 1))
+    await waitFor(() => expect(document.querySelector('li[data-grant="7"]')).toBeNull())
   })
 
   it('toggle outcome', async () => {

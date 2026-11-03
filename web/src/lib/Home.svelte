@@ -253,7 +253,8 @@
       // the clients AdGuard refused.
       if (!r.applied) toggleNotes[childId] = { code: 'partial', text: `${done} ${s.name}, except on ${r.failed.join(', ')}` }
       if (r.shared.length > 0) toggleShared[childId] = `Also ${done.toLowerCase()} on ${sharedText(r.shared)}`
-      await Promise.all([loadBlocked(childId), refresh()])
+      // fresh: a poll already out may predate the toggle and its grant trim.
+      await Promise.all([loadBlocked(childId), refresh({ fresh: true })])
       return true
     } finally {
       toggling[childId] = false
