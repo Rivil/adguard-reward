@@ -481,3 +481,131 @@ func TestFold_CustomAfterCatalogue(t *testing.T) {
 		}
 	}
 }
+
+// tvInput is Ada's view of her phone (own [tiktok]) and the tv she shares
+// with Ben (own [tiktok]); youtube is open on both in AdGuard.
+func tvInput(t *testing.T, toggles ...Toggle) Input {
+	t.Helper()
+	return Input{
+		Clients:  []adguard.PersistentClient{client("a-phone", false, "tiktok"), client("tv", false, "tiktok")},
+		Services: fixtureServices(t),
+		Custom:   []CustomService{{ID: "custom:1", Name: "Portal"}},
+		Mapped:   []string{"a-phone", "tv"},
+		Self:     ada.ID,
+		Owners:   map[string][]ChildRef{"a-phone": {ada}, "tv": {ada, ben}},
+		Toggles:  toggles,
+	}
+}
+
+func TestCompute_ToggleState(t *testing.T) {
+	v := Compute(tvInput(t,
+		Toggle{ChildID: ada.ID, ServiceID: "youtube", State: "unblocked"},
+		Toggle{ChildID: ada.ID, ServiceID: "tiktok", State: "blocked"},
+		Toggle{ChildID: ben.ID, ServiceID: "netflix", State: "blocked"},
+	))
+	if yt := service(t, v, "youtube"); yt.State != StateUnblocked || yt.Toggle != "unblocked" {
+		t.Fatalf("youtube = %+v, want unblocked with toggle unblocked", yt)
+	}
+	if tk := service(t, v, "tiktok"); tk.State != StateBlocked || tk.Toggle != "blocked" {
+		t.Fatalf("tiktok = %+v, want blocked with toggle blocked", tk)
+	}
+	for _, s := range v.Services {
+		if s.ID != "youtube" && s.ID != "tiktok" && s.Toggle != "" {
+			t.Fatalf("untoggled %s has Toggle %q (another owner's toggle is not self's)", s.ID, s.Toggle)
+		}
+	}
+}
+
+func TestCompute_CustomPermanent(t *testing.T) {
+	in := customInput()
+	in.Toggles = []Toggle{{ChildID: ada.ID, ServiceID: "custom:1", State: "unblocked"}}
+	if p := service(t, Compute(in), "custom:1"); p.State != StateUnblocked || p.Toggle != "unblocked" || !reflect.DeepEqual(p.UnblockedBy, noUnblock) {
+		t.Fatalf("self unblocked: %+v, want unblocked, unattributed", p)
+	}
+
+	in.Toggles = []Toggle{{ChildID: ada.ID, ServiceID: "custom:1", State: "blocked"}}
+	if p := service(t, Compute(in), "custom:1"); p.State != StateBlocked || p.Toggle != "blocked" {
+		t.Fatalf("self blocked: %+v, want blocked", p)
+	}
+
+	in.Toggles = []Toggle{{ChildID: ben.ID, ServiceID: "custom:1", State: "unblocked"}}
+	p := service(t, Compute(in), "custom:1")
+	if p.State != StatePartial || !reflect.DeepEqual(p.Differs, []string{"c2"}) || p.Toggle != "" {
+		t.Fatalf("Ben's unblock on shared c2: %+v, want partial differing on c2", p)
+	}
+	if want := []Unblock{{Client: "c2", Child: ben, Permanent: true}}; !reflect.DeepEqual(p.UnblockedBy, want) {
+		t.Fatalf("UnblockedBy %+v, want %+v", p.UnblockedBy, want)
+	}
+}
+
+func TestCompute_PermanentUnblockedBy(t *testing.T) {
+	v := Compute(tvInput(t,
+		Toggle{ChildID: ben.ID, ServiceID: "youtube", State: "unblocked"},
+		Toggle{ChildID: ada.ID, ServiceID: "youtube", State: "unblocked"},
+	))
+	yt := service(t, v, "youtube")
+	want := []Unblock{{Client: "tv", GrantID: 0, Child: ben, Permanent: true}}
+	if !reflect.DeepEqual(yt.UnblockedBy, want) {
+		t.Fatalf("UnblockedBy = %+v, want %+v (self's own toggle never listed)", yt.UnblockedBy, want)
+	}
+	// Ben's unblock on a service tv blocks in AdGuard attributes nothing.
+	tk := service(t, Compute(tvInput(t, Toggle{ChildID: ben.ID, ServiceID: "tiktok", State: "unblocked"})), "tiktok")
+	if tk.State != StateBlocked || !reflect.DeepEqual(tk.UnblockedBy, noUnblock) {
+		t.Fatalf("tiktok = %+v, want blocked, unattributed", tk)
+	}
+}
+
+func TestCompute_PermanentAndGrant(t *testing.T) {
+	in := tvInput(t, Toggle{ChildID: ben.ID, ServiceID: "youtube", State: "unblocked"})
+	in.Grants = []GrantCover{{ID: 5, Child: ben, Services: []string{"youtube"}, Clients: []string{"tv"}}}
+	yt := service(t, Compute(in), "youtube")
+	want := []Unblock{
+		{Client: "tv", GrantID: 0, Child: ben, Permanent: true},
+		{Client: "tv", GrantID: 5, Child: ben},
+	}
+	if !reflect.DeepEqual(yt.UnblockedBy, want) {
+		t.Fatalf("UnblockedBy = %+v, want %+v", yt.UnblockedBy, want)
+	}
+}
+
+func TestCompute_ForeignToggle(t *testing.T) {
+	base := Compute(tvInput(t))
+	got := Compute(tvInput(t,
+		Toggle{ChildID: cleo.ID, ServiceID: "youtube", State: "unblocked"},
+		Toggle{ChildID: cleo.ID, ServiceID: "custom:1", State: "unblocked"},
+		Toggle{ChildID: cleo.ID, ServiceID: "tiktok", State: "unblocked"},
+	))
+	if !reflect.DeepEqual(got, base) {
+		t.Fatalf("a non-owner's toggles changed the view:\n got %+v\nwant %+v", got, base)
+	}
+	if p := service(t, got, "custom:1"); p.State != StateBlocked {
+		t.Fatalf("custom:1 = %+v, want blocked", p)
+	}
+}
+
+func TestCompute_NoToggles(t *testing.T) {
+	inputs := map[string]Input{
+		"fixture": fixtureInput(t, "Kid phone", "Kid tablet"),
+		"shared":  sharedInput(t),
+		"custom":  customInput(GrantCover{ID: 9, Child: ben, Services: []string{"custom:1"}, Clients: []string{"c2"}}),
+		"tv":      tvInput(t),
+	}
+	for name, in := range inputs {
+		in.Toggles = nil
+		withNil := Compute(in)
+		in.Toggles = []Toggle{}
+		if withEmpty := Compute(in); !reflect.DeepEqual(withNil, withEmpty) {
+			t.Fatalf("%s: nil and empty Toggles differ", name)
+		}
+		for _, s := range withNil.Services {
+			if s.Toggle != "" {
+				t.Fatalf("%s: %s Toggle %q with no toggles", name, s.ID, s.Toggle)
+			}
+			for _, u := range s.UnblockedBy {
+				if u.Permanent || u.GrantID == 0 {
+					t.Fatalf("%s: %s carries a permanent entry %+v with no toggles", name, s.ID, u)
+				}
+			}
+		}
+	}
+}
