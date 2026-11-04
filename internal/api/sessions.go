@@ -67,7 +67,9 @@ func (a *API) handleSessionDelete(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleSessionsRevokeAll is POST /api/v1/sessions/revoke-all: every
-// session of the caller except the current one.
+// session of the caller except the current one, then every PIN device of
+// the caller except the current session's own (all of them when the
+// session is untagged). Sessions go first so "revoked" counts them all.
 func (a *API) handleSessionsRevokeAll(w http.ResponseWriter, r *http.Request) {
 	sess, _ := auth.FromContext(r.Context())
 	n, err := a.deps.Sessions.DeleteOthers(r.Context(), sess.Username, sess.ID)
@@ -76,7 +78,17 @@ func (a *API) handleSessionsRevokeAll(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, "internal", "could not revoke sessions")
 		return
 	}
+	devices := 0
+	if a.deps.Devices != nil {
+		devices, err = a.deps.Devices.DeleteOtherDevices(r.Context(), sess.Username, sess.DeviceID)
+		if err != nil {
+			a.log.Error("revoke devices failed", "err", err, "session", sess)
+			writeError(w, http.StatusInternalServerError, "internal", "could not revoke devices")
+			return
+		}
+	}
 	writeJSON(w, http.StatusOK, struct {
-		Revoked int `json:"revoked"`
-	}{n})
+		Revoked        int `json:"revoked"`
+		RevokedDevices int `json:"revoked_devices"`
+	}{n, devices})
 }

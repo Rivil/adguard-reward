@@ -1,8 +1,7 @@
 package api
 
 import (
-	"encoding/json"
-	"io"
+	"errors"
 	"net/http"
 	"net/netip"
 	"strconv"
@@ -34,27 +33,28 @@ type loginRequest struct {
 // limiting live in recheckPassword, shared with PIN change and remove.
 func (a *API) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var in loginRequest
-	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxLoginBody))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&in); err != nil || in.Username == "" || in.Password == "" {
+	if err := decodeBody(w, r, maxLoginBody, &in); err != nil || in.Username == "" || in.Password == "" {
 		writeError(w, http.StatusBadRequest, CodeBadRequest, "expected JSON {username, password}")
-		return
-	}
-	if dec.More() {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, "expected a single JSON object")
-		return
-	}
-	// Drain so the body limit is what rejects an oversize request, not the
-	// decoder's early stop.
-	if _, err := io.Copy(io.Discard, r.Body); err != nil {
-		writeError(w, http.StatusBadRequest, CodeBadRequest, "request body too large")
 		return
 	}
 
 	res := a.recheckPassword(r, in.Username, in.Password)
 	switch res.outcome {
 	case outcomeOK:
-		raw, _, err := a.deps.Auth.Issue(r.Context(), in.Username)
+		deviceID, ok := a.loginDevice(w, r, in.Username)
+		if !ok {
+			writeError(w, http.StatusInternalServerError, "internal", "could not create session")
+			return
+		}
+		var (
+			raw string
+			err error
+		)
+		if deviceID != 0 {
+			raw, _, err = a.deps.Auth.IssueForDevice(r.Context(), in.Username, deviceID)
+		} else {
+			raw, _, err = a.deps.Auth.Issue(r.Context(), in.Username)
+		}
 		if err != nil {
 			a.log.Error("issue session failed", "err", err)
 			writeError(w, http.StatusInternalServerError, "internal", "could not create session")
@@ -75,6 +75,32 @@ func (a *API) handleLogin(w http.ResponseWriter, r *http.Request) {
 	// outcomeCanceled: the client is gone; nothing to write.
 }
 
+// loginDevice decides whether a full login lands on a PIN device: a live
+// device cookie of the same user tags the new session (the PIN lock keeps
+// applying — a password login must not lift it); a live device of another
+// user, or a dead cookie, is cleared. ok is false when the device store
+// failed: the login fails closed rather than silently skipping the lock.
+func (a *API) loginDevice(w http.ResponseWriter, r *http.Request, username string) (deviceID int64, ok bool) {
+	if a.deps.Devices == nil {
+		return 0, true
+	}
+	c, err := r.Cookie(auth.DeviceCookieName)
+	if err != nil {
+		return 0, true
+	}
+	dev, err := a.deps.Auth.LookupDevice(r.Context(), c.Value)
+	switch {
+	case err == nil && dev.Username == username:
+		return dev.ID, true
+	case err == nil, errors.Is(err, auth.ErrDeviceNotFound):
+		a.deps.Auth.ClearDevice(w)
+		return 0, true
+	default:
+		a.log.Error("login: device lookup failed", "err", err)
+		return 0, false
+	}
+}
+
 func (a *API) rejectLimited(w http.ResponseWriter, username string, ip netip.Addr, retry time.Duration) {
 	w.Header().Set("Retry-After", strconv.Itoa(int(retry/time.Second)))
 	a.logLogin(username, ip, outcomeRateLimited)
@@ -88,9 +114,23 @@ func (a *API) logLogin(username string, ip netip.Addr, outcome string) {
 }
 
 // handleLogout is POST /api/v1/logout: the session row goes and the cookie
-// is cleared (replacing the refresh RequireSession just wrote).
+// is cleared (replacing the refresh RequireSession just wrote). On a PIN
+// session logout keeps meaning logout (locked logout_semantics): the device
+// and its PIN go too, every session tagged with it included, and the device
+// cookie is cleared, so the next visit is the full login page.
 func (a *API) handleLogout(w http.ResponseWriter, r *http.Request) {
 	sess, _ := auth.FromContext(r.Context())
+	if sess.DeviceID != 0 && a.deps.Devices != nil {
+		if err := a.deps.Devices.RevokeDevice(r.Context(), sess.DeviceID); err != nil {
+			a.log.Error("logout: revoke device failed", "err", err, "session", sess)
+			writeError(w, http.StatusInternalServerError, "internal", "could not end session")
+			return
+		}
+		a.deps.Auth.Clear(w)
+		a.deps.Auth.ClearDevice(w)
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
 	if err := a.deps.Sessions.Delete(r.Context(), sess.ID); err != nil {
 		a.log.Error("logout failed", "err", err, "session", sess)
 		writeError(w, http.StatusInternalServerError, "internal", "could not end session")
