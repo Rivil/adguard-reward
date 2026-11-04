@@ -2,5 +2,724 @@
   "phase": "pin-unlock",
   "base": "milestone/v0.2",
   "base_commit": "45ec08497f3f7ec490b19beac71b001dd0274f12",
-  "tasks": {}
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/auth/pin.go",
+        "internal/auth/pin_test.go",
+        "go.mod",
+        "go.sum"
+      ],
+      "commit": "9ad1f31",
+      "completed_at": "2026-11-04T16:07:46.407137Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "VerifyPIN",
+          "loc": "internal/auth/pin.go:98",
+          "what": "ASCII-only 4-6 digit PIN validation and salted Argon2id PHC hashing whose verify reads cost params from the stored string"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "internal/api/unlock.go",
+        "internal/api/unlock_test.go",
+        "internal/api/api.go",
+        "internal/api/errors.go"
+      ],
+      "commit": "958a89c",
+      "completed_at": "2026-11-04T16:51:00.598938Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "API.handleUnlock",
+          "loc": "internal/api/unlock.go:55",
+          "what": "POST /api/v1/unlock trades a device cookie and PIN for a tagged session without AdGuard; attempt reserved before Argon2, 5th wrong PIN revokes, one event=unlock log line per attempt"
+        }
+      ]
+    },
+    "t-11": {
+      "files": [
+        "internal/api/login.go",
+        "internal/api/sessions.go",
+        "internal/api/teardown_test.go"
+      ],
+      "commit": "28983d3",
+      "completed_at": "2026-11-04T16:54:55.551681Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "API.handleLogout",
+          "loc": "internal/api/login.go:121",
+          "what": "logout on a PIN session revokes the device; revoke-all deletes the caller's other devices; a full login on a same-user PIN device stays tagged, another user's device cookie is cleared"
+        }
+      ]
+    },
+    "t-12": {
+      "files": [
+        "internal/api/pin.go",
+        "internal/api/pin_change_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "a8bc564",
+      "completed_at": "2026-11-04T16:58:22.106371Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "API.handlePinRemove",
+          "loc": "internal/api/pin.go:146",
+          "what": "PIN change (POST with password) and remove (DELETE) re-check the AdGuard password under the login limiter; change resets strikes and keeps the token, remove revokes the device and leaves the session on 30d"
+        }
+      ]
+    },
+    "t-13": {
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "2545d22",
+      "completed_at": "2026-11-04T17:01:40.125872Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "run",
+          "loc": "cmd/adguard-reward/main.go:125",
+          "what": "the store is wired as the auth and API device store; device cookie inherits the Secure decision and the sweeper drops expired devices"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/store/migrations/0010_devices.sql",
+        "internal/auth/device.go",
+        "internal/store/devices.go",
+        "internal/store/devices_test.go",
+        "internal/store/store_test.go"
+      ],
+      "commit": "8bce358",
+      "completed_at": "2026-11-04T16:15:45.675002Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "Store.ReserveAttempt",
+          "loc": "internal/store/devices.go:80",
+          "what": "devices table with capped persisted strike counter; increment-first reservation and revocation that deletes tagged sessions"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/api/login.go",
+        "internal/api/reauth.go",
+        "internal/api/reauth_test.go"
+      ],
+      "commit": "8263d6a",
+      "completed_at": "2026-11-04T16:18:41.381087Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "API.recheckPassword",
+          "loc": "internal/api/reauth.go:40",
+          "what": "AdGuard password check under the shared login limiter and in-flight slot, reused by login and PIN change/remove"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/activeGrants.ts",
+        "web/src/lib/activeGrants.test.ts"
+      ],
+      "commit": "e685f38",
+      "completed_at": "2026-11-04T16:23:20.216788Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "locked",
+          "loc": "web/src/lib/api.ts:128",
+          "what": "SPA request() routes 401 pin_required to a locked store and other 401s to sign-out; PIN client calls; grant polling pauses after 60s idle"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/auth/auth.go",
+        "internal/auth/auth_test.go",
+        "internal/store/sessions.go",
+        "internal/store/sessions_test.go"
+      ],
+      "commit": "b4dbe69",
+      "completed_at": "2026-11-04T16:26:08.335082Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "Manager.expiry",
+          "loc": "internal/auth/auth.go:209",
+          "what": "sessions carry a nullable device tag; tagged sessions slide 15m idle, untagged 30d; Attach/DetachDevice reset the window"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "web/src/lib/PinPad.svelte",
+        "web/src/lib/PinPad.test.ts",
+        "web/src/App.svelte",
+        "web/src/App.test.ts"
+      ],
+      "commit": "5249a91",
+      "completed_at": "2026-11-04T16:30:21.368177Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "PinPad",
+          "loc": "web/src/lib/PinPad.svelte:41",
+          "what": "full-screen PIN pad replaces the route while locked; bad_pin shows attempts left, revoked falls back to login, unlock remounts the route"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "internal/auth/device.go",
+        "internal/auth/middleware.go",
+        "internal/auth/auth.go",
+        "internal/auth/middleware_test.go"
+      ],
+      "commit": "6534255",
+      "completed_at": "2026-11-04T16:34:36.648377Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "Manager.rejectNoSession",
+          "loc": "internal/auth/middleware.go:54",
+          "what": "90-day HttpOnly device cookie; a lapsed session with a live device cookie answers 401 pin_required, otherwise unauthorized and the device cookie cleared; sweeper drops expired devices"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "web/src/lib/Settings.svelte",
+        "web/src/lib/Settings.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/App.svelte"
+      ],
+      "commit": "7dda31d",
+      "completed_at": "2026-11-04T16:37:54.222414Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "Settings",
+          "loc": "web/src/lib/Settings.svelte:65",
+          "what": "/settings screen shows has_pin; first set needs PIN+confirm, change and remove re-ask the AdGuard password"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "internal/api/pin.go",
+        "internal/api/pin_test.go",
+        "internal/api/api.go",
+        "internal/api/login_test.go",
+        "internal/api/errors.go"
+      ],
+      "commit": "8545751",
+      "completed_at": "2026-11-04T16:43:15.60804Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "API.handlePinSet",
+          "loc": "internal/api/pin.go:58",
+          "what": "POST /api/v1/pin sets a first PIN on an untagged session (Argon2id hash, device cookie, session tagged); GET /api/v1/pin reports has_pin from the session tag"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-1",
+          "text": "TestValidatePIN rejects the Arabic-Indic and fullwidth inputs only because of byte length: each is 4 runes but 8 or 12 bytes. An implementation that checks len(pin) in bytes but uses unicode.IsDigit per rune would still pass. A 6-byte multi-byte case such as \"١٢٣\" (3 Arabic-Indic digits) would catch that variant.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "go.mod also moves golang.org/x/sys v0.47.0 -\u003e v0.49.0 (indirect) because x/crypto v0.58.0 requires it. The task lists go.mod and go.sum, so this is in scope.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "HashPIN does not call ValidatePIN; the doc comment says so and leaves it to callers. The c-1 handler task must run ValidatePIN before hashing.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestVerifyPIN covers a wide range of malformed input (wrong variant or version, field order, leading zeros, signs, out-of-bound m/t/p, extra or missing fields, non-base64), each wrapped in recover.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "parsePHC's comment says the lower bounds reject parameters that would be trivially brute-forced, but the memory lower bound is only 8*p KiB (e.g. m=8,t=1 is accepted). That is harmless, since anyone who can edit the row can write their own hash anyway, but the comment overstates what the check does.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "phcUint names a parameter `max`, which shadows the Go builtin inside that function. It is legal but slightly confusing.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "go.mod also bumps golang.org/x/sys v0.47.0 -\u003e v0.49.0 (indirect), which x/crypto v0.58.0 pulls in. It sits within the declared go.mod/go.sum files.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-10": {
+      "outcome": "pass",
+      "rounds": 3,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-7",
+          "text": "The 500 paths in handleUnlock (device lookup, ReserveAttempt, VerifyPIN hash parse, RevokeDevice, ResetAttempts, IssueForDevice, TouchDevice failures) return without emitting the event=unlock line, so 'every attempt emits one line' does not hold on internal errors.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "The success path calls IssueForDevice before TouchDevice. If TouchDevice fails, the client gets a 500, but a live tagged session row already exists and its cookie is never sent. Also, the task description orders TouchDevice before IssueForDevice.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "A bad body sent with an expired device cookie still makes LookupDevice revoke the device (a side effect), yet the reply is 400 and the device cookie is not cleared, so the client keeps a dead cookie until its next attempt.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "wellFormedDeviceToken duplicates the token-format knowledge that auth.hashToken already holds; the two could drift.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-4",
+          "text": "If RevokeDevice errors on the 5th strike (500), the device row is left at failed_attempts=5 with its tagged sessions intact; every later attempt hits ErrNoAttempts and goes to revokedUnlock, which answers device_revoked but never retries RevokeDevice. The device row and its live tagged sessions stay until expiry or idle-out. Calling RevokeDevice on the ErrNoAttempts branch would close this.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-7",
+          "text": "TestUnlock_Log scans the logs for the correct PIN 583920 but not for the wrong PIN 000000 sent in the bad_pin and 5th-strike steps, so a leak of a wrong PIN would go unnoticed.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "wellFormedDeviceToken repeats auth.hashToken's length and strict-base64url check. The two must stay in step to tell no_device from device_revoked; an exported helper in auth would avoid the drift.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Restart persistence of the strike counter (c-4) is not tested here. This task's test_contract doesn't claim it, and the counter lives in the devices table, so it holds by construction.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 3,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-7",
+          "text": "server-side failures log outcome \"error\", a fifth value beyond c-7's ok|bad_pin|device_revoked|no_device (plus the task's bad_request); harmless but outside the enumerated set",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 3,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "a correct PIN racing a parallel 5th-strike revoke reaches IssueForDevice for a deleted device; foreign_keys(ON) makes the insert fail, so it answers 500/error rather than device_revoked, with no orphan session left behind",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 3,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "unlock is not behind the login IP rate limiter; only the per-device counter limits guessing, which the record does not ask for",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-11": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "handleLogin's body decoding was switched to the shared decodeBody helper (internal/api/pin.go), plus a new TestLogin_TrailingBodyRejected. The file is declared, but the task description doesn't mention this refactor. Behaviour matches the old code: trailing data and oversize bodies are still rejected before AdGuard is contacted.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "handleSessionsRevokeAll is not atomic. If DeleteOthers succeeds and DeleteOtherDevices then fails, the caller gets a 500 although the other sessions are already gone. Retrying is safe, so this is acceptable.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-12": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "handlePinRemove calls Devices.RevokeDevice, not the DeleteDevice the task description names; this also deletes every other session tagged with the device instead of letting ON DELETE SET NULL untag them. It is deliberate, commented and tested (TestRemovePIN_OtherTaggedSessionGoes), but it departs from the recorded plan.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "DetachDevice and RevokeDevice are separate, non-transactional calls: if RevokeDevice fails after DetachDevice succeeded, the caller gets a 500 while their session is already untagged on the 30-day expiry and the device/PIN row still exists, so a failed remove quietly lifts the 15-minute idle lock for this session.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "reauth's Retry-After uses int(retry/time.Second), which can emit \"0\" for a sub-second remaining window; this mirrors the existing rejectLimited in login.go.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-13": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "No binary-level test checks that the sweeper removes expired devices; the test_contract does not claim one, and the wiring rests on RunSweeper's existing m.devices branch.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRun_PinSurvivesRestart also checks zero /control/login hits on unlock and that a correct PIN resets the counter, which goes beyond the restart contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestDevice_LogValue's extra check that the log line does not contain \"ab\" proves little: slog's JSON handler would write a [32]byte TokenHash as a number array, not hex. The exact {id, username} map comparison is what actually guards against leaking hashes, and it is sufficient.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "ResetAttempts and TouchDevice return nil for a missing device id, while ReplacePIN returns ErrDeviceNotFound. This matches the interface docs, but callers cannot tell when the device is gone.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "DeleteOtherDevices and DeleteExpiredDevices also delete the sessions tagged with those devices, which goes beyond the test_contract. It is documented in the code and tested, and it is consistent with RevokeDevice.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "test_contract names TestLogin_Burst with a 20-request burst; the diff adds a new TestLogin_Burst20 instead, and the existing TestLogin_Burst in login_test.go is unchanged at 12 requests. The behaviour is covered, but under a name the contract doesn't use",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "loginSlot is now released when recheckPassword returns, before Auth.Issue, not after Issue as the old handleLogin comment said. This doesn't affect the budget because success never touches the limiter",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "tests cover both directions of the shared budget (re-check failures limit login and login failures limit re-check) and the canceled-while-queued path with zero AdGuard hits",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 403 re-check test can only fail if someone later adds 403 routing, because request() only calls the global handlers on a 401. It still meets the contract and guards against that drift.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Idle detection uses Date.now(), so a wall-clock jump such as an NTP correction or a manual clock change can end the 60s idle window early or late. performance.now() would avoid this, but the effect is harmless.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Input on the PIN pad while locked counts as use and resumes grant polling. Those polls get 401 pin_required back and set locked again, which does no harm.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "AttachDevice(ctx, id, 0) would store an untagged session with a 15m expiry, which the next Authenticate would slide to 30d; callers should never pass 0, and no guard enforces that",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestAttachDevice_StartsWindow uses a second attached session as an inside-the-window control, so the T+15m01s rejection is not trivially satisfied; TestSession_SetDevice also covers the store's ErrNotFound path and foreign key enforcement",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-3",
+          "text": "The double-lock test in App.test.ts never makes Home's own fetches return pin_required, which the test_contract describes. Home mounts and fetches while state is 'ok', and the two concurrent 401s come from direct me() calls. Its comment 'Home's own fetches plus two more racing in parallel' is therefore misleading. Also, because the pad is gated on a boolean store, stacking is impossible by construction, so this test is weak protection against a regression.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "In PinPad.submit, the finally block sets pending=false after onRevoked/onUnlocked may already have unmounted the component. This is harmless in Svelte 5, but the early return inside the try/catch still runs the finally.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 'unauthorized' code from unlock is handled the same as device_revoked (onRevoked), and PinPad.test covers both codes. The App-level test covers only device_revoked, which is what the contract asks for.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "The double-lock test can only guard against regressions: `locked` is a boolean writable rendered by a single {#if}, so one pad is guaranteed by construction. It still waits for two or more concurrent pin_required responses from Home's Promise.all, so it does exercise the race.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The PinPad overlay is role=dialog aria-modal but does not autofocus the PIN input or trap focus. This is an accessibility point, not a contract item.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "cmd/adguard-reward/main.go still builds auth.Options without Devices, so the device cookie and pin_required gate do nothing in production until a sibling task wires the store in; main.go is not in this task's file list.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "On the expired-session path with a device-store error, Authenticate has already deleted the session row but the 500 keeps the session cookie; this matches the 'neither cookie cleared' contract, and the browser just replays a dead cookie until the next 401.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRunSweeper_Devices depends on a real 5ms ticker and a 1s wall-clock deadline; it should be reliable but could be slow on a heavily loaded CI machine.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "If the initial GET /api/v1/pin fails (network or 5xx), hasPin stays null: the screen shows only the error with no form and no retry, so the user has to leave and come back",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 403 test sets route to 'settings' by hand and renders Settings on its own, so it only shows that a 403 does not navigate. That is correct because only 401 reaches the global handlers in request()",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The validation tests check for zero non-GET calls rather than zero fetch calls overall. That still meets the contract's intent, because the only GET is the initial has_pin load before anything is submitted.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 403 test's check that the route is still 'settings' has real value: if 403 were ever sent through the shared sign-out handler, its navigate('login') would change the route and the test would fail.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Beyond the contract, the tests also cover refusing a change or remove with no password, rejecting a 7-digit PIN, and retrying after a failed status load.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-1",
+          "text": "decodeBody drains r.Body directly (io.Copy(io.Discard, r.Body)) rather than the MaxBytesReader it wrapped, so the drain bypasses the limit: a valid object followed by \u003e4 KiB of whitespace (or a trailing '}', which dec.More() treats as no-more) is accepted with 204, and the drain reads an unbounded body. The comment claims the opposite. Drain the limited reader and treat any non-EOF trailing content as bad.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "cmd/adguard-reward/main.go wires neither auth.Options.Devices nor api.Deps.Devices, so in production IssueDevice returns 'no device store' and POST /api/v1/pin answers 500; the new Deps.Devices comment says 'main always wires it', which is false today. main.go is outside this task's files, so a sibling task may own it, but confirm it does.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Two concurrent first-set POSTs on one untagged session each IssueDevice; the second AttachDevice overwrites the tag and the first device row remains, valid for 90 days. Rare, same user and browser, but it leaves an orphan device.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestSetPIN_TaggedWithoutCookie also checks zero /control/login hits and no device cookie on the 403, and TestSetPIN_NoPlaintext includes a positive control on the 'pin set' log line, so neither test passes vacuously.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "Deps.Devices doc comment says 'main always wires it', but nothing under cmd/ sets Devices in api.Deps or auth.Options, so POST /api/v1/pin answers 500 in production until a sibling task wires it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "Two concurrent first-set POSTs on the same untagged session each IssueDevice and AttachDevice; the second overwrites the session tag and the browser's device cookie, leaving the first device row orphaned for its 90-day lifetime",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestSetPIN_First checks HttpOnly/SameSite=Strict/Path=/ on the device cookie but not Secure under TLS; no test_contract line here asks for it",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
 }
