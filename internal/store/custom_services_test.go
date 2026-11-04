@@ -280,15 +280,23 @@ func TestIsCustomServiceID(t *testing.T) {
 	}
 }
 
-func TestMigrate_ServiceTogglesLast(t *testing.T) {
+// TestMigrate_ServiceTogglesAfterCustomServices pins 0008 directly after
+// 0007, embedded and applied, without requiring it to stay the last one.
+func TestMigrate_ServiceTogglesAfterCustomServices(t *testing.T) {
 	s, _ := openTemp(t)
-	names := s.Migrations()
-	const last = "0008_service_toggles.sql"
-	if len(names) < 2 || names[len(names)-1] != last || names[len(names)-2] != "0007_custom_services.sql" {
-		t.Fatalf("migrations = %v, want 0007_custom_services.sql then %s last", names, last)
+	const prev, want = "0007_custom_services.sql", "0008_service_toggles.sql"
+	follows := func(names []string) bool {
+		for i, n := range names {
+			if n == prev {
+				return i+1 < len(names) && names[i+1] == want
+			}
+		}
+		return false
 	}
-	applied := queryStrings(t, s.DB(), `SELECT name FROM schema_migrations ORDER BY rowid`)
-	if applied[len(applied)-1] != last {
-		t.Fatalf("applied = %v", applied)
+	if names := s.Migrations(); !follows(names) {
+		t.Fatalf("migrations = %v, want %s directly after %s", names, want, prev)
+	}
+	if applied := queryStrings(t, s.DB(), `SELECT name FROM schema_migrations ORDER BY rowid`); !follows(applied) {
+		t.Fatalf("applied = %v, want %s directly after %s", applied, want, prev)
 	}
 }

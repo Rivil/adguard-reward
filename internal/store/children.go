@@ -139,8 +139,11 @@ func (st *Store) CreateChild(ctx context.Context, name string, clients []string)
 		if err := checkConflicts(ctx, tx, 0, name); err != nil {
 			return err
 		}
+		// The history watermark is read in the insert itself, inside this tx,
+		// so a reused child id never inherits an earlier child's grants.
 		res, err := tx.ExecContext(ctx,
-			`INSERT INTO children (name, created_at) VALUES (?, ?)`, name, time.Now().Unix())
+			`INSERT INTO children (name, created_at, history_after_grant_id)
+			 VALUES (?, ?, (SELECT COALESCE(MAX(id), 0) FROM grants))`, name, time.Now().Unix())
 		if err != nil {
 			return err
 		}
