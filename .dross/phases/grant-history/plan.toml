@@ -26,11 +26,11 @@ task_seq = 10
   id = "t-1"
   wave = 1
   title = "Add grant-history schema migration 0009"
-  files = ["internal/store/migrations/0009_grant_history.sql", "internal/store/store_test.go", "internal/store/children.go", "internal/store/children_test.go"]
+  files = ["internal/store/migrations/0009_grant_history.sql", "internal/store/store_test.go", "internal/store/children.go", "internal/store/children_test.go", "internal/store/custom_services_test.go"]
   description = "Add grants.end_reason, children.history_after_grant_id (INTEGER NOT NULL DEFAULT 0), the grant_service_names / grant_service_removals / grant_extensions tables and grants_child_history_idx as pinned in the header. No UPDATE of existing rows. CreateChild sets history_after_grant_id = COALESCE(MAX(grants.id), 0) in its insert tx."
   covers = ["c-1", "c-2", "c-3", "c-6"]
   test_contract = ["if the migration backfills or rewrites legacy rows, TestMigrate0009_LegacyRowsUntouched fails: a store migrated through 0008 with one expired, one ended and one active grant, then upgraded, keeps status, started_at, ends_at, ended_at, grant_services and grant_clients byte-identical and end_reason NULL on all three", "if the CHECK constraints are missing, TestMigrate0009_Checks fails: INSERT with end_reason='bogus' is rejected, and a grant_service_removals row with reason other than 'permanent_block' is rejected", "if migration ordering breaks, TestMigrate0009_Order fails: schema_migrations lists 0009_grant_history.sql directly after 0008_service_toggles.sql", "if CreateChild does not set the watermark inside its tx, TestCreateChild_HistoryWatermark fails: with grants up to id 7 a new child gets history_after_grant_id 7; with no grants it gets 0; children existing before 0009 read 0 after the upgrade"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-2"
@@ -45,7 +45,7 @@ task_seq = 10
     '''if popstate does not re-parse the child, the popstate test fails: going from /history?child=3 to /history?child=5 updates historyChild to 5; a stale 3 fails''',
     '''if the client builds the wrong URL or swallows errors, the fetchHistory test fails: fetchHistory(3) requests GET /api/v1/children/3/history with no query, fetchHistory(3, 40) appends ?before=40, and a 404 rejects with ApiError status 404''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-3"
@@ -64,7 +64,7 @@ task_seq = 10
     '''if trimmed services still count as live, TestSetToggle_TrimFreesService fails: after trim + unblock a new grant for the same (child, service) is accepted (no *ErrGrantOverlap), and DeleteCustomService of a custom:N trimmed off a still-live grant succeeds instead of *ErrServiceInUse''',
     '''if drift repair re-unblocks a trimmed service, TestToggle_BlockSurvivesReconcile fails: engine Toggle(block, tiktok) on a live two-service grant, then Reconcile, leaves tiktok in the client's blocked_services''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-4"
@@ -81,13 +81,13 @@ task_seq = 10
     '''if End records a reason before AdGuard confirms the revert, TestEnd_RevertFailedKeepsActive fails: AdGuard add failing returns *ErrRevertFailed and the row stays active with end_reason NULL''',
     '''if engine times come from the schedule instead of the clock, TestEngine_HistoryTimes fails: Create -> clk+10m -> End gives ended_at == clk.Now() at End; a timer expiry after an Extend re-arm records 'expired' with ended_at = fake clock at revert, not the original ends_at; two Extends at different clock times record extended_at equal to those times''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-5"
   wave = 2
   title = "Build History screen with paging"
-  files = ["web/src/lib/History.svelte", "web/src/lib/History.test.ts", "web/src/lib/history.ts", "web/src/lib/history.test.ts"]
+  files = ["web/src/lib/History.svelte", "web/src/lib/History.panel.test.ts", "web/src/lib/history.ts", "web/src/lib/history.test.ts"]
   description = '''Per-child screen with the child's name and a back button; grants newest first with services (removed marked), start, end, end-status label and extensions; load-more drives fetchHistory(child, next_before). Pure statusLabel/endTimeOf helpers live in history.ts. A null child or 404 renders "No such child" with the back button.'''
   covers = ["c-1", "c-2", "c-3", "c-4", "c-6"]
   depends_on = ["t-2"]
@@ -99,7 +99,7 @@ task_seq = 10
     '''if error and empty states are conflated, the states test fails: a 404 or null child shows "No such child" with the back button and no list and makes no fetch for a null child; an initial 500 shows retry, not the empty state; zero grants shows "No grants yet"''',
     '''if extensions collapse to the latest, the extensions test fails: a twice-extended grant renders two extension entries in chronological order, each old -> new''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-6"
@@ -110,7 +110,7 @@ task_seq = 10
   covers = ["c-2", "c-3", "c-4", "c-6"]
   depends_on = ["t-3", "t-4"]
   test_contract = ["if the page boundary is off by one, TestListGrantHistory_Paging fails: 51 grants give a first page of 50 newest-first with has-more; exactly 50 gives has-more false", "if the keyset cursor is not stable, TestListGrantHistory_StableCursor fails: a grant created between the page-1 and page-2 reads appears neither in page 2 nor as a duplicate", "if a reused child id inherits history, TestListGrantHistory_ReusedChildID fails: child A (highest id) gets grants at fixed t0, is deleted, and a new child created with the same id (asserted equal) has an empty history; a grant then created for the new child is its only entry. Grant start times are injected and never compared with children.created_at", "if removed services or extensions are dropped, TestListGrantHistory_RemovalsAndExtensions fails: a grant with one trimmed and one live service lists both with removed_at/reason on the trimmed one; a grant ended by its last trim still lists that service; extensions come back ascending", "if legacy rows get inferred reasons or leak across children, TestListGrantHistory_Legacy fails: a grant seeded at 0008 and upgraded returns its services with empty snapshot name, its times, status 'ended' and NULL reason; another child's grants never appear", "if history is not durable, TestListGrantHistory_Reopen fails: store Close + Open on the same dir returns an identical history", "if removed services lose their snapshot name, TestListGrantHistory_RemovedServiceKeepsName fails: a grant created via CreateGrantNamed with {tiktok: 'TikTok', youtube: 'YouTube'} has youtube trimmed by a block toggle; the history read returns youtube marked removed with name 'YouTube' from grant_service_names, not an empty name (names must not be joined through the live grant_services rows)"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-7"
@@ -125,7 +125,7 @@ task_seq = 10
     '''if the lookup uses the raw id, TestGrantCreate_SnapshotTrimmedID fails: a service id sent with surrounding whitespace still gets its snapshot''',
     '''if a rejected create writes names, TestGrantCreate_RejectNoNames fails: a 409 overlap or 422 unknown-service create writes no name rows, and the existing 409/422 cases still pass''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-8"
@@ -140,7 +140,7 @@ task_seq = 10
     '''if per-child links share a closure, the Home links test fails: with two children each History link navigates to its own child id''',
     '''if back navigation is broken, the back test fails: History's back button returns to '/' and renders Home''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-9"
@@ -159,7 +159,7 @@ task_seq = 10
     '''if input/auth errors are wrong, TestHistory_Errors fails: non-numeric, unknown or deleted child id -> 404; ?before=abc, -1 or 0 -> 400; no session -> 401''',
     '''if the wire shape drifts from the pinned contract, TestHistory_GoldenKeys fails: the response JSON has exactly the pinned field names and lists are [], never null''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-10"
@@ -174,4 +174,4 @@ task_seq = 10
     '''if the startup pass does not record expiry, TestRun_OverdueGrantExpiredAtStartup fails: a grant whose ends_at passes while the app is stopped reads "expired" after restart with ended_at >= restart time (set by the startup pass, not ends_at)''',
     '''if expiry is recorded before AdGuard confirms the revert, TestRun_AdGuardDownAtStartup fails: with AdGuard unreachable at startup the overdue grant reads "ongoing", not "expired", until a later pass reverts it''',
   ]
-  status = "pending"
+  status = "done"

@@ -2,5 +2,403 @@
   "phase": "grant-history",
   "base": "milestone/v0.2",
   "base_commit": "6d5958a74402d0320eb07b6de5b2e7be66598797",
-  "tasks": {}
+  "tasks": {
+    "t-1": {
+      "files": [
+        "internal/store/migrations/0009_grant_history.sql",
+        "internal/store/store_test.go",
+        "internal/store/children.go",
+        "internal/store/children_test.go",
+        "internal/store/custom_services_test.go"
+      ],
+      "commit": "a753b94",
+      "completed_at": "2026-11-04T10:04:50.279801Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "0009_grant_history.sql",
+          "loc": "internal/store/migrations/0009_grant_history.sql:1",
+          "what": "end_reason, removal/extension/name-snapshot tables and a per-child grant-id watermark set in CreateChild"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "43094d1",
+      "completed_at": "2026-11-04T10:46:37.45695Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "TestRun_OverdueGrantExpiredAtStartup",
+          "loc": "cmd/adguard-reward/main_test.go:1210",
+          "what": "end-to-end proof that history survives restart and that downtime-overdue grants record expiry only once the startup or a later pass reverts them"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts"
+      ],
+      "commit": "e94c3a1",
+      "completed_at": "2026-11-04T10:07:37.516007Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "fetchHistory",
+          "loc": "web/src/lib/api.ts:571",
+          "what": "history route with strictly parsed ?child= store, query-aware navigate and the paged history client"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/store/toggles.go",
+        "internal/store/toggles_test.go",
+        "internal/grants/toggle_test.go"
+      ],
+      "commit": "7f506d2",
+      "completed_at": "2026-11-04T10:10:23.49819Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "trimGrant",
+          "loc": "internal/store/toggles.go:80",
+          "what": "block-toggle trims log a grant_service_removals row in-tx and an emptied grant records end_reason permanent_block"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/store/grants.go",
+        "internal/store/grants_test.go",
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go"
+      ],
+      "commit": "6352119",
+      "completed_at": "2026-11-04T10:16:13.695482Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "ExtendGrant",
+          "loc": "internal/store/grants.go:165",
+          "what": "end_reason derived in SetGrantStatus, one grant_extensions row per extend, name snapshots written atomically by CreateGrantNamed"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "web/src/lib/History.svelte",
+        "web/src/lib/History.panel.test.ts",
+        "web/src/lib/history.ts",
+        "web/src/lib/history.test.ts"
+      ],
+      "commit": "e0bfd83",
+      "completed_at": "2026-11-04T10:30:50.572419Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "History.svelte",
+          "loc": "web/src/lib/History.svelte:60",
+          "what": "per-child history screen: newest-first grants with end-status labels, removed-service markers, extensions and deduped load-more paging"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "internal/store/history.go",
+        "internal/store/history_test.go"
+      ],
+      "commit": "cd5f7bf",
+      "completed_at": "2026-11-04T10:33:59.292459Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "ListGrantHistory",
+          "loc": "internal/store/history.go:64",
+          "what": "one-tx keyset-paged per-child read of grants with live+removed services, snapshot names and extensions, gated by the child's grant-id watermark"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "internal/api/grants.go",
+        "internal/api/grants_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "c553a34",
+      "completed_at": "2026-11-04T10:36:38.229681Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "handleGrantCreate",
+          "loc": "internal/api/grants.go:197",
+          "what": "grant create snapshots each service's catalogue name (trimmed id) via Grants.CreateNamed with no extra AdGuard read"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "web/src/App.svelte",
+        "web/src/App.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "f703c5d",
+      "completed_at": "2026-11-04T10:39:23.283615Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "App.svelte",
+          "loc": "web/src/App.svelte:50",
+          "what": "history route mounted with the parsed child (reload keeps ?child=) and a per-child History link on Home"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "internal/api/history.go",
+        "internal/api/history_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "63ad04c",
+      "completed_at": "2026-11-04T10:43:02.785825Z",
+      "landmarks": [
+        {
+          "feature": "grant history",
+          "symbol": "handleHistory",
+          "loc": "internal/api/history.go:82",
+          "what": "GET /children/{id}/history: paged wire view with endStatus mapping and snapshot -\u003e live catalogue -\u003e bare id names, catalogue read only when a snapshot is missing"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestCreateChild_HistoryWatermark comments that a rejected create 'leaves no row and writes no watermark', but only checks for ErrNameTaken; nothing counts the rows afterwards. This goes beyond the contract and does not affect it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestMigrate0009_Checks also checks the ON DELETE CASCADE on all three new tables and the column order of grants_child_history_idx, which is more than the contract asks for.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestMigrate_ServiceTogglesLast was rewritten as a test that 0008 directly follows 0007, so adding 0009 no longer breaks it. The intent is kept.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-10": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRun_AdGuardDownAtStartup simulates 'AdGuard unreachable' with forced 503s on /control/status and /control/clients rather than a refused connection; the startup-reconcile stderr assertion confirms the pass did fail, so the contract is still exercised",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRun_HistorySurvivesRestart reuses the first run's session cookie after restart, relying on persisted sessions as TestRun_GrantSurvivesRestart already does",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The routeFor load test calls vi.resetModules() and re-imports ./api for each garbage URL. Each import adds another popstate listener to window, and these listeners update their own separate store instances. That is harmless to the later popstate test, but the listeners pile up for the rest of the file.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "childIdOf uses the regex ^[1-9][0-9]*$ plus a Number.isSafeInteger check, which rejects '1e2', ' 3', '3.5', '0' and '-1'. The tests check all of these when the page loads and on popstate, and navigate() applies the same checks to the number it is given.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "TestSetToggle_TrimFreesService and TestToggle_BlockSurvivesReconcile would also have passed before this change, since trimGrant already deleted the grant_services row. They are regression guards for keeping that DELETE, which is what their test_contract lines describe.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The removal insert relies on the grant_service_removals PK (grant_id, service_id) never colliding. That holds because grant_services rows are only inserted by CreateGrant, so the same (grant, service) can't be trimmed twice.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "SetGrantStatus used to stamp ended_at for any non-active target; it now stamps ended_at and end_reason only for expired and ended. Any other target, including a status the CHECK would reject, gets NULLs. No caller does that today.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Engine.Extend still runs GetGrant before store.ExtendGrant, which now checks for an active grant itself inside its transaction. The pre-read is redundant but harmless under e.mu.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "The load-more double-click test clicks a button that is already disabled, so jsdom drops the second click and the loadingMore guard in loadMore is never exercised. The one-fetch contract still holds because the test would fail only if both the guard and the disabled attribute were removed.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "History.svelte is not mounted anywhere under web/src yet; route wiring and the per-child History link are outside this task's record.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "A finished grant with a null ended_at renders an em dash, not the scheduled ends_at, which matches the endTimeOf contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "ListGrantHistory has no upper bound on limit; each IN list adds one bind parameter per grant (twice in the services query), so a very large caller-supplied limit could hit SQLite's bind-parameter limit. Callers are expected to pass HistoryPageSize.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "In historyDetails, the first query's rows are closed by hand on scan error and after the loop, but the second query uses defer. Both are correct; the style just differs.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Engine.Create is no longer called through the API's Grants interface; it remains as a nil-names wrapper over CreateNamed for other callers",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestGrantCreate_RejectNoNames 409 case relies on the store's single-transaction write so roblox gets no name row; the store tests already cover that atomicity",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "An existing Home test's selector was narrowed to '.none button.link' because the new History link button also has class 'link' and now comes first in each child section; this is a correct adjustment, not a weakened test",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "App reload tests simulate a page load by setting route and historyChild directly (loadAt) instead of re-running the module's initial URL parsing; the URL-to-child parsing itself is not exercised here",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-6",
+          "text": "liveNames treats any catalogue error as 'no names', including a failed ListCustomServices store read, not just AdGuard being down; that matches the locked service_names fallback but hides store failures behind a warning log",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "TestHistory_NameSnapshotEndToEnd uses the custom name 'Portal' instead of the contract's 'Roblox' and never creates a custom:7, so 'deleted custom:7' is really 'never-existing custom:7'; either way the service is missing from the catalogue, which is the behaviour the contract is after",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestHistory_CatalogueDown counts catalogue requests from right after grantOK returns; if the engine ever read the catalogue asynchronously after a grant, this zero-requests check could become flaky",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
 }
