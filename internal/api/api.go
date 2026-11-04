@@ -123,6 +123,9 @@ func New(d Deps) *API {
 // registration — and the catch-all — is visible.
 func (a *API) routes() {
 	a.mux.HandleFunc("POST /api/v1/login", a.handleLogin)
+	// Unlock is outside requireSession: its caller has, by definition, no
+	// live session — only the device cookie and a PIN.
+	a.mux.HandleFunc("POST /api/v1/unlock", a.handleUnlock)
 	a.mux.Handle("POST /api/v1/logout", a.requireSession(http.HandlerFunc(a.handleLogout)))
 	a.mux.Handle("GET /api/v1/me", a.requireSession(http.HandlerFunc(a.handleMe)))
 	a.mux.Handle("GET /api/v1/sessions", a.requireSession(http.HandlerFunc(a.handleSessionsList)))
