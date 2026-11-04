@@ -1,4 +1,4 @@
-phases = ["custom-services", "permanent-toggles", "grant-history", "pin-unlock", "export-import"]
+phases = ["custom-services", "permanent-toggles", "grant-history", "pin-unlock", "export-import", "history-overview"]
 
 [milestone]
   version = "v0.2"
