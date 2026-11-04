@@ -207,3 +207,204 @@ describe('Settings', () => {
     navigate('home')
   })
 })
+
+/** A response the test releases by hand, to observe the in-flight UI. */
+function held(): { answer: Answer; release: (r: Response) => void } {
+  let release: (r: Response) => void = () => {}
+  const p = new Promise<Response>((resolve) => (release = resolve))
+  return { answer: () => p, release }
+}
+
+const value = (label: string) => (screen.getByLabelText(label) as HTMLInputElement).value
+const alertText = async () => (await screen.findByRole('alert')).textContent
+const tryAgain = () => screen.queryByRole('button', { name: 'Try again' })
+
+describe('Settings — messages, field resets and gates', () => {
+  it('every field starts empty and there is no alert, note or Try again', async () => {
+    mockFetch({ 'GET /api/v1/pin': status(true) })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('This device has a PIN')
+
+    expect(value('New PIN')).toBe('')
+    expect(value('Confirm PIN')).toBe('')
+    expect(value('AdGuard password')).toBe('')
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(tryAgain()).toBeNull()
+  })
+
+  it('a malformed PIN reads "A PIN is 4 to 6 digits"; a mismatch reads "The PINs don\'t match"', async () => {
+    mockFetch({ 'GET /api/v1/pin': status(false) })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('No PIN on this device')
+
+    await type('PIN', '12')
+    await type('Confirm PIN', '12')
+    await fireEvent.click(screen.getByRole('button', { name: 'Set PIN' }))
+    expect(await alertText()).toBe('A PIN is 4 to 6 digits')
+
+    await type('PIN', '1234')
+    await type('Confirm PIN', '1235')
+    await fireEvent.click(screen.getByRole('button', { name: 'Set PIN' }))
+    expect(await alertText()).toBe("The PINs don't match")
+  })
+
+  it('change and remove without a password both read "Enter your AdGuard password"', async () => {
+    mockFetch({ 'GET /api/v1/pin': status(true) })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('This device has a PIN')
+
+    await type('New PIN', '1111')
+    await type('Confirm PIN', '1111')
+    await fireEvent.click(screen.getByRole('button', { name: 'Change PIN' }))
+    expect(await alertText()).toBe('Enter your AdGuard password')
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove PIN' }))
+    expect(await alertText()).toBe('Enter your AdGuard password')
+  })
+
+  it('a first set notes "PIN set" and clears both PIN fields', async () => {
+    mockFetch({ 'GET /api/v1/pin': status(false), 'POST /api/v1/pin': noContent })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('No PIN on this device')
+
+    await type('PIN', '583920')
+    await type('Confirm PIN', '583920')
+    await fireEvent.click(screen.getByRole('button', { name: 'Set PIN' }))
+
+    expect((await screen.findByRole('status')).textContent).toBe('PIN set')
+    expect(value('New PIN')).toBe('')
+    expect(value('Confirm PIN')).toBe('')
+    expect(value('AdGuard password')).toBe('')
+  })
+
+  it('a change notes "PIN changed" and clears PIN, confirm and password', async () => {
+    mockFetch({ 'GET /api/v1/pin': status(true), 'POST /api/v1/pin': noContent })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('This device has a PIN')
+
+    await type('New PIN', '1111')
+    await type('Confirm PIN', '1111')
+    await type('AdGuard password', 'pw')
+    await fireEvent.click(screen.getByRole('button', { name: 'Change PIN' }))
+
+    expect((await screen.findByRole('status')).textContent).toBe('PIN changed')
+    expect(value('New PIN')).toBe('')
+    expect(value('Confirm PIN')).toBe('')
+    expect(value('AdGuard password')).toBe('')
+  })
+
+  it('a remove notes "PIN removed" and clears both PIN fields', async () => {
+    mockFetch({ 'GET /api/v1/pin': status(true), 'DELETE /api/v1/pin': noContent })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('This device has a PIN')
+
+    await type('New PIN', '9999')
+    await type('Confirm PIN', '9999')
+    await type('AdGuard password', 'pw')
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove PIN' }))
+
+    expect((await screen.findByRole('status')).textContent).toBe('PIN removed')
+    expect(value('PIN')).toBe('')
+    expect(value('Confirm PIN')).toBe('')
+  })
+
+  it('a failed first set keeps "No PIN", keeps what was typed and shows no note', async () => {
+    mockFetch({
+      'GET /api/v1/pin': status(false),
+      'POST /api/v1/pin': () => json(500, { error: 'internal', message: 'boom' }),
+    })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('No PIN on this device')
+
+    await type('PIN', '583920')
+    await type('Confirm PIN', '583920')
+    await fireEvent.click(screen.getByRole('button', { name: 'Set PIN' }))
+
+    expect((await screen.findByRole('alert')).getAttribute('data-error')).toBe('internal')
+    expect(screen.getByText('No PIN on this device')).toBeTruthy()
+    expect(value('PIN')).toBe('583920')
+    expect(value('Confirm PIN')).toBe('583920')
+    expect(screen.queryByRole('status')).toBeNull()
+    // The status did load: a save failure never offers Try again.
+    expect(tryAgain()).toBeNull()
+  })
+
+  it('a failed remove keeps the PIN, the password and shows no note', async () => {
+    mockFetch({
+      'GET /api/v1/pin': status(true),
+      'DELETE /api/v1/pin': () => json(500, { error: 'internal', message: 'boom' }),
+    })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('This device has a PIN')
+
+    await type('AdGuard password', 'pw')
+    await fireEvent.click(screen.getByRole('button', { name: 'Remove PIN' }))
+
+    expect((await screen.findByRole('alert')).getAttribute('data-error')).toBe('internal')
+    expect(screen.getByText('This device has a PIN')).toBeTruthy()
+    expect(value('AdGuard password')).toBe('pw')
+    expect(screen.queryByRole('status')).toBeNull()
+    expect(tryAgain()).toBeNull()
+  })
+
+  it('a network failure shows data-error=network with the connection message', async () => {
+    mockFetch({
+      'GET /api/v1/pin': status(false),
+      'POST /api/v1/pin': () => Promise.reject(new TypeError('Failed to fetch')),
+    })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('No PIN on this device')
+
+    await type('PIN', '1234')
+    await type('Confirm PIN', '1234')
+    await fireEvent.click(screen.getByRole('button', { name: 'Set PIN' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.getAttribute('data-error')).toBe('network')
+    expect(alert.textContent).toBe("Can't reach the server — check your connection")
+  })
+
+  it('while a save is in flight the inputs and buttons are disabled; they re-enable after', async () => {
+    const save = held()
+    mockFetch({ 'GET /api/v1/pin': status(true), 'POST /api/v1/pin': save.answer })
+    render(Settings, { onBack: () => {} })
+    await screen.findByText('This device has a PIN')
+
+    await type('New PIN', '1111')
+    await type('Confirm PIN', '1111')
+    await type('AdGuard password', 'pw')
+    await fireEvent.click(screen.getByRole('button', { name: 'Change PIN' }))
+
+    const change = screen.getByRole('button', { name: 'Change PIN' }) as HTMLButtonElement
+    const remove = screen.getByRole('button', { name: 'Remove PIN' }) as HTMLButtonElement
+    await vi.waitFor(() => expect(change.disabled).toBe(true))
+    expect(remove.disabled).toBe(true)
+    for (const label of ['New PIN', 'Confirm PIN', 'AdGuard password'])
+      expect((screen.getByLabelText(label) as HTMLInputElement).disabled).toBe(true)
+
+    save.release(noContent())
+    expect((await screen.findByRole('status')).textContent).toBe('PIN changed')
+    expect(change.disabled).toBe(false)
+    expect(remove.disabled).toBe(false)
+  })
+
+  it('Try again hides while the reload is in flight and returns if it fails again', async () => {
+    const reload = held()
+    let n = 0
+    mockFetch({
+      'GET /api/v1/pin': (call) => (++n === 2 ? reload.answer(call) : json(502, { error: 'internal', message: 'boom' })),
+    })
+    render(Settings, { onBack: () => {} })
+    await screen.findByRole('alert')
+    expect(tryAgain()).toBeTruthy()
+
+    await fireEvent.click(tryAgain()!)
+    await vi.waitFor(() => expect(tryAgain()).toBeNull())
+    expect(screen.queryByRole('alert')).toBeNull()
+
+    reload.release(json(502, { error: 'internal', message: 'boom' }))
+    await vi.waitFor(() => expect(tryAgain()).toBeTruthy())
+    expect(screen.queryByRole('button', { name: 'Set PIN' })).toBeNull()
+  })
+})
