@@ -23,13 +23,13 @@ regenerate the whole document from a scan of the code and git history.
 
 ### Active grants panel
 
-Home's first block: every active grant as a row (child, services, countdown recomputed each second from the server's `ends_at` on one shared clock) with Extend (by the grant's own span) and End controls, per-row busy/alert state; expiry asks the server once and the row leaves on the answer. The list is a polled store — one shared in-flight refresh, 15 s interval plus a `visibilitychange` catch-up — and a failed poll keeps the last list ticking under a can't-reach-server badge (a 401 still routes to login).
+Home's first block: every active grant as a row (child, services, countdown recomputed each second from the server's `ends_at` on one shared clock) with Extend (by the grant's own span) and End controls, per-row busy/alert state; expiry asks the server once and the row leaves on the answer. The list is a polled store — one shared in-flight refresh, 15 s interval plus a `visibilitychange` catch-up — and a failed poll keeps the last list ticking under a can't-reach-server badge (a 401 still routes to login). A `fresh` refresh (after a permanent toggle) waits out a poll already in flight and polls again, so a toggle never shows a pre-toggle grant list.
 
-- refresh — web/src/lib/activeGrants.ts:24
+- refresh — web/src/lib/activeGrants.ts:29
 - ActiveGrants.svelte — web/src/lib/ActiveGrants.svelte:1
 - run — web/src/lib/ActiveGrants.svelte:45
 
-_introduced 05-phone-ui-buttons-pwa · e2b9115 · 2dab1f8_
+_introduced 05-phone-ui-buttons-pwa · e2b9115 · 2dab1f8 · extended permanent-toggles · ced8522_
 
 ### AdGuard API client
 
@@ -222,15 +222,16 @@ _introduced 04-grants-scheduler-reconciler · 13dc7bb_
 
 ### Grant reconciliation
 
-One pass under the engine mutex reads AdGuard once, reverts every grant past `ends_at` the timer missed, removes any granted service id that has reappeared in a covered client's `blocked_services` (a parent re-blocked it in AdGuard's UI), and re-arms missing expiry timers; a pass with nothing to do issues no writes. `Start` runs the pass before the HTTP listener accepts, `Run` loops it on an injectable interval (60 s in production) and logs a failed pass as an error, a pass that reverted or repaired as info, and a no-op pass not at all.
+One pass under the engine mutex reads AdGuard once, reverts every grant past `ends_at` the timer missed, removes any granted service id that has reappeared in a covered client's `blocked_services` (a parent re-blocked it in AdGuard's UI), re-arms missing expiry timers, and converges every client to its stored permanent toggles (a drifted pass re-reads clients before writing); a pass with nothing to do issues no writes. `Start` runs the pass before the HTTP listener accepts, `Run` loops it on an injectable interval (60 s in production) and logs a failed pass as an error, a pass that reverted or repaired as info, and a no-op pass not at all.
 
-- Engine.Reconcile — internal/grants/reconcile.go:32
-- Engine.Start — internal/grants/reconcile.go:112
-- Engine.Run — internal/grants/reconcile.go:123
-- TestReconcile_RunLogs — internal/grants/reconcile_test.go:356
+- Engine.Reconcile — internal/grants/reconcile.go:52
+- Engine.reconcileToggles — internal/grants/reconcile.go:165
+- Engine.Start — internal/grants/reconcile.go:234
+- Engine.Run — internal/grants/reconcile.go:246
+- TestReconcile_RunLogs — internal/grants/reconcile_test.go:362
 - run — cmd/adguard-reward/main.go:59
 
-_introduced 04-grants-scheduler-reconciler · 29444c6 · cdc438e · extended 06-deploy-nora · 43e3917_
+_introduced 04-grants-scheduler-reconciler · 29444c6 · cdc438e · extended 06-deploy-nora · 43e3917 · extended permanent-toggles · fed9367 · 71d537f_
 
 ### Grants API
 
@@ -307,28 +308,30 @@ _introduced 02-auth-sessions · 6835089_
 
 ### Managed rules region
 
-The app owns only the AdGuard user_rules lines between `! adguard-reward begin` and `! adguard-reward end`. The region is rendered from intent: one `||domain^$client=...` block line per custom-service domain covering every mapped child client, and `@@` exceptions for the union of active grants, with urlfilter-faithful `$client` quoting. It is spliced in under the engine mutex by a locked read-modify-write that writes only on change, leaves every outside line byte-identical, appends a missing region, and refuses malformed markers. Service CRUD, grant lifecycle and child/client changes resync it, and every startup and tick reconcile pass converges it, undoing manual edits inside the markers.
+The app owns only the AdGuard user_rules lines between `! adguard-reward begin` and `! adguard-reward end`. The region is rendered from intent: one `||domain^$client=...` block line per custom-service domain covering every mapped child client, and `@@` exceptions for the union of active grants and permanent custom-service unblocks, with urlfilter-faithful `$client` quoting. It is spliced in under the engine mutex by a locked read-modify-write that writes only on change, leaves every outside line byte-identical, appends a missing region, and refuses malformed markers. Service CRUD, grant lifecycle and child/client changes resync it, and every startup and tick reconcile pass converges it, undoing manual edits inside the markers.
 
 - Splice — internal/rules/region.go:30
 - Render — internal/rules/render.go:71
 - QuoteClient — internal/rules/render.go:38
 - Client.EditUserRules — internal/adguard/rules.go:19
-- Engine.syncRules — internal/grants/rules.go:45
-- Engine.Reconcile — internal/grants/reconcile.go:42
+- Engine.syncRules — internal/grants/rules.go:47
+- Engine.Reconcile — internal/grants/reconcile.go:52
 - API.resyncRules — internal/api/children.go:321
 
-_introduced custom-services · 2ef485b · b0307d0 · 0e8340d · e0e25c2_
+_introduced custom-services · 2ef485b · b0307d0 · 0e8340d · e0e25c2 · extended permanent-toggles · 85a3fde · cc23401_
 
 ### Per-child blocked view
 
-`GET /api/v1/clients` (persistent clients plus the child each is assigned to, and the unlabelled devices — see device labelling), `GET /api/v1/services` (the runtime catalogue) and `GET /api/v1/children/{id}/blocked` all read AdGuard live on every request; the blocked view folds each mapped client's effective set (its own list, or the global list when `use_global_blocked_services` is set) into one state per catalogue service — blocked when every present client blocks it, unblocked when none does, partial otherwise with the differing clients named — reports a client AdGuard no longer knows as `missing`, and answers 502 for any AdGuard failure.
+`GET /api/v1/clients` (persistent clients plus the child each is assigned to, and the unlabelled devices — see device labelling), `GET /api/v1/services` (the runtime catalogue) and `GET /api/v1/children/{id}/blocked` all read AdGuard live on every request; the blocked view folds each mapped client's effective set (its own list, or the global list when `use_global_blocked_services` is set) into one state per catalogue service — blocked when every present client blocks it, unblocked when none does, partial otherwise with the differing clients named — reports a client AdGuard no longer knows as `missing`, and answers 502 for any AdGuard failure. Each service carries the child's own permanent toggle (null when untoggled), other owners' permanent unblocks are attributed in `unblocked_by`, and a custom service an owner permanently unblocked counts as open; a failed toggles read nulls every toggle and drops custom services.
 
-- blocked.Compute — internal/blocked/blocked.go:59
-- API.handleClients — internal/api/clients.go:77
-- API.handleServices — internal/api/clients.go:254
-- API.handleBlocked — internal/api/blocked.go:24
+- blocked.Compute — internal/blocked/blocked.go:136
+- permanentlyOpen — internal/blocked/blocked.go:309
+- API.handleClients — internal/api/clients.go:92
+- API.handleServices — internal/api/clients.go:327
+- API.handleBlocked — internal/api/blocked.go:42
+- API.toggleInputs — internal/api/blocked.go:146
 
-_introduced 03-children-and-blocked-view · 3a50df3 · 1ec458d · extended auto-client-labelling · 9605869_
+_introduced 03-children-and-blocked-view · 3a50df3 · 1ec458d · extended auto-client-labelling · 9605869 · extended permanent-toggles · 8464c65 · 9d3f4ee_
 
 ### Per-client blocked services
 
@@ -342,6 +345,21 @@ Typed read of AdGuard's persistent clients and the global blocked-services list 
 - Client.Services — internal/adguard/services.go:17
 
 _introduced 01-config-adguard-client · 1513504 · extended 04-grants-scheduler-reconciler · 3123562_
+
+### Permanent service toggles
+
+From a child's view a parent permanently unblocks or blocks any built-in or custom service: `POST /api/v1/children/{id}/toggles` (strict body, 404 before AdGuard, a 1 s catalogue check) stores per-(child, service) intent and, for a block, trims the service from the child's live grant in the same transaction (ending a grant left empty); the engine then writes built-ins to every mapped client by an open-wins plan (a shared client stays open while any owner unblocked it) and custom services through the managed rules region, within one `ApplyTimeout`. A partial write still stores the intent, answers `applied: false` naming the failed clients for the reconciler to converge, and the response names shared devices affected. Home rows offer Unblock/Block per row state, list permanently unblocked services instead of hiding them, and end with a searchable "Block a service…" picker; one toggle per child is in flight at a time, and the blocked view and active grants refetch after it.
+
+- Store.SetServiceToggle — internal/store/toggles.go:43
+- Engine.Toggle — internal/grants/toggle.go:54
+- Engine.toggleCustom — internal/grants/toggle_custom.go:20
+- togglePlan — internal/grants/intent.go:91
+- API.handleToggle — internal/api/toggles.go:62
+- setToggle — web/src/lib/Home.svelte:237
+- controlFor — web/src/lib/toggles.ts:44
+- BlockPicker — web/src/lib/BlockPicker.svelte:31
+
+_introduced permanent-toggles · e7a7c6d · bb2c072 · 273289b · be1e1d9_
 
 ### PWA shell
 
@@ -425,15 +443,15 @@ _introduced 05-phone-ui-buttons-pwa · 1b8647f · 4de11cf · 2109098_
 
 ### Timed grants
 
-A grant temporarily unblocks one or more catalogue services for one child: the engine owns every grant-related AdGuard write under one mutex with one `ApplyTimeout` context per operation. `Create` removes the services from each of the child's mapped clients and stores exactly that client list on the row (a client moved to another child mid-grant is still re-blocked at expiry); an in-process timer at `ends_at` re-blocks by set-union — idempotent, and on each stored client only the services no other active grant still covers there (ref-counted, re-read under the mutex) — and CASes the grant to `expired`, while a failed AdGuard write leaves it `active` for the reconciler to retry; `Extend` reschedules the timer, `End` reverts immediately. On the phone, `runTap` is the one path from a tap to a grant: a single in-flight POST per key, the 201 merged into the active list as server truth, a partial apply naming the failed clients, and a 409 turned into an extend offer resolved client-side against the loaded list (`overlapsFor`) — accepting it extends the overlapping grant by the tap's duration and creates a new grant for the remaining services. Pure countdown / duration / own-span helpers mirror the server bounds.
+A grant temporarily unblocks one or more catalogue services for one child: the engine owns every grant-related AdGuard write under one mutex with one `ApplyTimeout` context per operation. `Create` removes the services from each of the child's mapped clients and stores exactly that client list on the row (a client moved to another child mid-grant is still re-blocked at expiry); an in-process timer at `ends_at` re-blocks by set-union — idempotent, and on each stored client only the services no other active grant still covers there (ref-counted, re-read under the mutex) — and CASes the grant to `expired`, while a failed AdGuard write leaves it `active` for the reconciler to retry; revert never re-blocks a service any current owner of that client has permanently unblocked, and fails closed (grant stays active) when toggles or children can't be read; `Extend` reschedules the timer, `End` reverts immediately. On the phone, `runTap` is the one path from a tap to a grant: a single in-flight POST per key, the 201 merged into the active list as server truth, a partial apply naming the failed clients, and a 409 turned into an extend offer resolved client-side against the loaded list (`overlapsFor`) — accepting it extends the overlapping grant by the tap's duration and creates a new grant for the remaining services. Pure countdown / duration / own-span helpers mirror the server bounds.
 
-- grants.New — internal/grants/grants.go:111
-- Engine.Create — internal/grants/grants.go:148
-- Engine.revert — internal/grants/grants.go:207
-- Engine.Extend — internal/grants/grants.go:288
-- Engine.End — internal/grants/grants.go:313
+- grants.New — internal/grants/grants.go:185
+- Engine.Create — internal/grants/grants.go:226
+- Engine.revert — internal/grants/grants.go:318
+- Engine.Extend — internal/grants/grants.go:476
+- Engine.End — internal/grants/grants.go:506
 - runTap — web/src/lib/tap.ts:94
 - acceptOffer — web/src/lib/tap.ts:115
 - overlapsFor — web/src/lib/grants.ts:55
 
-_introduced 04-grants-scheduler-reconciler · 6064863 · extended 05-phone-ui-buttons-pwa · 2322e19 · 257ccc3 · extended shared-devices · 181af67_
+_introduced 04-grants-scheduler-reconciler · 6064863 · extended 05-phone-ui-buttons-pwa · 2322e19 · 257ccc3 · extended shared-devices · 181af67 · extended permanent-toggles · 85a3fde_

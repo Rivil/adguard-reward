@@ -1,0 +1,88 @@
+[phase]
+  id = "permanent-toggles"
+  title = "permanent-toggles"
+  milestone = "v0.2"
+
+[[criteria]]
+  id = "c-1"
+  text = "From a child's blocked view a parent can permanently unblock a blocked or partial service (built-in or custom); within 5 s none of the child's mapped clients is blocked from it in AdGuard (built-in: absent from blocked_services; custom: no blocking rule for those clients in the managed region)."
+
+[[criteria]]
+  id = "c-2"
+  text = "From a child's view a parent can permanently block any built-in or custom service that is unblocked or partial; within 5 s every mapped client of the child is blocked from it in AdGuard (built-in: present in blocked_services; custom: covered by the managed region's block rule)."
+
+[[criteria]]
+  id = "c-3"
+  text = "When a grant expires or is ended early, a service that is permanently unblocked for that child stays unblocked on every client the grant covered; the grant's other services re-block as before (ref-counting on shared clients unchanged)."
+
+[[criteria]]
+  id = "c-4"
+  text = "Permanent toggle state persists across restarts: a grant that expires while the app is down is reverted by the startup pass without re-blocking permanently unblocked services, and the managed region keeps a custom service's permanent unblock after restart and every reconcile tick."
+
+[[criteria]]
+  id = "c-5"
+  text = "The child's view lists permanently unblocked services with an 'unblocked' state and a block control, instead of hiding them as it does today, so every toggle can be reversed from the same page."
+
+[[decisions]]
+  key = "drift_enforcement"
+  choice = "A toggle stores per-(child, service) intent in both directions; every reconcile pass converges AdGuard to it (blocked_services for built-ins, managed region for custom). Services never toggled via the app stay AdGuard-owned."
+  why = "Core value is no drift; matches how custom services and grants already converge."
+  locked = true
+
+[[decisions]]
+  key = "revert_baseline_v2"
+  choice = "Supersedes phase 04 revert_baseline: revert re-blocks a grant's services except those permanently unblocked for an owner of that client; still set-union, still no pre-grant snapshot."
+  why = "Milestone requires an expiring grant never re-block a permanently unblocked service."
+  locked = true
+
+[[decisions]]
+  key = "shared_client_scope"
+  choice = "A toggle applies to all the child's mapped clients, shared ones included. A shared client is open if any owning child has the service permanently unblocked. Other owners' views show it as unblocked-by that child. The toggle response names the shared devices it affected."
+  why = "Same 'any owner opens' rule as grants on shared devices; one consistent mental model."
+  locked = true
+
+[[decisions]]
+  key = "block_during_grant"
+  choice = "A permanent block on a service under an active grant blocks immediately and removes that service from the grant's coverage; the grant's other services keep running; a grant left with no services ends early."
+  why = "The tap must do what it says now; a 409 would make it two taps."
+  locked = true
+
+[[decisions]]
+  key = "unblock_during_grant"
+  choice = "A permanent unblock on a service under an active grant just records the intent; the grant runs on unchanged and the service stays open at its end (c-3)."
+  why = "The service is already open; nothing to write, only the revert changes."
+  locked = true
+
+[[decisions]]
+  key = "toggle_partial_apply"
+  choice = "If a toggle's AdGuard write fails on some clients, the intent is stored, the response reports applied=false with the failed client names, and the reconciler converges them. Exception (amended at plan time, 2026-11-03): a block's re-block of a trimmed grant's stored clients that are no longer mapped to the child is best-effort: a failure there is reported in failed (applied=false) but never retried."
+  why = "Mirrors phase 04 partial_apply; stored intent plus convergence means nothing is stranded. The exception matches the accepted rule that a device leaving a child keeps its last list; keeping the service on the grant until the write succeeds would hold the child's own devices open under open-wins."
+  locked = true
+
+[[decisions]]
+  key = "block_picker"
+  choice = "A 'Block a service…' control at the foot of the child's view opens a searchable picker over the catalogue (built-in + custom, already-blocked excluded); picking one permanently blocks it."
+  why = "Reaches any of ~100 built-ins without a long phone scroll; the view stays focused on what's blocked or toggled."
+  locked = true
+
+[[decisions]]
+  key = "new_client_blocked_set_v2"
+  choice = "Supersedes auto-client-labelling new_client_blocked_set: a new client assigned to a child gets (the known siblings' effective blocked services, or AdGuard's global list when none is known) ∪ every built-in service under an active grant of the child or under any child's active grant stored on a known sibling (unchanged from today's baselineFrom) ∪ every built-in service permanently unblocked on a known sibling by an owner of that sibling who does not own the new client (that sibling is open for another child's reason, as with a sibling's grant) ∪ the child's permanent blocks, minus every service permanently unblocked by any owner of that client — the child or, for a shared client being adopted, a co-owner (subtracted last, so a live grant cannot re-add it; open-wins as in shared_client_scope), with use_global_blocked_services=false; an unassigned new client still gets AdGuard's defaults."
+  why = "drift_enforcement would converge the device on its next reconcile tick anyway; baking toggles into the baseline makes a new device correct from its first write instead of up to one tick late. Recorded at plan time (2026-11-03) after round-2 plan review."
+  locked = true
+
+[[deferred]]
+  text = "Record 'ended by permanent block' (a grant trimmed or ended by block_during_grant) as a grant end reason in the history."
+  why = "The history store arrives with grant-history."
+  target = "grant-history"
+
+[[deferred]]
+  text = "Export/import carries permanent toggle state alongside children, buttons and custom services."
+  why = "export-import owns the file format; nothing to export until this phase lands."
+  target = "export-import"
+
+[[deferred]]
+  id = "f3282d0d14e58aec"
+  text = "Capture partial grant trims (a permanent block removing one service from a live grant) at trim time: permanent-toggles' SetServiceToggle deletes the grant_services row, so history cannot reconstruct a trim afterwards; ToggleChange.Trimmed carries the pre-trim grant."
+  why = "Round-1 plan review note; soft-trim would add store churn for data nothing reads until grant-history ships."
+  target = "grant-history"

@@ -1174,24 +1174,6 @@
   accepted_in = "shared-devices"
 
 [[accepted]]
-  key = "bc76e085b2a98272"
-  file = "web/src/lib/Home.svelte"
-  op = "ArrayDeclaration"
-  text = "return v.services.filter((s) => s.state !== 'unblocked' || (s.unblocked_by ?? []).length > 0)"
-  line = 208
-  category = "dead-array-fallback"
-  accepted_in = "shared-devices"
-
-[[accepted]]
-  key = "7f673034875137a4"
-  file = "web/src/lib/Home.svelte"
-  op = "ArrayDeclaration"
-  text = "const by = s.unblocked_by ?? []"
-  line = 217
-  category = "dead-array-fallback"
-  accepted_in = "shared-devices"
-
-[[accepted]]
   key = "8ef387b402aa021d"
   file = "web/src/lib/Home.svelte"
   op = "ArrayDeclaration"
@@ -1235,15 +1217,6 @@
   line = 118
   accepted_in = "shared-devices"
   reason = "Equivalent: length >= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
-
-[[accepted]]
-  key = "84cebad2af320e60"
-  file = "web/src/lib/Home.svelte"
-  op = "ConditionalExpression"
-  text = "const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []"
-  line = 219
-  accepted_in = "shared-devices"
-  reason = "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."
 
 [[accepted]]
   key = "c11e6591b162d114"
@@ -1514,3 +1487,93 @@
   line = 22
   accepted_in = "custom-services"
   reason = "Equivalent mutant: pending's initial false -> true is unobservable because onMount's run() sets pending = true before any test or user can see the DOM, and finally resets it, so every observable state is identical."
+
+[[accepted]]
+  key = "bc02b0686e411159"
+  file = "internal/grants/grants.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 345
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "6bbce7448c751d07"
+  file = "internal/grants/grants.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 404
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "5a75225dd24910cc"
+  file = "internal/grants/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case t.state == store.ToggleUnblocked:"
+  line = 220
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "d829dbd8a124561a"
+  file = "internal/grants/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case t.childID == childID:"
+  line = 222
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "8507d03bf1699d5f"
+  file = "web/src/lib/BlockPicker.svelte"
+  op = "StringLiteral"
+  text = "let query = $state('')"
+  line = 21
+  accepted_in = "permanent-toggles"
+  reason = "Initial query value is unobservable: the search panel renders only under {#if open}, and the only way to open it, toggleOpen(), sets query = '' first, so the initial value never reaches the input or pickerOptions in any render."
+
+[[accepted]]
+  key = "49ec100d567c86ad"
+  file = "web/src/lib/BlockPicker.svelte"
+  op = "StringLiteral"
+  text = "query = ''"
+  line = 37
+  accepted_in = "permanent-toggles"
+  reason = "The post-pick query reset is unobservable: the same pick sets open = false, which unmounts the panel, and reopening goes through toggleOpen(), which sets query = '' again before the panel renders."
+
+[[accepted]]
+  key = "ff2992988b4c7e63"
+  file = "web/src/lib/toggles.ts"
+  op = "ConditionalExpression"
+  text = "const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []"
+  line = 30
+  accepted_in = "permanent-toggles"
+  reason = "Equivalent (carried over from the retired Home.svelte acceptance 84cebad2 when openOn moved to toggles.ts): the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:191,194), so filtering differs unconditionally yields [] there too."
+
+[[accepted]]
+  key = "c8067c4b53b4a89d"
+  file = "web/src/lib/Home.svelte"
+  op = "StringLiteral"
+  text = "if (!(await setToggle(childId, s, 'blocked'))) throw new Error('not blocked')"
+  line = 271
+  accepted_in = "permanent-toggles"
+  reason = "The Error message in pickBlock is never read: BlockPicker.pick() catches every onpick rejection without inspecting it (the alert comes from setToggle's toggleNotes), so the message text is unobservable."
+
+[[accepted]]
+  key = "e59f02659c1e10ad"
+  file = "web/src/lib/Home.svelte"
+  op = "OptionalChaining"
+  text = "<p class=\"error\" role=\"alert\" data-error={toggleNotes[child.id]?.code} data-toggle-error>{toggleNotes[child.id]?.text}</p>"
+  line = 399
+  accepted_in = "permanent-toggles"
+  reason = "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
+
+[[accepted]]
+  key = "69e5de68ee929324"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "return a.Child.ID < b.Child.ID"
+  line = 187
+  accepted_in = "permanent-toggles"
+  reason = "Equivalent: the final tie-break in the UnblockedBy sort.Slice less func. Two entries reach it only with equal Client and GrantID; with distinct Child.ID, < and <= agree. With equal Child.ID the two Unblock values are identical (same client, grant, child, Permanent), so a swap cannot change the slice. Verified 2026-11-03: <= passes go test ./internal/blocked while >= (NEGATION) fails TestCompute_UnblockedByChildOrder."

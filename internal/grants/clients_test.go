@@ -428,3 +428,85 @@ func TestCreateClient_ResyncsRules(t *testing.T) {
 	}
 	noLineContains(t, e.fake.UserRules(), "Dad laptop")
 }
+
+// Permanent toggles in the baseline (locked new_client_blocked_set_v2).
+
+func TestCreateClient_BaselineToggles(t *testing.T) {
+	e := newEnv(t, nil)
+	// kid-phone has not converged yet: it still blocks youtube.
+	e.fakeClient("kid-phone", "youtube")
+	e.fakeClient("den")
+	ann := e.child("Ann", "kid-phone")
+	e.seedToggle(ann.ID, "youtube", store.ToggleUnblocked)
+	e.seedToggle(ann.ID, "tiktok", store.ToggleBlocked)
+
+	e.createClient("TV", ptr(ann.ID))
+	e.wantOwn("TV", "tiktok")
+
+	e.adopt(ann.ID, []string{"kid-phone"}, []string{"den"})
+	e.wantOwn("den", "tiktok")
+}
+
+func TestCreateClient_BaselineGrantAndUnblock(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "tiktok", "youtube")
+	ann := e.child("Ann", "kid-phone")
+	e.create(ann.ID, []string{"tiktok", "youtube"}, []string{"kid-phone"})
+	e.seedToggle(ann.ID, "youtube", store.ToggleUnblocked)
+
+	e.createClient("TV", ptr(ann.ID))
+	e.wantOwn("TV", "tiktok")
+}
+
+func TestAdoptClients_SharedPermanentOpen(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("a-phone", "tiktok", "youtube")
+	e.fakeClient("tv", "roblox") // youtube open: Ben unblocked it
+	ann := e.child("Ann", "a-phone")
+	ben := e.child("Ben", "tv")
+	e.seedToggle(ben.ID, "youtube", store.ToggleUnblocked)
+
+	e.adopt(ann.ID, []string{"a-phone"}, []string{"tv"})
+	e.wantOwn("tv", "roblox", "tiktok")
+}
+
+func TestBaseline_SharedSiblingPermanent(t *testing.T) {
+	e := newEnv(t, nil)
+	e.setBlocked("Kid phone", "tiktok") // youtube open: Ada unblocked it
+	ada := e.child("Ada", "Kid phone")
+	ben := e.child("Ben", "Kid phone")
+	e.seedToggle(ada.ID, "youtube", store.ToggleUnblocked)
+
+	// Kid phone is open for Ada's reason, not Ben's.
+	e.createClient("Ben tv", ptr(ben.ID))
+	e.wantOwn("Ben tv", "tiktok", "youtube")
+
+	if err := e.eng.CreateClient(ctx, "Ada tv", []string{"192.168.1.31"}, ptr(ada.ID)); err != nil {
+		t.Fatal(err)
+	}
+	e.wantOwn("Ada tv", "tiktok")
+}
+
+func TestCreateClient_ToggleReadFails(t *testing.T) {
+	var fs *toggleFailStore
+	e := newEnvStore(t, nil, func(st *store.Store) Store {
+		fs = &toggleFailStore{Store: st}
+		return fs
+	})
+	ann := e.child("Ann", "Kid phone")
+	boom := errors.New("database is locked")
+	fs.set(boom)
+
+	if err := e.eng.CreateClient(ctx, "TV", tvIDs, ptr(ann.ID)); !errors.Is(err, boom) {
+		t.Fatalf("CreateClient err = %v, want the toggle read error", err)
+	}
+	if n := e.adds(); n != 0 {
+		t.Errorf("adds = %d, want 0 (no baseline without the toggles)", n)
+	}
+	if err := e.eng.AdoptClients(ctx, ann.ID, []string{"Kid phone"}, []string{"Old laptop"}); !errors.Is(err, boom) {
+		t.Fatalf("AdoptClients err = %v, want the toggle read error", err)
+	}
+	if n := e.posts(); n != 0 {
+		t.Errorf("update POSTs = %d, want 0", n)
+	}
+}

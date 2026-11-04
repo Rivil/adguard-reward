@@ -166,6 +166,29 @@ describe('activeGrants', () => {
     expect(get(activeGrants).loaded).toBe(true)
   })
 
+  it('fresh refresh waits out a poll in flight, then polls again', async () => {
+    // A poll that left before a toggle trimmed grant 1 answers with it; the
+    // toggle's fresh refresh must not settle for that answer.
+    let release!: (r: Response) => void
+    const server = grantsServer(() => new Promise<Response>((r) => (release = r)), ok([]))
+    const stale = refresh()
+    const fresh = refresh({ fresh: true })
+    expect(fresh).not.toBe(stale)
+    expect(server.fetch).toHaveBeenCalledTimes(1)
+
+    release(json(200, { grants: [grant(1)] }))
+    await stale
+    await fresh
+    expect(server.fetch).toHaveBeenCalledTimes(2)
+    expect(get(activeGrants)).toEqual({ grants: [], unreachable: false, loaded: true })
+
+    // With nothing in flight, fresh is a single poll.
+    server.push(ok([grant(2)]))
+    await refresh({ fresh: true })
+    expect(server.fetch).toHaveBeenCalledTimes(3)
+    expect(get(activeGrants).grants).toEqual([grant(2)])
+  })
+
   it('merge upserts by id', async () => {
     const g1 = grant(1)
     const g2 = grant(2)

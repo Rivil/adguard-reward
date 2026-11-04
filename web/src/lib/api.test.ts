@@ -37,6 +37,7 @@ import {
   route,
   saveButtons,
   setOnUnauthorized,
+  toggleService,
   updateChild,
 } from './api'
 
@@ -564,7 +565,7 @@ describe('shared-device fields default to []', () => {
     const v = await childBlocked(2)
     expect(v.child).toEqual({ id: 2, name: 'Ben' })
     expect(v.clients.map((c) => c.shared_with)).toEqual([[], [{ id: 1, name: 'Ada' }]])
-    expect(v.services.map((s) => s.unblocked_by)).toEqual([[], [by]])
+    expect(v.services.map((s) => s.unblocked_by)).toEqual([[], [{ ...by, permanent: false }]])
     expect(v.services[0].state).toBe('unblocked')
   })
 
@@ -666,5 +667,86 @@ describe('services route', () => {
     history.replaceState(null, '', '/services')
     window.dispatchEvent(new PopStateEvent('popstate'))
     expect(get(route)).toBe('services')
+  })
+})
+
+describe('permanent toggles', () => {
+  const kidPhone = { client: 'Kid phone', others: [{ id: 2, name: 'Ben' }] }
+
+  it('toggle service', async () => {
+    const full = {
+      service_id: 'custom:1',
+      state: 'blocked',
+      applied: false,
+      failed: ['Kid tablet'],
+      shared: [kidPhone],
+      grant: { id: 7, ended: true },
+    }
+    const calls = mockFetch(json(200, full))
+    expect(await toggleService(3, 'custom:1', 'blocked')).toEqual(full)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).toBe('/api/v1/children/3/toggles')
+    expect(calls[0].init.method).toBe('POST')
+    expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    expect(header(calls[0].init, 'Content-Type')).toBe('application/json')
+    expect(JSON.parse(calls[0].init.body as string)).toStrictEqual({ service_id: 'custom:1', state: 'blocked' })
+  })
+
+  it('toggle result defaults', async () => {
+    mockFetch(
+      json(200, { service_id: 'youtube', state: 'unblocked', applied: true }),
+      json(200, {
+        child: { id: 3, name: 'Ada' },
+        clients: [],
+        services: [
+          {
+            id: 'youtube',
+            name: 'YouTube',
+            icon: 'x',
+            state: 'unblocked',
+            differs: [],
+            unblocked_by: [{ client: 'TV', grant_id: 5, child: { id: 2, name: 'Ben' } }],
+          },
+          {
+            id: 'tiktok',
+            name: 'TikTok',
+            icon: 'x',
+            state: 'unblocked',
+            differs: [],
+            toggle: 'unblocked',
+            unblocked_by: [{ client: 'TV', grant_id: 0, child: { id: 2, name: 'Ben' }, permanent: true }],
+          },
+        ],
+      }),
+    )
+    expect(await toggleService(3, 'youtube', 'unblocked')).toStrictEqual({
+      service_id: 'youtube',
+      state: 'unblocked',
+      applied: true,
+      failed: [],
+      shared: [],
+      grant: null,
+    })
+    const v = await childBlocked(3)
+    expect(v.services.map((s) => s.toggle)).toStrictEqual([null, 'unblocked'])
+    expect(v.services.map((s) => s.unblocked_by?.map((u) => u.permanent))).toStrictEqual([[false], [true]])
+  })
+
+  it('toggle errors', async () => {
+    mockFetch(json(422, { error: 'unprocessable', message: 'unknown service "nope"' }))
+    const bad = await fails(toggleService(3, 'nope', 'blocked'))
+    expect(bad.status).toBe(422)
+    expect(bad.code).toBe('unprocessable')
+    expect(messageFor(bad)).toBe('unknown service "nope"')
+
+    mockFetch(json(404, { error: 'not_found', message: 'child 99 not found' }))
+    const gone = await fails(toggleService(99, 'youtube', 'unblocked'))
+    expect(gone.status).toBe(404)
+    expect(gone.code).toBe('not_found')
+
+    mockFetch(json(502, { error: 'adguard_unavailable', message: 'upstream down' }))
+    const down = await fails(toggleService(3, 'youtube', 'blocked'))
+    expect(down.code).toBe('adguard_unavailable')
+    expect(unauthorized).not.toHaveBeenCalled()
   })
 })

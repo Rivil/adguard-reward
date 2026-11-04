@@ -9,20 +9,25 @@
     listChildren,
     listServices,
     logout,
+    messageFor,
     navigate,
+    toggleService,
     type BlockedView,
     type Button,
     type Child,
     type Service,
-    type ServiceState,
+    type ToggleResult,
+    type ToggleState,
   } from './api'
   import { merge, refresh, snapshot, start } from './activeGrants'
   import ActiveGrants from './ActiveGrants.svelte'
+  import BlockPicker from './BlockPicker.svelte'
   import GrantForm, { type GrantFormValue } from './GrantForm.svelte'
   import MigrationBanner from './MigrationBanner.svelte'
   import ServiceIcon from './ServiceIcon.svelte'
   import { formatDuration, minutesToSeconds, sharedDevices, sharedText } from './grants'
   import { acceptOffer, runTap, type Offer, type Outcome, type TapDeps, type TapSpec } from './tap'
+  import { controlFor, openOn, shown } from './toggles'
 
   let { username, onLogout }: { username: string; onLogout: () => void } = $props()
 
@@ -49,6 +54,13 @@
   // own error line so AdGuard being down never blocks a tap.
   let blocked = $state<Record<number, { view: BlockedView | null; error: string | null }>>({})
   let opened = $state<Record<number, boolean>>({})
+
+  // Permanent toggles, per child: whether one is out (one at a time, so a
+  // double tap is one POST and refetches never overlap), and its outcome
+  // lines inside that child's blocked view.
+  let toggling = $state<Record<number, boolean>>({})
+  let toggleNotes = $state<Record<number, { code: string; text: string } | null>>({})
+  let toggleShared = $state<Record<number, string>>({})
 
   // The ad-hoc form: the same tap path as a button, without one configured.
   let adhoc = $state<GrantFormValue>({ child_id: null, services: [], minutes: 60 })
@@ -182,14 +194,20 @@
 
   const loadingBlocked = new Set<number>()
 
-  async function openBlocked(id: number) {
-    if (blocked[id]?.view || loadingBlocked.has(id)) return
-    loadingBlocked.add(id)
+  async function loadBlocked(id: number) {
     try {
       const view = await childBlocked(id)
       blocked[id] = { view, error: null }
     } catch (err) {
       blocked[id] = { view: null, error: err instanceof ApiError ? err.code : 'network' }
+    }
+  }
+
+  async function openBlocked(id: number) {
+    if (blocked[id]?.view || loadingBlocked.has(id)) return
+    loadingBlocked.add(id)
+    try {
+      await loadBlocked(id)
     } finally {
       loadingBlocked.delete(id)
     }
@@ -206,23 +224,52 @@
     for (const [id, open] of Object.entries(opened)) if (open) void openBlocked(Number(id))
   }
 
-  // An unblocked service stays listed while another child's grant is what
-  // holds it open on a shared client, so the owner can see why.
-  function shown(v: BlockedView) {
-    return v.services.filter((s) => s.state !== 'unblocked' || (s.unblocked_by ?? []).length > 0)
-  }
+  // ---- permanent toggles ---------------------------------------------------
 
   /**
-   * Where the service is open: plain client names for a partial service, and
-   * "<client> by <child>'s grant" where another child's grant holds it open.
-   * [] for a plainly blocked service.
+   * Permanently block or unblock one service on every client of the child
+   * (locked shared_client_scope). A call while that child's last toggle is
+   * still out is dropped. Once the server answers, the child's blocked view
+   * and the active grants are fetched again — a block can trim or end a
+   * grant (locked block_during_grant) — and the controls stay locked until
+   * both land. Resolves true when the server stored the intent.
    */
-  function openOn(s: ServiceState): string[] {
-    const by = s.unblocked_by ?? []
-    const attributed = new Set(by.map((u) => u.client))
-    const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []
-    const granted = by.map((u) => `${u.client} by ${u.child.name === '' ? "a removed child's grant" : `${u.child.name}'s grant`}`)
-    return [...plain, ...granted]
+  async function setToggle(childId: number, s: { id: string; name: string }, state: ToggleState): Promise<boolean> {
+    if (toggling[childId]) return false
+    toggling[childId] = true
+    toggleNotes[childId] = null
+    toggleShared[childId] = ''
+    try {
+      let r: ToggleResult
+      try {
+        r = await toggleService(childId, s.id, state)
+      } catch (err) {
+        toggleNotes[childId] =
+          err instanceof ApiError ? { code: err.code, text: messageFor(err) } : { code: 'network', text: "Can't reach the server — check your connection" }
+        return false
+      }
+      const done = state === 'blocked' ? 'Blocked' : 'Unblocked'
+      // The intent is stored either way (locked toggle_partial_apply); name
+      // the clients AdGuard refused.
+      if (!r.applied) toggleNotes[childId] = { code: 'partial', text: `${done} ${s.name}, except on ${r.failed.join(', ')}` }
+      if (r.shared.length > 0) toggleShared[childId] = `Also ${done.toLowerCase()} on ${sharedText(r.shared)}`
+      // fresh: a poll already out may predate the toggle and its grant trim.
+      await Promise.all([loadBlocked(childId), refresh({ fresh: true })])
+      return true
+    } finally {
+      toggling[childId] = false
+    }
+  }
+
+  function rowToggle(childId: number, s: { id: string; name: string }, state: ToggleState) {
+    void setToggle(childId, s, state)
+  }
+
+  // The picker closes only once a block is stored. A failed pick (its alert
+  // says why) or one dropped while another toggle is out throws, so the list
+  // stays open for another try.
+  async function pickBlock(childId: number, s: Service) {
+    if (!(await setToggle(childId, s, 'blocked'))) throw new Error('not blocked')
   }
 </script>
 
@@ -323,14 +370,41 @@
               <ul class="services">
                 {#each shown(v) as s (s.id)}
                   {@const on = openOn(s)}
-                  <li data-state={s.state}>
+                  <li data-state={s.state} data-row={s.id}>
                     <ServiceIcon name={s.name} icon={s.icon} size={20} />
-                    {s.name}{#if on.length > 0}
-                      <span class="partial"> — unblocked on {on.join(', ')}</span>
-                    {/if}
+                    <span class="name"
+                      >{s.name}{#if on.length > 0}
+                        <span class="partial"> — unblocked on {on.join(', ')}</span>
+                      {:else if s.state === 'unblocked'}
+                        <!-- This child's own permanent unblock: listed so it can be reversed (c-5). -->
+                        <span class="partial"> — unblocked</span>
+                      {/if}</span
+                    >
+                    <span class="controls">
+                      {#each controlFor(s) as c (c)}
+                        <button
+                          type="button"
+                          data-control={c}
+                          aria-label={`${c === 'unblock' ? 'Unblock' : 'Block'} ${s.name}`}
+                          disabled={toggling[child.id] === true}
+                          onclick={() => rowToggle(child.id, s, c === 'unblock' ? 'unblocked' : 'blocked')}
+                          >{c === 'unblock' ? 'Unblock' : 'Block'}</button
+                        >
+                      {/each}
+                    </span>
                   </li>
                 {/each}
               </ul>
+            {/if}
+            {#if toggleNotes[child.id]}
+              <p class="error" role="alert" data-error={toggleNotes[child.id]?.code} data-toggle-error>{toggleNotes[child.id]?.text}</p>
+            {/if}
+            {#if toggleShared[child.id]}
+              <p class="notice" role="status" data-toggle-shared>{toggleShared[child.id]}</p>
+            {/if}
+            {#if services !== null}
+              <!-- The catalogue feeds the picker; without it there is nothing to pick from. -->
+              <BlockPicker catalogue={services} view={v} onpick={(s) => pickBlock(child.id, s)} />
             {/if}
           {:else}
             <p class="none">Loading…</p>
@@ -457,6 +531,14 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.25rem 0;
+  }
+  .services .controls {
+    display: flex;
+    gap: 0.25rem;
+    margin-left: auto;
+  }
+  .services .controls button {
+    min-height: 2.75rem;
   }
   .partial,
   .none,

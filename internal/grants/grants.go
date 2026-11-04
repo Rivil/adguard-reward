@@ -15,6 +15,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
 	"slices"
 	"strings"
 	"sync"
@@ -103,6 +104,33 @@ type Store interface {
 	CreateCustomService(ctx context.Context, name string, domains []string) (store.CustomService, error)
 	UpdateCustomService(ctx context.Context, id int64, name string, domains []string) (store.CustomService, error)
 	DeleteCustomService(ctx context.Context, id int64) error
+	SetServiceToggle(ctx context.Context, childID int64, serviceID, state string, at time.Time) (store.ToggleChange, error)
+	ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error)
+}
+
+// toToggles maps stored toggle rows onto the planners' toggle type.
+func toToggles(rows []store.ServiceToggle) []toggle {
+	out := make([]toggle, 0, len(rows))
+	for _, r := range rows {
+		out = append(out, toggle{childID: r.ChildID, serviceID: r.ServiceID, state: r.State})
+	}
+	return out
+}
+
+// readToggles reads the children and every stored toggle — what
+// permanentOpen and togglePlan decide from. Callers fail closed on an
+// error: a decision made without the toggles could re-block a permanently
+// unblocked service or drop its exception from the managed region.
+func (e *Engine) readToggles(ctx context.Context) ([]store.Child, []toggle, error) {
+	children, err := e.store.ListChildren(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read children: %w", err)
+	}
+	rows, err := e.store.ListServiceToggles(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("read service toggles: %w", err)
+	}
+	return children, toToggles(rows), nil
 }
 
 // AdGuard is the client subset the engine writes through; *adguard.Client
@@ -274,14 +302,19 @@ func (e *Engine) unblock(ctx context.Context, g store.Grant) []string {
 // revert re-adds g's services to its stored clients (set-union, so a second
 // revert changes nothing), ref-counted (locked: shared_device_rule): it
 // re-reads the active grants through ctx on every call and re-blocks on each
-// client only what no other active grant still covers there, issuing no
-// write for a client that is fully held open. Re-reading rather than taking
-// a caller's snapshot means consecutive reverts under mu each see the
-// statuses the previous one committed. A failed read fails every client
-// without a write — never re-block blind. AdGuard calls go through actx. A
-// client AdGuard no longer has counts as reverted; any other failure is
-// returned by name. writes counts the Add calls issued. Only built-in ids are
-// re-blocked here; a grant with none issues nothing. Caller holds mu.
+// client only what no other active grant still covers there and no current
+// owner of the client has permanently unblocked (locked revert_baseline_v2),
+// issuing no write for a client that is fully held open. Re-reading rather
+// than taking a caller's snapshot means consecutive reverts under mu each
+// see the statuses the previous one committed. A failed read of the active
+// grants, children or toggles fails every client without a write — never
+// re-block blind. AdGuard calls go through actx. A client AdGuard no longer
+// has counts as reverted; one inheriting the global list gets the services
+// on its own list (the adguard client warns), as phase 04 did; any other
+// failure is returned by name. writes counts the Add calls issued. Only
+// built-in ids are re-blocked here; a grant with none issues nothing. Unlike
+// a toggle, revert does not go through applyPlan, whose global-list rule
+// would wedge such a grant active. Caller holds mu.
 func (e *Engine) revert(ctx, actx context.Context, g store.Grant) (failed []string, writes int) {
 	g.Services = builtin(g.Services)
 	if len(g.Services) == 0 {
@@ -292,12 +325,18 @@ func (e *Engine) revert(ctx, actx context.Context, g store.Grant) (failed []stri
 		e.log.Warn("grant revert: read active grants failed", "grant", g.ID, "err", err)
 		return slices.Clone(g.Clients), 0
 	}
-	plan := revertPlan(g, active)
+	children, toggles, err := e.readToggles(ctx)
+	if err != nil {
+		e.log.Warn("grant revert: read permanent toggles failed", "grant", g.ID, "err", err)
+		return slices.Clone(g.Clients), 0
+	}
+	plan := dropOpen(revertPlan(g, active), permanentOpen(children, toggles))
 	failed = []string{}
 	for _, name := range g.Clients {
 		svcs, ok := plan[name]
 		if !ok {
-			e.log.Debug("grant revert: every service still held open by another grant", "grant", g.ID, "client", name)
+			e.log.Debug("grant revert: every service still held open by another grant or a permanent unblock",
+				"grant", g.ID, "client", name)
 			continue
 		}
 		writes++
@@ -308,6 +347,65 @@ func (e *Engine) revert(ctx, actx context.Context, g store.Grant) (failed []stri
 			e.log.Debug("grant revert: client gone, nothing to re-block", "grant", g.ID, "client", name)
 		default:
 			e.log.Warn("grant revert: re-block failed", "grant", g.ID, "client", name, "err", err)
+			failed = append(failed, name)
+		}
+	}
+	return failed, writes
+}
+
+// applyPlan converges each client in plan to its {remove, add} through
+// actx, diffing both against one read of AdGuard's clients so a client
+// already in line costs no write. A client AdGuard no longer has is skipped
+// (there is nothing left to converge); one inheriting the global
+// blocked-services list is failed without a write, since the global list is
+// never written and its own list would be ignored; any other write error
+// fails the client. A failed read fails every client without a write.
+// failed is sorted and never nil; writes counts the Remove and Add calls
+// issued. Caller holds mu.
+func (e *Engine) applyPlan(actx context.Context, plan map[string]clientPlan) (failed []string, writes int) {
+	names := slices.Sorted(maps.Keys(plan))
+	failed = []string{}
+	if len(names) == 0 {
+		return failed, 0
+	}
+	res, err := e.ag.Clients(actx)
+	if err != nil {
+		e.log.Warn("toggle apply: read clients failed", "err", err)
+		return names, 0
+	}
+	byName := make(map[string]adguard.PersistentClient, len(res.Persistent))
+	for _, pc := range res.Persistent {
+		byName[pc.Name] = pc
+	}
+	for _, name := range names {
+		pc, ok := byName[name]
+		switch {
+		case !ok:
+			e.log.Debug("toggle apply: client not in AdGuard, skipped", "client", name)
+			continue
+		case pc.UseGlobalBlockedServices:
+			e.log.Warn("toggle apply: client uses the global blocked-services list; migrate it first", "client", name)
+			failed = append(failed, name)
+			continue
+		}
+		p := plan[name]
+		remove := intersect(p.remove, pc.BlockedServices)
+		add := slices.DeleteFunc(slices.Clone(p.add), func(s string) bool { return slices.Contains(pc.BlockedServices, s) })
+		var err error
+		if len(remove) > 0 {
+			writes++
+			err = e.ag.RemoveBlockedServices(actx, name, remove)
+		}
+		if err == nil && len(add) > 0 {
+			writes++
+			err = e.ag.AddBlockedServices(actx, name, add)
+		}
+		switch {
+		case err == nil:
+		case errors.Is(err, adguard.ErrClientNotFound):
+			e.log.Debug("toggle apply: client gone, skipped", "client", name)
+		default:
+			e.log.Warn("toggle apply: write failed", "client", name, "err", err)
 			failed = append(failed, name)
 		}
 	}
@@ -396,10 +494,12 @@ func (e *Engine) Extend(ctx context.Context, id int64, d time.Duration) (store.G
 
 // End reverts an active grant now and marks it ended. Like expiry it
 // re-blocks a service on a client only when no other active grant still
-// covers it there. The order is: managed region rewritten without the grant's
-// exceptions, then the built-in revert, then the status CAS. An unknown or
-// non-active grant is ErrGrantNotFound; a client that could not be
-// re-blocked — every client, when the active grants could not be read or the
+// covers it there and no current owner of the client has it permanently
+// unblocked. The order is: managed region rewritten without the grant's
+// exceptions (a permanent unblock's exception stays), then the built-in
+// revert, then the status CAS. An unknown or non-active grant is
+// ErrGrantNotFound; a client that could not be re-blocked — every client,
+// when the active grants, children or toggles could not be read or the
 // region write failed (Err carries why, e.g. a malformed region) — is
 // *ErrRevertFailed and the grant stays active with its timer; the reconciler
 // re-converges both halves from intent.

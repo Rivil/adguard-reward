@@ -4,6 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.svelte'
+import { refresh } from './activeGrants'
 import { route, setOnUnauthorized, type BlockedView, type Button, type Child, type Grant, type Service } from './api'
 
 type Call = { method: string; url: string; body: string | null }
@@ -612,7 +613,7 @@ describe('Home', () => {
     await waitFor(() => expect(d1.querySelectorAll('li').length).toBe(2))
     expect(blockedCalls(1)).toBe(1)
     const names = [...d1.querySelectorAll('li')].map((li) => li.textContent?.replace(/\s+/g, ' ').trim())
-    expect(names[0]).toBe('YouTube')
+    expect(names[0]).toBe('YouTube Unblock')
     expect(names[1]).toContain('Roblox')
     expect(names[1]).toContain('unblocked on Kid phone, Kid tablet')
     expect(d1.querySelector('li[data-state="partial"]')).not.toBeNull()
@@ -1017,7 +1018,7 @@ describe('Home custom services', () => {
     const blockedLi = d1.querySelector('li[data-state="blocked"]')!
     expect(avatarIn(blockedLi)?.textContent).toBe('P')
     expect(blockedLi.querySelector('img')).toBeNull()
-    expect(blockedLi.textContent?.replace(/\s+/g, ' ').trim()).toBe('P Portal')
+    expect(blockedLi.textContent?.replace(/\s+/g, ' ').trim()).toBe('P Portal Unblock')
     expect(blockedLi.querySelector('.partial')).toBeNull()
 
     const partialLi = d1.querySelector('li[data-state="partial"]')!
@@ -1094,5 +1095,332 @@ describe('Home custom services', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Services' }))
     expect(location.pathname).toBe('/services')
     expect(get(route)).toBe('services')
+  })
+})
+
+describe('Home permanent toggles', () => {
+  const TOGGLES = '/api/v1/children/1/toggles'
+  const flat = (el: Element | null | undefined) => el?.textContent?.replace(/\s+/g, ' ').trim() ?? ''
+  const toggleCalls = (calls: Call[]) => calls.filter((c) => c.method === 'POST' && c.url === TOGGLES)
+  const blockedGets = (calls: Call[]) => getsOf(calls, '/api/v1/children/1/blocked')
+  const stored = (over: Record<string, unknown> = {}) =>
+    json(200, { service_id: 'youtube', state: 'unblocked', applied: true, failed: [], shared: [], grant: null, ...over })
+
+  function row(d: Element, id: string): HTMLElement {
+    const el = d.querySelector(`li[data-row="${id}"]`)
+    if (!el) throw new Error(`no row ${id}`)
+    return el as HTMLElement
+  }
+
+  const controls = (li: Element) => [...li.querySelectorAll('.controls button')].map((b) => b.textContent?.trim())
+
+  function control(li: Element, label: 'Unblock' | 'Block'): HTMLButtonElement {
+    const el = [...li.querySelectorAll('.controls button')].find((b) => b.textContent?.trim() === label)
+    if (!el) throw new Error(`no ${label} control`)
+    return el as HTMLButtonElement
+  }
+
+  /** Mount, open Ada's blocked view and wait for its list. */
+  async function openAda(): Promise<HTMLDetailsElement> {
+    await mountLoaded()
+    const d1 = details('details[data-blocked="1"]')
+    await open(d1)
+    await waitFor(() => expect(d1.querySelector('ul.services')).not.toBeNull())
+    return d1
+  }
+
+  it('toggle controls', async () => {
+    const adaView = view(1, 'Ada', {
+      services: [
+        { id: 'youtube', name: 'YouTube', icon: ICON, state: 'blocked', differs: [], toggle: null },
+        { id: 'tiktok', name: 'TikTok', icon: ICON, state: 'partial', differs: ['Kid phone'], toggle: null },
+        { id: 'roblox', name: 'Roblox', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [], toggle: 'unblocked' },
+      ],
+    })
+    const answers: Answer[] = [
+      () => stored(),
+      () =>
+        stored({ service_id: 'tiktok', state: 'blocked', applied: false, failed: ['tablet'], shared: [{ client: 'tv', others: [{ id: 2, name: 'B' }] }] }),
+    ]
+    const s = server({}, { '/api/v1/children/1/blocked': () => json(200, adaView), [`POST ${TOGGLES}`]: () => answers.shift()!() })
+    const d1 = await openAda()
+    await waitFor(() => expect(d1.querySelectorAll('li[data-row]').length).toBe(3))
+
+    expect(controls(row(d1, 'youtube'))).toEqual(['Unblock'])
+    expect(controls(row(d1, 'tiktok'))).toEqual(['Unblock', 'Block'])
+    // This child's own permanent unblock is listed as unblocked, with only Block.
+    const roblox = row(d1, 'roblox')
+    expect(roblox.getAttribute('data-state')).toBe('unblocked')
+    expect(flat(roblox.querySelector('.partial'))).toBe('— unblocked')
+    expect(controls(roblox)).toEqual(['Block'])
+    expect(screen.getByRole('button', { name: 'Unblock YouTube' })).toBe(control(row(d1, 'youtube'), 'Unblock'))
+    expect(screen.getByRole('button', { name: 'Block TikTok' })).toBe(control(row(d1, 'tiktok'), 'Block'))
+
+    await fireEvent.click(control(row(d1, 'youtube'), 'Unblock'))
+    await waitFor(() => expect(toggleCalls(s.calls)).toHaveLength(1))
+    expect(toggleCalls(s.calls)[0].body).toBe('{"service_id":"youtube","state":"unblocked"}')
+
+    await waitFor(() => expect(control(row(d1, 'tiktok'), 'Block').disabled).toBe(false))
+    // Applied with nothing shared: no alert, no shared notice.
+    expect(d1.querySelector('[data-toggle-error]')).toBeNull()
+    expect(d1.querySelector('[data-toggle-shared]')).toBeNull()
+
+    await fireEvent.click(control(row(d1, 'tiktok'), 'Block'))
+    await waitFor(() => expect(toggleCalls(s.calls)).toHaveLength(2))
+    expect(toggleCalls(s.calls)[1].body).toBe('{"service_id":"tiktok","state":"blocked"}')
+    // A block's outcome is worded as a block.
+    await waitFor(() => expect(d1.querySelector('[data-toggle-error]')).not.toBeNull())
+    expect(flat(d1.querySelector('[data-toggle-error]'))).toBe('Blocked TikTok, except on tablet')
+    expect(flat(d1.querySelector('[data-toggle-shared]'))).toBe('Also blocked on tv (shared with B)')
+  })
+
+  it('untoggled unblocked hidden', async () => {
+    const adaView = view(1, 'Ada', {
+      services: [
+        { id: 'youtube', name: 'YouTube', icon: ICON, state: 'blocked', differs: [], toggle: null },
+        { id: 'roblox', name: 'Roblox', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [], toggle: null },
+      ],
+    })
+    server({}, { '/api/v1/children/1/blocked': () => json(200, adaView) })
+    const d1 = await openAda()
+    await waitFor(() => expect(d1.querySelectorAll('li[data-row]').length).toBe(1))
+    expect(row(d1, 'youtube')).toBeTruthy()
+    expect(d1.querySelector('li[data-row="roblox"]')).toBeNull()
+    expect(d1.textContent).not.toContain('Roblox')
+  })
+
+  it('reverse', async () => {
+    // The server stores the toggle and the next blocked view reflects it.
+    let yt: { state: 'blocked' | 'unblocked'; toggle: 'blocked' | 'unblocked' | null } = { state: 'blocked', toggle: null }
+    let calls: Call[] = []
+    const s = server(
+      {},
+      {
+        '/api/v1/children/1/blocked': () =>
+          json(200, view(1, 'Ada', { services: [{ id: 'youtube', name: 'YouTube', icon: ICON, state: yt.state, differs: [], toggle: yt.toggle }] })),
+        [`POST ${TOGGLES}`]: () => {
+          const body = JSON.parse(toggleCalls(calls).at(-1)!.body!) as { service_id: string; state: 'blocked' | 'unblocked' }
+          yt = { state: body.state, toggle: body.state }
+          return stored({ state: body.state })
+        },
+      },
+    )
+    calls = s.calls
+    const d1 = await openAda()
+
+    await fireEvent.click(control(row(d1, 'youtube'), 'Unblock'))
+    await waitFor(() => expect(row(d1, 'youtube').getAttribute('data-state')).toBe('unblocked'))
+    expect(controls(row(d1, 'youtube'))).toEqual(['Block'])
+    expect(flat(row(d1, 'youtube').querySelector('.partial'))).toBe('— unblocked')
+
+    await waitFor(() => expect(control(row(d1, 'youtube'), 'Block').disabled).toBe(false))
+    await fireEvent.click(control(row(d1, 'youtube'), 'Block'))
+    await waitFor(() => expect(row(d1, 'youtube').getAttribute('data-state')).toBe('blocked'))
+    expect(toggleCalls(s.calls).map((c) => c.body)).toEqual([
+      '{"service_id":"youtube","state":"unblocked"}',
+      '{"service_id":"youtube","state":"blocked"}',
+    ])
+    expect(controls(row(d1, 'youtube'))).toEqual(['Unblock'])
+  })
+
+  it('toggle inflight', async () => {
+    let hold: ((r: Response) => void) | null = null
+    const s = server({}, { [`POST ${TOGGLES}`]: () => new Promise<Response>((r) => (hold = r)) })
+    const d1 = await openAda()
+    const unblock = control(row(d1, 'youtube'), 'Unblock')
+
+    // Two clicks in one task: the second lands before the DOM disables the control.
+    unblock.click()
+    unblock.click()
+    await waitFor(() => expect(unblock.disabled).toBe(true))
+    expect(toggleCalls(s.calls)).toHaveLength(1)
+
+    // The picker shares the child's guard: a pick while the toggle is out is
+    // dropped, and the list stays open.
+    await fireEvent.click(d1.querySelector('.block-picker-toggle')!)
+    await fireEvent.click(d1.querySelector('button[data-service="roblox"]')!)
+    expect(toggleCalls(s.calls)).toHaveLength(1)
+    await waitFor(() => expect(d1.querySelector('button[data-service="roblox"]')).not.toBeNull())
+
+    hold!(stored())
+    await waitFor(() => expect(control(row(d1, 'youtube'), 'Unblock').disabled).toBe(false))
+    expect(toggleCalls(s.calls)).toHaveLength(1)
+  })
+
+  it('toggle refresh', async () => {
+    let hold: ((r: Response) => void) | null = null
+    const s = server({}, { [`POST ${TOGGLES}`]: () => new Promise<Response>((r) => (hold = r)) })
+    const d1 = await openAda()
+    await waitFor(() => expect(grantGets(s.calls)).toBeGreaterThan(0))
+    const grants0 = grantGets(s.calls)
+    expect(blockedGets(s.calls)).toBe(1)
+
+    await fireEvent.click(control(row(d1, 'youtube'), 'Unblock'))
+    await waitFor(() => expect(toggleCalls(s.calls)).toHaveLength(1))
+    // Nothing is refetched while the toggle is still out.
+    await new Promise((r) => setTimeout(r, 0))
+    expect(blockedGets(s.calls)).toBe(1)
+    expect(grantGets(s.calls)).toBe(grants0)
+
+    hold!(stored())
+    await waitFor(() => expect(blockedGets(s.calls)).toBe(2))
+    await waitFor(() => expect(grantGets(s.calls)).toBe(grants0 + 1))
+  })
+
+  it('toggle refresh after a stale poll', async () => {
+    // A poll that left before the block answers with the grant the block
+    // ended; the toggle's refresh must poll again rather than join it.
+    const now = Date.now()
+    const g7: Grant = {
+      id: 7,
+      child_id: 1,
+      services: ['youtube'],
+      clients: ['Kid phone'],
+      started_at: new Date(now - 60_000).toISOString(),
+      ends_at: new Date(now + 3_600_000).toISOString(),
+      shared: [],
+    }
+    const adaView = view(1, 'Ada', {
+      services: [{ id: 'youtube', name: 'YouTube', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [], toggle: 'unblocked' }],
+    })
+    let grants: Grant[] = [g7]
+    let holdNext = false
+    let release: (() => void) | null = null
+    const s = server(
+      {},
+      {
+        '/api/v1/children/1/blocked': () => json(200, adaView),
+        '/api/v1/grants': () => {
+          if (!holdNext) return json(200, { grants })
+          holdNext = false
+          const leftWith = grants
+          return new Promise<Response>((r) => (release = () => r(json(200, { grants: leftWith }))))
+        },
+        [`POST ${TOGGLES}`]: () => {
+          grants = []
+          return stored({ state: 'blocked', grant: { id: 7, ended: true } })
+        },
+      },
+    )
+    const d1 = await openAda()
+    await waitFor(() => expect(document.querySelector('li[data-grant="7"]')).not.toBeNull())
+
+    holdNext = true
+    void refresh()
+    await waitFor(() => expect(release).not.toBeNull())
+    const before = grantGets(s.calls)
+
+    await fireEvent.click(control(row(d1, 'youtube'), 'Block'))
+    await waitFor(() => expect(toggleCalls(s.calls)).toHaveLength(1))
+    release!()
+
+    await waitFor(() => expect(grantGets(s.calls)).toBe(before + 1))
+    await waitFor(() => expect(document.querySelector('li[data-grant="7"]')).toBeNull())
+  })
+
+  it('toggle outcome', async () => {
+    const answers: Answer[] = [
+      () => stored({ applied: false, failed: ['tablet'], shared: [{ client: 'tv', others: [{ id: 2, name: 'B' }] }] }),
+      () => json(502, { error: 'adguard_unavailable', message: 'down' }),
+      () => Promise.reject(new TypeError('Failed to fetch')),
+      () => stored({ service_id: 'tiktok', applied: false, failed: ['tablet', 'tv'] }),
+    ]
+    const s = server({}, { [`POST ${TOGGLES}`]: () => answers.shift()!() })
+    const d1 = await openAda()
+    const alert = () => d1.querySelector('[data-toggle-error]')
+    const notice = () => d1.querySelector('[data-toggle-shared]')
+
+    // applied=false: the intent is stored, the refused client is named.
+    await fireEvent.click(control(row(d1, 'youtube'), 'Unblock'))
+    await waitFor(() => expect(alert()).not.toBeNull())
+    expect(alert()?.getAttribute('role')).toBe('alert')
+    expect(alert()?.getAttribute('data-error')).toBe('partial')
+    expect(flat(alert())).toBe('Unblocked YouTube, except on tablet')
+    expect(notice()?.getAttribute('role')).toBe('status')
+    expect(flat(notice())).toBe('Also unblocked on tv (shared with B)')
+    await waitFor(() => expect(blockedGets(s.calls)).toBe(2))
+
+    // 502: an alert, no refetch, the row as it was; the last notice is gone.
+    await waitFor(() => expect(control(row(d1, 'tiktok'), 'Unblock').disabled).toBe(false))
+    await fireEvent.click(control(row(d1, 'tiktok'), 'Unblock'))
+    await waitFor(() => expect(alert()?.getAttribute('data-error')).toBe('adguard_unavailable'))
+    expect(flat(alert())).toBe("Can't reach AdGuard Home — try again in a moment")
+    expect(notice()).toBeNull()
+    expect(blockedGets(s.calls)).toBe(2)
+    expect(row(d1, 'tiktok').getAttribute('data-state')).toBe('blocked')
+    expect(controls(row(d1, 'tiktok'))).toEqual(['Unblock'])
+
+    // A dropped connection is named as such.
+    await waitFor(() => expect(control(row(d1, 'tiktok'), 'Unblock').disabled).toBe(false))
+    await fireEvent.click(control(row(d1, 'tiktok'), 'Unblock'))
+    await waitFor(() => expect(alert()?.getAttribute('data-error')).toBe('network'))
+    expect(flat(alert())).toBe("Can't reach the server — check your connection")
+    expect(toggleCalls(s.calls)).toHaveLength(3)
+
+    // Several refused clients are listed comma-separated.
+    await waitFor(() => expect(control(row(d1, 'tiktok'), 'Unblock').disabled).toBe(false))
+    await fireEvent.click(control(row(d1, 'tiktok'), 'Unblock'))
+    await waitFor(() => expect(alert()?.getAttribute('data-error')).toBe('partial'))
+    expect(alert()?.getAttribute('role')).toBe('alert')
+    expect(flat(alert())).toContain('except on tablet, tv')
+    expect(toggleCalls(s.calls)).toHaveLength(4)
+  })
+
+  it('picker blocks', async () => {
+    const adaView = view(1, 'Ada', {
+      services: [
+        { id: 'youtube', name: 'YouTube', icon: ICON, state: 'blocked', differs: [], toggle: null },
+        { id: 'tiktok', name: 'TikTok', icon: ICON, state: 'unblocked', differs: [], unblocked_by: [], toggle: null },
+      ],
+    })
+    const answers: Answer[] = [() => json(502, { error: 'adguard_unavailable', message: 'down' }), () => stored({ service_id: 'tiktok', state: 'blocked' })]
+    const s = server({}, { '/api/v1/children/1/blocked': () => json(200, adaView), [`POST ${TOGGLES}`]: () => answers.shift()!() })
+    const d1 = await openAda()
+    const pickerToggle = () => d1.querySelector('.block-picker-toggle') as HTMLButtonElement
+    expect(flat(pickerToggle())).toBe('Block a service…')
+
+    await fireEvent.click(pickerToggle())
+    // Already blocked: not offered.
+    expect(d1.querySelector('button[data-service="youtube"]')).toBeNull()
+
+    // A failed pick alerts and leaves the list open for another try.
+    await fireEvent.click(d1.querySelector('button[data-service="tiktok"]')!)
+    await waitFor(() => expect(d1.querySelector('[data-toggle-error]')?.getAttribute('data-error')).toBe('adguard_unavailable'))
+    await waitFor(() => expect((d1.querySelector('button[data-service="tiktok"]') as HTMLButtonElement | null)?.disabled).toBe(false))
+    expect(pickerToggle().getAttribute('aria-expanded')).toBe('true')
+    expect(blockedGets(s.calls)).toBe(1)
+
+    await fireEvent.click(d1.querySelector('button[data-service="tiktok"]')!)
+    await waitFor(() => expect(blockedGets(s.calls)).toBe(2))
+    expect(toggleCalls(s.calls).map((c) => c.body)).toEqual([
+      '{"service_id":"tiktok","state":"blocked"}',
+      '{"service_id":"tiktok","state":"blocked"}',
+    ])
+    await waitFor(() => expect(pickerToggle().getAttribute('aria-expanded')).toBe('false'))
+    expect(d1.querySelector('[data-toggle-error]')).toBeNull()
+  })
+
+  it('picker needs the catalogue', async () => {
+    server({ services: 'down' })
+    const d1 = await openAda()
+    expect(d1.querySelector('.block-picker')).toBeNull()
+  })
+
+  it('permanent attribution', async () => {
+    const benView = view(2, 'Ben', {
+      services: [
+        {
+          id: 'youtube', name: 'YouTube', icon: ICON, state: 'unblocked', differs: [], toggle: null,
+          unblocked_by: [{ client: 'tv', grant_id: 0, child: { id: 3, name: 'Bob' }, permanent: true }],
+        },
+      ],
+    })
+    server({}, { '/api/v1/children/2/blocked': () => json(200, benView) })
+    await mountLoaded()
+    const d2 = details('details[data-blocked="2"]')
+    await open(d2)
+    await waitFor(() => expect(d2.querySelectorAll('li[data-row]').length).toBe(1))
+    expect(flat(d2.querySelector('li .partial'))).toBe('— unblocked on tv by Bob (permanent)')
+    expect(d2.textContent).not.toContain("Bob's grant")
   })
 })

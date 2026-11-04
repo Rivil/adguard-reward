@@ -1187,3 +1187,348 @@ func TestGrant_EndMalformedRegion(t *testing.T) {
 		t.Fatalf("user_rules changed: %q", e.fake.UserRules())
 	}
 }
+
+// Permanent toggles (locked revert_baseline_v2, shared_client_scope).
+
+// seedToggle stores childID's permanent toggle straight into the store, as
+// the toggle API would have left it.
+func (e *env) seedToggle(childID int64, serviceID, state string) {
+	e.t.Helper()
+	if _, err := e.st.SetServiceToggle(ctx, childID, serviceID, state, e.clk.Now()); err != nil {
+		e.t.Fatalf("SetServiceToggle(%d, %s, %s): %v", childID, serviceID, state, err)
+	}
+}
+
+// fakeClient adds a persistent client to the fake with its own
+// blocked-services list (blocked, possibly empty); its name doubles as its
+// ClientID.
+func (e *env) fakeClient(name string, blocked ...string) {
+	e.t.Helper()
+	e.addFakeClient(adguard.NewClient{Name: name, IDs: []string{name}, Blocked: &blocked})
+}
+
+// fakeGlobalClient adds a persistent client that inherits AdGuard's global
+// blocked-services list.
+func (e *env) fakeGlobalClient(name string) {
+	e.t.Helper()
+	e.addFakeClient(adguard.NewClient{Name: name, IDs: []string{name}})
+}
+
+func (e *env) addFakeClient(nc adguard.NewClient) {
+	e.t.Helper()
+	ag, err := adguard.New(e.fake.URL(), svcUser, svcPass)
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	if err := ag.AddClient(ctx, nc); err != nil {
+		e.t.Fatalf("AddClient(%s): %v", nc.Name, err)
+	}
+}
+
+// toggleFailStore fails ListServiceToggles while err is set.
+type toggleFailStore struct {
+	*store.Store
+	mu  sync.Mutex
+	err error
+}
+
+func (s *toggleFailStore) set(err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.err = err
+}
+
+func (s *toggleFailStore) ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error) {
+	s.mu.Lock()
+	err := s.err
+	s.mu.Unlock()
+	if err != nil {
+		return nil, err
+	}
+	return s.Store.ListServiceToggles(ctx)
+}
+
+// keepsPermanentUnblock grants [youtube, tiktok] on kid-phone + tv, marks
+// youtube permanently unblocked mid-grant, reverts through revert and wants
+// only tiktok back on both clients.
+func keepsPermanentUnblock(t *testing.T, revert func(e *env, id int64), status string) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "tiktok", "youtube")
+	e.fakeClient("tv", "tiktok", "youtube")
+	kid := e.child("Ann", "kid-phone", "tv")
+	res := e.create(kid.ID, []string{"youtube", "tiktok"}, []string{"kid-phone", "tv"})
+	if !res.Applied {
+		t.Fatalf("create: %+v", res)
+	}
+	e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+
+	revert(e, res.Grant.ID)
+	e.wantStatus(res.Grant.ID, status)
+	for _, name := range []string{"kid-phone", "tv"} {
+		if got := e.blocked(name); !reflect.DeepEqual(got, []string{"tiktok"}) {
+			t.Errorf("%s = %v, want [tiktok] (youtube stays permanently unblocked)", name, got)
+		}
+	}
+}
+
+func TestExpire_KeepsPermanentUnblock(t *testing.T) {
+	keepsPermanentUnblock(t, func(e *env, _ int64) { e.clk.Advance(d + time.Second) }, store.StatusExpired)
+}
+
+func TestEnd_KeepsPermanentUnblock(t *testing.T) {
+	keepsPermanentUnblock(t, func(e *env, id int64) { e.end(id) }, store.StatusEnded)
+}
+
+func TestRevert_CoOwnerUnblock(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("a-phone", "youtube")
+	e.fakeClient("tv", "youtube")
+	a := e.child("Ann", "a-phone", "tv")
+	b := e.child("Ben", "tv")
+	g := e.create(a.ID, youtube, []string{"a-phone", "tv"}).Grant
+	e.seedToggle(b.ID, "youtube", store.ToggleUnblocked)
+	before := len(e.updatesFor())
+
+	e.end(g.ID)
+	if got := e.updatesFor()[before:]; !reflect.DeepEqual(got, []string{"a-phone"}) {
+		t.Errorf("End updated %v, want [a-phone] only (Ben's permanent unblock keeps tv open)", got)
+	}
+	e.wantBlocks("a-phone", "youtube", true)
+	e.wantBlocks("tv", "youtube", false)
+	e.wantStatus(g.ID, store.StatusEnded)
+}
+
+func TestRevert_ToggleReadFailure(t *testing.T) {
+	boom := errors.New("database is locked")
+	for name, wrap := range map[string]func(*store.Store) (Store, func(error)){
+		"toggles": func(st *store.Store) (Store, func(error)) {
+			fs := &toggleFailStore{Store: st}
+			return fs, fs.set
+		},
+		"children": func(st *store.Store) (Store, func(error)) {
+			fs := &customFailStore{Store: st}
+			return fs, func(err error) { fs.mu.Lock(); fs.childrenErr = err; fs.mu.Unlock() }
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			var fail func(error)
+			e := newEnvStore(t, nil, func(st *store.Store) Store {
+				s, f := wrap(st)
+				fail = f
+				return s
+			})
+			e.fakeClient("kid-phone", "youtube")
+			e.fakeClient("tv", "youtube")
+			kid := e.child("Ann", "kid-phone", "tv")
+			g := e.create(kid.ID, youtube, []string{"kid-phone", "tv"}).Grant
+			posts := e.posts()
+			fail(boom)
+
+			err := e.eng.End(ctx, g.ID)
+			var rf *ErrRevertFailed
+			if !errors.As(err, &rf) || !reflect.DeepEqual(rf.Clients, g.Clients) {
+				t.Fatalf("End err = %v, want *ErrRevertFailed naming every client %v", err, g.Clients)
+			}
+			if n := e.posts() - posts; n != 0 {
+				t.Errorf("End issued %d update POSTs after a failed read, want 0 (never re-block blind)", n)
+			}
+			e.wantStatus(g.ID, store.StatusActive)
+			if n := e.clk.pending(); n != 1 {
+				t.Errorf("%d timers armed, want the grant's timer kept", n)
+			}
+
+			e.clk.Advance(d)
+			e.wantStatus(g.ID, store.StatusActive)
+			if n := e.posts() - posts; n != 0 {
+				t.Errorf("expiry issued %d update POSTs after a failed read, want 0", n)
+			}
+
+			fail(nil)
+			e.end(g.ID)
+			e.wantStatus(g.ID, store.StatusEnded)
+			e.wantBlocks("kid-phone", "youtube", true)
+			e.wantBlocks("tv", "youtube", true)
+		})
+	}
+}
+
+// globalListWrites counts non-GET requests to AdGuard's global
+// blocked-services endpoints.
+func (e *env) globalListWrites() int {
+	n := 0
+	for _, r := range e.fake.Requests() {
+		if r.Method != "GET" && strings.HasPrefix(r.Path, "/control/blocked_services/") {
+			n++
+		}
+	}
+	return n
+}
+
+func TestApplyPlan(t *testing.T) {
+	apply := func(e *env, plan map[string]clientPlan) ([]string, int) {
+		e.eng.mu.Lock()
+		defer e.eng.mu.Unlock()
+		return e.eng.applyPlan(ctx, plan)
+	}
+	setup := func(t *testing.T) *env {
+		e := newEnv(t, nil)
+		e.fakeClient("kid-phone", "tiktok", "youtube")
+		e.fakeClient("tv")
+		e.fakeClient("tablet", "youtube")
+		e.fakeGlobalClient("kid-tablet")
+		return e
+	}
+
+	t.Run("gone skipped, global failed", func(t *testing.T) {
+		e := setup(t)
+		before := len(e.updatesFor())
+		failed, writes := apply(e, map[string]clientPlan{
+			"ghost":      {remove: youtube},
+			"kid-tablet": {add: youtube},
+			"kid-phone":  {remove: youtube, add: []string{"roblox", "tiktok"}},
+			"tv":         {remove: youtube}, // already open: no write
+		})
+		if !reflect.DeepEqual(failed, []string{"kid-tablet"}) {
+			t.Errorf("failed = %v, want [kid-tablet]", failed)
+		}
+		updates := e.updatesFor()[before:]
+		if !reflect.DeepEqual(updates, []string{"kid-phone", "kid-phone"}) {
+			t.Errorf("updates = %v, want kid-phone's remove and add only", updates)
+		}
+		if writes != len(updates) {
+			t.Errorf("writes = %d, want %d (the updates issued)", writes, len(updates))
+		}
+		if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"roblox", "tiktok"}) {
+			t.Errorf("kid-phone = %v, want [roblox tiktok]", got)
+		}
+		if got := e.blocked("kid-tablet"); len(got) != 0 || !e.usesGlobal("kid-tablet") {
+			t.Errorf("kid-tablet = %v (global %v), want untouched", got, e.usesGlobal("kid-tablet"))
+		}
+		if n := e.globalListWrites(); n != 0 {
+			t.Errorf("%d writes to the global blocked-services list, want 0", n)
+		}
+	})
+
+	t.Run("write error", func(t *testing.T) {
+		e := setup(t)
+		e.fake.SetUpdateStatus("tablet", 500)
+		before := len(e.updatesFor())
+		failed, writes := apply(e, map[string]clientPlan{
+			"tablet":    {remove: youtube},
+			"kid-phone": {add: youtube}, // already blocked: no write
+		})
+		if !reflect.DeepEqual(failed, []string{"tablet"}) {
+			t.Errorf("failed = %v, want [tablet]", failed)
+		}
+		if updates := e.updatesFor()[before:]; writes != 1 || !reflect.DeepEqual(updates, []string{"tablet"}) {
+			t.Errorf("writes = %d, updates = %v; want 1 / [tablet]", writes, updates)
+		}
+	})
+
+	t.Run("read failure", func(t *testing.T) {
+		e := setup(t)
+		e.fake.SetStatus("/control/clients", 500)
+		posts := e.posts()
+		failed, writes := apply(e, map[string]clientPlan{
+			"tv":        {add: youtube},
+			"kid-phone": {remove: youtube},
+		})
+		if !reflect.DeepEqual(failed, []string{"kid-phone", "tv"}) || writes != 0 || e.posts() != posts {
+			t.Errorf("failed = %v writes = %d posts = %d; want every client failed, nothing written",
+				failed, writes, e.posts()-posts)
+		}
+	})
+}
+
+func TestExpire_GlobalClient(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "youtube")
+	e.fakeGlobalClient("kid-tablet")
+	kid := e.child("Ann", "kid-phone", "kid-tablet")
+	clients := []string{"kid-phone", "kid-tablet"}
+	res := e.create(kid.ID, youtube, clients)
+	if !reflect.DeepEqual(res.Failed, []string{"kid-tablet"}) {
+		t.Fatalf("create Failed = %v, want [kid-tablet]", res.Failed)
+	}
+
+	e.clk.Advance(d + time.Second)
+	e.wantStatus(res.Grant.ID, store.StatusExpired)
+	if n := e.clk.pending(); n != 0 {
+		t.Errorf("%d timers armed after expiry, want 0", n)
+	}
+	e.wantBlocks("kid-tablet", "youtube", true)
+	e.wantBlocks("kid-phone", "youtube", true)
+	if _, err := e.eng.Create(ctx, kid.ID, youtube, clients, d); err != nil {
+		t.Errorf("a fresh grant on youtube: %v, want nil (the old one must not linger active)", err)
+	}
+}
+
+func TestStart_RestartKeepsToggles(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	ag, err := adguard.New(fake.URL(), svcUser, svcPass)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// youtube is open on kid-phone: the grant below unblocked it.
+	if err := ag.AddClient(ctx, adguard.NewClient{Name: "kid-phone", IDs: []string{"kid-phone"}, Blocked: &[]string{"tiktok"}}); err != nil {
+		t.Fatal(err)
+	}
+
+	// The previous process: toggles and a grant that went overdue while down.
+	dir := t.TempDir()
+	st, err := store.Open(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kid, err := st.CreateChild(ctx, "Ann", []string{"kid-phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	cs, err := st.CreateCustomService(ctx, "Portal", []string{"a.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := cs.ServiceID()
+	for _, id := range []string{"youtube", svc} {
+		if _, err := st.SetServiceToggle(ctx, kid.ID, id, store.ToggleUnblocked, t0.Add(-3*time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	g, err := st.CreateGrant(ctx, kid.ID, []string{"youtube", svc}, []string{"kid-phone"}, t0.Add(-2*time.Hour), t0.Add(-time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := st.Close(); err != nil {
+		t.Fatal(err)
+	}
+
+	st, err = store.Open(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	clk := &fakeClock{now: t0}
+	eng := New(st, ag, Options{Now: clk.Now, AfterFunc: clk.AfterFunc})
+	t.Cleanup(eng.Close)
+	e := &env{t: t, fake: fake, st: st, clk: clk, logs: &lockedBuffer{}, eng: eng}
+
+	if err := eng.Start(ctx); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	e.wantStatus(g.ID, store.StatusExpired)
+	if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"tiktok"}) {
+		t.Errorf("kid-phone = %v, want [tiktok] (youtube permanently unblocked)", got)
+	}
+	if got, want := e.exceptions(), []string{"@@||a.com^$client='kid-phone'"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("exceptions %q, want %q (custom permanent unblock survives the restart)", got, want)
+	}
+
+	posts, rulesPosts := e.posts(), e.setRulesPosts()
+	stats := e.reconcile()
+	if stats.Writes != 0 || stats.RulesWritten != 0 {
+		t.Errorf("second pass Stats = %+v, want Writes 0 RulesWritten 0", stats)
+	}
+	if n := e.posts() - posts + e.setRulesPosts() - rulesPosts; n != 0 {
+		t.Errorf("second pass issued %d POSTs, want 0", n)
+	}
+}
