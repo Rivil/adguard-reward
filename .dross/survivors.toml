@@ -1734,3 +1734,21 @@
   line = 43
   accepted_in = "grant-history"
   reason = "Equivalent: REMOVED_REASONS[null] is undefined, so forcing the lookup yields the same falsy reason and the same fallback text as the null branch."
+
+[[accepted]]
+  key = "4f13ab2bafd98088"
+  file = "web/src/lib/History.svelte"
+  op = "ConditionalExpression"
+  text = "if (loadingMore || id === null || before === null) return"
+  line = 63
+  accepted_in = "grant-history"
+  reason = "Equivalent (two mutants, id===null->false and before===null->false): loadMore is only reachable from the Load more button, which renders only inside {#if nextBefore !== null} on the loaded branch; a null child takes the notFound branch so no button exists, and a same-tick second click is stopped by the loadingMore guard (set before the await). Both null checks are defensive and unreachable from the UI."
+
+[[accepted]]
+  key = "a449124a3ffdc745"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  accepted_in = "grant-history"
+  reason = "Equivalent: typeof window !== \"\" is always true, identical to the already-accepted ->true mutant on this line; window is defined in every runtime this SPA runs in (browser and jsdom)."
