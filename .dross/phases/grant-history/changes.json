@@ -3,6 +3,15 @@
   "base": "milestone/v0.2",
   "base_commit": "6d5958a74402d0320eb07b6de5b2e7be66598797",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/History.panel.test.ts",
+        "web/src/lib/History.svelte"
+      ],
+      "commit": "54abf99",
+      "completed_at": "2026-11-04T12:02:53.442559Z",
+      "notes": "quick: Change web/src/lib/History.svelte:119 from class={{ removed: removed !== null }} to the behaviour-identical class:removed={removed !== null} so Stryker's ObjectLiteral instrumentation no longer breaks Svelte compilation (unblocks grant-history verify TS mutation leg)"
+    },
     "t-1": {
       "files": [
         "internal/store/migrations/0009_grant_history.sql",
