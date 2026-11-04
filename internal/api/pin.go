@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/Rivil/adguard-reward/internal/auth"
 )
@@ -105,8 +107,95 @@ func (a *API) handlePinSet(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// changePIN replaces a tagged session's PIN after the password re-check.
-// It lands with PIN change and remove; until then it refuses.
-func (a *API) changePIN(w http.ResponseWriter, _ *http.Request, _ auth.Session, _, _ string) {
-	writeError(w, http.StatusNotImplemented, "not_implemented", "changing a PIN is not available yet")
+// changePIN replaces a tagged session's PIN after re-checking the AdGuard
+// password for the session's own username (locked pin_change_reauth) under
+// the login rate limit. The new hash resets the strike counter; the device
+// token, and so the device cookie, is kept.
+func (a *API) changePIN(w http.ResponseWriter, r *http.Request, sess auth.Session, pin, password string) {
+	if !a.reauth(w, r, sess, password) {
+		return
+	}
+	hash, err := auth.HashPIN(pin)
+	if err != nil {
+		a.log.Error("hash pin failed", "err", err, "session", sess)
+		writeError(w, http.StatusInternalServerError, "internal", "could not change PIN")
+		return
+	}
+	switch err := a.deps.Devices.ReplacePIN(r.Context(), sess.DeviceID, hash); {
+	case errors.Is(err, auth.ErrDeviceNotFound):
+		writeError(w, http.StatusNotFound, CodeNotFound, "this device has no PIN")
+		return
+	case err != nil:
+		a.log.Error("replace pin failed", "err", err, "session", sess)
+		writeError(w, http.StatusInternalServerError, "internal", "could not change PIN")
+		return
+	}
+	a.log.Info("pin changed", "session", sess)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// removeRequest is the body of DELETE /api/v1/pin.
+type removeRequest struct {
+	Password *string `json:"password"`
+}
+
+// handlePinRemove is DELETE /api/v1/pin {password}: after the password
+// re-check the device and its PIN go and the device cookie is cleared,
+// while this session carries on untagged under the 30-day sliding expiry.
+// Any other session still tagged with the device goes with it.
+func (a *API) handlePinRemove(w http.ResponseWriter, r *http.Request) {
+	sess, _ := auth.FromContext(r.Context())
+	var in removeRequest
+	if err := decodeBody(w, r, maxPINBody, &in); err != nil {
+		writeError(w, http.StatusBadRequest, CodeBadRequest, "expected JSON {password}")
+		return
+	}
+	if a.deps.Devices == nil {
+		writeError(w, http.StatusInternalServerError, "internal", "device PINs are not configured")
+		return
+	}
+	if sess.DeviceID == 0 {
+		writeError(w, http.StatusNotFound, CodeNotFound, "this device has no PIN")
+		return
+	}
+	if in.Password == nil || *in.Password == "" {
+		writeError(w, http.StatusForbidden, CodeReauthRequired, "removing the PIN needs your AdGuard password")
+		return
+	}
+	if !a.reauth(w, r, sess, *in.Password) {
+		return
+	}
+	// Detach this session first so the revoke below spares it.
+	if err := a.deps.Auth.DetachDevice(r.Context(), sess.ID); err != nil {
+		a.log.Error("detach device failed", "err", err, "session", sess)
+		writeError(w, http.StatusInternalServerError, "internal", "could not remove PIN")
+		return
+	}
+	if err := a.deps.Devices.RevokeDevice(r.Context(), sess.DeviceID); err != nil {
+		a.log.Error("remove device failed", "err", err, "session", sess)
+		writeError(w, http.StatusInternalServerError, "internal", "could not remove PIN")
+		return
+	}
+	a.deps.Auth.ClearDevice(w)
+	a.log.Info("pin removed", "session", sess)
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// reauth runs the shared password re-check for the session's username and
+// writes the refusal itself; true means the password was right.
+func (a *API) reauth(w http.ResponseWriter, r *http.Request, sess auth.Session, password string) bool {
+	res := a.recheckPassword(r, sess.Username, password)
+	switch res.outcome {
+	case outcomeOK:
+		return true
+	case outcomeBadCreds:
+		writeError(w, http.StatusForbidden, CodeBadCredentials, "wrong password")
+	case outcomeRateLimited:
+		w.Header().Set("Retry-After", strconv.Itoa(int(res.retry/time.Second)))
+		writeError(w, http.StatusTooManyRequests, CodeRateLimited, rateLimitedMsg)
+	case outcomeUnreachable:
+		writeError(w, http.StatusBadGateway, CodeAdGuardUnavailable, adguardUnavailable)
+	}
+	// outcomeCanceled: the client is gone; nothing to write.
+	return false
 }

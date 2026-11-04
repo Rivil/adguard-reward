@@ -133,6 +133,7 @@ func (a *API) routes() {
 	a.mux.Handle("POST /api/v1/sessions/revoke-all", a.requireSession(http.HandlerFunc(a.handleSessionsRevokeAll)))
 	a.mux.Handle("GET /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinStatus)))
 	a.mux.Handle("POST /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinSet)))
+	a.mux.Handle("DELETE /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinRemove)))
 	a.mux.Handle("GET /api/v1/children", a.requireSession(http.HandlerFunc(a.handleChildrenList)))
 	a.mux.Handle("POST /api/v1/children", a.requireSession(http.HandlerFunc(a.handleChildCreate)))
 	a.mux.Handle("GET /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildGet)))
