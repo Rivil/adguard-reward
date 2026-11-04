@@ -95,7 +95,7 @@ describe('PinPad', () => {
     const { onUnlocked, onRevoked } = setup()
     await tap('1', '2', '3', '4')
     await fireEvent.click(unlockButton())
-    expect(await screen.findByRole('alert')).toBeTruthy()
+    expect((await screen.findByRole('alert')).getAttribute('data-error')).toBe('internal')
     expect(screen.getByRole('dialog')).toBeTruthy()
     expect(onUnlocked).not.toHaveBeenCalled()
     expect(onRevoked).not.toHaveBeenCalled()
@@ -131,5 +131,122 @@ describe('PinPad', () => {
     expect(pinInput().value).toBe('123456')
     await fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
     expect(pinInput().value).toBe('12345')
+  })
+
+  it('has one key per digit and each key types its own digit', async () => {
+    stubUnlock(() => new Response(null, { status: 204 }))
+    setup()
+
+    const names = screen.getAllByRole('button').map((b) => b.getAttribute('aria-label') ?? b.textContent)
+    expect(names).toEqual(['1', '2', '3', '4', '5', '6', '7', '8', '9', '0', 'Delete', 'Unlock'])
+
+    await tap('7', '8', '9', '0')
+    expect(pinInput().value).toBe('7890')
+    for (let i = 0; i < 4; i++) await fireEvent.click(screen.getByRole('button', { name: 'Delete' }))
+    expect(pinInput().value).toBe('')
+    await tap('1', '2', '3', '4', '5', '6')
+    expect(pinInput().value).toBe('123456')
+  })
+
+  it('a full 6-digit PIN can be submitted', async () => {
+    const calls = stubUnlock(() => new Response(null, { status: 204 }))
+    const { onUnlocked } = setup()
+
+    await tap('1', '2', '3', '4', '5', '6')
+    expect(unlockButton().disabled).toBe(false)
+    await fireEvent.click(unlockButton())
+
+    await vi.waitFor(() => expect(onUnlocked).toHaveBeenCalledTimes(1))
+    expect(calls.map((c) => c.init.body)).toEqual(['{"pin":"123456"}'])
+  })
+
+  it('Delete is disabled on an empty PIN and enabled once a digit is in', async () => {
+    stubUnlock(() => new Response(null, { status: 204 }))
+    setup()
+    const del = () => screen.getByRole('button', { name: 'Delete' }) as HTMLButtonElement
+
+    expect(del().disabled).toBe(true)
+    await tap('5')
+    expect(del().disabled).toBe(false)
+    await fireEvent.click(del())
+    expect(pinInput().value).toBe('')
+    expect(del().disabled).toBe(true)
+  })
+
+  it('while unlocking: the label reads Unlocking…, the pad is frozen and the PIN kept', async () => {
+    let answer!: (r: Response) => void
+    const held = new Promise<Response>((resolve) => {
+      answer = resolve
+    })
+    const calls = stubUnlock(() => held)
+    const { onUnlocked } = setup()
+
+    await tap('1', '2', '3', '4')
+    await fireEvent.click(unlockButton())
+
+    const busy = screen.getByRole('button', { name: 'Unlocking…' }) as HTMLButtonElement
+    expect(busy.disabled).toBe(true)
+    expect(screen.queryByRole('button', { name: 'Unlock' })).toBeNull()
+    expect(pinInput().disabled).toBe(true)
+    const del = screen.getByRole('button', { name: 'Delete' }) as HTMLButtonElement
+    expect(del.disabled).toBe(true)
+    for (const d of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']) {
+      expect((screen.getByRole('button', { name: d }) as HTMLButtonElement).disabled, d).toBe(true)
+    }
+
+    // A click that still reaches Delete or the form changes nothing in flight.
+    await fireEvent.click(del)
+    expect(pinInput().value).toBe('1234')
+    await fireEvent.submit(busy.form!)
+    expect(calls).toHaveLength(1)
+
+    answer(new Response(null, { status: 204 }))
+    await vi.waitFor(() => expect(onUnlocked).toHaveBeenCalledTimes(1))
+    expect(unlockButton().textContent).toBe('Unlock')
+    expect(pinInput().disabled).toBe(false)
+  })
+
+  it('a retry clears the old error at once and a success empties the PIN', async () => {
+    let attempt = 0
+    let answer!: (r: Response) => void
+    const held = new Promise<Response>((resolve) => {
+      answer = resolve
+    })
+    stubUnlock(() => {
+      attempt++
+      return attempt === 1 ? json(401, { error: 'bad_pin', message: 'wrong pin', attempts_remaining: 4 }) : held
+    })
+    const { onUnlocked } = setup()
+
+    await tap('9', '9', '9', '9')
+    await fireEvent.click(unlockButton())
+    expect((await screen.findByRole('alert')).textContent).toContain('4 attempts left')
+
+    await tap('1', '2', '3', '4')
+    await fireEvent.click(unlockButton())
+    // In flight: the stale "attempts left" line is already gone.
+    expect(screen.getByRole('button', { name: 'Unlocking…' })).toBeTruthy()
+    expect(screen.queryByRole('alert')).toBeNull()
+
+    answer(new Response(null, { status: 204 }))
+    await vi.waitFor(() => expect(onUnlocked).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(pinInput().value).toBe('')
+  })
+
+  it('a network failure shows the connection message and stays on the pad', async () => {
+    stubUnlock(() => Promise.reject(new TypeError('Failed to fetch')))
+    const { onUnlocked, onRevoked } = setup()
+
+    await tap('1', '2', '3', '4')
+    await fireEvent.click(unlockButton())
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.getAttribute('data-error')).toBe('network')
+    expect(alert.textContent).toBe("Can't reach the server — check your connection")
+    expect(pinInput().value).toBe('')
+    expect(unlockButton().textContent).toBe('Unlock')
+    expect(onUnlocked).not.toHaveBeenCalled()
+    expect(onRevoked).not.toHaveBeenCalled()
   })
 })

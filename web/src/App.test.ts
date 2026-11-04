@@ -390,6 +390,38 @@ describe('services route', () => {
   })
 })
 
+describe('settings route', () => {
+  const noPin = () => json(200, { has_pin: false })
+
+  it('reload on /settings while signed in renders Settings', async () => {
+    history.replaceState(null, '', '/settings')
+    route.set('settings')
+    const calls = mockFetch({ '/api/v1/me': signedIn, '/api/v1/pin': noPin })
+    render(App)
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy()
+    expect(location.pathname).toBe('/settings')
+    expect(get(route)).toBe('settings')
+    expect(calls.map((c) => c.url)).toContain('/api/v1/pin')
+  })
+
+  it('back to /settings while signed out stays on login', async () => {
+    // The route alone must not open Settings: username is still null, so the
+    // page (and its /api/v1/pin load) never mounts.
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+
+    history.pushState(null, '', '/settings')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    await tick()
+
+    expect(get(route)).toBe('settings')
+    expect(screen.getByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Settings' })).toBeNull()
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+  })
+})
+
 describe('history route', () => {
   const cleoPage = () =>
     json(200, {
@@ -580,6 +612,43 @@ describe('App PIN lock', () => {
     await vi.waitFor(() => expect(childrenFetches()).toBeGreaterThan(before))
     expect(location.pathname).toBe('/children')
     expect(get(locked)).toBe(false)
+  })
+
+  it('while unlock re-reads /me nothing renders: no flash of Sign in', async () => {
+    // Locked at load, so username is still null when the pad goes away. Until
+    // the second /me answers the app must show nothing, not the login page.
+    atChildren()
+    let answerMe!: (r: Response) => void
+    const heldMe = new Promise<Response>((resolve) => {
+      answerMe = resolve
+    })
+    let unlockedYet = false
+    const calls = mockFetch({
+      '/api/v1/me': () => (unlockedYet ? heldMe : pinRequired()),
+      '/api/v1/children': noChildren,
+      '/api/v1/clients': clients,
+      'POST /api/v1/unlock': () => {
+        unlockedYet = true
+        return new Response(null, { status: 204 })
+      },
+    })
+    render(App)
+    await screen.findByRole('dialog')
+    await fireEvent.input(screen.getByLabelText('PIN'), { target: { value: '1234' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+
+    const meCalls = () => calls.filter((c) => c.url === '/api/v1/me').length
+    await vi.waitFor(() => expect(meCalls()).toBe(2))
+    await tick()
+    expect(get(locked)).toBe(false)
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
+
+    answerMe(signedIn())
+    expect(await screen.findByRole('heading', { name: 'Children' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull()
+    expect(location.pathname).toBe('/children')
   })
 
   it("concurrent pin_required responses from Home's fetches render exactly one pad", async () => {

@@ -965,6 +965,12 @@ describe('PIN lock routing', () => {
     locked.set(false)
   })
 
+  it('a fresh load starts unlocked', async () => {
+    vi.resetModules()
+    const m = await import('./api')
+    expect(get(m.locked)).toBe(false)
+  })
+
   it('pin_required locks instead of signing out', async () => {
     const calls = mockFetch(json(401, { error: 'pin_required', message: 'enter the PIN' }))
     const err = await fails(listChildren())
