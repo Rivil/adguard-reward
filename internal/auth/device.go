@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"net/http"
 	"time"
 )
 
@@ -15,6 +16,17 @@ var (
 	// already used all MaxPINAttempts: the caller treats it as revoked.
 	ErrNoAttempts = errors.New("no pin attempts left")
 )
+
+// DeviceCookieName is the device cookie, separate from the session cookie
+// so a lapsed session can still name the device that may unlock.
+const DeviceCookieName = "adguard_reward_device"
+
+// DefaultDeviceLifetime is the locked 90-day device token lifetime.
+const DefaultDeviceLifetime = 90 * 24 * time.Hour
+
+// CodePINRequired is RequireSession's 401 code when the session has lapsed
+// but the request carries a live device cookie.
+const CodePINRequired = "pin_required"
 
 // MaxPINAttempts is how many consecutive wrong PINs a device survives; the
 // last of them revokes it. The devices table CHECK caps the counter here.
@@ -75,4 +87,98 @@ type DeviceStore interface {
 	// DeleteExpiredDevices deletes devices whose expires_at <= now, and
 	// the sessions tagged with them, and returns how many devices went.
 	DeleteExpiredDevices(ctx context.Context, now time.Time) (int, error)
+}
+
+// IssueDevice creates a device for username with the given PIN hash and
+// returns the raw token for the device cookie: 256 random bits, of which
+// only the SHA-256 is stored. The token exists only in the return value.
+func (m *Manager) IssueDevice(ctx context.Context, username, pinHash string) (string, Device, error) {
+	if m.devices == nil {
+		return "", Device{}, errors.New("no device store")
+	}
+	raw, hash, err := newToken()
+	if err != nil {
+		return "", Device{}, err
+	}
+	now := m.now()
+	d := Device{
+		Username:  username,
+		TokenHash: hash,
+		PINHash:   pinHash,
+		CreatedAt: now,
+		ExpiresAt: now.Add(m.devLife),
+	}
+	id, err := m.devices.InsertDevice(ctx, d)
+	if err != nil {
+		return "", Device{}, err
+	}
+	d.ID = id
+	m.log.Debug("device issued", "device", d)
+	return raw, d, nil
+}
+
+// LookupDevice resolves a presented device token. Malformed, unknown and
+// expired tokens all return ErrDeviceNotFound; an expired device is revoked
+// on sight, its tagged sessions with it. Lookup never slides the expiry —
+// only a successful unlock does. Without a device store every token is
+// ErrDeviceNotFound.
+func (m *Manager) LookupDevice(ctx context.Context, raw string) (Device, error) {
+	if m.devices == nil {
+		return Device{}, ErrDeviceNotFound
+	}
+	hash, ok := hashToken(raw)
+	if !ok {
+		m.log.Debug("device rejected", "reason", "malformed token")
+		return Device{}, ErrDeviceNotFound
+	}
+	d, err := m.devices.DeviceByTokenHash(ctx, hash)
+	if err != nil {
+		if errors.Is(err, ErrDeviceNotFound) {
+			m.log.Debug("device rejected", "reason", "unknown token")
+		}
+		return Device{}, err
+	}
+	if !d.ExpiresAt.After(m.now()) {
+		if err := m.devices.RevokeDevice(ctx, d.ID); err != nil {
+			return Device{}, err
+		}
+		m.log.Debug("device rejected", "reason", "expired", "device", d)
+		return Device{}, ErrDeviceNotFound
+	}
+	return d, nil
+}
+
+// DeviceLifetime is how long a device lives without an unlock.
+func (m *Manager) DeviceLifetime() time.Duration { return m.devLife }
+
+// DeviceCookie is the device cookie carrying raw.
+func (m *Manager) DeviceCookie(raw string) *http.Cookie {
+	return &http.Cookie{
+		Name:     DeviceCookieName,
+		Value:    raw,
+		Path:     "/",
+		MaxAge:   int(m.devLife / time.Second),
+		HttpOnly: true,
+		Secure:   m.secure,
+		SameSite: http.SameSiteStrictMode,
+	}
+}
+
+// ClearDeviceCookie is the cookie that deletes the device cookie.
+func (m *Manager) ClearDeviceCookie() *http.Cookie {
+	c := m.DeviceCookie("")
+	c.MaxAge = -1
+	return c
+}
+
+// SetDeviceCookie writes c, replacing any Set-Cookie for the device cookie
+// already on w so a response never carries two.
+func SetDeviceCookie(w http.ResponseWriter, c *http.Cookie) {
+	dropCookie(w.Header(), DeviceCookieName)
+	http.SetCookie(w, c)
+}
+
+// ClearDevice writes the clearing device cookie, replacing any already on w.
+func (m *Manager) ClearDevice(w http.ResponseWriter) {
+	SetDeviceCookie(w, m.ClearDeviceCookie())
 }

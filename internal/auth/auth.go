@@ -85,8 +85,14 @@ type Options struct {
 	// PINIdle is the sliding idle expiry of a session tagged with a PIN
 	// device.
 	PINIdle time.Duration
-	Now     func() time.Time
-	Log     *slog.Logger
+	// Devices stores PIN devices. Nil disables the device cookie entirely:
+	// RequireSession ignores it and never answers pin_required.
+	Devices DeviceStore
+	// DeviceLifetime is the device token's lifetime, slid only by a
+	// successful unlock. Zero means DefaultDeviceLifetime.
+	DeviceLifetime time.Duration
+	Now            func() time.Time
+	Log            *slog.Logger
 	// ErrorWriter renders RequireSession's 401.
 	ErrorWriter ErrorWriter
 }
@@ -103,6 +109,8 @@ type Manager struct {
 	secure   bool
 	lifetime time.Duration
 	pinIdle  time.Duration
+	devices  DeviceStore
+	devLife  time.Duration
 	now      func() time.Time
 	log      *slog.Logger
 	writeErr ErrorWriter
@@ -115,6 +123,9 @@ func New(store SessionStore, o Options) *Manager {
 	}
 	if o.PINIdle == 0 {
 		o.PINIdle = DefaultPINIdle
+	}
+	if o.DeviceLifetime == 0 {
+		o.DeviceLifetime = DefaultDeviceLifetime
 	}
 	if o.Now == nil {
 		o.Now = time.Now
@@ -132,6 +143,8 @@ func New(store SessionStore, o Options) *Manager {
 		secure:   o.Secure,
 		lifetime: o.Lifetime,
 		pinIdle:  o.PINIdle,
+		devices:  o.Devices,
+		devLife:  o.DeviceLifetime,
 		now:      o.Now,
 		log:      o.Log,
 		writeErr: o.ErrorWriter,
@@ -248,7 +261,7 @@ func (m *Manager) ClearCookie() *http.Cookie {
 // SetCookie writes c, replacing any Set-Cookie for the session cookie
 // already on w so a response never carries two.
 func SetCookie(w http.ResponseWriter, c *http.Cookie) {
-	dropSessionCookie(w.Header())
+	dropCookie(w.Header(), CookieName)
 	http.SetCookie(w, c)
 }
 
@@ -257,14 +270,15 @@ func (m *Manager) Clear(w http.ResponseWriter) {
 	SetCookie(w, m.ClearCookie())
 }
 
-func dropSessionCookie(h http.Header) {
+// dropCookie removes every Set-Cookie for name already on h.
+func dropCookie(h http.Header, name string) {
 	existing := h.Values("Set-Cookie")
 	if len(existing) == 0 {
 		return
 	}
 	kept := existing[:0:0]
 	for _, v := range existing {
-		if len(v) > len(CookieName) && v[:len(CookieName)+1] == CookieName+"=" {
+		if len(v) > len(name) && v[:len(name)+1] == name+"=" {
 			continue
 		}
 		kept = append(kept, v)
@@ -276,7 +290,8 @@ func dropSessionCookie(h http.Header) {
 	h["Set-Cookie"] = kept
 }
 
-// RunSweeper deletes expired sessions every interval until ctx is done.
+// RunSweeper deletes expired sessions — and, with a device store, expired
+// devices — every interval until ctx is done.
 func (m *Manager) RunSweeper(ctx context.Context, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
@@ -291,6 +306,16 @@ func (m *Manager) RunSweeper(ctx context.Context, interval time.Duration) {
 				m.log.Error("session sweep failed", "err", err)
 			case n > 0:
 				m.log.Info("expired sessions removed", "count", n)
+			}
+			if m.devices == nil {
+				continue
+			}
+			n, err = m.devices.DeleteExpiredDevices(ctx, m.now())
+			switch {
+			case err != nil && ctx.Err() == nil:
+				m.log.Error("device sweep failed", "err", err)
+			case n > 0:
+				m.log.Info("expired devices removed", "count", n)
 			}
 		}
 	}
