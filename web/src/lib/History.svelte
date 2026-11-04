@@ -116,7 +116,7 @@
               <ul class="services">
                 {#each g.services as s (s.id)}
                   {@const removed = removedText(s)}
-                  <li data-service={s.id} class={{ removed: removed !== null }}>
+                  <li data-service={s.id} class:removed={removed !== null}>
                     <span class="name">{s.name}</span>
                     {#if removed !== null}
                       <span class="meta" data-removed>{removed}</span>

@@ -103,6 +103,8 @@ describe('History', () => {
     expect(yt.textContent).toContain('YouTube')
     expect(yt.querySelector('[data-removed]')?.textContent).toBe(`removed ${formatTime(at)} · permanent block`)
     expect(grantEl(2).querySelector('li[data-service="tiktok"] [data-removed]')).toBeNull()
+    expect(yt.classList.contains('removed')).toBe(true)
+    expect(grantEl(2).querySelector('li[data-service="tiktok"]')?.classList.contains('removed')).toBe(false)
     expect(grantEl(1).querySelector('[data-no-services]')?.textContent).toBe('—')
   })
 
