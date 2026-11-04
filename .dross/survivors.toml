@@ -66,6 +66,10 @@
   name = "dead-array-fallback"
   reason = "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
 
+[[category]]
+  name = "stryker-false-survivor"
+  reason = "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -388,24 +392,6 @@
   text = "return typeof location === 'undefined' ? '/' : location.pathname"
   line = 35
   category = "stryker-node-env-guard"
-  accepted_in = "02-auth-sessions"
-
-[[accepted]]
-  key = "d335c2ed61ddcc43"
-  file = "web/src/lib/api.ts"
-  op = "StringLiteral"
-  text = "if (typeof history !== 'undefined' && currentPath() !== path) {"
-  line = 44
-  category = "stryker-node-env-guard"
-  accepted_in = "02-auth-sessions"
-
-[[accepted]]
-  key = "94cf19252c2aef02"
-  file = "web/src/lib/api.ts"
-  op = "StringLiteral"
-  text = "history.pushState(null, '', path)"
-  line = 45
-  reason = "history.pushState title argument is ignored by every browser per the HTML spec; no observable behaviour"
   accepted_in = "02-auth-sessions"
 
 [[accepted]]
@@ -1577,3 +1563,174 @@
   line = 187
   accepted_in = "permanent-toggles"
   reason = "Equivalent: the final tie-break in the UnblockedBy sort.Slice less func. Two entries reach it only with equal Client and GrantID; with distinct Child.ID, < and <= agree. With equal Child.ID the two Unblock values are identical (same client, grant, child, Permanent), so a swap cannot change the slice. Verified 2026-11-03: <= passes go test ./internal/blocked while >= (NEGATION) fails TestCompute_UnblockedByChildOrder."
+
+[[accepted]]
+  key = "6a3fdd28ae736d00"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (raw === null || !/^[1-9][0-9]*$/.test(raw)) return null"
+  line = 56
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "db97002fa641df0f"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return typeof child === 'number' && Number.isSafeInteger(child) && child > 0 ? child : null"
+  line = 62
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "ee84e47feff29b68"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (typeof history !== 'undefined' && currentPath() + currentSearch() !== url) {"
+  line = 97
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "b4690ae2b3c68c80"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  accepted_in = "grant-history"
+  reason = "Two mutants: ->false is a Stryker false survivor (hand-applied, 4 api.test.ts popstate tests fail); ->true is equivalent in every runtime this SPA runs in (window always defined in the browser and jsdom)."
+
+[[accepted]]
+  key = "ff0972906c068a25"
+  file = "web/src/lib/api.ts"
+  op = "EqualityOperator"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "4fee91a56666ef73"
+  file = "web/src/lib/api.ts"
+  op = "BlockStatement"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "1956634d46fca7b0"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "window.addEventListener('popstate', () => {"
+  line = 105
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "4952cfeed1f15d36"
+  file = "web/src/App.svelte"
+  op = "ConditionalExpression"
+  text = "{:else if $route === 'history' && username !== null}"
+  line = 49
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "c0198d7e5b2e0674"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return typeof location === 'undefined' ? '' : location.search"
+  line = 70
+  accepted_in = "grant-history"
+  reason = "Equivalent: SSR guard typeof location === 'undefined'; location is always defined in the browser and jsdom, so forcing the location.search branch changes nothing."
+
+[[accepted]]
+  key = "6e4687d79f086dcd"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "return typeof location === 'undefined' ? '' : location.search"
+  line = 70
+  accepted_in = "grant-history"
+  reason = "Equivalent: the '' fallback is the SSR-only branch of currentSearch(); unreachable where location exists (browser, jsdom)."
+
+[[accepted]]
+  key = "d2def4d0fa4562da"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (typeof history !== 'undefined' && currentPath() + currentSearch() !== url) {"
+  line = 97
+  accepted_in = "grant-history"
+  reason = "Equivalent: typeof history !== '' is always true, same as !== 'undefined' wherever history exists (browser, jsdom)."
+
+[[accepted]]
+  key = "f94717ed4dfb082d"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "history.pushState(null, '', url)"
+  line = 98
+  accepted_in = "grant-history"
+  reason = "Equivalent: the second pushState argument (title) is ignored by browsers and jsdom."
+
+[[accepted]]
+  key = "ec73d5656295bf3a"
+  file = "web/src/lib/History.svelte"
+  op = "ArrayDeclaration"
+  text = "let grants = $state<HistoryGrant[]>([])"
+  line = 13
+  accepted_in = "grant-history"
+  reason = "Equivalent: initial grants value is overwritten by load() (grants = []) in the mount effect, and the list only renders once loaded is true after a page arrives."
+
+[[accepted]]
+  key = "52d6dfd7f539f3a8"
+  file = "web/src/lib/History.svelte"
+  op = "BooleanLiteral"
+  text = "let loadingMore = $state(false)"
+  line = 19
+  accepted_in = "grant-history"
+  reason = "Equivalent: initial loadingMore is reset to false by load() in the mount effect, and the load-more button only renders after loaded."
+
+[[accepted]]
+  key = "e94743814eb9d4ff"
+  file = "web/src/lib/History.svelte"
+  op = "UpdateOperator"
+  text = "const gen = ++generation"
+  line = 33
+  accepted_in = "grant-history"
+  reason = "Equivalent: generation only needs to change per load; --generation yields unique values the same as ++generation, so gen !== generation comparisons behave identically."
+
+[[accepted]]
+  key = "f98cd98dee9e271c"
+  file = "web/src/lib/History.svelte"
+  op = "ArrayDeclaration"
+  text = "grants = []"
+  line = 35
+  accepted_in = "grant-history"
+  reason = "Equivalent: the reset value of grants in load() is never rendered (loaded is false until a page arrives, which overwrites grants)."
+
+[[accepted]]
+  key = "e2e32041a8692c9c"
+  file = "web/src/lib/History.svelte"
+  op = "ConditionalExpression"
+  text = "{#if g.extensions.length > 0}"
+  line = 128
+  accepted_in = "grant-history"
+  reason = "Equivalent: rendering the extensions <ol> unconditionally only adds an empty list with no [data-extension] items when there are no extensions; no visible content changes."
+
+[[accepted]]
+  key = "bb7c3aac00f9f965"
+  file = "web/src/lib/History.svelte"
+  op = "EqualityOperator"
+  text = "{#if g.extensions.length > 0}"
+  line = 128
+  accepted_in = "grant-history"
+  reason = "Equivalent: length >= 0 renders an empty <ol> for zero extensions; no visible content changes."
+
+[[accepted]]
+  key = "d229e14e3992b417"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "const reason = s.removed_reason === null ? null : REMOVED_REASONS[s.removed_reason]"
+  line = 43
+  accepted_in = "grant-history"
+  reason = "Equivalent: REMOVED_REASONS[null] is undefined, so forcing the lookup yields the same falsy reason and the same fallback text as the null branch."

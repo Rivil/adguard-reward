@@ -1,6 +1,6 @@
 {
   "phase": "grant-history",
-  "generated_at": "2026-11-04T11:12:17.272776Z",
+  "generated_at": "2026-11-04T12:36:17.035019Z",
   "languages": [
     {
       "name": "go",
@@ -119,8 +119,626 @@
         "web/src/lib/history.test.ts",
         "web/src/lib/history.ts"
       ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 505,
+        "Survived": 60,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.8938053097345132,
+        "Surviving": [
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 56,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "6a3fdd28ae736d00",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 56,
+            "Op": "Regex",
+            "Snippet": "/^[1-9][^0-9]*$/",
+            "Origin": "in-hunk",
+            "Key": "b8b0cced7793d0ab",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 62,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "db97002fa641df0f",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 97,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "ee84e47feff29b68",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 97,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "d2def4d0fa4562da",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 98,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "f94717ed4dfb082d",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 35,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "9d6183df834aa3b3",
+            "Lifecycle": "accepted",
+            "Note": "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates, so the mutation never takes effect. The value is asserted (api.test.ts:368 expects '/')."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 38,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "cb4084c4e0eff4fa",
+            "Lifecycle": "accepted",
+            "Note": "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates. The value is asserted (api.test.ts:659 expects '/services')."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 70,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "c0198d7e5b2e0674",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 70,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "6e4687d79f086dcd",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 104,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "b4690ae2b3c68c80",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 104,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "b4690ae2b3c68c80",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 104,
+            "Op": "EqualityOperator",
+            "Snippet": "typeof window === 'undefined'",
+            "Origin": "inherited",
+            "Key": "ff0972906c068a25",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 104,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "a449124a3ffdc745",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 104,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "inherited",
+            "Key": "4fee91a56666ef73",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 105,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "1956634d46fca7b0",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 29,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f58967c1e1d3ea7e",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 29,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "372943104e355966",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 29,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "372943104e355966",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 13,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "ec73d5656295bf3a",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 15,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "c0ffc9bf3a09a0d7",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 16,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "95e0aa99610180e8",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 19,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "52d6dfd7f539f3a8",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 28,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "e0d3275d2a0abbe2",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 33,
+            "Op": "UpdateOperator",
+            "Snippet": "--generation",
+            "Origin": "in-hunk",
+            "Key": "e94743814eb9d4ff",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 35,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "f98cd98dee9e271c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 37,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "f739a8c5dc028909",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 48,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "5cfa6c54c8367b09",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 54,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "5a3fb2f071be05d6",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 63,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "4f13ab2bafd98088",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 63,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "4f13ab2bafd98088",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 69,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "0daca1a8250c0c92",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 73,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "dff168a4ccaa4934",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 76,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "36e4c882a2c4d8bd",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 86,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "2559c4f8212287ce",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 86,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "96ef56321443acf7",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 108,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "5facd72c0ab5994f",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 128,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "e2e32041a8692c9c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 128,
+            "Op": "EqualityOperator",
+            "Snippet": "g.extensions.length \u003e= 0",
+            "Origin": "in-hunk",
+            "Key": "bb7c3aac00f9f965",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "a6d312f12b091b9b",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 135,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9382694512e2eb73",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 368,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 368,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 35,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "9e7b970f78a207cf",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 36,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "332725e64d242d98",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 67,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4a2c7171134bef4f",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "6451ace12288b160",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "EqualityOperator",
+            "Snippet": "(out.grant.shared ?? []).length \u003e= 0",
+            "Origin": "inherited",
+            "Key": "abeb67deb0f8d203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: length \u003e= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 147,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "inherited",
+            "Key": "6232b0be4db10034",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 181,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "85c805b4f0c4fa20",
+            "Lifecycle": "accepted",
+            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 272,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "c8067c4b53b4a89d",
+            "Lifecycle": "accepted",
+            "Note": "The Error message in pickBlock is never read: BlockPicker.pick() catches every onpick rejection without inspecting it (the alert comes from setToggle's toggleNotes), so the message text is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 354,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].code",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 354,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].text",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 410,
+            "Op": "OptionalChaining",
+            "Snippet": "toggleNotes[child.id].code",
+            "Origin": "inherited",
+            "Key": "e59f02659c1e10ad",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 410,
+            "Op": "OptionalChaining",
+            "Snippet": "toggleNotes[child.id].text",
+            "Origin": "inherited",
+            "Key": "e59f02659c1e10ad",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 94,
+            "Op": "OptionalChaining",
+            "Snippet": "stopPolling()",
+            "Origin": "inherited",
+            "Key": "6c8255537ab76c28",
+            "Lifecycle": "accepted",
+            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 44,
+            "Op": "StringLiteral",
+            "Snippet": "``",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "149503a2d7f6398c",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 33,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "d7d2dff8b83920c9",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 43,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "d229e14e3992b417",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 49,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "4952cfeed1f15d36",
+            "Lifecycle": "in-diff",
+            "Note": ""
+          }
+        ],
+        "NotCovered": 8
+      },
       "measured_on": "local",
-      "error": "stryker did not write a report at /Users/rivil/Development/adguard-reward/web/reports/mutation/mutation.json: stryker failed with exit status 1; 3775 bytes of tool output observed; the full output of stryker went to this run's log in .dross/logs (machine-local, not committed)",
       "ranges": {
         "web/src/App.test.ts": [
           {
@@ -297,7 +915,7 @@
           },
           {
             "start": 73,
-            "end": 194,
+            "end": 196,
             "construct": "ExpressionStatement"
           }
         ],
@@ -807,6 +1425,8 @@
       ".dross/phases/grant-history/panel/verification.md",
       ".dross/phases/grant-history/plan.toml",
       ".dross/phases/grant-history/spec.toml",
+      ".dross/phases/grant-history/tests.json",
+      ".dross/phases/grant-history/verify.toml",
       ".dross/phases/permanent-toggles/spec.toml",
       ".dross/project.toml",
       "cmd/adguard-reward/main_test.go",
@@ -856,7 +1476,7 @@
       ".dross/phases/grant-history/changes.json": [
         {
           "start": 1,
-          "end": 404
+          "end": 413
         }
       ],
       ".dross/phases/grant-history/panel/mvp.md": [
@@ -893,6 +1513,18 @@
         {
           "start": 1,
           "end": 75
+        }
+      ],
+      ".dross/phases/grant-history/tests.json": [
+        {
+          "start": 1,
+          "end": 1326
+        }
+      ],
+      ".dross/phases/grant-history/verify.toml": [
+        {
+          "start": 1,
+          "end": 91
         }
       ],
       ".dross/phases/permanent-toggles/spec.toml": [
@@ -1214,7 +1846,7 @@
       "web/src/lib/History.panel.test.ts": [
         {
           "start": 1,
-          "end": 194
+          "end": 196
         }
       ],
       "web/src/lib/History.svelte": [
@@ -1321,6 +1953,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "b9c2fab22bbe89223557d0d67729a83d7b980adb",
-  "measured_tree": "af8044e61309ca82ca5ac807b74ac4189cbe5cf0"
+  "measured_commit": "bee6a8741656d4c37960e63948a6f14b07e1321e",
+  "measured_tree": "19de4bf01fa13a229e3c717ca3517c2563f81e46"
 }
