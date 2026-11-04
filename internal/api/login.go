@@ -2,14 +2,12 @@ package api
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"net/netip"
 	"strconv"
 	"time"
 
-	"github.com/Rivil/adguard-reward/internal/adguard"
 	"github.com/Rivil/adguard-reward/internal/auth"
 )
 
@@ -32,11 +30,8 @@ type loginRequest struct {
 	Password string `json:"password"`
 }
 
-// handleLogin is POST /api/v1/login. The limiter is consulted twice: once
-// before queueing for the in-flight slot (fast 429, no AdGuard call) and
-// again while holding it, so a burst that arrived together cannot all pass
-// the first check before any failure is counted. The slot is released only
-// after Fail or Issue has run.
+// handleLogin is POST /api/v1/login. The AdGuard round-trip and its rate
+// limiting live in recheckPassword, shared with PIN change and remove.
 func (a *API) handleLogin(w http.ResponseWriter, r *http.Request) {
 	var in loginRequest
 	dec := json.NewDecoder(http.MaxBytesReader(w, r.Body, maxLoginBody))
@@ -56,27 +51,9 @@ func (a *API) handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ip := a.deps.ClientIP(r)
-	if ok, retry := a.deps.Limiter.Check(ip); !ok {
-		a.rejectLimited(w, in.Username, ip, retry)
-		return
-	}
-
-	select {
-	case a.loginSlot <- struct{}{}:
-	case <-r.Context().Done():
-		return
-	}
-	defer func() { <-a.loginSlot }()
-
-	if ok, retry := a.deps.Limiter.Check(ip); !ok {
-		a.rejectLimited(w, in.Username, ip, retry)
-		return
-	}
-
-	err := a.deps.AdGuard.Login(r.Context(), in.Username, in.Password)
-	switch {
-	case err == nil:
+	res := a.recheckPassword(r, in.Username, in.Password)
+	switch res.outcome {
+	case outcomeOK:
 		raw, _, err := a.deps.Auth.Issue(r.Context(), in.Username)
 		if err != nil {
 			a.log.Error("issue session failed", "err", err)
@@ -84,19 +61,18 @@ func (a *API) handleLogin(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		auth.SetCookie(w, a.deps.Auth.Cookie(raw))
-		a.logLogin(in.Username, ip, outcomeOK)
+		a.logLogin(in.Username, res.ip, outcomeOK)
 		w.WriteHeader(http.StatusNoContent)
-	case errors.Is(err, adguard.ErrBadCredentials):
-		a.deps.Limiter.Fail(ip)
-		a.logLogin(in.Username, ip, outcomeBadCreds)
+	case outcomeRateLimited:
+		a.rejectLimited(w, in.Username, res.ip, res.retry)
+	case outcomeBadCreds:
+		a.logLogin(in.Username, res.ip, outcomeBadCreds)
 		writeError(w, http.StatusUnauthorized, CodeBadCredentials, badCredentialsMsg)
-	default:
-		// 5xx, transport failure, or AdGuard's own 429: neutral message, no
-		// budget consumed — the parent did nothing wrong.
-		a.log.Warn("adguard login unavailable", "err", err)
-		a.logLogin(in.Username, ip, outcomeUnreachable)
+	case outcomeUnreachable:
+		a.logLogin(in.Username, res.ip, outcomeUnreachable)
 		writeError(w, http.StatusBadGateway, CodeAdGuardUnavailable, adguardUnavailable)
 	}
+	// outcomeCanceled: the client is gone; nothing to write.
 }
 
 func (a *API) rejectLimited(w http.ResponseWriter, username string, ip netip.Addr, retry time.Duration) {
