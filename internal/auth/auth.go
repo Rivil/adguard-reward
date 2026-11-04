@@ -31,6 +31,10 @@ type Session struct {
 	CreatedAt  time.Time
 	LastSeenAt time.Time
 	ExpiresAt  time.Time
+	// DeviceID is the PIN device this session is tagged with, 0 for none.
+	// A tagged session is a PIN session: it slides by PINIdle, not
+	// Lifetime. The tag is server state, never inferred from a cookie.
+	DeviceID int64
 }
 
 // LogValue implements slog.LogValuer: only the id and username are logged.
@@ -49,6 +53,9 @@ type SessionStore interface {
 	ByTokenHash(ctx context.Context, hash [32]byte) (Session, error)
 	// Touch updates last_seen_at and expires_at.
 	Touch(ctx context.Context, id int64, lastSeen, expires time.Time) error
+	// SetDevice sets the session's device tag (0 clears it) and its
+	// expires_at together; a missing session returns ErrNotFound.
+	SetDevice(ctx context.Context, id, deviceID int64, expires time.Time) error
 	// Delete removes one session by id.
 	Delete(ctx context.Context, id int64) error
 	// ListByUser lists a user's sessions, oldest first.
@@ -67,16 +74,19 @@ type SessionStore interface {
 // internal/api, so the middleware is handed one rather than owning it.
 type ErrorWriter func(w http.ResponseWriter, status int, code, message string)
 
-// Options configures a Manager. Zero values: Lifetime 30 days, Now
-// time.Now, Log discarded, ErrorWriter a plain-text http.Error.
+// Options configures a Manager. Zero values: Lifetime 30 days, PINIdle 15
+// minutes, Now time.Now, Log discarded, ErrorWriter a plain-text http.Error.
 type Options struct {
 	// Secure sets the cookie's Secure attribute; true whenever the app is
 	// reached over TLS (its own or a proxy's).
 	Secure bool
 	// Lifetime is the sliding idle expiry.
 	Lifetime time.Duration
-	Now      func() time.Time
-	Log      *slog.Logger
+	// PINIdle is the sliding idle expiry of a session tagged with a PIN
+	// device.
+	PINIdle time.Duration
+	Now     func() time.Time
+	Log     *slog.Logger
 	// ErrorWriter renders RequireSession's 401.
 	ErrorWriter ErrorWriter
 }
@@ -84,11 +94,15 @@ type Options struct {
 // DefaultLifetime is the locked 30-day sliding expiry.
 const DefaultLifetime = 30 * 24 * time.Hour
 
+// DefaultPINIdle is the locked 15-minute idle window of a PIN session.
+const DefaultPINIdle = 15 * time.Minute
+
 // Manager issues, checks and revokes sessions.
 type Manager struct {
 	store    SessionStore
 	secure   bool
 	lifetime time.Duration
+	pinIdle  time.Duration
 	now      func() time.Time
 	log      *slog.Logger
 	writeErr ErrorWriter
@@ -98,6 +112,9 @@ type Manager struct {
 func New(store SessionStore, o Options) *Manager {
 	if o.Lifetime == 0 {
 		o.Lifetime = DefaultLifetime
+	}
+	if o.PINIdle == 0 {
+		o.PINIdle = DefaultPINIdle
 	}
 	if o.Now == nil {
 		o.Now = time.Now
@@ -114,15 +131,26 @@ func New(store SessionStore, o Options) *Manager {
 		store:    store,
 		secure:   o.Secure,
 		lifetime: o.Lifetime,
+		pinIdle:  o.PINIdle,
 		now:      o.Now,
 		log:      o.Log,
 		writeErr: o.ErrorWriter,
 	}
 }
 
-// Issue creates a session for username and returns the raw token to hand
-// to the browser. The token exists only in the return value.
+// Issue creates an untagged session for username and returns the raw token
+// to hand to the browser. The token exists only in the return value.
 func (m *Manager) Issue(ctx context.Context, username string) (string, Session, error) {
+	return m.issue(ctx, username, 0)
+}
+
+// IssueForDevice creates a session tagged with deviceID: a PIN session whose
+// first idle window starts now.
+func (m *Manager) IssueForDevice(ctx context.Context, username string, deviceID int64) (string, Session, error) {
+	return m.issue(ctx, username, deviceID)
+}
+
+func (m *Manager) issue(ctx context.Context, username string, deviceID int64) (string, Session, error) {
 	raw, hash, err := newToken()
 	if err != nil {
 		return "", Session{}, err
@@ -133,8 +161,9 @@ func (m *Manager) Issue(ctx context.Context, username string) (string, Session, 
 		TokenHash:  hash,
 		CreatedAt:  now,
 		LastSeenAt: now,
-		ExpiresAt:  now.Add(m.lifetime),
+		DeviceID:   deviceID,
 	}
+	s.ExpiresAt = m.expiry(s, now)
 	id, err := m.store.Insert(ctx, s)
 	if err != nil {
 		return "", Session{}, err
@@ -168,11 +197,32 @@ func (m *Manager) Authenticate(ctx context.Context, raw string) (Session, error)
 		m.log.Debug("session rejected", "reason", "expired", "session", s)
 		return Session{}, ErrNoSession
 	}
-	s.LastSeenAt, s.ExpiresAt = now, now.Add(m.lifetime)
+	s.LastSeenAt, s.ExpiresAt = now, m.expiry(s, now)
 	if err := m.store.Touch(ctx, s.ID, s.LastSeenAt, s.ExpiresAt); err != nil {
 		return Session{}, err
 	}
 	return s, nil
+}
+
+// expiry is when s lapses if idle from now: PINIdle for a tagged session,
+// Lifetime otherwise.
+func (m *Manager) expiry(s Session, now time.Time) time.Time {
+	if s.DeviceID != 0 {
+		return now.Add(m.pinIdle)
+	}
+	return now.Add(m.lifetime)
+}
+
+// AttachDevice tags a session with deviceID and restarts its expiry as a
+// PIN session's: with no further request it lapses PINIdle from now.
+func (m *Manager) AttachDevice(ctx context.Context, sessionID, deviceID int64) error {
+	return m.store.SetDevice(ctx, sessionID, deviceID, m.now().Add(m.pinIdle))
+}
+
+// DetachDevice clears a session's device tag and restores the plain sliding
+// Lifetime from now.
+func (m *Manager) DetachDevice(ctx context.Context, sessionID int64) error {
+	return m.store.SetDevice(ctx, sessionID, 0, m.now().Add(m.lifetime))
 }
 
 // Cookie is the session cookie carrying raw.

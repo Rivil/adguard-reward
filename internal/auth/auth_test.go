@@ -69,6 +69,18 @@ func (f *fakeStore) Touch(_ context.Context, id int64, lastSeen, expires time.Ti
 	return nil
 }
 
+func (f *fakeStore) SetDevice(_ context.Context, id, deviceID int64, expires time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	s, ok := f.rows[id]
+	if !ok {
+		return ErrNotFound
+	}
+	s.DeviceID, s.ExpiresAt = deviceID, expires
+	f.rows[id] = s
+	return nil
+}
+
 func (f *fakeStore) Delete(_ context.Context, id int64) error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
@@ -508,5 +520,157 @@ func TestRunSweeper(t *testing.T) {
 	case <-done:
 	case <-time.After(time.Second):
 		t.Fatal("RunSweeper did not return after cancel")
+	}
+}
+
+func TestAuthenticate_PinIdleWindow(t *testing.T) {
+	m, f, c := newTest(t, Options{})
+	raw, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const justUnder = 14*time.Minute + 59*time.Second
+
+	at := t0.Add(justUnder)
+	c.Set(at)
+	got, err := m.Authenticate(ctx, raw)
+	if err != nil {
+		t.Fatalf("at +14m59s: %v", err)
+	}
+	if !got.ExpiresAt.Equal(at.Add(15*time.Minute)) || got.DeviceID != 7 {
+		t.Fatalf("at +14m59s session = %+v, want ExpiresAt now+15m, DeviceID 7", got)
+	}
+	if lt := f.lastTouch(); !lt.expire.Equal(at.Add(15 * time.Minute)) {
+		t.Fatalf("stored expiry = %v, want %v", lt.expire, at.Add(15*time.Minute))
+	}
+
+	at = at.Add(justUnder)
+	c.Set(at)
+	if _, err := m.Authenticate(ctx, raw); err != nil {
+		t.Fatalf("second +14m59s: %v", err)
+	}
+
+	c.Set(at.Add(15 * time.Minute))
+	if _, err := m.Authenticate(ctx, raw); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("after exactly 15m idle: err = %v, want ErrNoSession", err)
+	}
+	if len(f.deletes) != 1 || f.deletes[0] != s.ID {
+		t.Fatalf("deletes = %v, want [%d]", f.deletes, s.ID)
+	}
+	if _, err := f.ByTokenHash(ctx, s.TokenHash); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expired PIN session row still present (err %v)", err)
+	}
+}
+
+func TestAuthenticate_UntaggedUnaffected(t *testing.T) {
+	m, _, c := newTest(t, Options{})
+	raw, _, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	at := t0.Add(16 * time.Minute)
+	c.Set(at)
+	got, err := m.Authenticate(ctx, raw)
+	if err != nil {
+		t.Fatalf("untagged at +16m: %v", err)
+	}
+	if !got.ExpiresAt.Equal(at.Add(30*day)) || got.DeviceID != 0 {
+		t.Fatalf("untagged session = %+v, want ExpiresAt now+30d, DeviceID 0", got)
+	}
+}
+
+func TestIssueForDevice(t *testing.T) {
+	m, f, _ := newTest(t, Options{})
+	_, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.ExpiresAt.Equal(t0.Add(15*time.Minute)) || s.DeviceID != 7 || s.Username != "mum" {
+		t.Fatalf("IssueForDevice = %+v, want ExpiresAt t0+15m, DeviceID 7", s)
+	}
+	if row := f.rows[s.ID]; row.DeviceID != 7 || !row.ExpiresAt.Equal(t0.Add(15*time.Minute)) {
+		t.Fatalf("stored row = %+v, want DeviceID 7 and ExpiresAt t0+15m", row)
+	}
+
+	_, plain, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !plain.ExpiresAt.Equal(t0.Add(30*day)) || plain.DeviceID != 0 {
+		t.Fatalf("Issue = %+v, want ExpiresAt t0+30d, DeviceID 0", plain)
+	}
+}
+
+func TestAttachDevice_StartsWindow(t *testing.T) {
+	m, f, c := newTest(t, Options{})
+	raw, s, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rawCtl, ctl, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	T := t0.Add(time.Hour)
+	c.Set(T)
+	for _, id := range []int64{s.ID, ctl.ID} {
+		if err := m.AttachDevice(ctx, id, 7); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if row := f.rows[s.ID]; row.DeviceID != 7 || !row.ExpiresAt.Equal(T.Add(15*time.Minute)) {
+		t.Fatalf("after AttachDevice row = %+v, want DeviceID 7, ExpiresAt T+15m", row)
+	}
+
+	// Control: inside the window the attached session still works.
+	c.Set(T.Add(14*time.Minute + 59*time.Second))
+	if _, err := m.Authenticate(ctx, rawCtl); err != nil {
+		t.Fatalf("attached session at T+14m59s: %v", err)
+	}
+
+	c.Set(T.Add(15*time.Minute + time.Second))
+	if _, err := m.Authenticate(ctx, raw); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("attached session at T+15m01s: err = %v, want ErrNoSession", err)
+	}
+
+	if err := m.AttachDevice(ctx, 999, 7); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("AttachDevice(missing) err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestDetachDevice_RestoresSliding(t *testing.T) {
+	m, f, c := newTest(t, Options{})
+	raw, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	T := t0.Add(5 * time.Minute)
+	c.Set(T)
+	if err := m.DetachDevice(ctx, s.ID); err != nil {
+		t.Fatal(err)
+	}
+	if row := f.rows[s.ID]; row.DeviceID != 0 || !row.ExpiresAt.Equal(T.Add(30*day)) {
+		t.Fatalf("after DetachDevice row = %+v, want DeviceID 0, ExpiresAt T+30d", row)
+	}
+
+	at := T.Add(16 * time.Minute)
+	c.Set(at)
+	got, err := m.Authenticate(ctx, raw)
+	if err != nil {
+		t.Fatalf("detached session at T+16m: %v", err)
+	}
+	if !got.ExpiresAt.Equal(at.Add(30*day)) || got.DeviceID != 0 {
+		t.Fatalf("detached session = %+v, want ExpiresAt now+30d, DeviceID 0", got)
+	}
+}
+
+func TestPINIdle_Option(t *testing.T) {
+	m, _, _ := newTest(t, Options{PINIdle: time.Minute})
+	_, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.ExpiresAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("PINIdle 1m: ExpiresAt = %v, want t0+1m", s.ExpiresAt)
 	}
 }
