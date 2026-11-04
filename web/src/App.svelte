@@ -9,6 +9,7 @@
   import Services from './lib/Services.svelte'
   import History from './lib/History.svelte'
   import PinPad from './lib/PinPad.svelte'
+  import Settings from './lib/Settings.svelte'
 
   let username = $state<string | null>(null)
   let ready = $state(false)
@@ -70,6 +71,8 @@
     <Services onBack={() => navigate('home')} />
   {:else if $route === 'history' && username !== null}
     <History child={$historyChild} onBack={() => navigate('home')} />
+  {:else if $route === 'settings' && username !== null}
+    <Settings onBack={() => navigate('home')} />
   {:else}
     <Login onSuccess={refresh} />
   {/if}
