@@ -209,6 +209,23 @@ Shared child / services / minutes fieldset used by the ad-hoc unlock on Home and
 
 _introduced 05-phone-ui-buttons-pwa · 60f0d6c_
 
+### Grant history
+
+Every grant keeps a record of how it ran, never pruned: migration 0009 adds `end_reason` (expired / ended early / permanent block, derived in `SetGrantStatus`), one `grant_extensions` row per extend with old and new end, a `grant_service_removals` row when a block toggle trims a service from a live grant (written in the trim's transaction), per-service display-name snapshots written atomically at create from the catalogue already loaded (no extra AdGuard read), and a `history_after_grant_id` watermark set in `CreateChild` so a reused child id never inherits an earlier child's grants. `GET /api/v1/children/{id}/history` serves a one-transaction, keyset-paged read (newest first, 50 per page) whose names resolve snapshot → live catalogue → bare id, reading the catalogue only when a snapshot is missing; pre-upgrade `ended` rows report reason unknown rather than a guessed one. The phone's History screen (`history?child=N`, reached from a per-child link on Home, kept across reload) lists each grant's services with removed markers, start, end, end status and extensions, with deduped Load more paging; history survives restart and a grant overdue across downtime is recorded expired once a pass reverts it.
+
+- 0009_grant_history.sql — internal/store/migrations/0009_grant_history.sql:1
+- Store.ExtendGrant — internal/store/grants.go:165
+- trimGrant — internal/store/toggles.go:80
+- Store.ListGrantHistory — internal/store/history.go:64
+- API.handleGrantCreate — internal/api/grants.go:197
+- API.handleHistory — internal/api/history.go:82
+- fetchHistory — web/src/lib/api.ts:571
+- History.loadMore — web/src/lib/History.svelte:60
+- App.svelte — web/src/App.svelte:50
+- TestRun_OverdueGrantExpiredAtStartup — cmd/adguard-reward/main_test.go:1210
+
+_introduced grant-history · a753b94 · cd5f7bf · 63ad04c · e0bfd83_
+
 ### Grant persistence
 
 `grants` + `grant_services` + `grant_clients` rows (migration 0003) with a partial index over live grants: `CreateGrant` checks (child, service) overlap and inserts in one transaction, answering `*ErrGrantOverlap` with the existing grant id; `SetGrantStatus` is a compare-and-swap and the only exit from `active`, so a timer and an explicit end cannot both revert the same grant.

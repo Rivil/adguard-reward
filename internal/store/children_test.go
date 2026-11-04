@@ -367,3 +367,55 @@ func TestChildren_NotFound(t *testing.T) {
 		t.Fatalf("UpdateChild(999) err = %v, want ErrChildNotFound", err)
 	}
 }
+
+func historyWatermark(t *testing.T, s *Store, childID int64) int64 {
+	t.Helper()
+	var w int64
+	if err := s.DB().QueryRow(`SELECT history_after_grant_id FROM children WHERE id = ?`, childID).Scan(&w); err != nil {
+		t.Fatalf("history_after_grant_id of %d: %v", childID, err)
+	}
+	return w
+}
+
+func TestCreateChild_HistoryWatermark(t *testing.T) {
+	t.Run("no grants", func(t *testing.T) {
+		s, _ := openTemp(t)
+		c := mustCreate(t, s, "Ada")
+		if w := historyWatermark(t, s, c.ID); w != 0 {
+			t.Fatalf("watermark with no grants = %d, want 0", w)
+		}
+	})
+
+	t.Run("upgrade then create", func(t *testing.T) {
+		dir := t.TempDir()
+		openAt0008(t, dir) // child 1 with grants 1..3
+		old, err := openWith(dir, nil, migrationsThrough(t, "0008_service_toggles.sql"))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if _, err := old.DB().Exec(`INSERT INTO grants (id, child_id, status, started_at, ends_at, ended_at)
+		    VALUES (7, 1, 'expired', 7000, 7600, 7600)`); err != nil {
+			t.Fatal(err)
+		}
+		if err := old.Close(); err != nil {
+			t.Fatal(err)
+		}
+
+		s, err := Open(dir, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer s.Close()
+		if w := historyWatermark(t, s, 1); w != 0 {
+			t.Fatalf("pre-0009 child watermark = %d, want 0 (sees all its grants)", w)
+		}
+		ben := mustCreate(t, s, "Ben")
+		if w := historyWatermark(t, s, ben.ID); w != 7 {
+			t.Fatalf("new child watermark with grants up to id 7 = %d, want 7", w)
+		}
+		// A rejected create leaves no row and writes no watermark.
+		if _, err := s.CreateChild(ctx, "ben", nil); !errors.Is(err, ErrNameTaken) {
+			t.Fatalf("duplicate name err = %v, want ErrNameTaken", err)
+		}
+	})
+}

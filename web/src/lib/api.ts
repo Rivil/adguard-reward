@@ -28,7 +28,7 @@ export class ApiError extends Error {
 
 // ---- routing -------------------------------------------------------------
 
-export type Route = 'login' | 'home' | 'children' | 'buttons' | 'services'
+export type Route = 'login' | 'home' | 'children' | 'buttons' | 'services' | 'history'
 
 const PATHS: Record<Route, string> = {
   login: '/login',
@@ -36,6 +36,12 @@ const PATHS: Record<Route, string> = {
   children: '/children',
   buttons: '/buttons',
   services: '/services',
+  history: '/history',
+}
+
+/** Query parameters a route carries; only 'history' reads child. */
+export interface RouteParams {
+  child?: number | null
 }
 
 function routeFor(pathname: string): Route {
@@ -45,24 +51,62 @@ function routeFor(pathname: string): Route {
   return 'home'
 }
 
+/** A child id is a positive whole number written plainly; anything else is null, never NaN, 0 or negative. */
+function childIdOf(raw: string | null): number | null {
+  if (raw === null || !/^[1-9][0-9]*$/.test(raw)) return null
+  const n = Number(raw)
+  return Number.isSafeInteger(n) ? n : null
+}
+
+function validChild(child: number | null | undefined): number | null {
+  return typeof child === 'number' && Number.isSafeInteger(child) && child > 0 ? child : null
+}
+
 function currentPath(): string {
   return typeof location === 'undefined' ? '/' : location.pathname
 }
 
-/** The page the SPA is showing, driven by the URL. */
-export const route = writable<Route>(routeFor(currentPath()))
+function currentSearch(): string {
+  return typeof location === 'undefined' ? '' : location.search
+}
 
-/** Switch page and push the matching URL. */
-export function navigate(r: Route): void {
-  const path = PATHS[r]
-  if (typeof history !== 'undefined' && currentPath() !== path) {
-    history.pushState(null, '', path)
+/** The history child the URL names; null off the history route. */
+function childFor(r: Route, search: string): number | null {
+  return r === 'history' ? childIdOf(new URLSearchParams(search).get('child')) : null
+}
+
+const initialRoute = routeFor(currentPath())
+
+/** The page the SPA is showing, driven by the URL. */
+export const route = writable<Route>(initialRoute)
+
+/**
+ * The child the history page shows, from ?child= on /history. null when the
+ * parameter is missing or not a positive whole number, and on every other route.
+ */
+export const historyChild = writable<number | null>(childFor(initialRoute, currentSearch()))
+
+/**
+ * Switch page and push the matching URL. Only 'history' carries a query
+ * (?child=N, when params.child is a valid id); every other route pushes its
+ * bare path, so no query outlives the page that set it.
+ */
+export function navigate(r: Route, params: RouteParams = {}): void {
+  const child = r === 'history' ? validChild(params.child) : null
+  const url = child === null ? PATHS[r] : `${PATHS[r]}?child=${child}`
+  if (typeof history !== 'undefined' && currentPath() + currentSearch() !== url) {
+    history.pushState(null, '', url)
   }
+  historyChild.set(child)
   route.set(r)
 }
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('popstate', () => route.set(routeFor(currentPath())))
+  window.addEventListener('popstate', () => {
+    const r = routeFor(currentPath())
+    historyChild.set(childFor(r, currentSearch()))
+    route.set(r)
+  })
 }
 
 let onUnauthorized: () => void = () => navigate('login')
@@ -475,6 +519,63 @@ export async function listButtons(): Promise<Button[]> {
 export async function saveButtons(buttons: ButtonInput[]): Promise<Button[]> {
   const res = await request<{ buttons: Button[] }>('PUT', BUTTONS, { buttons })
   return res.buttons
+}
+
+// ---- grant history -------------------------------------------------------
+
+/** How a finished grant ended; 'ended_unknown' is a pre-upgrade end whose reason was never recorded. */
+export type HistoryStatus = 'ongoing' | 'expired' | 'ended_early' | 'permanent_block' | 'ended_unknown'
+
+export interface HistoryService {
+  id: string
+  /** The name snapshotted at grant start, else the current name, else the bare id. */
+  name: string
+  /** RFC 3339; null while the service stayed on the grant. */
+  removed_at: string | null
+  removed_reason: 'permanent_block' | null
+}
+
+export interface HistoryExtension {
+  /** RFC 3339: when the extension happened. */
+  at: string
+  old_ends_at: string
+  new_ends_at: string
+}
+
+export interface HistoryGrant {
+  id: number
+  status: HistoryStatus
+  /** RFC 3339. */
+  started_at: string
+  /** The scheduled end, not when it actually ended. */
+  ends_at: string
+  /** When it actually ended; null while ongoing. */
+  ended_at: string | null
+  services: HistoryService[]
+  /** Oldest first. */
+  extensions: HistoryExtension[]
+}
+
+export interface HistoryPage {
+  child: ChildRef
+  /** Newest first. */
+  grants: HistoryGrant[]
+  /** The cursor for the next (older) page; null on the last page. */
+  next_before: number | null
+}
+
+/**
+ * One page of a child's grant history, newest first. before is the previous
+ * page's next_before; omitted for the first page. A 404 means no such child.
+ */
+export async function fetchHistory(childId: number, before?: number): Promise<HistoryPage> {
+  const query = before === undefined ? '' : `?before=${before}`
+  const p = await request<HistoryPage>('GET', `${CHILDREN}/${childId}/history${query}`)
+  return {
+    ...p,
+    grants: (p.grants ?? []).map((g) => ({ ...g, services: g.services ?? [], extensions: g.extensions ?? [] })),
+    next_before: p.next_before ?? null,
+  }
 }
 
 /** A data: URL for an <img> from a catalogue icon. */

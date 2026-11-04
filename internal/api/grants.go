@@ -188,7 +188,9 @@ func (a *API) handleGrantsList(w http.ResponseWriter, r *http.Request) {
 // 404 that never touches the catalogue and a failed read is a 500 with no
 // AdGuard write. Services are checked against the full catalogue — AdGuard's
 // built-ins plus the stored custom services — so a "custom:<n>" id is only
-// accepted when that service exists. The overlap lock (one active grant per child and service)
+// accepted when that service exists. Each service's catalogue name is
+// snapshotted with the grant in the same store write, so a rejected create
+// leaves no names behind. The overlap lock (one active grant per child and service)
 // surfaces as 409 naming the existing grant; another child's grant on a
 // shared client does not overlap. The 201 names every shared device the
 // grant touches and its other owners.
@@ -236,18 +238,24 @@ func (a *API) handleGrantCreate(w http.ResponseWriter, r *http.Request) {
 		a.writeCatalogueError(w, "create grant", err)
 		return
 	}
-	known := make(map[string]bool, len(catalogue))
+	known := make(map[string]string, len(catalogue))
 	for _, s := range catalogue {
-		known[s.ID] = true
+		known[s.ID] = s.Name
 	}
+	// names snapshots each granted service's display name from the catalogue
+	// just read — no second AdGuard call — keyed by the trimmed id the grant
+	// stores (locked service_names).
+	names := make(map[string]string, len(services))
 	for _, s := range services {
-		if !known[s] {
+		name, ok := known[s]
+		if !ok {
 			writeError(w, http.StatusUnprocessableEntity, CodeUnprocessable, fmt.Sprintf("unknown service %q", s))
 			return
 		}
+		names[s] = name
 	}
 
-	res, err := a.deps.Grants.Create(r.Context(), child.ID, services, child.Clients, d)
+	res, err := a.deps.Grants.CreateNamed(r.Context(), child.ID, services, child.Clients, d, names)
 	if err != nil {
 		var (
 			overlap *store.ErrGrantOverlap

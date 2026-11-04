@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"reflect"
@@ -233,5 +234,168 @@ func TestToggles_Persist(t *testing.T) {
 	t.Cleanup(func() { _ = s2.Close() })
 	if after := mustToggles(t, s2); !reflect.DeepEqual(after, before) {
 		t.Fatalf("after reopen %+v, want %+v", after, before)
+	}
+}
+
+// removals lists grant_service_removals as "grant/service@at:reason".
+func removals(t *testing.T, s *Store) []string {
+	t.Helper()
+	out := queryStrings(t, s.DB(), `SELECT grant_id || '/' || service_id || '@' || removed_at || ':' || reason
+	  FROM grant_service_removals ORDER BY grant_id, service_id`)
+	if out == nil {
+		out = []string{}
+	}
+	return out
+}
+
+// endReason reads grants.end_reason, "NULL" when unset.
+func endReason(t *testing.T, s *Store, id int64) string {
+	t.Helper()
+	var r sql.NullString
+	if err := s.DB().QueryRow(`SELECT end_reason FROM grants WHERE id = ?`, id).Scan(&r); err != nil {
+		t.Fatal(err)
+	}
+	if !r.Valid {
+		return "NULL"
+	}
+	return r.String
+}
+
+func TestSetToggle_TrimLogsRemoval(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	g := mustGrant(t, s, ada.ID, []string{"youtube", "tiktok"}, ada.Clients)
+
+	mustToggle(t, s, ada.ID, "youtube", ToggleBlocked)
+
+	want := []string{fmt.Sprintf("%d/youtube@%d:permanent_block", g.ID, tToggle.Unix())}
+	if got := removals(t, s); !reflect.DeepEqual(got, want) {
+		t.Fatalf("removals = %v, want %v", got, want)
+	}
+	got := mustGetGrant(t, s, g.ID)
+	if got.Status != StatusActive || endReason(t, s, g.ID) != "NULL" {
+		t.Fatalf("grant = %+v end_reason %s, want active with NULL reason", got, endReason(t, s, g.ID))
+	}
+	active, err := s.ListActiveGrants(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(active) != 1 || !reflect.DeepEqual(active[0].Services, []string{"tiktok"}) {
+		t.Fatalf("active grants = %+v, want one with [tiktok] only", active)
+	}
+}
+
+func TestSetToggle_TrimEndsWithReason(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	g := mustGrant(t, s, ada.ID, []string{"youtube"}, ada.Clients)
+
+	mustToggle(t, s, ada.ID, "youtube", ToggleBlocked)
+
+	want := []string{fmt.Sprintf("%d/youtube@%d:permanent_block", g.ID, tToggle.Unix())}
+	if got := removals(t, s); !reflect.DeepEqual(got, want) {
+		t.Fatalf("removals = %v, want %v", got, want)
+	}
+	var (
+		status  string
+		endedAt int64
+	)
+	if err := s.DB().QueryRow(`SELECT status, ended_at FROM grants WHERE id = ?`, g.ID).Scan(&status, &endedAt); err != nil {
+		t.Fatal(err)
+	}
+	if status != StatusEnded || endedAt != tToggle.Unix() || endReason(t, s, g.ID) != EndReasonPermanentBlock {
+		t.Fatalf("grant = %s ended_at %d reason %s, want ended at %d with permanent_block",
+			status, endedAt, endReason(t, s, g.ID), tToggle.Unix())
+	}
+}
+
+func TestSetToggle_NoSpuriousRemoval(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	ben := mustCreate(t, s, "Ben", "Ben phone")
+	g := mustGrant(t, s, ada.ID, []string{"youtube", "tiktok"}, ada.Clients)
+	mustGrant(t, s, ben.ID, []string{"netflix"}, ben.Clients)
+	old := mustGrant(t, s, ada.ID, []string{"netflix"}, ada.Clients)
+	mustSetStatus(t, s, old.ID, StatusActive, StatusExpired)
+
+	mustToggle(t, s, ada.ID, "youtube", ToggleUnblocked) // unblock never trims
+	mustToggle(t, s, ada.ID, "netflix", ToggleBlocked)   // only Ben's and an expired grant cover it
+	mustToggle(t, s, ada.ID, "roblox", ToggleBlocked)    // no grant covers it at all
+
+	if got := removals(t, s); len(got) != 0 {
+		t.Fatalf("removals = %v, want none", got)
+	}
+	if got := mustGetGrant(t, s, g.ID); !reflect.DeepEqual(got.Services, []string{"tiktok", "youtube"}) {
+		t.Fatalf("grant = %+v, want untouched", got)
+	}
+}
+
+func TestSetToggle_TrimEndedNotReExpired(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	g := mustGrant(t, s, ada.ID, []string{"youtube"}, ada.Clients)
+	mustToggle(t, s, ada.ID, "youtube", ToggleBlocked)
+
+	ok, err := s.SetGrantStatus(ctx, g.ID, StatusActive, StatusExpired, tToggle.Add(time.Hour))
+	if err != nil || ok {
+		t.Fatalf("SetGrantStatus(active->expired) on a trim-ended grant = %v, %v; want false, nil", ok, err)
+	}
+	if got := endReason(t, s, g.ID); got != EndReasonPermanentBlock {
+		t.Fatalf("end_reason = %s, want permanent_block", got)
+	}
+	if got := mustGetGrant(t, s, g.ID); got.Status != StatusEnded {
+		t.Fatalf("status = %s, want ended", got.Status)
+	}
+}
+
+func TestSetToggle_RemovalRollsBack(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	g := mustGrant(t, s, ada.ID, []string{"youtube", "tiktok"}, ada.Clients)
+	if _, err := s.DB().Exec(`INSERT INTO grant_service_removals (grant_id, service_id, removed_at, reason)
+	    VALUES (?, 'youtube', 1, 'permanent_block')`, g.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	if _, err := s.SetServiceToggle(ctx, ada.ID, "youtube", ToggleBlocked, tToggle); err == nil {
+		t.Fatal("SetServiceToggle past a conflicting removal row succeeded")
+	}
+	if list := mustToggles(t, s); len(list) != 0 {
+		t.Fatalf("toggles after failed set = %v, want none", toggleKeys(list))
+	}
+	if got := mustGetGrant(t, s, g.ID); got.Status != StatusActive || !reflect.DeepEqual(got.Services, []string{"tiktok", "youtube"}) {
+		t.Fatalf("grant after failed set = %+v, want active [tiktok youtube]", got)
+	}
+	if got, want := removals(t, s), []string{fmt.Sprintf("%d/youtube@1:permanent_block", g.ID)}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("removals after failed set = %v, want only the seeded %v", got, want)
+	}
+}
+
+func TestSetToggle_TrimFreesService(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	cs, err := s.CreateCustomService(ctx, "Roblox", []string{"roblox.com"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	custom := CustomServiceID(cs.ID)
+	g := mustGrant(t, s, ada.ID, []string{"youtube", "tiktok", custom}, ada.Clients)
+
+	mustToggle(t, s, ada.ID, "youtube", ToggleBlocked)
+	mustToggle(t, s, ada.ID, "youtube", ToggleUnblocked)
+	if _, err := s.CreateGrant(ctx, ada.ID, []string{"youtube"}, ada.Clients, t0, t0.Add(time.Hour)); err != nil {
+		var overlap *ErrGrantOverlap
+		if errors.As(err, &overlap) {
+			t.Fatalf("CreateGrant(youtube) after trim + unblock = %v, want accepted (trimmed service is not live)", err)
+		}
+		t.Fatal(err)
+	}
+
+	mustToggle(t, s, ada.ID, custom, ToggleBlocked)
+	if got := mustGetGrant(t, s, g.ID); got.Status != StatusActive || !reflect.DeepEqual(got.Services, []string{"tiktok"}) {
+		t.Fatalf("grant = %+v, want still live with [tiktok]", got)
+	}
+	if err := s.DeleteCustomService(ctx, cs.ID); err != nil {
+		t.Fatalf("DeleteCustomService(%s) trimmed off a live grant = %v, want success", custom, err)
 	}
 }

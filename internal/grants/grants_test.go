@@ -3,6 +3,7 @@ package grants
 import (
 	"bytes"
 	"context"
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -94,6 +95,14 @@ func (c *fakeClock) Advance(d time.Duration) {
 		c.mu.Unlock()
 		next.fn()
 	}
+}
+
+// jump moves the clock by d without firing anything; a following
+// Advance(0) then fires every overdue timer late, at the jumped-to time.
+func (c *fakeClock) jump(d time.Duration) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	c.now = c.now.Add(d)
 }
 
 // pending reports how many timers are armed and unfired.
@@ -1530,5 +1539,153 @@ func TestStart_RestartKeepsToggles(t *testing.T) {
 	}
 	if n := e.posts() - posts + e.setRulesPosts() - rulesPosts; n != 0 {
 		t.Errorf("second pass issued %d POSTs, want 0", n)
+	}
+}
+
+// history reads the history columns of grant id: ended_at as a time (zero
+// when NULL) and end_reason ("NULL" when unset).
+func (e *env) history(id int64) (endedAt time.Time, reason string) {
+	e.t.Helper()
+	var (
+		at sql.NullInt64
+		r  sql.NullString
+	)
+	if err := e.st.DB().QueryRow(`SELECT ended_at, end_reason FROM grants WHERE id = ?`, id).Scan(&at, &r); err != nil {
+		e.t.Fatalf("read history of grant %d: %v", id, err)
+	}
+	if at.Valid {
+		endedAt = time.Unix(at.Int64, 0).UTC()
+	}
+	reason = "NULL"
+	if r.Valid {
+		reason = r.String
+	}
+	return endedAt, reason
+}
+
+func TestEnd_RevertFailedKeepsActive(t *testing.T) {
+	e := newEnv(t, nil)
+	res := e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+	id := res.Grant.ID
+	e.clk.Advance(5 * time.Minute)
+
+	e.fake.SetUpdateStatus("Kid phone", 500)
+	var rf *ErrRevertFailed
+	if err := e.eng.End(ctx, id); !errors.As(err, &rf) {
+		t.Fatalf("End err = %v, want *ErrRevertFailed", err)
+	}
+	if e.status(id) != store.StatusActive {
+		t.Fatalf("status = %q, want active", e.status(id))
+	}
+	if at, reason := e.history(id); reason != "NULL" || !at.IsZero() {
+		t.Fatalf("after a failed revert ended_at = %v end_reason = %s, want unset (nothing recorded before AdGuard confirms)", at, reason)
+	}
+}
+
+func TestEngine_HistoryTimes(t *testing.T) {
+	t.Run("end", func(t *testing.T) {
+		e := newEnv(t, nil)
+		res := e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+		e.clk.Advance(10 * time.Minute)
+		at := e.clk.Now()
+		if err := e.eng.End(ctx, res.Grant.ID); err != nil {
+			t.Fatalf("End: %v", err)
+		}
+		if got, reason := e.history(res.Grant.ID); !got.Equal(at) || reason != store.EndReasonEndedEarly {
+			t.Fatalf("ended_at = %v end_reason = %s, want %v / %s (End's clock, not ends_at %v)",
+				got, reason, at, store.EndReasonEndedEarly, res.Grant.EndsAt)
+		}
+	})
+
+	t.Run("expiry after extend", func(t *testing.T) {
+		e := newEnv(t, nil)
+		res := e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+		id := res.Grant.ID
+		e.clk.Advance(5 * time.Minute)
+		g, err := e.eng.Extend(ctx, id, 10*time.Minute)
+		if err != nil {
+			t.Fatalf("Extend: %v", err)
+		}
+		// The re-armed timer fires late: the revert runs 7 minutes past the
+		// extended ends_at, and that is the end time history must show.
+		e.clk.jump(g.EndsAt.Sub(e.clk.Now()) + 7*time.Minute)
+		at := e.clk.Now()
+		e.clk.Advance(0)
+		if e.status(id) != store.StatusExpired {
+			t.Fatalf("status = %q, want expired", e.status(id))
+		}
+		got, reason := e.history(id)
+		if reason != store.EndReasonExpired || !got.Equal(at) {
+			t.Fatalf("ended_at = %v end_reason = %s, want %v / %s", got, reason, at, store.EndReasonExpired)
+		}
+		if got.Equal(res.Grant.EndsAt) || got.Equal(g.EndsAt) {
+			t.Fatalf("ended_at = %v is a scheduled ends_at, want the clock at revert", got)
+		}
+	})
+
+	t.Run("extensions", func(t *testing.T) {
+		e := newEnv(t, nil)
+		res := e.create(1, []string{"tiktok"}, []string{"Kid phone"})
+		id := res.Grant.ID
+		var want []string
+		for _, step := range []time.Duration{5 * time.Minute, 3 * time.Minute} {
+			e.clk.Advance(step)
+			want = append(want, fmt.Sprint(e.clk.Now().Unix()))
+			if _, err := e.eng.Extend(ctx, id, 10*time.Minute); err != nil {
+				t.Fatalf("Extend: %v", err)
+			}
+		}
+		rows, err := e.st.DB().Query(`SELECT extended_at FROM grant_extensions WHERE grant_id = ? ORDER BY id`, id)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer rows.Close()
+		var got []string
+		for rows.Next() {
+			var at int64
+			if err := rows.Scan(&at); err != nil {
+				t.Fatal(err)
+			}
+			got = append(got, fmt.Sprint(at))
+		}
+		if err := rows.Err(); err != nil {
+			t.Fatal(err)
+		}
+		if !reflect.DeepEqual(got, want) {
+			t.Fatalf("extended_at = %v, want %v (the engine clock at each Extend)", got, want)
+		}
+	})
+}
+
+func TestEngine_CreateNamed(t *testing.T) {
+	e := newEnv(t, nil)
+	names := map[string]string{"tiktok": "TikTok"}
+	res, err := e.eng.CreateNamed(ctx, 1, []string{"tiktok"}, []string{"Kid phone"}, d, names)
+	if err != nil {
+		t.Fatalf("CreateNamed: %v", err)
+	}
+	plain := e.create(2, []string{"tiktok"}, []string{"Kid phone"})
+
+	rows, err := e.st.DB().Query(`SELECT grant_id, service_id, name FROM grant_service_names ORDER BY grant_id`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var got []string
+	for rows.Next() {
+		var (
+			id       int64
+			svc, nme string
+		)
+		if err := rows.Scan(&id, &svc, &nme); err != nil {
+			t.Fatal(err)
+		}
+		got = append(got, fmt.Sprintf("%d:%s=%s", id, svc, nme))
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	if want := []string{fmt.Sprintf("%d:tiktok=TikTok", res.Grant.ID)}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("grant_service_names = %v, want %v (Create on grant %d snapshots nothing)", got, want, plain.Grant.ID)
 	}
 }

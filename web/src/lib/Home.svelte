@@ -310,6 +310,16 @@
       {@const hintId = `shared-hint-${child.id}`}
       <section data-child={child.id}>
         <h2>{child.name}</h2>
+        <!-- Its own route (locked history_location); Home stays the tap surface. -->
+        <p class="history-link">
+          <button
+            type="button"
+            class="link"
+            data-history={child.id}
+            aria-label={`History for ${child.name}`}
+            onclick={() => navigate('history', { child: child.id })}>History</button
+          >
+        </p>
         {#if own.length === 0}
           <p class="none">
             No buttons yet —
@@ -476,6 +486,9 @@
     color: var(--accent);
     text-decoration: underline;
     cursor: pointer;
+  }
+  .history-link {
+    margin: 0 0 0.5rem;
   }
   details {
     margin-top: 0.75rem;

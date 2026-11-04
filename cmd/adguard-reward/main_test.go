@@ -1056,6 +1056,271 @@ func TestRun_StartupAdGuardDown(t *testing.T) {
 	}
 }
 
+// ---- grant history across restart and downtime --------------------------
+
+type historyService struct {
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	RemovedAt     *string `json:"removed_at"`
+	RemovedReason *string `json:"removed_reason"`
+}
+
+type historyExtension struct {
+	At        string `json:"at"`
+	OldEndsAt string `json:"old_ends_at"`
+	NewEndsAt string `json:"new_ends_at"`
+}
+
+type historyGrant struct {
+	ID         int64              `json:"id"`
+	Status     string             `json:"status"`
+	StartedAt  string             `json:"started_at"`
+	EndsAt     string             `json:"ends_at"`
+	EndedAt    *string            `json:"ended_at"`
+	Services   []historyService   `json:"services"`
+	Extensions []historyExtension `json:"extensions"`
+}
+
+type historyPage struct {
+	Child struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	} `json:"child"`
+	Grants     []historyGrant `json:"grants"`
+	NextBefore *int64         `json:"next_before"`
+}
+
+// childOfGrant is the child_id of active grant id, read from GET /grants.
+func childOfGrant(t *testing.T, c *http.Client, base string, ck *http.Cookie, id int64) int64 {
+	t.Helper()
+	_, rows := listGrants(t, c, base, ck)
+	for _, g := range rows {
+		if g.ID == id {
+			return g.ChildID
+		}
+	}
+	t.Fatalf("grant %d not in GET /api/v1/grants: %+v", id, rows)
+	return 0
+}
+
+// getHistory fetches the first history page of child.
+func getHistory(t *testing.T, c *http.Client, base string, ck *http.Cookie, child int64) historyPage {
+	t.Helper()
+	resp := call(t, c, http.MethodGet, base, fmt.Sprintf("/api/v1/children/%d/history", child), nil, withCookie(ck.Value))
+	b, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET history of child %d: %d %s", child, resp.StatusCode, b)
+	}
+	var page historyPage
+	if err := json.Unmarshal(b, &page); err != nil {
+		t.Fatalf("history body %s: %v", b, err)
+	}
+	return page
+}
+
+// onlyGrant returns the page's single grant, failing unless it is id.
+func onlyGrant(t *testing.T, page historyPage, id int64) historyGrant {
+	t.Helper()
+	if len(page.Grants) != 1 || page.Grants[0].ID != id {
+		t.Fatalf("history grants = %+v, want only grant %d", page.Grants, id)
+	}
+	return page.Grants[0]
+}
+
+// parseWire parses an RFC 3339 wire timestamp.
+func parseWire(t *testing.T, field, s string) time.Time {
+	t.Helper()
+	v, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t.Fatalf("%s = %q: %v", field, s, err)
+	}
+	return v
+}
+
+// TestRun_HistorySurvivesRestart extends a grant twice and ends it early
+// through the API, then restarts on the same data_dir: the history page is
+// identical, still ended_early with both extension entries (c-1, c-2, c-5).
+func TestRun_HistorySurvivesRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 1800)
+	child := childOfGrant(t, c, base, ck, created.ID)
+
+	ends := []string{created.EndsAt}
+	for i := 0; i < 2; i++ {
+		resp := call(t, c, http.MethodPost, base, fmt.Sprintf("/api/v1/grants/%d/extend", created.ID),
+			map[string]any{"duration": 600}, withCookie(ck.Value))
+		b, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("extend %d: %d %s", i+1, resp.StatusCode, b)
+		}
+		var ext struct {
+			EndsAt string `json:"ends_at"`
+		}
+		if err := json.Unmarshal(b, &ext); err != nil {
+			t.Fatal(err)
+		}
+		ends = append(ends, ext.EndsAt)
+	}
+	if resp := call(t, c, http.MethodPost, base, fmt.Sprintf("/api/v1/grants/%d/end", created.ID), nil, withCookie(ck.Value)); resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("end: %d %s, want 204", resp.StatusCode, b)
+	}
+	before := getHistory(t, c, base, ck, child)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	after := getHistory(t, c, "http://"+r2.addr, ck, child)
+	if !reflect.DeepEqual(after, before) {
+		t.Errorf("history after restart = %+v, want it unchanged: %+v", after, before)
+	}
+
+	g := onlyGrant(t, after, created.ID)
+	if g.Status != "ended_early" {
+		t.Errorf("status after restart = %q, want ended_early", g.Status)
+	}
+	if g.EndedAt == nil {
+		t.Error("ended_at after restart is null; an ended grant records its end time")
+	}
+	if len(g.Extensions) != 2 {
+		t.Fatalf("extensions after restart = %+v, want two entries", g.Extensions)
+	}
+	for i, x := range g.Extensions {
+		if x.OldEndsAt != ends[i] || x.NewEndsAt != ends[i+1] {
+			t.Errorf("extension %d = %s -> %s, want %s -> %s", i+1, x.OldEndsAt, x.NewEndsAt, ends[i], ends[i+1])
+		}
+		parseWire(t, fmt.Sprintf("extension %d at", i+1), x.At)
+	}
+	if len(g.Services) != 1 || g.Services[0].ID != "tiktok" || g.Services[0].RemovedAt != nil {
+		t.Errorf("services after restart = %+v, want tiktok, not removed", g.Services)
+	}
+}
+
+// TestRun_OverdueGrantExpiredAtStartup lets a grant's ends_at pass while the
+// app is stopped. The reconciler is parked at an hour, so only the startup
+// pass can record the expiry, and it stamps ended_at with its own clock — at
+// or after the restart, not the long-past ends_at (c-1, c-5).
+func TestRun_OverdueGrantExpiredAtStartup(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = time.Hour
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 1800)
+	child := childOfGrant(t, c, base, ck, created.ID)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+	endsAt := time.Now().Add(-10 * time.Minute).Truncate(time.Second)
+	rewindGrant(t, dataDir, created.ID, endsAt)
+
+	restartAt := time.Now().Truncate(time.Second)
+	restored := false
+	r2 := startWith(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil,
+		func(string) { restored = phoneBlocks(fake, "tiktok") })
+	if !restored {
+		t.Error("Kid phone did not block tiktok when the listener opened; the startup pass did not revert the overdue grant")
+	}
+
+	g := onlyGrant(t, getHistory(t, c, "http://"+r2.addr, ck, child), created.ID)
+	if g.Status != "expired" {
+		t.Fatalf("status after restart = %q, want expired", g.Status)
+	}
+	if g.EndedAt == nil {
+		t.Fatal("ended_at is null; the startup pass must record when it expired the grant")
+	}
+	ended := parseWire(t, "ended_at", *g.EndedAt)
+	if ended.Before(restartAt) {
+		t.Errorf("ended_at = %s, before the restart at %s: it was not set by the startup pass", ended, restartAt)
+	}
+	if !ended.After(endsAt) {
+		t.Errorf("ended_at = %s, want after the scheduled ends_at %s", ended, endsAt)
+	}
+	if got := parseWire(t, "ends_at", g.EndsAt); !got.Equal(endsAt) {
+		t.Errorf("ends_at = %s, want the scheduled %s", got, endsAt)
+	}
+}
+
+// TestRun_AdGuardDownAtStartup restarts over an overdue grant with AdGuard
+// unreachable. Expiry is only recorded once the revert lands, so the grant
+// stays ongoing through the failed startup pass and failed ticks, and reads
+// expired — stamped after AdGuard came back — once a later pass reverts it
+// (c-1, c-5).
+func TestRun_AdGuardDownAtStartup(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = 50 * time.Millisecond
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 1800)
+	child := childOfGrant(t, c, base, ck, created.ID)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+	rewindGrant(t, dataDir, created.ID, time.Now().Add(-10*time.Minute))
+
+	fake.SetStatus("/control/status", http.StatusServiceUnavailable)
+	fake.SetStatus("/control/clients", http.StatusServiceUnavailable)
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base2 := "http://" + r2.addr
+	if !strings.Contains(r2.stderr.String(), `msg="startup reconcile" err=`) {
+		t.Fatalf("stderr lacks the startup reconcile error; AdGuard was not down for the startup pass:\n%s", r2.stderr.String())
+	}
+
+	g := onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID)
+	if g.Status != "ongoing" || g.EndedAt != nil {
+		t.Errorf("after a failed startup pass: status %q ended_at %v, want ongoing with no end time", g.Status, g.EndedAt)
+	}
+	// Several failing ticks at 50 ms must not record the expiry either.
+	time.Sleep(300 * time.Millisecond)
+	g = onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID)
+	if g.Status != "ongoing" || g.EndedAt != nil {
+		t.Errorf("after failing reconcile ticks: status %q ended_at %v, want ongoing with no end time", g.Status, g.EndedAt)
+	}
+	if phoneBlocks(fake, "tiktok") {
+		t.Fatal("tiktok re-blocked while /control/clients answers 503")
+	}
+
+	recoveredAt := time.Now().Truncate(time.Second)
+	fake.SetResponse("/control/status", 0, nil)
+	fake.SetResponse("/control/clients", 0, nil)
+	if !waitFor(2*time.Second, func() bool {
+		return onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID).Status == "expired"
+	}) {
+		t.Fatalf("history status = %q within 2 s of AdGuard recovering, want expired",
+			onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID).Status)
+	}
+	if !phoneBlocks(fake, "tiktok") {
+		t.Error("grant reads expired but Kid phone does not block tiktok")
+	}
+	g = onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID)
+	if g.EndedAt == nil {
+		t.Fatal("expired grant has no ended_at")
+	}
+	if ended := parseWire(t, "ended_at", *g.EndedAt); ended.Before(recoveredAt) {
+		t.Errorf("ended_at = %s, before AdGuard recovered at %s: expiry was recorded before the revert", ended, recoveredAt)
+	}
+}
+
 // clientBlocks reports whether the fake's named client blocks service id.
 func clientBlocks(fake *adguardtest.Server, name, id string) bool {
 	ids, _ := fake.BlockedServices(name)

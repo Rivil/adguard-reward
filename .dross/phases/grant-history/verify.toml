@@ -1,0 +1,96 @@
+[verify]
+  phase = "grant-history"
+  generated_at = 2026-11-04T13:37:44.790939Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-11-04T13:53:21.246513Z
+  measured_commit = "9449ace46138667408de191030106cc19d2e732e"
+  measured_tree = "585f8aed41f0509831b739fb42911ab56990dd8a"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.9411764705882353
+  mutants_killed = 736
+  mutants_survived = 46
+  mutants_not_covered = 8
+  mutants_no_block = 0
+  mutants_test_gap = 8
+  mutants_in_scope = 782
+  unclassified_in_scope = 0
+  criteria_total = 6
+  criteria_covered = 6
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 213
+    survived = 4
+    timeout = 0
+    in_scope = 217
+    score = 0.9815668202764977
+    file_count = 19
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/grants.go — adapter-lacks-range-runner", "internal/api/grants_test.go — adapter-lacks-range-runner", "internal/api/history.go — adapter-lacks-range-runner", "internal/api/history_test.go — adapter-lacks-range-runner", "internal/grants/grants.go — adapter-lacks-range-runner", "internal/grants/grants_test.go — adapter-lacks-range-runner", "internal/grants/toggle_test.go — adapter-lacks-range-runner", "internal/store/children.go — adapter-lacks-range-runner", "internal/store/children_test.go — adapter-lacks-range-runner", "internal/store/custom_services_test.go — adapter-lacks-range-runner", "internal/store/grants.go — adapter-lacks-range-runner", "internal/store/grants_test.go — adapter-lacks-range-runner", "internal/store/history.go — adapter-lacks-range-runner", "internal/store/history_test.go — adapter-lacks-range-runner", "internal/store/store_test.go — adapter-lacks-range-runner", "internal/store/toggles.go — adapter-lacks-range-runner", "internal/store/toggles_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 523
+    survived = 42
+    timeout = 0
+    in_scope = 565
+    score = 0.9256637168141593
+    file_count = 10
+    measured_on = "local"
+    ranges = ["web/src/App.test.ts:391-391 (hunk)", "web/src/App.test.ts:392-484 (ExpressionStatement)", "web/src/App.test.ts:45-50 (ExpressionStatement)", "web/src/App.test.ts:8-8 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:1-2 (hunk)", "web/src/lib/History.panel.test.ts:10-10 (hunk)", "web/src/lib/History.panel.test.ts:11-13 (FunctionDeclaration json)", "web/src/lib/History.panel.test.ts:14-14 (VariableDeclaration fail)", "web/src/lib/History.panel.test.ts:15-16 (hunk)", "web/src/lib/History.panel.test.ts:17-29 (FunctionDeclaration mockFetch)", "web/src/lib/History.panel.test.ts:3-3 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:30-30 (hunk)", "web/src/lib/History.panel.test.ts:31-31 (VariableDeclaration URL3)", "web/src/lib/History.panel.test.ts:32-32 (hunk)", "web/src/lib/History.panel.test.ts:33-44 (FunctionDeclaration grant)", "web/src/lib/History.panel.test.ts:4-4 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:45-45 (hunk)", "web/src/lib/History.panel.test.ts:46-52 (FunctionDeclaration page)", "web/src/lib/History.panel.test.ts:5-5 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:53-53 (hunk)", "web/src/lib/History.panel.test.ts:54-54 (VariableDeclaration URL4)", "web/src/lib/History.panel.test.ts:55-55 (VariableDeclaration BOB)", "web/src/lib/History.panel.test.ts:56-57 (hunk)", "web/src/lib/History.panel.test.ts:58-68 (FunctionDeclaration gated)", "web/src/lib/History.panel.test.ts:6-6 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:69-69 (hunk)", "web/src/lib/History.panel.test.ts:7-7 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:70-70 (VariableDeclaration ok)", "web/src/lib/History.panel.test.ts:71-71 (hunk)", "web/src/lib/History.panel.test.ts:72-74 (FunctionDeclaration shownIds)", "web/src/lib/History.panel.test.ts:75-75 (hunk)", "web/src/lib/History.panel.test.ts:76-80 (FunctionDeclaration grantEl)", "web/src/lib/History.panel.test.ts:8-8 (hunk)", "web/src/lib/History.panel.test.ts:81-81 (hunk)", "web/src/lib/History.panel.test.ts:82-86 (FunctionDeclaration mount)", "web/src/lib/History.panel.test.ts:87-87 (hunk)", "web/src/lib/History.panel.test.ts:88-91 (ExpressionStatement)", "web/src/lib/History.panel.test.ts:9-9 (TSTypeAliasDeclaration Answer)", "web/src/lib/History.panel.test.ts:92-92 (hunk)", "web/src/lib/History.panel.test.ts:93-395 (ExpressionStatement)", "web/src/lib/Home.test.ts:164-170 (ExpressionStatement)", "web/src/lib/Home.test.ts:172-1012 (ExpressionStatement)", "web/src/lib/Home.test.ts:8-8 (ImportDeclaration)", "web/src/lib/api.test.ts:5-44 (ImportDeclaration)", "web/src/lib/api.test.ts:755-755 (hunk)", "web/src/lib/api.test.ts:756-883 (ExpressionStatement)", "web/src/lib/api.test.ts:884-884 (hunk)", "web/src/lib/api.test.ts:885-948 (ExpressionStatement)", "web/src/lib/api.ts:104-110 (IfStatement)", "web/src/lib/api.ts:31-31 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:33-40 (VariableDeclaration PATHS)", "web/src/lib/api.ts:41-42 (hunk)", "web/src/lib/api.ts:43-45 (TSInterfaceDeclaration RouteParams)", "web/src/lib/api.ts:524-526 (hunk)", "web/src/lib/api.ts:527-527 (TSTypeAliasDeclaration HistoryStatus)", "web/src/lib/api.ts:528-528 (hunk)", "web/src/lib/api.ts:529-536 (TSInterfaceDeclaration HistoryService)", "web/src/lib/api.ts:537-537 (hunk)", "web/src/lib/api.ts:538-543 (TSInterfaceDeclaration HistoryExtension)", "web/src/lib/api.ts:54-54 (hunk)", "web/src/lib/api.ts:544-544 (hunk)", "web/src/lib/api.ts:545-557 (TSInterfaceDeclaration HistoryGrant)", "web/src/lib/api.ts:55-59 (FunctionDeclaration childIdOf)", "web/src/lib/api.ts:558-558 (hunk)", "web/src/lib/api.ts:559-565 (TSInterfaceDeclaration HistoryPage)", "web/src/lib/api.ts:566-570 (hunk)", "web/src/lib/api.ts:571-579 (FunctionDeclaration fetchHistory)", "web/src/lib/api.ts:580-580 (hunk)", "web/src/lib/api.ts:60-60 (hunk)", "web/src/lib/api.ts:61-63 (FunctionDeclaration validChild)", "web/src/lib/api.ts:64-64 (hunk)", "web/src/lib/api.ts:69-71 (FunctionDeclaration currentSearch)", "web/src/lib/api.ts:72-73 (hunk)", "web/src/lib/api.ts:74-76 (FunctionDeclaration childFor)", "web/src/lib/api.ts:77-77 (hunk)", "web/src/lib/api.ts:78-78 (VariableDeclaration initialRoute)", "web/src/lib/api.ts:79-79 (hunk)", "web/src/lib/api.ts:81-81 (VariableDeclaration route)", "web/src/lib/api.ts:82-86 (hunk)", "web/src/lib/api.ts:87-87 (VariableDeclaration historyChild)", "web/src/lib/api.ts:89-93 (hunk)", "web/src/lib/api.ts:94-102 (FunctionDeclaration navigate)", "web/src/lib/history.test.ts:1-1 (hunk)", "web/src/lib/history.test.ts:18-18 (hunk)", "web/src/lib/history.test.ts:19-28 (ExpressionStatement)", "web/src/lib/history.test.ts:2-2 (ImportDeclaration)", "web/src/lib/history.test.ts:29-29 (hunk)", "web/src/lib/history.test.ts:3-3 (ImportDeclaration)", "web/src/lib/history.test.ts:30-45 (ExpressionStatement)", "web/src/lib/history.test.ts:4-4 (ImportDeclaration)", "web/src/lib/history.test.ts:46-46 (hunk)", "web/src/lib/history.test.ts:47-65 (ExpressionStatement)", "web/src/lib/history.test.ts:5-5 (hunk)", "web/src/lib/history.test.ts:6-17 (FunctionDeclaration grant)", "web/src/lib/history.test.ts:66-66 (hunk)", "web/src/lib/history.test.ts:67-79 (ExpressionStatement)", "web/src/lib/history.test.ts:80-80 (hunk)", "web/src/lib/history.test.ts:81-89 (ExpressionStatement)", "web/src/lib/history.ts:1-3 (hunk)", "web/src/lib/history.ts:15-16 (hunk)", "web/src/lib/history.ts:17-19 (FunctionDeclaration statusLabel)", "web/src/lib/history.ts:20-24 (hunk)", "web/src/lib/history.ts:25-27 (FunctionDeclaration endTimeOf)", "web/src/lib/history.ts:28-29 (hunk)", "web/src/lib/history.ts:30-34 (FunctionDeclaration formatTime)", "web/src/lib/history.ts:35-35 (hunk)", "web/src/lib/history.ts:36-38 (VariableDeclaration REMOVED_REASONS)", "web/src/lib/history.ts:39-40 (hunk)", "web/src/lib/history.ts:4-4 (ImportDeclaration)", "web/src/lib/history.ts:41-45 (FunctionDeclaration removedText)", "web/src/lib/history.ts:46-47 (hunk)", "web/src/lib/history.ts:48-57 (FunctionDeclaration appendPage)", "web/src/lib/history.ts:5-5 (hunk)", "web/src/lib/history.ts:6-14 (VariableDeclaration LABELS)"]
+    whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/History.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/store/grants_test.go:TestSetGrantStatus_EndReason", "internal/store/toggles_test.go:TestSetToggle_TrimEndsWithReason", "internal/grants/grants_test.go:TestEngine_HistoryTimes", "internal/api/history_test.go:TestEndStatus"]
+  notes = "End reason (expired/ended_early/permanent_block) and actual ended_at (clock at revert, not ends_at) asserted at store, engine and API layers; no unaccepted survivors in those files."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/store/grants_test.go:TestExtendGrant_RecordsEachExtension", "internal/grants/grants_test.go:TestEngine_HistoryTimes", "internal/api/history_test.go:TestHistory_ExtendedAndTrimmed", "web/src/lib/History.panel.test.ts:'renders every extension in chronological order, old -> new'"]
+  notes = "Two extends -> two rows with at/old/new asserted exactly, ascending through the API and rendered in order."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/store/toggles_test.go:TestSetToggle_TrimLogsRemoval", "internal/api/history_test.go:TestHistory_ExtendedAndTrimmed", "web/src/lib/History.panel.test.ts:'lists a removed service inside its grant with its marker, and \"—\" for no services'", "web/src/lib/history.test.ts:'marks a trimmed service with its time and reason'"]
+  notes = "Trimmed service stays listed with removed_at + permanent_block on a still-live grant (store, API, UI); prior history.ts:44 reason-less survivor now killed."
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["web/src/lib/History.panel.test.ts:'shows the child name and grants newest first with start, end and status'", "web/src/lib/History.panel.test.ts:'fetches a further page once when Load more is clicked twice before the screen updates'", "web/src/lib/History.panel.test.ts:stale-response describe (5 tests)", "web/src/App.test.ts:'a History link on Home opens that child'", "internal/api/history_test.go:TestHistory_Paging", "internal/store/history_test.go:TestListGrantHistory_Paging"]
+  notes = "Upgraded from weak: the 21 real survivors from the prior run are now killed by quick 0.2.3.2 (stale-response guards, loadingMore guard, error text, loading state, heading, em dash, multi-digit ids). Remaining History.svelte:63 null-guard and api.ts:104 survivors accepted as equivalent (unreachable from the UI)."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["cmd/adguard-reward/main_test.go:TestRun_HistorySurvivesRestart", "cmd/adguard-reward/main_test.go:TestRun_OverdueGrantExpiredAtStartup"]
+  notes = "Real process restart: history DeepEqual before/after; downtime-overdue grant reads expired with ended_at >= restart and > ends_at."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/store/history_test.go:TestListGrantHistory_Legacy", "internal/store/store_test.go:TestMigrate0009_LegacyRowsUntouched", "internal/api/history_test.go:TestHistory_NameSnapshotEndToEnd", "web/src/lib/history.test.ts:'labels every end status, never calling a legacy end \"Ended early\"'"]
+  notes = "Pre-0009 rows untouched, never backfilled, listed with services/times; legacy names resolve to live name or bare id; ended_unknown never labelled Ended early."
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0009_grant_history.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/History.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "NOTE"
+  text = "Drained this run: History.svelte:63 (ConditionalExpression x2, id/before null guards) and api.ts:104 (StringLiteral) accepted as equivalent with user approval. 52 accepted, 0 in-diff, 0 unclassified; 8 NOT COVERED mutants are all within accepted survivors."

@@ -5,7 +5,7 @@ import { tick } from 'svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.svelte'
-import { me, navigate, route, setOnUnauthorized } from './lib/api'
+import { historyChild, me, navigate, route, setOnUnauthorized } from './lib/api'
 
 type Call = { method: string; url: string; init: RequestInit }
 type Answer = () => Response | Promise<Response>
@@ -46,6 +46,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
   history.replaceState(null, '', '/')
   route.set('home')
+  historyChild.set(null)
 })
 
 describe('App', () => {
@@ -385,5 +386,99 @@ describe('services route', () => {
     expect(location.pathname).toBe('/')
     expect(get(route)).toBe('home')
     expect(screen.queryByRole('heading', { name: 'Services' })).toBeNull()
+  })
+})
+
+describe('history route', () => {
+  const cleoPage = () =>
+    json(200, {
+      child: { id: 3, name: 'Cleo' },
+      grants: [
+        {
+          id: 7,
+          status: 'expired',
+          started_at: '2026-10-01T10:00:00Z',
+          ends_at: '2026-10-01T11:00:00Z',
+          ended_at: '2026-10-01T11:00:00Z',
+          services: [{ id: 'youtube', name: 'YouTube', removed_at: null, removed_reason: null }],
+          extensions: [],
+        },
+      ],
+      next_before: null,
+    })
+
+  /** Start the SPA as a browser reload at /history?child=3 would. */
+  function loadAt(url: string, child: number | null) {
+    history.replaceState(null, '', url)
+    route.set('history')
+    historyChild.set(child)
+  }
+
+  it('reload on /history?child=3 keeps the query and shows that child', async () => {
+    loadAt('/history?child=3', 3)
+    const calls = mockFetch({ '/api/v1/me': signedIn, '/api/v1/children/3/history': cleoPage })
+    render(App)
+
+    expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
+    // refresh() re-navigates after /me; it must carry ?child= through.
+    expect(location.pathname + location.search).toBe('/history?child=3')
+    expect(get(route)).toBe('history')
+    expect(get(historyChild)).toBe(3)
+    expect(document.querySelector('[data-grant="7"]')).not.toBeNull()
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me', '/api/v1/children/3/history'])
+  })
+
+  it('history needs a session', async () => {
+    loadAt('/history?child=3', 3)
+    const calls = mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    await screen.findByRole('button', { name: 'Sign in' })
+    await tick()
+    expect(location.pathname).toBe('/login')
+    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+    expect(screen.queryByRole('heading', { name: /history/i })).toBeNull()
+  })
+
+  it('Back from History returns home', async () => {
+    loadAt('/history?child=3', 3)
+    mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/children/3/history': cleoPage,
+      '/api/v1/children': noChildren,
+      '/api/v1/buttons': () => json(200, { buttons: [] }),
+      '/api/v1/services': () => json(200, { services: [] }),
+      '/api/v1/grants': () => json(200, { grants: [] }),
+      '/api/v1/migration': () => json(200, { global: [], clients: [] }),
+    })
+    render(App)
+    await screen.findByRole('heading', { name: 'Cleo — history' })
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+    expect(await screen.findByText(/Signed in as/)).toBeTruthy()
+    expect(location.pathname + location.search).toBe('/')
+    expect(get(route)).toBe('home')
+    expect(get(historyChild)).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Cleo — history' })).toBeNull()
+  })
+
+  it('a History link on Home opens that child', async () => {
+    const cleo = { id: 3, name: 'Cleo', clients: ['Kid phone'] }
+    mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/children': () => json(200, { children: [cleo] }),
+      '/api/v1/buttons': () => json(200, { buttons: [] }),
+      '/api/v1/services': () => json(200, { services: [] }),
+      '/api/v1/grants': () => json(200, { grants: [] }),
+      '/api/v1/migration': () => json(200, { global: [], clients: [] }),
+      '/api/v1/children/3/history': cleoPage,
+    })
+    render(App)
+
+    await fireEvent.click(await screen.findByRole('button', { name: 'History for Cleo' }))
+
+    expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
+    expect(location.pathname + location.search).toBe('/history?child=3')
+    expect(screen.queryByText(/Signed in as/)).toBeNull()
   })
 })

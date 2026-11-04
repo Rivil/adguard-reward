@@ -18,6 +18,8 @@ import {
   updateCustomService,
   endGrant,
   extendGrant,
+  fetchHistory,
+  historyChild,
   iconUrl,
   listButtons,
   listChildren,
@@ -748,5 +750,199 @@ describe('permanent toggles', () => {
     const down = await fails(toggleService(3, 'youtube', 'blocked'))
     expect(down.code).toBe('adguard_unavailable')
     expect(unauthorized).not.toHaveBeenCalled()
+  })
+})
+
+describe('history route', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/')
+    route.set('home')
+    historyChild.set(null)
+  })
+
+  it('navigate pushes the child and drops it on the next route', () => {
+    history.replaceState(null, '', '/')
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      navigate('history', { child: 3 })
+      expect(push).toHaveBeenCalledTimes(1)
+      expect(push.mock.calls[0][2]).toBe('/history?child=3')
+      expect(location.pathname + location.search).toBe('/history?child=3')
+      expect(get(route)).toBe('history')
+      expect(get(historyChild)).toBe(3)
+
+      // Same page, same child: nothing pushed.
+      navigate('history', { child: 3 })
+      expect(push).toHaveBeenCalledTimes(1)
+
+      navigate('history', { child: 5 })
+      expect(push).toHaveBeenCalledTimes(2)
+      expect(push.mock.calls[1][2]).toBe('/history?child=5')
+      expect(get(historyChild)).toBe(5)
+
+      navigate('home')
+      expect(push).toHaveBeenCalledTimes(3)
+      expect(push.mock.calls[2][2]).toBe('/')
+      expect(location.pathname).toBe('/')
+      expect(location.search).toBe('')
+      expect(get(route)).toBe('home')
+      expect(get(historyChild)).toBeNull()
+    } finally {
+      push.mockRestore()
+    }
+  })
+
+  it('navigate ignores an invalid or foreign child param', () => {
+    for (const child of [0, -1, 3.5, Number.NaN, null, undefined]) {
+      navigate('history', { child })
+      expect(location.pathname + location.search, String(child)).toBe('/history')
+      expect(get(route)).toBe('history')
+      expect(get(historyChild), String(child)).toBeNull()
+    }
+
+    navigate('children', { child: 3 })
+    expect(location.pathname + location.search).toBe('/children')
+    expect(get(historyChild)).toBeNull()
+  })
+
+  const garbage = [
+    '/history',
+    '/history?child=',
+    '/history?child=abc',
+    '/history?child=0',
+    '/history?child=-1',
+    '/history?child=3.5',
+    '/history?child=1e2',
+    '/history?child=%203',
+  ]
+
+  it('routeFor parses the child at load and rejects garbage', async () => {
+    for (const url of garbage) {
+      history.replaceState(null, '', url)
+      vi.resetModules()
+      const m = await import('./api')
+      expect(get(m.route), url).toBe('history')
+      expect(get(m.historyChild), url).toBeNull()
+    }
+
+    history.replaceState(null, '', '/history?child=7')
+    vi.resetModules()
+    const ok = await import('./api')
+    expect(get(ok.route)).toBe('history')
+    expect(get(ok.historyChild)).toBe(7)
+
+    // Multi-digit ids parse whole, zeros after the first digit included.
+    for (const [url, want] of [
+      ['/history?child=12', 12],
+      ['/history?child=105', 105],
+    ] as const) {
+      history.replaceState(null, '', url)
+      vi.resetModules()
+      const m = await import('./api')
+      expect(get(m.historyChild), url).toBe(want)
+    }
+
+    // A child query on another route never leaks into historyChild.
+    history.replaceState(null, '', '/children?child=7')
+    vi.resetModules()
+    const other = await import('./api')
+    expect(get(other.route)).toBe('children')
+    expect(get(other.historyChild)).toBeNull()
+  })
+
+  it('popstate re-parses the child', () => {
+    history.replaceState(null, '', '/history?child=3')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('history')
+    expect(get(historyChild)).toBe(3)
+
+    history.replaceState(null, '', '/history?child=5')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('history')
+    expect(get(historyChild)).toBe(5)
+
+    history.replaceState(null, '', '/history?child=40')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(historyChild)).toBe(40)
+
+    for (const url of garbage) {
+      historyChild.set(9)
+      history.replaceState(null, '', url)
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      expect(get(route), url).toBe('history')
+      expect(get(historyChild), url).toBeNull()
+    }
+
+    history.replaceState(null, '', '/history?child=5')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    history.replaceState(null, '', '/?child=5')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('home')
+    expect(get(historyChild)).toBeNull()
+  })
+})
+
+describe('fetchHistory', () => {
+  const page = {
+    child: { id: 3, name: 'Ada' },
+    grants: [
+      {
+        id: 41,
+        status: 'ended_early',
+        started_at: '2026-09-21T10:00:00Z',
+        ends_at: '2026-09-21T10:40:00Z',
+        ended_at: '2026-09-21T10:20:00Z',
+        services: [
+          { id: 'tiktok', name: 'TikTok', removed_at: null, removed_reason: null },
+          { id: 'youtube', name: 'YouTube', removed_at: '2026-09-21T10:10:00Z', removed_reason: 'permanent_block' },
+        ],
+        extensions: [
+          { at: '2026-09-21T10:05:00Z', old_ends_at: '2026-09-21T10:30:00Z', new_ends_at: '2026-09-21T10:35:00Z' },
+          { at: '2026-09-21T10:06:00Z', old_ends_at: '2026-09-21T10:35:00Z', new_ends_at: '2026-09-21T10:40:00Z' },
+        ],
+      },
+    ],
+    next_before: 41,
+  }
+
+  it('builds the URL with and without before', async () => {
+    const last = { child: page.child, grants: [], next_before: null }
+    const calls = mockFetch(json(200, page), json(200, last))
+    expect(await fetchHistory(3)).toStrictEqual(page)
+    expect(await fetchHistory(3, 40)).toStrictEqual(last)
+    expect(calls.map((c) => [c.init.method, c.url, c.init.body ?? null])).toEqual([
+      ['GET', '/api/v1/children/3/history', null],
+      ['GET', '/api/v1/children/3/history?before=40', null],
+    ])
+    for (const c of calls) {
+      expect(header(c.init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    }
+  })
+
+  it('fills missing lists and cursor', async () => {
+    const bare = { ...page.grants[0], services: null, extensions: undefined }
+    mockFetch(json(200, { child: page.child, grants: [bare] }), json(200, { child: page.child, grants: null }))
+    const got = await fetchHistory(3)
+    expect(got.grants[0].services).toStrictEqual([])
+    expect(got.grants[0].extensions).toStrictEqual([])
+    expect(got.next_before).toBeNull()
+    expect((await fetchHistory(3)).grants).toStrictEqual([])
+  })
+
+  it('rejects with ApiError', async () => {
+    mockFetch(json(404, { error: 'not_found', message: 'child 3 not found' }))
+    const gone = await fails(fetchHistory(3))
+    expect(gone.status).toBe(404)
+    expect(gone.code).toBe('not_found')
+    expect(unauthorized).not.toHaveBeenCalled()
+
+    mockFetch(json(400, { error: 'invalid_request', message: 'bad before' }))
+    const bad = await fails(fetchHistory(3, 40))
+    expect(bad.status).toBe(400)
+
+    mockFetch(json(401, { error: 'unauthorized', message: 'authentication required' }))
+    const anon = await fails(fetchHistory(3))
+    expect(anon.status).toBe(401)
+    expect(unauthorized).toHaveBeenCalledTimes(1)
   })
 })

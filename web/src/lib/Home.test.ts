@@ -5,7 +5,7 @@ import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.svelte'
 import { refresh } from './activeGrants'
-import { route, setOnUnauthorized, type BlockedView, type Button, type Child, type Grant, type Service } from './api'
+import { historyChild, route, setOnUnauthorized, type BlockedView, type Button, type Child, type Grant, type Service } from './api'
 
 type Call = { method: string; url: string; body: string | null }
 type Answer = () => Response | Promise<Response>
@@ -166,6 +166,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
   history.replaceState(null, '', '/')
   route.set('home')
+  historyChild.set(null)
 })
 
 describe('Home', () => {
@@ -194,7 +195,7 @@ describe('Home', () => {
     expect(section(2).textContent).toContain('No buttons yet')
     expect(section(2).querySelector('button[data-button]')).toBeNull()
 
-    await fireEvent.click(section(2).querySelector('button.link')!)
+    await fireEvent.click(section(2).querySelector('.none button.link')!)
     expect(location.pathname).toBe('/buttons')
     expect(get(route)).toBe('buttons')
   })
@@ -763,6 +764,27 @@ describe('Home', () => {
     await fireEvent.click(screen.getByRole('button', { name: 'Children' }))
     expect(location.pathname).toBe('/children')
     expect(get(route)).toBe('children')
+  })
+
+  it('each child has a History link to its own history', async () => {
+    server()
+    await mountLoaded()
+    const adaLink = screen.getByRole('button', { name: 'History for Ada' })
+    const benLink = screen.getByRole('button', { name: 'History for Ben' })
+    expect(adaLink.textContent?.trim()).toBe('History')
+    expect(section(1).contains(adaLink)).toBe(true)
+    expect(section(2).contains(benLink)).toBe(true)
+
+    // Both in turn: a shared closure would send both links to the same child.
+    await fireEvent.click(benLink)
+    expect(location.pathname + location.search).toBe('/history?child=2')
+    expect(get(route)).toBe('history')
+    expect(get(historyChild)).toBe(2)
+
+    await fireEvent.click(adaLink)
+    expect(location.pathname + location.search).toBe('/history?child=1')
+    expect(get(route)).toBe('history')
+    expect(get(historyChild)).toBe(1)
   })
 
   it('shows "No children yet" for an empty list', async () => {

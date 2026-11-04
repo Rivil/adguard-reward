@@ -72,6 +72,7 @@
   locked = true
 
 [[deferred]]
+  id = "516cf6ca4fdbf874"
   text = "Record 'ended by permanent block' (a grant trimmed or ended by block_during_grant) as a grant end reason in the history."
   why = "The history store arrives with grant-history."
   target = "grant-history"

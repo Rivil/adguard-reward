@@ -90,10 +90,10 @@ func hasCustom(ids []string) bool {
 
 // Store is the persistence the engine needs; *store.Store satisfies it.
 type Store interface {
-	CreateGrant(ctx context.Context, childID int64, services, clients []string, startedAt, endsAt time.Time) (store.Grant, error)
+	CreateGrantNamed(ctx context.Context, childID int64, services, clients []string, startedAt, endsAt time.Time, names map[string]string) (store.Grant, error)
 	ListActiveGrants(ctx context.Context) ([]store.Grant, error)
 	GetGrant(ctx context.Context, id int64) (store.Grant, error)
-	ExtendGrant(ctx context.Context, id int64, newEndsAt time.Time) (store.Grant, error)
+	ExtendGrant(ctx context.Context, id int64, newEndsAt, at time.Time) (store.Grant, error)
 	SetGrantStatus(ctx context.Context, id int64, from, to string, at time.Time) (bool, error)
 	GetChild(ctx context.Context, id int64) (store.Child, error)
 	ListChildren(ctx context.Context) ([]store.Child, error)
@@ -224,6 +224,13 @@ func (e *Engine) List(ctx context.Context) ([]store.Grant, error) {
 // — goes into Result.Failed; the row stays active for the reconciler to
 // converge (locked partial_apply). The expiry timer is armed either way.
 func (e *Engine) Create(ctx context.Context, childID int64, services, clients []string, d time.Duration) (Result, error) {
+	return e.CreateNamed(ctx, childID, services, clients, d, nil)
+}
+
+// CreateNamed is Create that also snapshots names — service id to the
+// display name the parent saw — with the grant, in the same store write
+// (locked service_names). A nil names snapshots nothing.
+func (e *Engine) CreateNamed(ctx context.Context, childID int64, services, clients []string, d time.Duration, names map[string]string) (Result, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
@@ -244,7 +251,7 @@ func (e *Engine) Create(ctx context.Context, childID int64, services, clients []
 	}
 
 	now := e.now()
-	g, err := e.store.CreateGrant(ctx, childID, services, clients, now, now.Add(d))
+	g, err := e.store.CreateGrantNamed(ctx, childID, services, clients, now, now.Add(d), names)
 	if err != nil {
 		return Result{}, err
 	}
@@ -471,8 +478,9 @@ func (e *Engine) expireLocked(ctx, actx context.Context, g store.Grant) (bool, i
 	return ok, writes
 }
 
-// Extend pushes an active grant's ends_at by d and reschedules its timer.
-// An unknown or non-active grant is ErrGrantNotFound.
+// Extend pushes an active grant's ends_at by d and reschedules its timer;
+// the store records the extension stamped with the engine clock. An unknown
+// or non-active grant is ErrGrantNotFound.
 func (e *Engine) Extend(ctx context.Context, id int64, d time.Duration) (store.Grant, error) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
@@ -484,7 +492,7 @@ func (e *Engine) Extend(ctx context.Context, id int64, d time.Duration) (store.G
 	if g.Status != store.StatusActive {
 		return store.Grant{}, ErrGrantNotFound
 	}
-	g, err = e.store.ExtendGrant(ctx, id, g.EndsAt.Add(d))
+	g, err = e.store.ExtendGrant(ctx, id, g.EndsAt.Add(d), e.now())
 	if err != nil {
 		return store.Grant{}, err
 	}

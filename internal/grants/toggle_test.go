@@ -452,3 +452,26 @@ func TestToggle_ReadFailure(t *testing.T) {
 		t.Fatalf("result = %+v, want kid-phone failed with no write", res)
 	}
 }
+
+// A block toggle trims the service off the live grant; drift repair must
+// read the trimmed grant and leave the service blocked, while the grant's
+// remaining service stays unblocked.
+func TestToggle_BlockSurvivesReconcile(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "youtube", "tiktok")
+	a := e.child("A", "kid-phone")
+	g := e.create(a.ID, []string{"youtube", "tiktok"}, a.Clients).Grant
+
+	e.toggle(a.ID, "tiktok", store.ToggleBlocked)
+	e.reconcile()
+
+	if !e.blocks("kid-phone", "tiktok") {
+		t.Fatalf("kid-phone blocks %v after reconcile, want tiktok re-blocked by the toggle to stay", e.blocked("kid-phone"))
+	}
+	if e.blocks("kid-phone", "youtube") {
+		t.Fatalf("kid-phone blocks %v after reconcile, want youtube still unblocked by the live grant", e.blocked("kid-phone"))
+	}
+	if got := e.grant(g.ID); got.Status != store.StatusActive || !reflect.DeepEqual(got.Services, []string{"youtube"}) {
+		t.Fatalf("grant = %+v, want active [youtube]", got)
+	}
+}

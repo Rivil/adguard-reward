@@ -39,14 +39,18 @@ type ChildStore interface {
 	DeleteChild(ctx context.Context, id int64) (bool, error)
 	// ListServiceToggles feeds the blocked view's permanent toggle state.
 	ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error)
+	// ListGrantHistory feeds the per-child history page.
+	ListGrantHistory(ctx context.Context, childID, before int64, limit int) (store.GrantHistory, error)
 }
 
 // Grants is the slice of *grants.Engine the grant, toggle and client-write
 // handlers need. It speaks store.Grant and the engine's sentinels (ErrGrantNotFound,
 // *ErrRevertFailed, *ErrAdoptFailed) plus the store's *ErrGrantOverlap and
-// the AdGuard client's write errors.
+// the AdGuard client's write errors. Grants are created with their service
+// names snapshotted (locked service_names), so the slice carries CreateNamed
+// rather than Create.
 type Grants interface {
-	Create(ctx context.Context, childID int64, services, clients []string, d time.Duration) (grants.Result, error)
+	CreateNamed(ctx context.Context, childID int64, services, clients []string, d time.Duration, names map[string]string) (grants.Result, error)
 	List(ctx context.Context) ([]store.Grant, error)
 	Extend(ctx context.Context, id int64, d time.Duration) (store.Grant, error)
 	End(ctx context.Context, id int64) error
@@ -128,6 +132,7 @@ func (a *API) routes() {
 	a.mux.Handle("DELETE /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildDelete)))
 	a.mux.Handle("GET /api/v1/children/{id}/blocked", a.requireSession(http.HandlerFunc(a.handleBlocked)))
 	a.mux.Handle("POST /api/v1/children/{id}/toggles", a.requireSession(http.HandlerFunc(a.handleToggle)))
+	a.mux.Handle("GET /api/v1/children/{id}/history", a.requireSession(http.HandlerFunc(a.handleHistory)))
 	a.mux.Handle("GET /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClients)))
 	a.mux.Handle("POST /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClientCreate)))
 	a.mux.Handle("POST /api/v1/clients/rename", a.requireSession(http.HandlerFunc(a.handleClientRename)))

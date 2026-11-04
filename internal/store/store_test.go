@@ -459,3 +459,163 @@ func TestSchema_ChildClientsPK(t *testing.T) {
 		t.Fatalf("child_clients primary key = %v, want [client_name child_id]", pk)
 	}
 }
+
+// legacySnapshot renders every pre-0009 grant column and grant child row with
+// quote(), so a comparison is byte-exact rather than type-coerced.
+func legacySnapshot(t *testing.T, db *sql.DB) []string {
+	t.Helper()
+	var out []string
+	for _, q := range []string{
+		`SELECT 'g ' || id || ' ' || quote(child_id) || ' ' || quote(status) || ' ' || quote(started_at) || ' ' ||
+		        quote(ends_at) || ' ' || quote(ended_at) FROM grants ORDER BY id`,
+		`SELECT 's ' || grant_id || ' ' || quote(child_id) || ' ' || quote(service_id) || ' ' || quote(active)
+		   FROM grant_services ORDER BY grant_id, service_id`,
+		`SELECT 'c ' || grant_id || ' ' || quote(client_name) FROM grant_clients ORDER BY grant_id, client_name`,
+	} {
+		out = append(out, queryStrings(t, db, q)...)
+	}
+	return out
+}
+
+// openAt0008 builds a database as the 0008 binary left it, with one expired,
+// one ended and one active grant.
+func openAt0008(t *testing.T, dir string) {
+	t.Helper()
+	old, err := openWith(dir, nil, migrationsThrough(t, "0008_service_toggles.sql"))
+	if err != nil {
+		t.Fatalf("open at 0008: %v", err)
+	}
+	for _, q := range []string{
+		`INSERT INTO children (id, name, created_at) VALUES (1, 'Ada', 100)`,
+		`INSERT INTO grants (id, child_id, status, started_at, ends_at, ended_at) VALUES
+		    (1, 1, 'expired', 1000, 1600, 1601),
+		    (2, 1, 'ended',   2000, 2600, 2100),
+		    (3, 1, 'active',  3000, 3600, NULL)`,
+		`INSERT INTO grant_services (grant_id, child_id, service_id, active) VALUES
+		    (1, 1, 'youtube', 0), (1, 1, 'custom:2', 0),
+		    (2, 1, 'tiktok', 0),
+		    (3, 1, 'youtube', 1)`,
+		`INSERT INTO grant_clients (grant_id, client_name) VALUES
+		    (1, 'Kid phone'), (2, 'Kid phone'), (2, 'Kid tablet'), (3, 'Kid phone')`,
+	} {
+		if _, err := old.DB().Exec(q); err != nil {
+			t.Fatalf("seed at 0008: %v", err)
+		}
+	}
+	// Positive control: the 0008 schema has no end_reason column.
+	if _, err := old.DB().Exec(`SELECT end_reason FROM grants`); err == nil {
+		t.Fatal("0008 schema already has grants.end_reason — the seed is not the old schema")
+	}
+	if err := old.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestMigrate0009_LegacyRowsUntouched(t *testing.T) {
+	dir := t.TempDir()
+	openAt0008(t, dir)
+
+	old, err := openWith(dir, nil, migrationsThrough(t, "0008_service_toggles.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := legacySnapshot(t, old.DB())
+	if err := old.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != 3+4+4 {
+		t.Fatalf("seed snapshot has %d rows, want 11: %v", len(before), before)
+	}
+
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatalf("Open over 0008: %v", err)
+	}
+	defer s.Close()
+
+	if after := legacySnapshot(t, s.DB()); fmt.Sprint(after) != fmt.Sprint(before) {
+		t.Fatalf("legacy rows changed by 0009:\n got  %v\n want %v", after, before)
+	}
+	reasons := queryStrings(t, s.DB(), `SELECT id || ':' || quote(end_reason) FROM grants ORDER BY id`)
+	if want := "[1:NULL 2:NULL 3:NULL]"; fmt.Sprint(reasons) != want {
+		t.Fatalf("end_reason after upgrade = %v, want %s (never backfilled)", reasons, want)
+	}
+	for _, table := range []string{"grant_service_names", "grant_service_removals", "grant_extensions"} {
+		var n int
+		if err := s.DB().QueryRow(`SELECT count(*) FROM ` + table).Scan(&n); err != nil {
+			t.Fatalf("%s: %v", table, err)
+		}
+		if n != 0 {
+			t.Fatalf("%s has %d rows after upgrade, want 0 (no backfill)", table, n)
+		}
+	}
+}
+
+func TestMigrate0009_Checks(t *testing.T) {
+	s, _ := openTemp(t)
+	db := s.DB()
+	if _, err := db.Exec(`INSERT INTO grants (id, child_id, status, started_at, ends_at) VALUES (1, 1, 'active', 0, 60)`); err != nil {
+		t.Fatal(err)
+	}
+	const insGrant = `INSERT INTO grants (child_id, status, started_at, ends_at, ended_at, end_reason) VALUES (1, 'ended', 0, 60, 30, ?)`
+	if _, err := db.Exec(insGrant, "bogus"); err == nil || !strings.Contains(err.Error(), "constraint") {
+		t.Fatalf("end_reason='bogus' err = %v, want a CHECK violation", err)
+	}
+	for _, ok := range []any{nil, "expired", "ended_early", "permanent_block"} {
+		if _, err := db.Exec(insGrant, ok); err != nil {
+			t.Fatalf("end_reason=%v rejected: %v", ok, err)
+		}
+	}
+
+	const insRemoval = `INSERT INTO grant_service_removals (grant_id, service_id, removed_at, reason) VALUES (1, ?, 10, ?)`
+	if _, err := db.Exec(insRemoval, "youtube", "ended_early"); err == nil || !strings.Contains(err.Error(), "constraint") {
+		t.Fatalf("removal reason='ended_early' err = %v, want a CHECK violation", err)
+	}
+	if _, err := db.Exec(insRemoval, "youtube", "permanent_block"); err != nil {
+		t.Fatalf("removal reason='permanent_block' rejected: %v", err)
+	}
+
+	// History rows go with their grant.
+	if _, err := db.Exec(`INSERT INTO grant_service_names (grant_id, service_id, name) VALUES (1, 'youtube', 'YouTube')`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`INSERT INTO grant_extensions (grant_id, extended_at, old_ends_at, new_ends_at) VALUES (1, 20, 60, 120)`); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Exec(`DELETE FROM grants WHERE id = 1`); err != nil {
+		t.Fatal(err)
+	}
+	for _, table := range []string{"grant_service_names", "grant_service_removals", "grant_extensions"} {
+		var n int
+		if err := db.QueryRow(`SELECT count(*) FROM ` + table).Scan(&n); err != nil {
+			t.Fatal(err)
+		}
+		if n != 0 {
+			t.Fatalf("%s kept %d rows after its grant was deleted, want CASCADE", table, n)
+		}
+	}
+	cols := queryStrings(t, db, `SELECT name FROM pragma_index_info('grants_child_history_idx')`)
+	if fmt.Sprint(cols) != "[child_id id]" {
+		t.Fatalf("grants_child_history_idx columns = %v, want [child_id id]", cols)
+	}
+}
+
+func TestMigrate0009_Order(t *testing.T) {
+	dir := t.TempDir()
+	openAt0008(t, dir)
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatalf("Open over 0008: %v", err)
+	}
+	defer s.Close()
+	applied := queryStrings(t, s.DB(), `SELECT name FROM schema_migrations ORDER BY rowid`)
+	i8 := -1
+	for i, n := range applied {
+		if n == "0008_service_toggles.sql" {
+			i8 = i
+		}
+	}
+	if i8 < 0 || i8+1 >= len(applied) || applied[i8+1] != "0009_grant_history.sql" {
+		t.Fatalf("schema_migrations = %v, want 0009_grant_history.sql applied right after 0008_service_toggles.sql", applied)
+	}
+}
