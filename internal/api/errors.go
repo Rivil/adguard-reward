@@ -17,6 +17,9 @@ const (
 	CodeNotFound           = "not_found"
 	CodeConflict           = "conflict"
 	CodeUnprocessable      = "unprocessable"
+	// CodeReauthRequired: changing or removing a PIN needs the AdGuard
+	// password and none was sent.
+	CodeReauthRequired = "reauth_required"
 )
 
 // errorBody is the JSON envelope every error response carries.

@@ -92,6 +92,9 @@ type Deps struct {
 	// CustomServices may be nil, and the catalogue then lists built-ins
 	// only; main always wires it.
 	CustomServices CustomServiceStore
+	// Devices stores PIN devices. Nil disables the PIN endpoints: they
+	// answer 500 rather than half-work. main always wires it.
+	Devices auth.DeviceStore
 }
 
 // API is the router plus its dependencies.
@@ -101,8 +104,8 @@ type API struct {
 	log  *slog.Logger
 
 	// loginSlot serialises the AdGuard round-trip so a parallel burst is
-	// bounded by the limiter: a request holds it from its second
-	// Limiter.Check until Fail or Issue has run.
+	// bounded by the limiter: recheckPassword holds it from its second
+	// Limiter.Check until Fail has run.
 	loginSlot chan struct{}
 }
 
@@ -125,6 +128,8 @@ func (a *API) routes() {
 	a.mux.Handle("GET /api/v1/sessions", a.requireSession(http.HandlerFunc(a.handleSessionsList)))
 	a.mux.Handle("DELETE /api/v1/sessions/{id}", a.requireSession(http.HandlerFunc(a.handleSessionDelete)))
 	a.mux.Handle("POST /api/v1/sessions/revoke-all", a.requireSession(http.HandlerFunc(a.handleSessionsRevokeAll)))
+	a.mux.Handle("GET /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinStatus)))
+	a.mux.Handle("POST /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinSet)))
 	a.mux.Handle("GET /api/v1/children", a.requireSession(http.HandlerFunc(a.handleChildrenList)))
 	a.mux.Handle("POST /api/v1/children", a.requireSession(http.HandlerFunc(a.handleChildCreate)))
 	a.mux.Handle("GET /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildGet)))
