@@ -14,6 +14,11 @@ const (
 	ToggleUnblocked = "unblocked"
 )
 
+// EndReasonPermanentBlock is the grants.end_reason of a grant a block
+// toggle emptied, and the grant_service_removals.reason of every service a
+// block toggle trimmed off a live grant.
+const EndReasonPermanentBlock = "permanent_block"
+
 // ServiceToggle is one stored permanent toggle.
 type ServiceToggle struct {
 	ChildID   int64
@@ -69,7 +74,9 @@ func (st *Store) SetServiceToggle(ctx context.Context, childID int64, serviceID,
 }
 
 // trimGrant removes serviceID from the child's live grant, if any, and ends
-// the grant when no service is left on it.
+// the grant when no service is left on it. The removal is logged in
+// grant_service_removals in the same tx so history still lists the service,
+// and a grant the trim empties records end_reason 'permanent_block'.
 func trimGrant(ctx context.Context, tx *sql.Tx, childID int64, serviceID string, at time.Time) (ToggleChange, error) {
 	var grantID int64
 	err := tx.QueryRowContext(ctx,
@@ -89,6 +96,11 @@ func trimGrant(ctx context.Context, tx *sql.Tx, childID int64, serviceID string,
 		`DELETE FROM grant_services WHERE grant_id = ? AND service_id = ?`, grantID, serviceID); err != nil {
 		return ToggleChange{}, err
 	}
+	if _, err := tx.ExecContext(ctx,
+		`INSERT INTO grant_service_removals (grant_id, service_id, removed_at, reason) VALUES (?, ?, ?, ?)`,
+		grantID, serviceID, at.Unix(), EndReasonPermanentBlock); err != nil {
+		return ToggleChange{}, err
+	}
 	change := ToggleChange{Trimmed: &pre}
 	var left int
 	if err := tx.QueryRowContext(ctx,
@@ -99,8 +111,8 @@ func trimGrant(ctx context.Context, tx *sql.Tx, childID int64, serviceID string,
 		return change, nil
 	}
 	if _, err := tx.ExecContext(ctx,
-		`UPDATE grants SET status = ?, ended_at = ? WHERE id = ? AND status = ?`,
-		StatusEnded, at.Unix(), grantID, StatusActive); err != nil {
+		`UPDATE grants SET status = ?, ended_at = ?, end_reason = ? WHERE id = ? AND status = ?`,
+		StatusEnded, at.Unix(), EndReasonPermanentBlock, grantID, StatusActive); err != nil {
 		return ToggleChange{}, err
 	}
 	change.Ended = true
