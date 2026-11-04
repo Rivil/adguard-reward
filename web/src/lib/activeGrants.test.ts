@@ -201,6 +201,55 @@ describe('activeGrants', () => {
     expect(fetchFn).toHaveBeenCalledTimes(4)
   })
 
+  it('waking off the old cadence runs one interval, not two', async () => {
+    // Wake between the dead interval's ticks: if idle left it running, it
+    // would fire 8s after the wake and poll on top of the new 15s cadence.
+    vi.useFakeTimers()
+    const fetchFn = grantsForever()
+    stop = start(15000)
+    await settle()
+    await vi.advanceTimersByTimeAsync(IDLE_AFTER_MS)
+    expect(fetchFn).toHaveBeenCalledTimes(4)
+
+    await vi.advanceTimersByTimeAsync(7000)
+    input()
+    expect(fetchFn).toHaveBeenCalledTimes(5)
+    await settle()
+    await vi.advanceTimersByTimeAsync(14999)
+    expect(fetchFn).toHaveBeenCalledTimes(5)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(fetchFn).toHaveBeenCalledTimes(6)
+    await vi.advanceTimersByTimeAsync(15000)
+    expect(fetchFn).toHaveBeenCalledTimes(7)
+  })
+
+  it('input whose propagation is stopped at the target still wakes an idle screen', async () => {
+    vi.useFakeTimers()
+    const fetchFn = grantsForever()
+    const swallow = (e: Event) => e.stopPropagation()
+    const target = document.createElement('button')
+    document.body.append(target)
+    target.addEventListener('pointerdown', swallow)
+    target.addEventListener('keydown', swallow)
+    try {
+      stop = start(15000)
+      await settle()
+      await vi.advanceTimersByTimeAsync(IDLE_AFTER_MS)
+      expect(fetchFn).toHaveBeenCalledTimes(4)
+
+      target.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+      expect(fetchFn).toHaveBeenCalledTimes(5)
+      await settle()
+      await vi.advanceTimersByTimeAsync(IDLE_AFTER_MS)
+      expect(fetchFn).toHaveBeenCalledTimes(8)
+
+      target.dispatchEvent(new Event('keydown', { bubbles: true }))
+      expect(fetchFn).toHaveBeenCalledTimes(9)
+    } finally {
+      target.remove()
+    }
+  })
+
   it('failure keeps grants and sets unreachable', async () => {
     const g1 = grant(1)
     grantsServer(ok([g1]), netFail, ok([grant(2)]))
