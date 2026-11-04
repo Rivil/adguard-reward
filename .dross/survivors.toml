@@ -70,6 +70,14 @@
   name = "stryker-false-survivor"
   reason = "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
 
+[[category]]
+  name = "gremlins-case-ceiling-pin-unlock"
+  reason = "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "stryker-static-pin-unlock"
+  reason = "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -294,15 +302,6 @@
   line = 349
   category = "string-concat-panic"
   accepted_in = "01-config-adguard-client"
-
-[[accepted]]
-  key = "1fa25d4f40ebe7f5"
-  file = "internal/api/login.go"
-  op = "CONDITIONALS_NEGATION"
-  text = "case err == nil:"
-  line = 79
-  category = "gremlins-switch-case"
-  accepted_in = "02-auth-sessions"
 
 [[accepted]]
   key = "793b75f25044151d"
@@ -1752,3 +1751,111 @@
   line = 104
   accepted_in = "grant-history"
   reason = "Equivalent: typeof window !== \"\" is always true, identical to the already-accepted ->true mutant on this line; window is defined in every runtime this SPA runs in (browser and jsdom)."
+
+[[accepted]]
+  key = "1702d76e6fc4596c"
+  file = "internal/api/pin.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 128
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "6f6a26b327e331f8"
+  file = "internal/api/unlock.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 87
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "2e088d645f6775d1"
+  file = "internal/api/unlock.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 111
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "9fa81f875c787158"
+  file = "internal/api/reauth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 59
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "a2174cc1b459ab80"
+  file = "internal/api/login.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil && dev.Username == username:"
+  line = 93
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "9633328df008345a"
+  file = "internal/api/login.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil, errors.Is(err, auth.ErrDeviceNotFound):"
+  line = 95
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "149178a83dc6f631"
+  file = "internal/auth/middleware.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 59
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "6b2ce1298875194f"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "export const UNLOCK_PATH = '/api/v1/unlock'"
+  line = 11
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "82334e90e6b24ee2"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "settings: '/settings',"
+  line = 52
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "620017a2348cd2ac"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const PIN = '/api/v1/pin'"
+  line = 259
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "4ac83fba7b317acf"
+  file = "web/src/lib/api.ts"
+  op = "ArrayDeclaration"
+  text = "const OWN_401 = new Set([LOGIN_PATH, UNLOCK_PATH])"
+  line = 190
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "e3ab9850c67d0aaa"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (typeof left === 'number' && Number.isSafeInteger(left) && left >= 0) attemptsRemaining = left"
+  line = 179
+  accepted_in = "pin-unlock"
+  reason = "Equivalent mutant: typeof left === 'number' -> true is guarded by Number.isSafeInteger(left), which rejects every non-number, so behaviour is identical."

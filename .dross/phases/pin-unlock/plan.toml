@@ -1,4 +1,4 @@
-task_seq = 13
+task_seq = 17
 
 [phase]
   id = "pin-unlock"
@@ -225,3 +225,43 @@ task_seq = 13
     '''if revoke-all does not reach other devices end-to-end, TestRun_RevokeAllDevices fails: two clients each set a PIN; A calls revoke-all; B's POST /unlock with the right PIN -> 401 device_revoked; A's unlock -> 204''',
   ]
   status = "done"
+
+[[task]]
+  id = "t-14"
+  wave = 7
+  title = "Pin sweeper and double-fault cleanup logs"
+  files = ["internal/auth/auth_test.go", "internal/api/pin_test.go", "internal/api/unlock_test.go"]
+  description = "Verify remediation (tests only). Kill log-only survivors: auth.go RunSweeper switch lines 305/307 (session sweep) and 315/317 (device sweep) — assert error line only when the sweep errors with a live ctx, info line with count only when n>0, and no line when n==0 or no error; pin.go:99 — attach-failure cleanup logs 'drop unattached device failed' only when DeleteDevice errors; unlock.go:152 — touch-failure cleanup logs 'unlock: drop unsent session failed' only when Sessions.Delete errors. Use the package's existing captured-slog and store-fault patterns."
+  covers = ["c-3", "c-7"]
+  test_contract = ["if the sweeper logs on a clean sweep or with count 0, or misses error/count lines, TestRunSweeper_Logs fails (sessions and devices legs, both sides of n>0 and err!=nil)", "if pin.go:99 or unlock.go:152 negate their derr checks, the cleanup-log tests fail: line present only when the cleanup delete itself fails"]
+  status = "pending"
+
+[[task]]
+  id = "t-15"
+  wave = 7
+  title = "Pin PinPad keys, cap and submit path"
+  files = ["web/src/lib/PinPad.test.ts", "web/src/App.test.ts", "web/src/lib/api.test.ts"]
+  description = "Verify remediation (tests only). Kill the hand-verified survivors in PinPad.svelte (DIGITS literal :11 incl. keys 8 and 0, canSubmit <= MAX :17, backspace pending guard :37, pending=true :44, error reset :45/:49, network error object :62 code+text, Delete disabled :88 pending||empty, Unlocking… label :95), App.svelte:50 (ready=false during unlock refresh) and :74 (settings route renders Settings only when signed in), api.ts:131 (locked starts false). If a mutant is provably equivalent through the UI, do not contort a test — name it and why in the report."
+  covers = ["c-3", "c-4"]
+  test_contract = ["if any digit key is wrong/missing, the 6-digit cap becomes < or the Delete/pending guards drop, PinPad.test.ts fails", "if a network failure stops showing data-error=network with its text, or the label stops reading Unlocking… while pending, PinPad.test.ts fails", "if App keeps ready=true across unlock refresh or renders Settings without a user, or locked starts true, App.test.ts / api.test.ts fail"]
+  status = "pending"
+
+[[task]]
+  id = "t-16"
+  wave = 7
+  title = "Pin Settings messages, resets and retry gate"
+  files = ["web/src/lib/Settings.test.ts"]
+  description = "Verify remediation (tests only). Kill the 20 hand-verified Settings.svelte survivors: network error object :40 (code network + text), initial pin/confirm/password :13-:15, pending initial :16 and :30, validation texts :54/:55/:70/:83, clearFields body :59-:62 (all three fields empty after success), :75 if(ok) gate (failure keeps hasPin, fields and no note), success notes :78/:90, :113 Try again shown only when hasPin===null && error && !pending and reloads status. If a mutant is provably equivalent, name it and why in the report."
+  covers = ["c-5"]
+  test_contract = ["if a success stops clearing pin/confirm/password, or a failed save/remove still flips hasPin or shows a note, Settings.test.ts fails", "if any validation or success message text changes, or Try again appears on a non-load error / disappears on a load error, Settings.test.ts fails"]
+  status = "pending"
+
+[[task]]
+  id = "t-17"
+  wave = 7
+  title = "Pin idle polling stop and capture listeners"
+  files = ["web/src/lib/activeGrants.test.ts"]
+  description = "Verify remediation (tests only). Kill activeGrants.ts survivors: :88 idle tick clears the interval (no double interval after wake), :108 input listeners registered with capture:true (an event whose propagation is stopped at the target still wakes polling), :110 stop() clears a running interval (no refresh after stop under fake timers). If a mutant is provably equivalent (e.g. clearInterval(null) no-op), name it and why in the report."
+  covers = ["c-3"]
+  test_contract = ["if stop() leaves the interval running, or idle-then-wake leaves two intervals, activeGrants.test.ts counts extra refresh calls and fails", "if input listeners lose capture, a stopPropagation'd keydown no longer wakes polling and activeGrants.test.ts fails"]
+  status = "pending"
