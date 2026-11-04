@@ -12,6 +12,16 @@
       "completed_at": "2026-11-04T12:02:53.442559Z",
       "notes": "quick: Change web/src/lib/History.svelte:119 from class={{ removed: removed !== null }} to the behaviour-identical class:removed={removed !== null} so Stryker's ObjectLiteral instrumentation no longer breaks Svelte compilation (unblocks grant-history verify TS mutation leg)"
     },
+    "quick-2": {
+      "files": [
+        "web/src/lib/History.panel.test.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/history.test.ts"
+      ],
+      "commit": "786cf81",
+      "completed_at": "2026-11-04T13:16:23.459876Z",
+      "notes": "quick: kill the 21 real survivors with tests in History.panel.test.ts / history.test.ts / api.test.ts"
+    },
     "t-1": {
       "files": [
         "internal/store/migrations/0009_grant_history.sql",
