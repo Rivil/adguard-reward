@@ -204,6 +204,7 @@ func TestSchema_Sessions(t *testing.T) {
 		{"created_at", "INTEGER", true, 0},
 		{"last_seen_at", "INTEGER", true, 0},
 		{"expires_at", "INTEGER", true, 0},
+		{"device_id", "INTEGER", false, 0}, // 0010_devices.sql
 	}
 	if fmt.Sprint(got) != fmt.Sprint(want) {
 		t.Fatalf("table_info(sessions) =\n %v\nwant\n %v", got, want)
