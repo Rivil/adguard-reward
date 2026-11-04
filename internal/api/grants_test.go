@@ -692,3 +692,95 @@ func TestGrants_UnknownCustom(t *testing.T) {
 		t.Errorf("%d set_rules POSTs after rejected creates", n)
 	}
 }
+
+// snapshotNames is the grant's stored name snapshot, service id to name.
+func (h *harness) snapshotNames(grantID int64) map[string]string {
+	h.t.Helper()
+	rows, err := h.store.DB().Query(`SELECT service_id, name FROM grant_service_names WHERE grant_id = ?`, grantID)
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	defer rows.Close()
+	out := map[string]string{}
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			h.t.Fatal(err)
+		}
+		out[id] = name
+	}
+	if err := rows.Err(); err != nil {
+		h.t.Fatal(err)
+	}
+	return out
+}
+
+func (h *harness) nameRows() int {
+	h.t.Helper()
+	var n int
+	if err := h.store.DB().QueryRow(`SELECT count(*) FROM grant_service_names`).Scan(&n); err != nil {
+		h.t.Fatal(err)
+	}
+	return n
+}
+
+// TestGrantCreate_SnapshotsNames grants a built-in and a custom service:
+// both names are snapshotted from the catalogue the handler already read,
+// so the create costs exactly one catalogue request.
+func TestGrantCreate_SnapshotsNames(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	cs := createCustom(t, h, cookie, "Portal", "a.com")
+	hits := h.fake.CountRequests("GET", "/control/blocked_services/all")
+
+	created := h.grantOK(cookie, ada.ID, []string{"tiktok", cs.ServiceID}, 1800)
+	want := map[string]string{"tiktok": "TikTok", cs.ServiceID: "Portal"}
+	if got := h.snapshotNames(created.ID); !reflect.DeepEqual(got, want) {
+		t.Errorf("snapshot = %v, want %v", got, want)
+	}
+	if n := h.fake.CountRequests("GET", "/control/blocked_services/all") - hits; n != 1 {
+		t.Errorf("create read the catalogue %d times, want 1 (names come from the same read)", n)
+	}
+}
+
+// TestGrantCreate_SnapshotTrimmedID sends a padded id: the snapshot is keyed
+// by the trimmed id the grant stores.
+func TestGrantCreate_SnapshotTrimmedID(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+
+	created := h.grantOK(cookie, ada.ID, []string{"  tiktok\t"}, 1800)
+	if got, want := h.snapshotNames(created.ID), map[string]string{"tiktok": "TikTok"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("snapshot = %v, want %v", got, want)
+	}
+}
+
+// TestGrantCreate_RejectNoNames: a 409 overlap and a 422 unknown service
+// write no name rows.
+func TestGrantCreate_RejectNoNames(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	h.grantOK(cookie, ada.ID, []string{"tiktok"}, 1800)
+	if n := h.nameRows(); n != 1 {
+		t.Fatalf("precondition: %d name rows, want 1", n)
+	}
+
+	for _, tc := range []struct {
+		name     string
+		services []string
+		want     int
+	}{
+		{"overlap", []string{"roblox", "tiktok"}, http.StatusConflict},
+		{"unknown service", []string{"roblox", "nope"}, http.StatusUnprocessableEntity},
+	} {
+		if w := h.postGrant(cookie, grantBody(ada.ID, tc.services, 1800)); w.Code != tc.want {
+			t.Errorf("%s: status %d, want %d (%s)", tc.name, w.Code, tc.want, w.Body.String())
+		}
+		if n := h.nameRows(); n != 1 {
+			t.Errorf("%s: %d name rows after a rejected create, want 1", tc.name, n)
+		}
+	}
+}

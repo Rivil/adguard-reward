@@ -44,9 +44,11 @@ type ChildStore interface {
 // Grants is the slice of *grants.Engine the grant, toggle and client-write
 // handlers need. It speaks store.Grant and the engine's sentinels (ErrGrantNotFound,
 // *ErrRevertFailed, *ErrAdoptFailed) plus the store's *ErrGrantOverlap and
-// the AdGuard client's write errors.
+// the AdGuard client's write errors. Grants are created with their service
+// names snapshotted (locked service_names), so the slice carries CreateNamed
+// rather than Create.
 type Grants interface {
-	Create(ctx context.Context, childID int64, services, clients []string, d time.Duration) (grants.Result, error)
+	CreateNamed(ctx context.Context, childID int64, services, clients []string, d time.Duration, names map[string]string) (grants.Result, error)
 	List(ctx context.Context) ([]store.Grant, error)
 	Extend(ctx context.Context, id int64, d time.Duration) (store.Grant, error)
 	End(ctx context.Context, id int64) error
