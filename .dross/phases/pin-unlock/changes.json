@@ -89,6 +89,70 @@
         }
       ]
     },
+    "t-14": {
+      "files": [
+        "internal/auth/auth_test.go",
+        "internal/api/pin_test.go",
+        "internal/api/unlock_test.go"
+      ],
+      "commit": "9294982",
+      "completed_at": "2026-11-04T19:07:50.327798Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "TestRunSweeper_Logs",
+          "loc": "internal/auth/auth_test.go:762",
+          "what": "pins sweeper log lines and the attach/touch double-fault cleanup logs on both sides of their error checks"
+        }
+      ]
+    },
+    "t-15": {
+      "files": [
+        "web/src/lib/PinPad.test.ts",
+        "web/src/App.test.ts",
+        "web/src/lib/api.test.ts"
+      ],
+      "commit": "d376eae",
+      "completed_at": "2026-11-04T19:12:13.198224Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "PinPad.test.ts",
+          "loc": "web/src/lib/PinPad.test.ts:237",
+          "what": "pins PinPad keys, 6-digit cap, pending/Delete guards, network error and App unlock/settings render gates"
+        }
+      ]
+    },
+    "t-16": {
+      "files": [
+        "web/src/lib/Settings.test.ts"
+      ],
+      "commit": "0f1d8f2",
+      "completed_at": "2026-11-04T19:14:03.720926Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "Settings messages/resets/gates suite",
+          "loc": "web/src/lib/Settings.test.ts:222",
+          "what": "pins Settings validation/success texts, field clearing, failure keeps state, in-flight disable and the Try again gate"
+        }
+      ]
+    },
+    "t-17": {
+      "files": [
+        "web/src/lib/activeGrants.test.ts"
+      ],
+      "commit": "4be954d",
+      "completed_at": "2026-11-04T19:15:44.315327Z",
+      "landmarks": [
+        {
+          "feature": "device PIN unlock",
+          "symbol": "waking off the old cadence test",
+          "loc": "web/src/lib/activeGrants.test.ts:204",
+          "what": "pins one interval after an off-phase wake and capture-phase input listeners for idle polling"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/store/migrations/0010_devices.sql",
@@ -446,6 +510,98 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "TestRun_PinSurvivesRestart also checks zero /control/login hits on unlock and that a correct PIN resets the counter, which goes beyond the restart contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-14": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Each cleanup-log test has a positive control (the attach/touch failure line is present) and checks the leftover row count, so the fault injection is shown to reach the code under test",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRunSweeper_Logs uses a real 1ms ticker and waits for a second session sweep, so it depends on timing, but it has a 1s deadline and removes duplicate log lines before comparing, so extra ticks cannot make it flaky",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-15": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-3",
+          "text": "PinPad.svelte:37 backspace pending guard is untestable through the UI: Delete is disabled while pending, so the click never reaches backspace(). The in-flight Delete click in 'while unlocking…' cannot fail if the guard is removed, yet its comment says it does. Name this mutant as equivalent in the report rather than relying on that assertion.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "api.test.ts 'a fresh load starts unlocked' re-imports api via vi.resetModules, which adds a second popstate listener bound to the throwaway module's stores; harmless, but a side effect left behind for the rest of the file.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-16": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "Settings.svelte:16 pending initial value has no killing test; it looks equivalent because onMount's load() sets pending=true synchronously in run() and the form and Try again are hidden while hasPin is null. The record asks for it to be named as equivalent in the report.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "Replacing `error` with true in the :113 Try again condition is only observable in the moment before mount, so it is effectively equivalent; the hasPin===null and !pending parts are each covered by the failed-save/remove and held-reload tests.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 'a first set notes PIN set' test asserts the AdGuard password field is empty, but nothing was ever typed there, so that one assertion is vacuous. Password clearing is properly covered by the change test.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-17": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "The diff adds no new test for line 110 (stop() clearing a running interval). That contract line rests on the existing 'polls on the interval and stops' test: stop() runs at 105s with the last input at 90s, so a leaked interval would poll at 120s and break toHaveBeenCalledTimes(5). The remaining condition mutant, `if (true) clearInterval(timer)`, is equivalent because clearInterval(null) does nothing. The task asks for such mutants to be named in the report, which is outside this diff and not checked here.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "The new tests time their checks precisely. A wake at 67s puts it 8s before the dead interval's 75s tick, which separates one interval from two. The stopPropagation test covers both pointerdown and keydown, and its button is removed in a finally block.",
           "resolution": "non-blocking, left"
         }
       ]

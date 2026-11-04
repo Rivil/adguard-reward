@@ -78,6 +78,10 @@
   name = "stryker-static-pin-unlock"
   reason = "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
 
+[[category]]
+  name = "activegrants-clear-null"
+  reason = "Equivalent mutant: the guard is 'if (timer !== null) clearInterval(timer)'; forcing it true only adds clearInterval(null), which is a no-op. The false side is killed by activeGrants.test.ts (off-phase wake / stop tests)."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -1859,3 +1863,30 @@
   line = 179
   accepted_in = "pin-unlock"
   reason = "Equivalent mutant: typeof left === 'number' -> true is guarded by Number.isSafeInteger(left), which rejects every non-number, so behaviour is identical."
+
+[[accepted]]
+  key = "245b4e6343fd38eb"
+  file = "web/src/lib/activeGrants.ts"
+  op = "ConditionalExpression"
+  text = "if (timer !== null) clearInterval(timer)"
+  line = 88
+  category = "activegrants-clear-null"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "60acbab3be5b6dfd"
+  file = "web/src/lib/activeGrants.ts"
+  op = "ConditionalExpression"
+  text = "if (timer !== null) clearInterval(timer)"
+  line = 110
+  category = "activegrants-clear-null"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "a5c6f882ad9a267f"
+  file = "web/src/lib/activeGrants.ts"
+  op = "BooleanLiteral"
+  text = "for (const e of INPUT_EVENTS) document.addEventListener(e, onInput, { capture: true, passive: true })"
+  line = 108
+  accepted_in = "pin-unlock"
+  reason = "Equivalent mutant: the surviving true->false is passive (onInput never calls preventDefault, so passive is unobservable); a capture:false mutant is killed by 'stop removes the input listeners' and the stopPropagation wake test."
