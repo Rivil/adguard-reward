@@ -5,7 +5,7 @@ import { tick } from 'svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.svelte'
-import { historyChild, me, navigate, route, setOnUnauthorized } from './lib/api'
+import { historyChild, locked, me, navigate, route, setOnUnauthorized } from './lib/api'
 
 type Call = { method: string; url: string; init: RequestInit }
 type Answer = () => Response | Promise<Response>
@@ -47,6 +47,7 @@ afterEach(() => {
   history.replaceState(null, '', '/')
   route.set('home')
   historyChild.set(null)
+  locked.set(false)
 })
 
 describe('App', () => {
@@ -479,6 +480,127 @@ describe('history route', () => {
 
     expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
     expect(location.pathname + location.search).toBe('/history?child=3')
+    expect(screen.queryByText(/Signed in as/)).toBeNull()
+  })
+})
+
+describe('App PIN lock', () => {
+  const pinRequired = () => json(401, { error: 'pin_required', message: 'enter your PIN' })
+  const clients = () => json(200, { clients: [] })
+  const atChildren = () => {
+    history.replaceState(null, '', '/children')
+    route.set('children')
+  }
+
+  it('pin_required on /me shows the pad on the same URL; unauthorized shows Sign in', async () => {
+    atChildren()
+    mockFetch({ '/api/v1/me': pinRequired })
+    render(App)
+
+    expect(await screen.findByRole('dialog')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Unlock' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull()
+    expect(location.pathname).toBe('/children')
+    expect(get(locked)).toBe(true)
+  })
+
+  it('a plain 401 on /me at /children shows Sign in, not the pad', async () => {
+    atChildren()
+    mockFetch({ '/api/v1/me': noSession })
+    render(App)
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('a wrong PIN keeps the pad and the location', async () => {
+    atChildren()
+    mockFetch({
+      '/api/v1/me': pinRequired,
+      'POST /api/v1/unlock': () => json(401, { error: 'bad_pin', message: 'wrong pin', attempts_remaining: 4 }),
+    })
+    render(App)
+    await screen.findByRole('dialog')
+    await fireEvent.input(screen.getByLabelText('PIN'), { target: { value: '0000' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+
+    expect((await screen.findByRole('alert')).textContent).toContain('4 attempts left')
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    expect((screen.getByLabelText('PIN') as HTMLInputElement).value).toBe('')
+    expect(location.pathname).toBe('/children')
+    expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull()
+  })
+
+  it('device_revoked from unlock falls back to the login page', async () => {
+    atChildren()
+    mockFetch({
+      '/api/v1/me': pinRequired,
+      'POST /api/v1/unlock': () => json(401, { error: 'device_revoked', message: 'revoked' }),
+    })
+    render(App)
+    await screen.findByRole('dialog')
+    await fireEvent.input(screen.getByLabelText('PIN'), { target: { value: '1234' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(location.pathname).toBe('/login')
+    expect(get(locked)).toBe(false)
+  })
+
+  it('unlocking removes the pad and the route refetches', async () => {
+    atChildren()
+    let state: 'ok' | 'locked' = 'ok'
+    const calls = mockFetch({
+      '/api/v1/me': () => (state === 'ok' ? signedIn() : pinRequired()),
+      '/api/v1/children': () => (state === 'ok' ? noChildren() : pinRequired()),
+      '/api/v1/clients': () => (state === 'ok' ? clients() : pinRequired()),
+      'POST /api/v1/unlock': () => {
+        state = 'ok'
+        return new Response(null, { status: 204 })
+      },
+    })
+    render(App)
+    expect(await screen.findByRole('heading', { name: 'Children' })).toBeTruthy()
+    const childrenFetches = () => calls.filter((c) => c.url === '/api/v1/children').length
+    const before = childrenFetches()
+    expect(before).toBeGreaterThan(0)
+
+    // The idle window lapses server-side; the next request 401s pin_required.
+    state = 'locked'
+    await expect(me()).rejects.toMatchObject({ status: 401, code: 'pin_required' })
+    expect(await screen.findByRole('dialog')).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Children' })).toBeNull()
+    expect(location.pathname).toBe('/children')
+
+    await fireEvent.input(screen.getByLabelText('PIN'), { target: { value: '1234' } })
+    await fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+
+    expect(await screen.findByRole('heading', { name: 'Children' })).toBeTruthy()
+    expect(screen.queryByRole('dialog')).toBeNull()
+    await vi.waitFor(() => expect(childrenFetches()).toBeGreaterThan(before))
+    expect(location.pathname).toBe('/children')
+    expect(get(locked)).toBe(false)
+  })
+
+  it("concurrent pin_required responses from Home's fetches render exactly one pad", async () => {
+    // /me succeeds, so Home mounts; every fetch Home makes on mount then
+    // races back 401 pin_required.
+    let pinResponses = 0
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string) => {
+        if (url === '/api/v1/me') return signedIn()
+        pinResponses++
+        return pinRequired()
+      }),
+    )
+    render(App)
+
+    expect(await screen.findAllByRole('dialog')).toHaveLength(1)
+    await vi.waitFor(() => expect(pinResponses).toBeGreaterThanOrEqual(2))
+    await tick()
+    expect(screen.getAllByRole('dialog')).toHaveLength(1)
+    expect(screen.getAllByRole('button', { name: 'Unlock' })).toHaveLength(1)
     expect(screen.queryByText(/Signed in as/)).toBeNull()
   })
 })
