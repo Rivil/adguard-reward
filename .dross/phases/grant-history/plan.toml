@@ -26,14 +26,10 @@ task_seq = 10
   id = "t-1"
   wave = 1
   title = "Add grant-history schema migration 0009"
-  files = ["internal/store/migrations/0009_grant_history.sql", "internal/store/store_test.go"]
-  description = '''Add grants.end_reason, the grant_service_names / grant_service_removals / grant_extensions tables and grants_child_history_idx exactly as pinned in the header. No UPDATE of existing rows.'''
+  files = ["internal/store/migrations/0009_grant_history.sql", "internal/store/store_test.go", "internal/store/children.go", "internal/store/children_test.go"]
+  description = "Add grants.end_reason, children.history_after_grant_id (INTEGER NOT NULL DEFAULT 0), the grant_service_names / grant_service_removals / grant_extensions tables and grants_child_history_idx as pinned in the header. No UPDATE of existing rows. CreateChild sets history_after_grant_id = COALESCE(MAX(grants.id), 0) in its insert tx."
   covers = ["c-1", "c-2", "c-3", "c-6"]
-  test_contract = [
-    '''if the migration backfills or rewrites legacy rows, TestMigrate0009_LegacyRowsUntouched fails: a store migrated through 0008 with one expired, one ended and one active grant, then upgraded, keeps status, started_at, ends_at, ended_at, grant_services and grant_clients byte-identical and end_reason NULL on all three''',
-    '''if the CHECK constraints are missing, TestMigrate0009_Checks fails: INSERT with end_reason='bogus' is rejected, and a grant_service_removals row with reason other than 'permanent_block' is rejected''',
-    '''if migration ordering breaks, TestMigrate0009_Order fails: schema_migrations lists 0009_grant_history.sql directly after 0008_service_toggles.sql''',
-  ]
+  test_contract = ["if the migration backfills or rewrites legacy rows, TestMigrate0009_LegacyRowsUntouched fails: a store migrated through 0008 with one expired, one ended and one active grant, then upgraded, keeps status, started_at, ends_at, ended_at, grant_services and grant_clients byte-identical and end_reason NULL on all three", "if the CHECK constraints are missing, TestMigrate0009_Checks fails: INSERT with end_reason='bogus' is rejected, and a grant_service_removals row with reason other than 'permanent_block' is rejected", "if migration ordering breaks, TestMigrate0009_Order fails: schema_migrations lists 0009_grant_history.sql directly after 0008_service_toggles.sql", "if CreateChild does not set the watermark inside its tx, TestCreateChild_HistoryWatermark fails: with grants up to id 7 a new child gets history_after_grant_id 7; with no grants it gets 0; children existing before 0009 read 0 after the upgrade"]
   status = "pending"
 
 [[task]]
@@ -110,17 +106,10 @@ task_seq = 10
   wave = 3
   title = "Add paged per-child history store read"
   files = ["internal/store/history.go", "internal/store/history_test.go"]
-  description = '''ListGrantHistory(ctx, childID, before, limit) reads grants, live + removed services with snapshot names, extensions and the child row in one inTx; reads limit+1 to derive has-more; drops grants with started_at < child.created_at.'''
+  description = "ListGrantHistory(ctx, childID, before, limit) reads grants, live + removed services with snapshot names, extensions and the child row in one inTx; reads limit+1 to derive has-more; keeps only grants with id > child.history_after_grant_id (no clock comparison)."
   covers = ["c-2", "c-3", "c-4", "c-6"]
   depends_on = ["t-3", "t-4"]
-  test_contract = [
-    '''if the page boundary is off by one, TestListGrantHistory_Paging fails: 51 grants give a first page of 50 newest-first with has-more; exactly 50 gives has-more false''',
-    '''if the keyset cursor is not stable, TestListGrantHistory_StableCursor fails: a grant created between the page-1 and page-2 reads appears neither in page 2 nor as a duplicate''',
-    '''if a reused child id inherits history, TestListGrantHistory_ReusedChildID fails: delete the highest-id child, create a new one (SQLite reuses the id) -> the new child's history is empty''',
-    '''if removed services or extensions are dropped, TestListGrantHistory_RemovalsAndExtensions fails: a grant with one trimmed and one live service lists both with removed_at/reason on the trimmed one; a grant ended by its last trim still lists that service; extensions come back ascending''',
-    '''if legacy rows get inferred reasons or leak across children, TestListGrantHistory_Legacy fails: a grant seeded at 0008 and upgraded returns its services with empty snapshot name, its times, status 'ended' and NULL reason; another child's grants never appear''',
-    '''if history is not durable, TestListGrantHistory_Reopen fails: store Close + Open on the same dir returns an identical history''',
-  ]
+  test_contract = ["if the page boundary is off by one, TestListGrantHistory_Paging fails: 51 grants give a first page of 50 newest-first with has-more; exactly 50 gives has-more false", "if the keyset cursor is not stable, TestListGrantHistory_StableCursor fails: a grant created between the page-1 and page-2 reads appears neither in page 2 nor as a duplicate", "if a reused child id inherits history, TestListGrantHistory_ReusedChildID fails: child A (highest id) gets grants at fixed t0, is deleted, and a new child created with the same id (asserted equal) has an empty history; a grant then created for the new child is its only entry. Grant start times are injected and never compared with children.created_at", "if removed services or extensions are dropped, TestListGrantHistory_RemovalsAndExtensions fails: a grant with one trimmed and one live service lists both with removed_at/reason on the trimmed one; a grant ended by its last trim still lists that service; extensions come back ascending", "if legacy rows get inferred reasons or leak across children, TestListGrantHistory_Legacy fails: a grant seeded at 0008 and upgraded returns its services with empty snapshot name, its times, status 'ended' and NULL reason; another child's grants never appear", "if history is not durable, TestListGrantHistory_Reopen fails: store Close + Open on the same dir returns an identical history", "if removed services lose their snapshot name, TestListGrantHistory_RemovedServiceKeepsName fails: a grant created via CreateGrantNamed with {tiktok: 'TikTok', youtube: 'YouTube'} has youtube trimmed by a block toggle; the history read returns youtube marked removed with name 'YouTube' from grant_service_names, not an empty name (names must not be joined through the live grant_services rows)"]
   status = "pending"
 
 [[task]]
