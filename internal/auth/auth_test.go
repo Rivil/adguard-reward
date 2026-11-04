@@ -8,9 +8,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -672,5 +674,197 @@ func TestPINIdle_Option(t *testing.T) {
 	}
 	if !s.ExpiresAt.Equal(t0.Add(time.Minute)) {
 		t.Fatalf("PINIdle 1m: ExpiresAt = %v, want t0+1m", s.ExpiresAt)
+	}
+}
+
+// sweepScript answers one sweeper leg with a fixed (n, err), counting the
+// calls and running hook (when set) inside each.
+type sweepScript struct {
+	mu    sync.Mutex
+	n     int
+	err   error
+	hook  func()
+	calls int
+}
+
+func (s *sweepScript) sweep() (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.calls++
+	if s.hook != nil {
+		s.hook()
+	}
+	return s.n, s.err
+}
+
+func (s *sweepScript) callCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.calls
+}
+
+// scriptedSessions is a fakeStore whose DeleteExpired answers from a script.
+type scriptedSessions struct {
+	*fakeStore
+	script *sweepScript
+}
+
+func (s scriptedSessions) DeleteExpired(context.Context, time.Time) (int, error) {
+	return s.script.sweep()
+}
+
+// scriptedDevices is a fakeDevices whose DeleteExpiredDevices answers from
+// a script.
+type scriptedDevices struct {
+	*fakeDevices
+	script *sweepScript
+}
+
+func (s scriptedDevices) DeleteExpiredDevices(context.Context, time.Time) (int, error) {
+	return s.script.sweep()
+}
+
+// sweepLines renders each JSON log record as "LEVEL msg k=v..." (time
+// dropped, other attrs sorted) and returns the distinct lines, sorted: a
+// sweeper that ticked several times logs each line once per tick.
+func sweepLines(t *testing.T, out string) []string {
+	t.Helper()
+	seen := map[string]bool{}
+	for _, raw := range strings.Split(out, "\n") {
+		if raw == "" {
+			continue
+		}
+		var rec map[string]any
+		if err := json.Unmarshal([]byte(raw), &rec); err != nil {
+			t.Fatalf("log line %q: %v", raw, err)
+		}
+		var keys []string
+		for k := range rec {
+			if k != "time" && k != "level" && k != "msg" {
+				keys = append(keys, k)
+			}
+		}
+		slices.Sort(keys)
+		line := fmt.Sprint(rec["level"], " ", rec["msg"])
+		for _, k := range keys {
+			line += fmt.Sprint(" ", k, "=", rec[k])
+		}
+		seen[line] = true
+	}
+	lines := []string{}
+	for l := range seen {
+		lines = append(lines, l)
+	}
+	slices.Sort(lines)
+	return lines
+}
+
+func TestRunSweeper_Logs(t *testing.T) {
+	boom := errors.New("disk on fire")
+	type leg struct {
+		n   int
+		err error
+	}
+	cases := []struct {
+		name     string
+		sessions leg
+		devices  leg
+		// cancelInSweep cancels the sweeper's ctx inside the session leg,
+		// so both legs fail on a done ctx: a shutdown, not a fault.
+		cancelInSweep bool
+		want          []string
+	}{
+		{name: "clean", want: []string{}},
+		{
+			name:     "removed",
+			sessions: leg{n: 2},
+			devices:  leg{n: 3},
+			want: []string{
+				"INFO expired devices removed count=3",
+				"INFO expired sessions removed count=2",
+			},
+		},
+		{
+			name:     "both fail",
+			sessions: leg{err: boom},
+			devices:  leg{err: boom},
+			want: []string{
+				"ERROR device sweep failed err=disk on fire",
+				"ERROR session sweep failed err=disk on fire",
+			},
+		},
+		{
+			name:     "sessions fail, devices removed",
+			sessions: leg{err: boom},
+			devices:  leg{n: 4},
+			want: []string{
+				"ERROR session sweep failed err=disk on fire",
+				"INFO expired devices removed count=4",
+			},
+		},
+		{
+			name:     "sessions removed, devices fail",
+			sessions: leg{n: 5},
+			devices:  leg{err: boom},
+			want: []string{
+				"ERROR device sweep failed err=disk on fire",
+				"INFO expired sessions removed count=5",
+			},
+		},
+		{
+			name:          "ctx done",
+			sessions:      leg{err: boom},
+			devices:       leg{err: boom},
+			cancelInSweep: true,
+			want:          []string{},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			log := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			sctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			sess := &sweepScript{n: tc.sessions.n, err: tc.sessions.err}
+			devs := &sweepScript{n: tc.devices.n, err: tc.devices.err}
+			if tc.cancelInSweep {
+				sess.hook = cancel
+			}
+			m := New(scriptedSessions{newFake(), sess}, Options{
+				Log:     log,
+				Devices: scriptedDevices{newFakeDevices(nil), devs},
+			})
+
+			done := make(chan struct{})
+			go func() {
+				m.RunSweeper(sctx, time.Millisecond)
+				close(done)
+			}()
+			if !tc.cancelInSweep {
+				// A second session sweep means the first tick, device leg
+				// and its log line included, has finished.
+				deadline := time.Now().Add(time.Second)
+				for sess.callCount() < 2 && time.Now().Before(deadline) {
+					time.Sleep(time.Millisecond)
+				}
+				cancel()
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				t.Fatal("RunSweeper did not return")
+			}
+			if n := sess.callCount(); !tc.cancelInSweep && n < 2 {
+				t.Fatalf("session sweep ran %d times within 1s, want >= 2", n)
+			}
+
+			if devs.callCount() == 0 {
+				t.Fatal("positive control: the device leg never ran")
+			}
+			// The buffer is read only after the sweeper goroutine is done.
+			if got := sweepLines(t, buf.String()); !slices.Equal(got, tc.want) {
+				t.Fatalf("sweeper log lines = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

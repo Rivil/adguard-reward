@@ -2,9 +2,12 @@ package api
 
 import (
 	"bytes"
+	"context"
 	"crypto/sha256"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -14,8 +17,98 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Rivil/adguard-reward/internal/adguard"
 	"github.com/Rivil/adguard-reward/internal/auth"
+	"github.com/Rivil/adguard-reward/internal/ratelimit"
 )
+
+// faultSessions is a SessionStore whose SetDevice and Delete fail with the
+// set error; every other call, and those two when unset, reach the store.
+type faultSessions struct {
+	auth.SessionStore
+	setDeviceErr, deleteErr error
+}
+
+func (f faultSessions) SetDevice(ctx context.Context, id, deviceID int64, expires time.Time) error {
+	if f.setDeviceErr != nil {
+		return f.setDeviceErr
+	}
+	return f.SessionStore.SetDevice(ctx, id, deviceID, expires)
+}
+
+func (f faultSessions) Delete(ctx context.Context, id int64) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+	return f.SessionStore.Delete(ctx, id)
+}
+
+// faultDevices is a DeviceStore whose TouchDevice and DeleteDevice fail
+// with the set error; every other call, and those two when unset, reach
+// the store.
+type faultDevices struct {
+	auth.DeviceStore
+	touchErr, deleteErr error
+}
+
+func (f faultDevices) TouchDevice(ctx context.Context, id int64, expires time.Time) error {
+	if f.touchErr != nil {
+		return f.touchErr
+	}
+	return f.DeviceStore.TouchDevice(ctx, id, expires)
+}
+
+func (f faultDevices) DeleteDevice(ctx context.Context, id int64) error {
+	if f.deleteErr != nil {
+		return f.deleteErr
+	}
+	return f.DeviceStore.DeleteDevice(ctx, id)
+}
+
+// rewire rebuilds the handler over the same store, fake, clock and log
+// buffer, with the manager and Deps reaching sessions and devices through
+// the given wrappers. Cookies issued before the rewire stay valid; Grants
+// is left nil — nothing here reaches it.
+func (h *harness) rewire(sessions auth.SessionStore, devices auth.DeviceStore) {
+	h.t.Helper()
+	log := slog.New(slog.NewJSONHandler(h.logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	client, err := adguard.New(h.fake.URL(), fakeUser, fakePass, adguard.WithLogger(log))
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	cfg := ratelimit.Defaults()
+	cfg.Now = h.clock.Now
+	h.h = New(Deps{
+		AdGuard:  client,
+		ClientIP: ClientIP(nil),
+		Log:      log,
+		Auth:     auth.New(sessions, auth.Options{Now: h.clock.Now, Log: log, ErrorWriter: UnauthorizedWriter, Devices: devices}),
+		Limiter:  ratelimit.New(cfg),
+		Sessions: sessions,
+		Children: h.store,
+		Buttons:  h.store,
+		Devices:  devices,
+	}).Handler()
+}
+
+// logsWithMsg returns the parsed log lines whose msg is msg.
+func (h *harness) logsWithMsg(msg string) []map[string]any {
+	h.t.Helper()
+	var out []map[string]any
+	for _, line := range strings.Split(h.logs.String(), "\n") {
+		if line == "" {
+			continue
+		}
+		var m map[string]any
+		if err := json.Unmarshal([]byte(line), &m); err != nil {
+			h.t.Fatalf("log line %q: %v", line, err)
+		}
+		if m["msg"] == msg {
+			out = append(out, m)
+		}
+	}
+	return out
+}
 
 func withDevice(v string) reqOpt {
 	return func(r *http.Request) { r.AddCookie(&http.Cookie{Name: auth.DeviceCookieName, Value: v}) }
@@ -338,5 +431,53 @@ func TestPinStatus(t *testing.T) {
 	}
 	if w := h.do(http.MethodGet, "/api/v1/pin", nil); w.Code != http.StatusUnauthorized {
 		t.Fatalf("GET /api/v1/pin without a session: %d, want 401", w.Code)
+	}
+}
+
+func TestSetPIN_AttachFailureCleanupLog(t *testing.T) {
+	attachErr := errors.New("attach refused")
+	for _, tc := range []struct {
+		name      string
+		deleteErr error
+		// devices is the device rows left behind: 0 when the cleanup
+		// delete ran, 1 when it failed.
+		devices int
+	}{
+		{name: "cleanup succeeds", devices: 0},
+		{name: "cleanup fails", deleteErr: errors.New("delete refused"), devices: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t, nil, nil)
+			session := h.loginOK()
+			h.rewire(
+				faultSessions{SessionStore: h.store, setDeviceErr: attachErr},
+				faultDevices{DeviceStore: h.store, deleteErr: tc.deleteErr},
+			)
+
+			w := h.do(http.MethodPost, "/api/v1/pin", map[string]string{"pin": "583920"}, withCookie(session))
+			if w.Code != http.StatusInternalServerError {
+				t.Fatalf("attach failing: %d %s, want 500", w.Code, w.Body.String())
+			}
+			if dc := deviceCookie(t, w); dc != nil {
+				t.Fatalf("attach failing set a device cookie: %+v", dc)
+			}
+			if n := len(h.logsWithMsg("attach device failed")); n != 1 {
+				t.Fatalf("positive control: %d attach device failed lines, want 1", n)
+			}
+			if n := h.deviceCount(); n != tc.devices {
+				t.Fatalf("device rows after the failed attach = %d, want %d", n, tc.devices)
+			}
+
+			drops := h.logsWithMsg("drop unattached device failed")
+			if tc.deleteErr == nil {
+				if len(drops) != 0 {
+					t.Fatalf("cleanup delete succeeded but logged %v", drops)
+				}
+				return
+			}
+			if len(drops) != 1 || drops[0]["level"] != "ERROR" || drops[0]["err"] != tc.deleteErr.Error() {
+				t.Fatalf("cleanup delete failed: lines %v, want one ERROR with err %q", drops, tc.deleteErr)
+			}
+		})
 	}
 }

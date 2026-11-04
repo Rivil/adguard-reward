@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
@@ -404,5 +405,62 @@ func TestUnlock_SpentDeviceRevokedOnSight(t *testing.T) {
 	}
 	if w := h.do(http.MethodGet, "/api/v1/me", nil, withCookie(session)); w.Code != http.StatusUnauthorized {
 		t.Fatalf("spent device's tagged session still live: %d", w.Code)
+	}
+}
+
+func TestUnlock_TouchFailureCleanupLog(t *testing.T) {
+	touchErr := errors.New("touch refused")
+	for _, tc := range []struct {
+		name      string
+		deleteErr error
+		// extra is the session rows the failed unlock leaves behind: 0
+		// when the cleanup delete ran, 1 when it failed.
+		extra int
+	}{
+		{name: "cleanup succeeds", extra: 0},
+		{name: "cleanup fails", deleteErr: errors.New("delete refused"), extra: 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			h := newHarness(t, nil, nil)
+			_, device := h.setPIN("583920")
+			sessions := func() int {
+				t.Helper()
+				var n int
+				if err := h.store.DB().QueryRow(`SELECT count(*) FROM sessions`).Scan(&n); err != nil {
+					t.Fatal(err)
+				}
+				return n
+			}
+			before := sessions()
+			h.rewire(
+				faultSessions{SessionStore: h.store, deleteErr: tc.deleteErr},
+				faultDevices{DeviceStore: h.store, touchErr: touchErr},
+			)
+
+			w := h.unlock(device, "583920")
+			if w.Code != http.StatusInternalServerError {
+				t.Fatalf("touch failing: %d %s, want 500", w.Code, w.Body.String())
+			}
+			if sc := sessionCookie(t, w); sc != nil {
+				t.Fatalf("touch failing set a session cookie: %+v", sc)
+			}
+			if n := len(h.logsWithMsg("unlock: touch device failed")); n != 1 {
+				t.Fatalf("positive control: %d touch device failed lines, want 1", n)
+			}
+			if n := sessions(); n != before+tc.extra {
+				t.Fatalf("session rows after the failed unlock = %d, want %d", n, before+tc.extra)
+			}
+
+			drops := h.logsWithMsg("unlock: drop unsent session failed")
+			if tc.deleteErr == nil {
+				if len(drops) != 0 {
+					t.Fatalf("cleanup delete succeeded but logged %v", drops)
+				}
+				return
+			}
+			if len(drops) != 1 || drops[0]["level"] != "ERROR" || drops[0]["err"] != tc.deleteErr.Error() {
+				t.Fatalf("cleanup delete failed: lines %v, want one ERROR with err %q", drops, tc.deleteErr)
+			}
+		})
 	}
 }
