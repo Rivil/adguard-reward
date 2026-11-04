@@ -2,7 +2,7 @@
 // Stryker disable all: test sources are not mutation targets
 import { get } from 'svelte/store'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { activeGrants, merge, refresh, remove, snapshot, start } from './activeGrants'
+import { IDLE_AFTER_MS, activeGrants, merge, refresh, remove, snapshot, start } from './activeGrants'
 import { setOnUnauthorized, type Grant } from './api'
 
 function grant(id: number, endsAt = '2026-09-21T11:00:00Z'): Grant {
@@ -34,6 +34,21 @@ function grantsServer(...answers: Answer[]) {
   })
   vi.stubGlobal('fetch', fetchFn)
   return { fetch: fetchFn, push: (a: Answer) => queue.push(a) }
+}
+
+/** A GET /api/v1/grants stub that always answers an empty list. */
+function grantsForever() {
+  const fetchFn = vi.fn(async (url: string) => {
+    if (url !== '/api/v1/grants') throw new Error('unexpected fetch ' + url)
+    return json(200, { grants: [] })
+  })
+  vi.stubGlobal('fetch', fetchFn)
+  return fetchFn
+}
+
+/** Someone touching the screen. */
+function input(type: 'pointerdown' | 'keydown' = 'pointerdown') {
+  document.body.dispatchEvent(new Event(type, { bubbles: true }))
 }
 
 const ok = (grants: Grant[]) => () => Promise.resolve(json(200, { grants }))
@@ -68,7 +83,9 @@ describe('activeGrants', () => {
     expect(server.fetch).toHaveBeenCalledTimes(1)
     await settle()
 
+    // Input before every tick keeps the screen in use, so idle never pauses it here.
     for (let i = 0; i < 3; i++) {
+      input()
       await vi.advanceTimersByTimeAsync(15000)
     }
     expect(server.fetch).toHaveBeenCalledTimes(4)
@@ -76,13 +93,16 @@ describe('activeGrants', () => {
     // A poll that does not come back: the interval must not start a second one.
     let release!: (r: Response) => void
     server.push(() => new Promise<Response>((r) => (release = r)))
+    input()
     await vi.advanceTimersByTimeAsync(15000)
     expect(server.fetch).toHaveBeenCalledTimes(5)
+    input()
     await vi.advanceTimersByTimeAsync(30000)
     expect(server.fetch).toHaveBeenCalledTimes(5)
 
     const again = start(15000)
     expect(again).toBe(stop)
+    input()
     await vi.advanceTimersByTimeAsync(15000)
     expect(server.fetch).toHaveBeenCalledTimes(5)
 
@@ -91,8 +111,94 @@ describe('activeGrants', () => {
     stop()
     stop = null
     server.push(ok([]))
+    input()
     await vi.advanceTimersByTimeAsync(60000)
     expect(server.fetch).toHaveBeenCalledTimes(5)
+  })
+
+  it('an untouched screen stops polling until input', async () => {
+    // Every poll slides the session; an open screen nobody touches must let
+    // the 15-minute PIN lock arrive.
+    vi.useFakeTimers()
+    const fetchFn = grantsForever()
+    stop = start(15000)
+    await settle()
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+
+    // Ticks at 15s, 30s, 45s poll; the 60s tick finds a minute without input.
+    await vi.advanceTimersByTimeAsync(IDLE_AFTER_MS)
+    expect(fetchFn).toHaveBeenCalledTimes(4)
+
+    for (let i = 0; i < (20 * 60 * 1000) / 15000; i++) await vi.advanceTimersByTimeAsync(15000)
+    expect(fetchFn).toHaveBeenCalledTimes(4)
+
+    // The next pointerdown polls at once and the 15s cadence resumes from it.
+    input('pointerdown')
+    expect(fetchFn).toHaveBeenCalledTimes(5)
+    await settle()
+    await vi.advanceTimersByTimeAsync(14999)
+    expect(fetchFn).toHaveBeenCalledTimes(5)
+    await vi.advanceTimersByTimeAsync(1)
+    expect(fetchFn).toHaveBeenCalledTimes(6)
+
+    // Input while in use only keeps it in use: no extra poll per tap.
+    input('pointerdown')
+    input('keydown')
+    expect(fetchFn).toHaveBeenCalledTimes(6)
+    await vi.advanceTimersByTimeAsync(15000)
+    expect(fetchFn).toHaveBeenCalledTimes(7)
+
+    // The last input was at the +15s tick: +45s and +60s still poll, +75s is a minute on and stops.
+    await vi.advanceTimersByTimeAsync(5 * 60 * 1000)
+    expect(fetchFn).toHaveBeenCalledTimes(9)
+
+    // A keydown wakes it the same way.
+    input('keydown')
+    expect(fetchFn).toHaveBeenCalledTimes(10)
+    await settle()
+    await vi.advanceTimersByTimeAsync(15000)
+    expect(fetchFn).toHaveBeenCalledTimes(11)
+  })
+
+  it('coming back into view wakes an idle screen', async () => {
+    vi.useFakeTimers()
+    const fetchFn = grantsForever()
+    const visibility = vi.spyOn(document, 'visibilityState', 'get')
+    try {
+      stop = start(15000)
+      await settle()
+      await vi.advanceTimersByTimeAsync(10 * 60 * 1000)
+      expect(fetchFn).toHaveBeenCalledTimes(4)
+
+      visibility.mockReturnValue('hidden')
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(fetchFn).toHaveBeenCalledTimes(4)
+
+      visibility.mockReturnValue('visible')
+      document.dispatchEvent(new Event('visibilitychange'))
+      expect(fetchFn).toHaveBeenCalledTimes(5)
+      await settle()
+      await vi.advanceTimersByTimeAsync(15000)
+      expect(fetchFn).toHaveBeenCalledTimes(6)
+    } finally {
+      visibility.mockRestore()
+    }
+  })
+
+  it('stop removes the input listeners', async () => {
+    vi.useFakeTimers()
+    const fetchFn = grantsForever()
+    stop = start(15000)
+    await settle()
+    await vi.advanceTimersByTimeAsync(IDLE_AFTER_MS)
+    expect(fetchFn).toHaveBeenCalledTimes(4)
+
+    stop()
+    stop = null
+    input('pointerdown')
+    input('keydown')
+    await vi.advanceTimersByTimeAsync(60000)
+    expect(fetchFn).toHaveBeenCalledTimes(4)
   })
 
   it('failure keeps grants and sets unreachable', async () => {

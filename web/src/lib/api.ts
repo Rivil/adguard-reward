@@ -1,12 +1,14 @@
 // The SPA's only door to /api/v1: every request carries the CSRF header and
 // the session cookie, every error arrives as an ApiError keyed by the
-// server's error code, and a 401 anywhere but the login route sends the
-// user back to the login page.
+// server's error code, and a 401 outside the login and unlock routes either
+// locks the screen behind the PIN pad (pin_required) or sends the user back
+// to the login page (any other code).
 import { writable } from 'svelte/store'
 
 export const CSRF_HEADER = 'X-Requested-With'
 export const CSRF_VALUE = 'adguard-reward'
 export const LOGIN_PATH = '/api/v1/login'
+export const UNLOCK_PATH = '/api/v1/unlock'
 
 export class ApiError extends Error {
   readonly status: number
@@ -15,20 +17,30 @@ export class ApiError extends Error {
   readonly retryAfter?: number
   /** The active grant a 409 names (grant creation, custom-service delete), when the envelope carries a numeric grant_id. */
   readonly grantId?: number
+  /** Wrong PINs left before the device is revoked, from a bad_pin envelope's whole-number attempts_remaining. */
+  readonly attemptsRemaining?: number
 
-  constructor(status: number, code: string, message: string, retryAfter?: number, grantId?: number) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    retryAfter?: number,
+    grantId?: number,
+    attemptsRemaining?: number,
+  ) {
     super(message)
     this.name = 'ApiError'
     this.status = status
     this.code = code
     this.retryAfter = retryAfter
     this.grantId = grantId
+    this.attemptsRemaining = attemptsRemaining
   }
 }
 
 // ---- routing -------------------------------------------------------------
 
-export type Route = 'login' | 'home' | 'children' | 'buttons' | 'services' | 'history'
+export type Route = 'login' | 'home' | 'children' | 'buttons' | 'services' | 'history' | 'settings'
 
 const PATHS: Record<Route, string> = {
   login: '/login',
@@ -37,6 +49,7 @@ const PATHS: Record<Route, string> = {
   buttons: '/buttons',
   services: '/services',
   history: '/history',
+  settings: '/settings',
 }
 
 /** Query parameters a route carries; only 'history' reads child. */
@@ -44,7 +57,8 @@ export interface RouteParams {
   child?: number | null
 }
 
-function routeFor(pathname: string): Route {
+/** The route a pathname names; anything unknown is home. */
+export function routeFor(pathname: string): Route {
   for (const r of Object.keys(PATHS) as Route[]) {
     if (r !== 'home' && PATHS[r] === pathname) return r
   }
@@ -109,11 +123,28 @@ if (typeof window !== 'undefined') {
   })
 }
 
-let onUnauthorized: () => void = () => navigate('login')
+/**
+ * True while the session has lapsed on a device with a PIN: the server
+ * answered 401 pin_required, so the app shows the PIN pad over the current
+ * page instead of the login page. The URL is kept; whoever unlocks clears it.
+ */
+export const locked = writable(false)
 
-/** Replace the 401 handler; tests inject a spy, the app keeps the default. */
+let onUnauthorized: () => void = () => {
+  locked.set(false)
+  navigate('login')
+}
+
+let onPinRequired: () => void = () => locked.set(true)
+
+/** Replace the signed-out 401 handler; tests inject a spy, the app keeps the default. */
 export function setOnUnauthorized(fn: () => void): void {
   onUnauthorized = fn
+}
+
+/** Replace the pin_required 401 handler; tests inject a spy, the app keeps the default. */
+export function setOnPinRequired(fn: () => void): void {
+  onPinRequired = fn
 }
 
 // ---- transport -----------------------------------------------------------
@@ -124,22 +155,39 @@ interface ErrorEnvelope {
   error?: unknown
   message?: unknown
   grant_id?: unknown
+  attempts_remaining?: unknown
 }
 
-async function readEnvelope(res: Response): Promise<{ code: string; message: string; grantId?: number }> {
+interface Envelope {
+  code: string
+  message: string
+  grantId?: number
+  attemptsRemaining?: number
+}
+
+async function readEnvelope(res: Response): Promise<Envelope> {
   let code = 'unknown'
   let message = res.statusText || `HTTP ${res.status}`
   let grantId: number | undefined
+  let attemptsRemaining: number | undefined
   try {
     const body = (await res.json()) as ErrorEnvelope
     if (typeof body?.error === 'string') code = body.error
     if (typeof body?.message === 'string') message = body.message
     if (typeof body?.grant_id === 'number') grantId = body.grant_id
+    const left = body?.attempts_remaining
+    if (typeof left === 'number' && Number.isSafeInteger(left) && left >= 0) attemptsRemaining = left
   } catch {
     // Not JSON: keep the status text.
   }
-  return { code, message, grantId }
+  return { code, message, grantId, attemptsRemaining }
 }
+
+/**
+ * Routes whose 401 is the caller's to show, not a lapsed session: a wrong
+ * password on login, a wrong PIN or a revoked device on unlock.
+ */
+const OWN_401 = new Set([LOGIN_PATH, UNLOCK_PATH])
 
 function retryAfterOf(res: Response): number | undefined {
   if (res.status !== 429) return undefined
@@ -165,9 +213,12 @@ export async function request<T>(method: Method, path: string, body?: unknown): 
     if (res.status === 204) return undefined as T
     return (await res.json()) as T
   }
-  const { code, message, grantId } = await readEnvelope(res)
-  const err = new ApiError(res.status, code, message, retryAfterOf(res), grantId)
-  if (res.status === 401 && path !== LOGIN_PATH) onUnauthorized()
+  const { code, message, grantId, attemptsRemaining } = await readEnvelope(res)
+  const err = new ApiError(res.status, code, message, retryAfterOf(res), grantId, attemptsRemaining)
+  if (res.status === 401 && !OWN_401.has(path)) {
+    if (code === 'pin_required') onPinRequired()
+    else onUnauthorized()
+  }
   throw err
 }
 
@@ -201,6 +252,43 @@ export async function logout(): Promise<void> {
 
 export function me(): Promise<Me> {
   return request<Me>('GET', '/api/v1/me')
+}
+
+// ---- device PIN ----------------------------------------------------------
+
+const PIN = '/api/v1/pin'
+
+export interface PinStatus {
+  /** Whether this device has a PIN, read from the session, never the cookie. */
+  has_pin: boolean
+}
+
+/**
+ * Trade the device cookie and a PIN for a fresh session. Its 401s (bad_pin
+ * with attemptsRemaining, device_revoked, unauthorized) are the caller's to
+ * show: they never reach the global handlers.
+ */
+export function unlock(pin: string): Promise<void> {
+  return request<void>('POST', UNLOCK_PATH, { pin })
+}
+
+export function pinStatus(): Promise<PinStatus> {
+  return request<PinStatus>('GET', PIN)
+}
+
+/** The first PIN on this device; the session alone is enough. */
+export function setPin(pin: string): Promise<void> {
+  return request<void>('POST', PIN, { pin })
+}
+
+/** Replace this device's PIN. A wrong or missing password is a 403 the caller shows. */
+export function changePin(pin: string, password: string): Promise<void> {
+  return request<void>('POST', PIN, { pin, password })
+}
+
+/** Drop this device's PIN; the session carries on unlocked. A wrong or missing password is a 403. */
+export function removePin(password: string): Promise<void> {
+  return request<void>('DELETE', PIN, { password })
 }
 
 // ---- children, clients, services ----------------------------------------
@@ -593,7 +681,15 @@ export function iconUrl(icon: string): string {
 export function messageFor(e: ApiError): string {
   switch (e.code) {
     case 'bad_credentials':
-      return 'Wrong username or password'
+      // A 403 is the password re-check on a PIN change or remove: no username was typed.
+      return e.status === 403 ? 'Wrong password' : 'Wrong username or password'
+    case 'reauth_required':
+      return 'Enter your AdGuard password'
+    case 'bad_pin':
+      if (e.attemptsRemaining === undefined) return 'Wrong PIN'
+      return `Wrong PIN — ${e.attemptsRemaining} ${e.attemptsRemaining === 1 ? 'attempt' : 'attempts'} left`
+    case 'device_revoked':
+      return 'This device was signed out — sign in with your password'
     case 'adguard_unavailable':
       return "Can't reach AdGuard Home — try again in a moment"
     case 'rate_limited':
