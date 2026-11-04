@@ -1,6 +1,6 @@
 {
   "phase": "permanent-toggles",
-  "generated_at": "2026-11-03T19:29:19.962639Z",
+  "generated_at": "2026-11-04T06:48:13.43569Z",
   "languages": [
     {
       "name": "go",
@@ -87,6 +87,39 @@
             "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
           },
           {
+            "File": "internal/grants/grants.go",
+            "Line": 345,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "bc02b0686e411159",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 404,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6bbce7448c751d07",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 85,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "cccf33fd143b660e",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -\u003e err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
             "File": "internal/grants/clients.go",
             "Line": 115,
             "Op": "CONDITIONALS_NEGATION",
@@ -129,39 +162,6 @@
             "Key": "37db173ea9b8e0ba",
             "Lifecycle": "accepted",
             "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-          },
-          {
-            "File": "internal/grants/grants.go",
-            "Line": 345,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "bc02b0686e411159",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
-          },
-          {
-            "File": "internal/grants/grants.go",
-            "Line": 404,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "6bbce7448c751d07",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
-          },
-          {
-            "File": "internal/grants/reconcile.go",
-            "Line": 85,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "cccf33fd143b660e",
-            "Lifecycle": "accepted",
-            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -\u003e err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
           }
         ],
         "NotCovered": 11
@@ -214,12 +214,32 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 428,
-        "Survived": 21,
+        "Killed": 429,
+        "Survived": 20,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.9532293986636972,
+        "Score": 0.955456570155902,
         "Surviving": [
+          {
+            "File": "web/src/lib/BlockPicker.svelte",
+            "Line": 21,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "8507d03bf1699d5f",
+            "Lifecycle": "accepted",
+            "Note": "Initial query value is unobservable: the search panel renders only under {#if open}, and the only way to open it, toggleOpen(), sets query = '' first, so the initial value never reaches the input or pickerOptions in any render."
+          },
+          {
+            "File": "web/src/lib/BlockPicker.svelte",
+            "Line": 37,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "49ec100d567c86ad",
+            "Lifecycle": "accepted",
+            "Note": "The post-pick query reset is unobservable: the same pick sets open = false, which unmounts the panel, and reopening goes through toggleOpen(), which sets query = '' again before the panel renders."
+          },
           {
             "File": "web/src/lib/Home.svelte",
             "Line": 134,
@@ -336,16 +356,6 @@
           },
           {
             "File": "web/src/lib/Home.svelte",
-            "Line": 254,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "cbb1c5fa7324921e",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
             "Line": 272,
             "Op": "StringLiteral",
             "Snippet": "\"\"",
@@ -403,26 +413,6 @@
             "Key": "6c8255537ab76c28",
             "Lifecycle": "accepted",
             "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
-          },
-          {
-            "File": "web/src/lib/BlockPicker.svelte",
-            "Line": 21,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "8507d03bf1699d5f",
-            "Lifecycle": "accepted",
-            "Note": "Initial query value is unobservable: the search panel renders only under {#if open}, and the only way to open it, toggleOpen(), sets query = '' first, so the initial value never reaches the input or pickerOptions in any render."
-          },
-          {
-            "File": "web/src/lib/BlockPicker.svelte",
-            "Line": 37,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "49ec100d567c86ad",
-            "Lifecycle": "accepted",
-            "Note": "The post-pick query reset is unobservable: the same pick sets open = false, which unmounts the panel, and reopening goes through toggleOpen(), which sets query = '' again before the panel renders."
           },
           {
             "File": "web/src/lib/toggles.ts",
@@ -569,7 +559,7 @@
           },
           {
             "start": 1101,
-            "end": 1417,
+            "end": 1426,
             "construct": "ExpressionStatement"
           }
         ],
@@ -863,6 +853,24 @@
       "note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
     },
     {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
       "file": "internal/api/grants.go",
       "line": 157,
       "op": "ARITHMETIC_BASE",
@@ -895,24 +903,6 @@
       "op": "ARITHMETIC_BASE",
       "language": "go",
       "key": "e39161b598da64d9",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
-      "file": "internal/api/custom_services.go",
-      "line": 153,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "d6679638cc1e6564",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
-      "file": "internal/api/custom_services.go",
-      "line": 154,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "476fdd58ed2fe273",
       "lifecycle": "accepted",
       "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
     },
@@ -1013,7 +1003,7 @@
       ".dross/phases/permanent-toggles/changes.json": [
         {
           "start": 1,
-          "end": 512
+          "end": 511
         }
       ],
       ".dross/phases/permanent-toggles/panel/mvp.md": [
@@ -1043,7 +1033,7 @@
       ".dross/phases/permanent-toggles/plan.toml": [
         {
           "start": 1,
-          "end": 181
+          "end": 172
         }
       ],
       ".dross/phases/permanent-toggles/spec.toml": [
@@ -1055,13 +1045,13 @@
       ".dross/phases/permanent-toggles/tests.json": [
         {
           "start": 1,
-          "end": 1624
+          "end": 1668
         }
       ],
       ".dross/phases/permanent-toggles/verify.toml": [
         {
           "start": 1,
-          "end": 106
+          "end": 114
         }
       ],
       ".dross/project.toml": [
@@ -1073,7 +1063,7 @@
       ".dross/survivors.toml": [
         {
           "start": 1490,
-          "end": 1588
+          "end": 1579
         }
       ],
       "cmd/adguard-reward/main_test.go": [
@@ -1579,7 +1569,7 @@
         },
         {
           "start": 1100,
-          "end": 1417
+          "end": 1426
         }
       ],
       "web/src/lib/activeGrants.test.ts": [
@@ -1663,6 +1653,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "df13b9993412389e74517813d91eeac5fdb5d063",
-  "measured_tree": "1fdf367f3ad5cc447cadac63118039957e40a4fe"
+  "measured_commit": "9d10006b1b12cce2a198b2f7636bf4f624859770",
+  "measured_tree": "3ed32b2c43868f2222a9fce07a6b57cf85834ace"
 }
