@@ -831,6 +831,17 @@ describe('history route', () => {
     expect(get(ok.route)).toBe('history')
     expect(get(ok.historyChild)).toBe(7)
 
+    // Multi-digit ids parse whole, zeros after the first digit included.
+    for (const [url, want] of [
+      ['/history?child=12', 12],
+      ['/history?child=105', 105],
+    ] as const) {
+      history.replaceState(null, '', url)
+      vi.resetModules()
+      const m = await import('./api')
+      expect(get(m.historyChild), url).toBe(want)
+    }
+
     // A child query on another route never leaks into historyChild.
     history.replaceState(null, '', '/children?child=7')
     vi.resetModules()
@@ -849,6 +860,10 @@ describe('history route', () => {
     window.dispatchEvent(new PopStateEvent('popstate'))
     expect(get(route)).toBe('history')
     expect(get(historyChild)).toBe(5)
+
+    history.replaceState(null, '', '/history?child=40')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(historyChild)).toBe(40)
 
     for (const url of garbage) {
       historyChild.set(9)

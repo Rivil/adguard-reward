@@ -57,12 +57,24 @@ describe('removedText', () => {
       `removed ${formatTime(at)} · permanent block`,
     )
   })
+
+  it('marks a removed service with only its time when the server sent no reason', () => {
+    const at = '2026-10-01T10:30:00Z'
+    expect(removedText({ ...live, removed_at: at, removed_reason: null })).toBe(`removed ${formatTime(at)}`)
+  })
 })
 
 describe('formatTime', () => {
   it('passes an unparseable timestamp through rather than "Invalid Date"', () => {
     expect(formatTime('not a time')).toBe('not a time')
     expect(formatTime('2026-10-01T10:30:00Z')).not.toBe('2026-10-01T10:30:00Z')
+  })
+
+  it('writes a medium date and a short time in the parent locale', () => {
+    const iso = '2026-10-01T10:30:45Z'
+    const want = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
+    expect(formatTime(iso)).toBe(want)
+    expect(formatTime(iso)).not.toBe(new Date(iso).toLocaleString())
   })
 })
 

@@ -43,8 +43,28 @@ function grant(id: number, over: Partial<HistoryGrant> = {}): HistoryGrant {
   }
 }
 
-function page(grants: HistoryGrant[], next_before: number | null = null): HistoryPage {
-  return { child: { id: 3, name: 'Ada' }, grants, next_before }
+function page(
+  grants: HistoryGrant[],
+  next_before: number | null = null,
+  child: { id: number; name: string } = { id: 3, name: 'Ada' },
+): HistoryPage {
+  return { child, grants, next_before }
+}
+
+const URL4 = '/api/v1/children/4/history'
+const BOB = { id: 4, name: 'Bob' }
+
+/** An answer held until release() — for responses that arrive after the screen moved on. */
+function gated(answer: Answer): { answer: Answer; release: () => void } {
+  let release!: () => void
+  const gate = new Promise<void>((r) => (release = r))
+  return {
+    answer: async () => {
+      await gate
+      return answer()
+    },
+    release,
+  }
 }
 
 const ok = (p: HistoryPage) => () => json(200, p)
@@ -192,5 +212,184 @@ describe('History', () => {
     await mount(3, { [URL3]: [ok(page([]))] })
     expect(await screen.findByText('No grants yet')).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Load more' })).toBeNull()
+  })
+
+  it('shows only "Loading…" under a plain History heading until the first page lands', async () => {
+    let atFetch = ''
+    const first = gated(ok(page([grant(1)])))
+    mockFetch({
+      [URL3]: [
+        () => {
+          atFetch = document.body.textContent ?? ''
+          return first.answer()
+        },
+      ],
+    })
+    render(History, { child: 3, onBack: () => {} })
+
+    // What was on screen when the fetch went out: nothing but the loading line.
+    await waitFor(() => expect(atFetch).not.toBe(''))
+    expect(atFetch).toContain('Loading…')
+    expect(atFetch).not.toContain('No grants yet')
+    expect(atFetch).not.toContain('No such child')
+    expect(screen.getByRole('heading').textContent).toBe('History')
+    expect(screen.getByRole('status').textContent).toBe('Loading…')
+
+    first.release()
+    await screen.findByRole('heading', { name: 'Ada — history' })
+  })
+
+  it('titles a null child plainly "History"', async () => {
+    await mount(null, {})
+    await screen.findByText('No such child')
+    expect(screen.getByRole('heading').textContent).toBe('History')
+  })
+
+  it('shows "—" for the end of a finished grant the server sent no ended_at for', async () => {
+    await mount(3, { [URL3]: [ok(page([grant(1, { status: 'ended_unknown', ended_at: null })]))] })
+    await waitFor(() => expect(shownIds()).toEqual([1]))
+    expect(grantEl(1).querySelector('[data-ended]')?.textContent).toBe('—')
+  })
+
+  it('shows the API error code and its message when the first page fails', async () => {
+    await mount(3, { [URL3]: [() => json(500, { error: 'internal', message: 'Database is locked' })] })
+    const alert = await screen.findByRole('alert')
+    expect(alert.dataset.error).toBe('internal')
+    expect(alert.textContent).toBe('Database is locked')
+  })
+
+  it('shows a network failure, not a blank alert, when the server is unreachable', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        throw new TypeError('Failed to fetch')
+      }),
+    )
+    render(History, { child: 3, onBack: () => {} })
+    const alert = await screen.findByRole('alert')
+    expect(alert.dataset.error).toBe('network')
+    expect(alert.textContent).toBe("Can't reach the server — check your connection")
+  })
+
+  it('shows "Loading…", not the empty state, while a retry is in flight', async () => {
+    const retry = gated(ok(page([grant(1)])))
+    await mount(3, { [URL3]: [fail(500, 'internal'), retry.answer] })
+    await screen.findByRole('alert')
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+    await screen.findByText('Loading…')
+    expect(screen.queryByText('No grants yet')).toBeNull()
+    expect(screen.queryByRole('alert')).toBeNull()
+
+    retry.release()
+    await waitFor(() => expect(shownIds()).toEqual([1]))
+  })
+
+  it('fetches a further page once when Load more is clicked twice before the screen updates', async () => {
+    const more = gated(ok(page([grant(7)])))
+    const calls = await mount(3, { [URL3]: [ok(page([grant(9)], 9))], [`${URL3}?before=9`]: [more.answer] })
+    const button = await screen.findByRole('button', { name: 'Load more' })
+
+    // Both clicks land before Svelte flushes disabled, so only the loadingMore guard stops the second.
+    button.click()
+    button.click()
+    await waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(true))
+    expect(calls).toEqual([URL3, `${URL3}?before=9`])
+
+    more.release()
+    await waitFor(() => expect(shownIds()).toEqual([9, 7]))
+  })
+
+  describe('after switching child', () => {
+    function mountSwitch(routes: Record<string, Answer[]>) {
+      const calls = mockFetch(routes)
+      const view = render(History, { child: 3, onBack: () => {} })
+      return { calls, toBob: () => view.rerender({ child: 4, onBack: () => {} }) }
+    }
+
+    /** Lets a released response run to completion (fetch, JSON parse, state writes, render). */
+    const settle = () => new Promise((r) => setTimeout(r, 30))
+
+    it("drops the earlier child's first page when it lands late", async () => {
+      const late = gated(ok(page([grant(1)])))
+      const { toBob } = mountSwitch({ [URL3]: [late.answer], [URL4]: [ok(page([grant(2)], null, BOB))] })
+      await toBob()
+      await screen.findByRole('heading', { name: 'Bob — history' })
+
+      late.release()
+      await settle()
+      expect(screen.getByRole('heading').textContent).toBe('Bob — history')
+      expect(shownIds()).toEqual([2])
+    })
+
+    it("drops the earlier child's first-page error when it lands late", async () => {
+      const late = gated(fail(404, 'not_found'))
+      const { toBob } = mountSwitch({ [URL3]: [late.answer], [URL4]: [ok(page([grant(2)], null, BOB))] })
+      await toBob()
+      await waitFor(() => expect(shownIds()).toEqual([2]))
+
+      late.release()
+      await settle()
+      expect(screen.queryByText('No such child')).toBeNull()
+      expect(shownIds()).toEqual([2])
+    })
+
+    it("drops the earlier child's further page when it lands late", async () => {
+      const late = gated(ok(page([grant(1)])))
+      const { toBob } = mountSwitch({
+        [URL3]: [ok(page([grant(9)], 9))],
+        [`${URL3}?before=9`]: [late.answer],
+        [URL4]: [ok(page([grant(2)], null, BOB))],
+      })
+      await fireEvent.click(await screen.findByRole('button', { name: 'Load more' }))
+      await toBob()
+      await waitFor(() => expect(shownIds()).toEqual([2]))
+
+      late.release()
+      await settle()
+      expect(shownIds()).toEqual([2])
+    })
+
+    it("drops the earlier child's further-page error when it lands late", async () => {
+      const late = gated(fail(500, 'internal'))
+      const { toBob } = mountSwitch({
+        [URL3]: [ok(page([grant(9)], 9))],
+        [`${URL3}?before=9`]: [late.answer],
+        [URL4]: [ok(page([grant(2)], null, BOB))],
+      })
+      await fireEvent.click(await screen.findByRole('button', { name: 'Load more' }))
+      await toBob()
+      await waitFor(() => expect(shownIds()).toEqual([2]))
+
+      late.release()
+      await settle()
+      expect(screen.queryByRole('alert')).toBeNull()
+    })
+
+    it("keeps the new child's Load more disabled when the earlier child's page settles", async () => {
+      const late = gated(ok(page([grant(1)])))
+      const bobMore = gated(ok(page([grant(1)], null, BOB)))
+      const { calls, toBob } = mountSwitch({
+        [URL3]: [ok(page([grant(9)], 9))],
+        [`${URL3}?before=9`]: [late.answer],
+        [URL4]: [ok(page([grant(2)], 2, BOB))],
+        [`${URL4}?before=2`]: [bobMore.answer],
+      })
+      await fireEvent.click(await screen.findByRole('button', { name: 'Load more' }))
+      await toBob()
+      await waitFor(() => expect(shownIds()).toEqual([2]))
+      const button = screen.getByRole('button', { name: 'Load more' }) as HTMLButtonElement
+      await fireEvent.click(button)
+      expect(button.disabled).toBe(true)
+
+      late.release()
+      await settle()
+      expect(button.disabled).toBe(true)
+      await fireEvent.click(button)
+      expect(calls.filter((u) => u === `${URL4}?before=2`).length).toBe(1)
+
+      bobMore.release()
+      await waitFor(() => expect(shownIds()).toEqual([2, 1]))
+    })
   })
 })
