@@ -1,0 +1,227 @@
+task_seq = 13
+
+[phase]
+  id = "pin-unlock"
+
+# Wire conventions (agreed in panel synthesis, panel/synthesis.md; all 10 disagreements took the provisional default):
+# - schema 0010: devices(id PK, username, token_hash UNIQUE, pin_hash CHECK LIKE '$argon2id$%',
+#   failed_attempts CHECK 0..5, created_at, expires_at); sessions.device_id NULL REFERENCES devices ON DELETE SET NULL.
+# - A session is a "PIN session" iff sessions.device_id IS NOT NULL (server state, never cookie presence).
+#   Tagged sessions slide 15m; untagged slide 30d. AttachDevice sets expires_at=now+15m; DetachDevice sets now+30d.
+# - Revocation (5th strike, logout) = RevokeDevice: deletes the device AND every session tagged to it in one tx (D-1).
+#   PIN remove = DetachDevice + DeleteDevice (session survives, untagged, 30d).
+# - Strike counter: ReserveAttempt increments in SQL BEFORE Argon2 (CHECK caps at 5); a correct PIN resets to 0 (D-2).
+# - Password re-check for change/remove: shared recheckPassword extracted from handleLogin, same limiter budget (D-7).
+#   Wrong password -> 403 bad_credentials; missing -> 403 reauth_required (D-3). SPA 401 routing unchanged otherwise.
+# - Unlock: POST /api/v1/unlock outside requireSession. No/malformed device cookie -> plain 401 unauthorized, logged
+#   outcome=no_device (D-9); well-formed but no live row -> 401 device_revoked + cookie cleared; wrong -> 401 bad_pin
+#   {attempts_remaining}; ok -> 204, TouchDevice(+90d), IssueForDevice(device.username). Device expiry slides only here.
+# - Logic lives in handlers over thin auth/store primitives; API split first-set (t-9) / unlock (t-10) /
+#   change-remove (t-12) (D-4).
+# - SPA lock is a `locked` store with PinPad as an overlay; URL is kept and the route refetches on unlock (D-6).
+# - Full login with a live same-user device cookie tags the new session; another user's device cookie is cleared (D-8).
+# - RunSweeper also deletes expired device rows (D-10).
+# - New dependency: golang.org/x/crypto (argon2), pinned to an exact version.
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Add PIN validation and Argon2id PHC hashing"
+  files = ["internal/auth/pin.go", "internal/auth/pin_test.go", "go.mod", "go.sum"]
+  description = '''ValidatePIN (bytes '0'-'9' only, length 4-6). HashPIN -> $argon2id$v=19$m=..,t=..,p=..$salt$hash with a random 16-byte salt, defaults no lower than m=19456 KiB, t=2, p=1. VerifyPIN parses params from the stored string and compares in constant time. Adds golang.org/x/crypto pinned to an exact version.'''
+  covers = ["c-1"]
+  test_contract = [
+    '''if validation uses unicode.IsDigit or trims input, TestValidatePIN fails: it rejects "١٢٣٤" (Arabic-Indic), "１２３４" (fullwidth), " 1234", "1234\n", "123", "1234567", "12a4", "" and accepts "0000", "000000", "0123"''',
+    '''if the hash is not salted PHC Argon2id, TestHashPIN_Format fails: output matches ^\$argon2id\$v=19\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+/]+\$[A-Za-z0-9+/]+$, does not contain the PIN, and two hashes of the same PIN differ''',
+    '''if verification coerces or is lax about the stored string, TestVerifyPIN fails: VerifyPIN("0123", HashPIN("123")) is false; a tampered salt is false; an $argon2i$ string, a v=16 string or a truncated PHC returns an error, never true, never panics''',
+    '''if VerifyPIN reads params from constants instead of the stored hash, TestVerifyPIN_StoredParams fails: a hash built with m=8192,t=1,p=1 still verifies''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Add devices schema, store and attempt reservation"
+  files = ["internal/store/migrations/0010_devices.sql", "internal/auth/device.go", "internal/store/devices.go", "internal/store/devices_test.go"]
+  description = '''Migration 0010 per the header. auth.Device (LogValue = id + username only) and the auth.DeviceStore interface; store implements ReserveAttempt (atomic increment-first), ResetAttempts, ReplacePIN, RevokeDevice (tagged sessions + device in one tx), DeleteDevice, DeleteOtherDevices(username, keepID), DeleteExpiredDevices, TouchDevice.'''
+  covers = ["c-1", "c-4", "c-5", "c-6"]
+  test_contract = [
+    '''if the reservation is read-then-write, TestReserveAttempt_Concurrent fails: 20 goroutines on one device -> exactly 5 succeed returning 1..5 once each and 15 are refused''',
+    '''if the counter is not persisted, TestReserveAttempt_SurvivesReopen fails: 3 reservations, Close, re-Open on the same dir -> the next ReserveAttempt returns 4''',
+    '''if revocation only detaches sessions, TestRevokeDevice_DeletesTaggedSessions fails: RevokeDevice deletes the device and every session whose device_id points at it, and leaves other sessions untouched''',
+    '''if remove deletes the session, TestDeleteDevice_DetachesSession fails: after DeleteDevice the tagged session row remains with device_id NULL''',
+    '''if reset or replace keep the counter, TestResetAndReplacePIN fails: ResetAttempts after 3 reservations and ReplacePIN both leave failed_attempts 0; ReplacePIN swaps pin_hash and keeps token_hash''',
+    '''if the schema guards are missing, TestMigrate0010_Checks fails: pin_hash "583920" or failed_attempts 6 is rejected by CHECK; a duplicate token_hash is rejected by UNIQUE; schema_migrations lists 0010_devices.sql directly after 0009_grant_history.sql''',
+    '''if DeleteOtherDevices crosses users or ignores keepID, TestDeleteOtherDevices fails: mum has A, B, C and dad has D -> DeleteOtherDevices("mum", A) removes B and C, keeps A and D, returns 2; keepID 0 removes all of mum's''',
+    '''if Device logs its hashes, TestDevice_LogValue fails: slog of a Device renders exactly {id, username}''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-3"
+  wave = 1
+  title = "Extract shared password re-check from login"
+  files = ["internal/api/login.go", "internal/api/reauth.go", "internal/api/reauth_test.go"]
+  description = '''Move the Limiter double-check + loginSlot + AdGuard.Login + Fail sequence out of handleLogin into recheckPassword(r, username, password), reused by login now and by PIN change/remove in t-12.'''
+  covers = ["c-5"]
+  test_contract = [
+    '''if the re-check forks its own limiter, TestRecheckPassword_SharedBudget fails: five wrong recheckPassword calls from 203.0.113.1 -> the 6th is rate-limited with zero new /control/login hits, and a following POST /api/v1/login from that IP is 429''',
+    '''if an upstream failure spends budget, TestRecheckPassword_UpstreamDown fails: 6 re-checks against an AdGuard 502, then a correct one passes''',
+    '''if the username comes from the request, TestRecheckPassword_Username fails: the /control/login body the fake records names the username argument''',
+    '''if the extraction changes login behaviour, TestLogin_Burst fails: at most 5 AdGuard hits in a 20-request burst''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-4"
+  wave = 1
+  title = "Route 401 by code; pause idle polling"
+  files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts", "web/src/lib/activeGrants.ts", "web/src/lib/activeGrants.test.ts"]
+  description = "request(): 401 pin_required -> onPinRequired (sets a `locked` store); other 401 -> onUnauthorized; neither for /api/v1/unlock or /api/v1/login. ApiError.attemptsRemaining. Client calls unlock, pinStatus, setPin, changePin, removePin; Route 'settings' <-> /settings; messageFor bad_pin, device_revoked, reauth_required, bad_credentials. activeGrants.start() skips interval refreshes once 1 minute has passed without pointerdown/keydown, and refreshes immediately on the next input or visibilitychange-to-visible, so an untouched open screen stops sliding the 15-minute window (review FLAG 1)."
+  covers = ["c-3", "c-4", "c-5", "c-6"]
+  test_contract = ["if pin_required is treated as signed-out, the pin_required routing test fails: 401 {error:\"pin_required\"} from GET /api/v1/children calls the pin spy and NOT the login spy", "if unlock errors trigger global handlers, the unlock error test fails: 401 bad_pin {attempts_remaining:3} from POST /api/v1/unlock calls neither spy and the ApiError has attemptsRemaining 3 (non-integer or missing -> undefined); 401 device_revoked and 401 unauthorized from /api/v1/unlock also call neither spy", "if a re-auth failure logs the parent out, the 403 test fails: 403 bad_credentials and 403 reauth_required from changePin or removePin call neither spy", "if request bodies drift from the wire shape, the PIN client test fails: setPin(\"0123\") sends exactly {\"pin\":\"0123\"} with no password key; changePin sends {pin,password}; removePin sends DELETE /api/v1/pin with {password}; all carry the CSRF header", "if the settings route is missing, the navigate test fails: navigate(\"settings\") pushes /settings and routeFor(\"/settings\") is \"settings\"", "if background polling keeps sliding the idle window, the activeGrants idle test fails: fake timers, start(15000), no input for 60s -> no further GET /api/v1/grants for the next 20 minutes of ticks; a pointerdown or keydown then triggers one GET immediately and resumes the 15s interval; a visibilitychange to visible also triggers one GET"]
+  status = "pending"
+
+[[task]]
+  id = "t-5"
+  wave = 2
+  title = "Tag sessions with a device; 15-minute idle"
+  files = ["internal/auth/auth.go", "internal/auth/auth_test.go", "internal/store/sessions.go", "internal/store/sessions_test.go"]
+  description = '''Session.DeviceID (nullable); the store persists and scans device_id. Authenticate slides a tagged session by 15m and an untagged one by 30d. Manager.IssueForDevice, AttachDevice (sets device_id AND expires_at=now+15m), DetachDevice (clears it AND sets expires_at=now+30d).'''
+  covers = ["c-3", "c-5"]
+  depends_on = ["t-2"]
+  test_contract = [
+    '''if the idle window does not slide or the boundary is off, TestAuthenticate_PinIdleWindow fails: fake clock, tagged session -> Authenticate at +14m59s OK with ExpiresAt=now+15m, again +14m59s later still OK, then exactly +15m00s idle -> ErrNoSession and the row is deleted''',
+    '''if the lock applies globally, TestAuthenticate_UntaggedUnaffected fails: an untagged session at +16m still authenticates with ExpiresAt=now+30d''',
+    '''if issuance ignores the device, TestIssueForDevice fails: IssueForDevice(..., 7) -> ExpiresAt=now+15m, DeviceID=7; plain Issue still now+30d''',
+    '''if attaching does not reset expiry, TestAttachDevice_StartsWindow fails: AttachDevice at T with no further request -> Authenticate at T+15m01s returns ErrNoSession''',
+    '''if detaching does not restore 30d, TestDetachDevice_RestoresSliding fails: DetachDevice at T with no further request -> Authenticate at T+16m OK with ExpiresAt now+30d''',
+    '''if an absent device is stored as 0, TestSession_DeviceIDRoundTrip fails: DeviceID 7 reads back 7; DeviceID 0 stores SQL NULL (raw query asserts device_id IS NULL)''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-6"
+  wave = 2
+  title = "Add PIN pad and lock state to App"
+  files = ["web/src/lib/PinPad.svelte", "web/src/lib/PinPad.test.ts", "web/src/App.svelte", "web/src/App.test.ts"]
+  description = '''App renders PinPad as an overlay whenever `locked` is set, keeping the current URL. bad_pin shows attempts left; device_revoked or unauthorized from unlock clears the lock and navigates to login; success clears the lock and re-mounts the route so it refetches.'''
+  covers = ["c-3", "c-4", "c-6"]
+  depends_on = ["t-4"]
+  test_contract = [
+    '''if pin_required shows the login page, the App lock test fails: on /children, GET /api/v1/me -> 401 pin_required renders the pad (no "Sign in" button) and pathname stays /children; 401 unauthorized renders "Sign in"''',
+    '''if the pad sends the wrong body, the PinPad submit test fails: tapping 1,2,3,4 and submitting POSTs /api/v1/unlock with exactly {pin:"1234"}''',
+    '''if bad_pin is mishandled, the wrong PIN test fails: "4 attempts left" is visible, the pad is still shown, the input is cleared and the location is unchanged''',
+    '''if revocation does not fall back to login, the device_revoked test fails: 401 device_revoked from unlock renders Login and pathname is /login''',
+    '''if unlock does not refetch, the unlock success test fails: 204 -> pad gone, /api/v1/children fetched again and Children renders''',
+    '''if concurrent locks stack, the double-lock test fails: two concurrent 401 pin_required from Home's fetches render exactly one pad''',
+    '''if input validation is missing, the PinPad input test fails: submit is disabled below 4 digits and a non-digit keystroke never reaches the input value''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-7"
+  wave = 3
+  title = "Add device cookie and pin_required gate"
+  files = ["internal/auth/device.go", "internal/auth/middleware.go", "internal/auth/auth.go", "internal/auth/middleware_test.go"]
+  description = '''Options.Devices + DeviceLifetime (90d). IssueDevice (256-bit token, SHA-256 stored via newToken), LookupDevice (expired -> deleted on sight), DeviceCookie/ClearDeviceCookie with single-Set-Cookie dedupe. RequireSession's 401 path: live device cookie -> pin_required (session cookie cleared, device cookie kept); otherwise plain unauthorized + device cookie cleared. RunSweeper also deletes expired devices.'''
+  covers = ["c-2", "c-3"]
+  depends_on = ["t-5"]
+  test_contract = ["if the token is short or stored raw, TestIssueDevice fails: the raw token is 43 chars (256 bits base64url) and the stored token_hash = sha256(decoded bytes)", "if an expired PIN session gets a plain 401, TestRequireSession_PinRequired fails: expired tagged session + live device cookie -> 401 pin_required, session cookie cleared, no device Set-Cookie", "if the request after the first lock loses pin_required, TestRequireSession_NoSessionCookie fails: no session cookie + live device cookie -> 401 pin_required", "if the 90-day lifetime is not enforced, TestRequireSession_ExpiredDevice fails: a device row past 90d -> 401 unauthorized, device cookie cleared (Max-Age<0), row deleted", "if bad device cookies linger, TestRequireSession_BadDeviceCookie fails: a malformed or unknown device cookie -> 401 unauthorized and the device cookie is cleared", "if ordinary requests slide the device, TestRequireSession_NoDeviceSlide fails: a successful authenticated request leaves the device's expires_at unchanged", "if cookie attributes are wrong, TestDeviceCookie_Attributes fails: HttpOnly, SameSite=Strict, Path=/, Max-Age=7776000, Secure iff Options.Secure (both ways), name differs from the session cookie; set-then-clear on one response leaves exactly one device Set-Cookie", "if store errors are masked as logged-out, TestRequireSession_DeviceStoreError fails: a DeviceStore error on the 401 path -> 500 internal and neither cookie cleared", "if the sweeper skips devices, TestRunSweeper_Devices fails: a tick removes a device with expires_at<=now and keeps one at now+1s", "if a nil device store panics or changes behaviour, TestRequireSession_NilDevices fails: with Options.Devices nil, sessions slide 30d, a missing or expired session gets plain 401 unauthorized, a device cookie on the request is ignored (never cleared, never pin_required), and nothing panics"]
+  status = "pending"
+
+[[task]]
+  id = "t-8"
+  wave = 3
+  title = "Add Settings screen for device PIN"
+  files = ["web/src/lib/Settings.svelte", "web/src/lib/Settings.test.ts", "web/src/lib/Home.svelte", "web/src/App.svelte"]
+  description = '''/settings route and a Home nav button. Shows has_pin; first set = PIN + confirm only; change = PIN + confirm + AdGuard password; remove = password. Errors keyed by code.'''
+  covers = ["c-5"]
+  depends_on = ["t-4", "t-6"]
+  test_contract = [
+    '''if the first set asks for a password, the first-set test fails: has_pin false -> no password field rendered and submit POSTs exactly {"pin":"583920"}''',
+    '''if client-side validation is missing, the validation test fails: "12a4", "123" or a PIN/confirm mismatch shows an inline error with zero fetch calls''',
+    '''if change/remove send the wrong request, the change/remove test fails: has_pin true -> change POSTs {pin,password}; remove sends DELETE with {password} and then shows "No PIN on this device" without reload''',
+    '''if a wrong password leaves Settings, the 403 test fails: 403 bad_credentials shows "Wrong password", has_pin display unchanged, route stays "settings"; 429 shows a retry message with seconds''',
+    '''if the screen is unreachable, the nav test fails: Home's Settings button navigates to /settings and App renders Settings there''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-9"
+  wave = 4
+  title = "Add first-PIN set and PIN status endpoints"
+  files = ["internal/api/pin.go", "internal/api/pin_test.go", "internal/api/api.go", "internal/api/login_test.go", "internal/api/errors.go"]
+  description = '''Deps.Devices. GET /api/v1/pin {has_pin} from the session's device_id. POST /api/v1/pin {pin} on an untagged session: hash, IssueDevice, AttachDevice, set device cookie. A tagged session without a password is refused here (change lands in t-12). The test harness wires Devices and keeps its data dir.'''
+  covers = ["c-1", "c-2", "c-3", "c-5"]
+  depends_on = ["t-1", "t-7"]
+  test_contract = [
+    '''if first set needs a password or stores the token raw, TestSetPIN_First fails: POST {"pin":"583920"} -> 204 + device cookie; pin_hash is PHC; token_hash = sha256(decoded cookie); /control/login hit count unchanged across the POST''',
+    '''if plaintext leaks anywhere, TestSetPIN_NoPlaintext fails: "583920" and the raw device cookie are absent from a SELECT * dump of every table in sqlite_master, from the bytes of every file in the data dir (.db, -wal, -shm), and from the debug log buffer with each line's time attr removed''',
+    '''if input validation is loose, TestSetPIN_BadInput fails: 400 and no devices row for "123", "1234567", "12a4", "١٢٣٤", {"pin":1234} (number), missing pin, unknown key, >4 KiB body; no session -> 401''',
+    '''if the idle lock is wrong at HTTP level, TestSetPIN_IdleLock fails: after set, GET /me at +14m59s -> 200, then +15m00s idle -> 401 pin_required; the same request without the device cookie -> 401 unauthorized; set at T with no further request, GET /me at T+15m01s -> 401 pin_required''',
+    '''if has-PIN is inferred from the cookie, TestSetPIN_TaggedWithoutCookie fails: a tagged session POST {"pin":"111111"} with NO device cookie and no password -> 403 reauth_required and pin_hash unchanged''',
+    '''if status is wrong, TestPinStatus fails: GET /api/v1/pin is {has_pin:false} before set and {has_pin:true} after''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-10"
+  wave = 5
+  title = "Add unlock endpoint with persisted strikes and log"
+  files = ["internal/api/unlock.go", "internal/api/unlock_test.go", "internal/api/api.go", "internal/api/errors.go"]
+  description = "POST /api/v1/unlock {pin} outside requireSession, per the header outcome table. ReserveAttempt before Argon2; ok -> ResetAttempts, TouchDevice(+90d), IssueForDevice(device.username), both cookies set; a failed 5th -> RevokeDevice. One event=unlock info line per attempt. A 400 (malformed or oversized body) also logs one line with outcome bad_request and consumes no attempt (review FLAG 5)."
+  covers = ["c-2", "c-4", "c-6", "c-7"]
+  depends_on = ["t-9"]
+  test_contract = ["if unlock touches AdGuard or reuses the session, TestUnlock_OK fails: correct PIN, no session cookie -> 204, a new session cookie differing from the old, GET /me 200 with the device's username, /control/login count unchanged", "if the minted session is untagged, TestUnlock_SessionTagged fails: 15m idle after unlock -> GET /me 401 pin_required", "if strikes are miscounted, TestUnlock_FiveStrikes fails: wrong PINs -> 401 bad_pin with attempts_remaining 4,3,2,1; the 5th -> 401 device_revoked, devices row gone, device cookie Max-Age<0; a 6th with the same cookie (even the right PIN) -> device_revoked", "if a correct PIN does not reset, TestUnlock_ResetOnSuccess fails: 3 wrong, 1 correct, 1 wrong -> attempts_remaining 4", "if parallel guesses exceed the cap, TestUnlock_Parallel fails: 20 parallel wrong unlocks -> exactly four bad_pin carrying {4,3,2,1} and sixteen device_revoked", "if revocation leaves the live session, TestUnlock_RevokeKillsSession fails: an unexpired session tagged to the device gets 401 on its next GET /me after the 5th strike", "if the 90-day slide is wrong, TestUnlock_DeviceLifetime fails: unlock at device age 89d23h -> 204, expires_at = now+90d, device cookie Max-Age 90d; at 90d+1s with no unlock in between -> device_revoked", "if bad bodies spend attempts or go unlogged, TestUnlock_BadBody fails: malformed JSON or >4 KiB body -> 400, failed_attempts unchanged, and exactly one unlock log line with outcome bad_request (username set when the device cookie resolves, \"\" otherwise); \"12a4\" -> bad_pin and one attempt consumed", "if logging is wrong or leaks, TestUnlock_Log fails: each outcome ok|bad_pin|device_revoked (unknown token and 5th strike)|no_device|bad_request emits exactly one info line {event:unlock, username, ip, outcome} (username \"\" for no_device, ip = trusted-proxy-resolved client IP); with time stripped, the log contains neither the PIN, the raw device token, nor the new raw session token"]
+  status = "pending"
+
+[[task]]
+  id = "t-11"
+  wave = 5
+  title = "Tear down devices on logout and revoke-all"
+  files = ["internal/api/login.go", "internal/api/sessions.go", "internal/api/teardown_test.go"]
+  description = '''Logout on a tagged session -> RevokeDevice + clear both cookies. revoke-all -> DeleteOtherDevices (keep the caller's device, 0 if untagged) then DeleteOthers; response gains revoked_devices. Full login with a live same-user device cookie tags the new session; another user's device cookie is cleared.'''
+  covers = ["c-6"]
+  depends_on = ["t-3", "t-9"]
+  test_contract = [
+    '''if logout keeps the device, TestLogout_PinDevice fails: 204, device row and pin_hash gone, exactly one Set-Cookie each for session and device with Max-Age<0; GET /me with the old device cookie -> plain 401 unauthorized, not pin_required''',
+    '''if logout over-reaches, TestLogout_NoPin fails: logout without a PIN behaves as before and a seeded device of "dad" survives''',
+    '''if revoke-all misses or over-deletes devices, TestRevokeAll_Devices fails: mum has A (caller), B, C and dad has D -> revoke-all from A deletes B and C, A and D remain, body has revoked_devices=2, and B's device cookie on GET /me -> plain 401 unauthorized''',
+    '''if an untagged caller is mishandled, TestRevokeAll_Untagged fails: revoke-all from an untagged session deletes all of mum's devices and none of dad's''',
+    '''if a full login bypasses the PIN lock, TestLogin_OnPinDevice fails: login with mum's live device cookie -> new session tagged (GET /me at +15m01s -> pin_required); with dad's device cookie as mum -> device cookie cleared and session untagged (30d)''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-12"
+  wave = 5
+  title = "Add PIN change and remove with re-auth"
+  files = ["internal/api/pin.go", "internal/api/pin_change_test.go", "internal/api/api.go"]
+  description = '''POST /api/v1/pin {pin,password} on a tagged session -> recheckPassword(session.Username), then ReplacePIN (resets counter, keeps token). DELETE /api/v1/pin {password} -> recheck, DetachDevice, DeleteDevice, clear device cookie. Runs after t-10 when executed sequentially (both edit api.go).'''
+  covers = ["c-5"]
+  depends_on = ["t-3", "t-9"]
+  test_contract = [
+    '''if change does not replace the hash and reset the counter, TestChangePIN_OK fails: right password with failed_attempts seeded to 3 -> 204, pin_hash differs and VerifyPIN(new) holds, failed_attempts 0, device cookie value unchanged, exactly +1 /control/login hit''',
+    '''if a wrong password is accepted or unlimited, TestChangePIN_WrongPassword fails: change/remove with a wrong password -> 403 bad_credentials, pin_hash and device row unchanged; the 6th wrong attempt -> 429 with Retry-After and zero new /control/login hits''',
+    '''if a missing password reaches AdGuard, TestChangePIN_MissingPassword fails: change/remove without password -> 403 reauth_required with zero /control/login hits''',
+    '''if the re-check uses a request-supplied username, TestChangePIN_Username fails: the recorded /control/login body names the session's username, and a body with a "username" key -> 400''',
+    '''if remove kills the session or keeps the device, TestRemovePIN fails: 204, device row gone, device cookie Max-Age<0, session device_id NULL, GET /me at +16m is 200 with expires_at about now+30d, and GET /api/v1/pin is {has_pin:false}''',
+    '''if remove without a PIN succeeds, TestRemovePIN_NoDevice fails: DELETE /api/v1/pin on an untagged session -> 404 not_found''',
+  ]
+  status = "pending"
+
+[[task]]
+  id = "t-13"
+  wave = 6
+  title = "Wire devices into main; prove restart and TLS"
+  files = ["cmd/adguard-reward/main.go", "cmd/adguard-reward/main_test.go"]
+  description = '''Pass the store as auth.Options.Devices and api.Deps.Devices; the device cookie inherits the existing Secure decision; the sweeper covers devices. Binary-level proofs for restart, TLS and cross-device revoke.'''
+  covers = ["c-2", "c-4", "c-6"]
+  depends_on = ["t-10", "t-11", "t-12"]
+  test_contract = [
+    '''if the counter resets on restart or Devices is not wired, TestRun_PinSurvivesRestart fails: set PIN, 2 wrong unlocks, stop, start on the same data_dir, 3rd wrong unlock -> attempts_remaining 2 (not 4); the pre-restart device cookie + correct PIN -> 204''',
+    '''if Secure is not applied under TLS, TestRun_DeviceCookieSecure fails: base_url https:// or a TLS listener -> device cookie Secure; plain http -> not Secure''',
+    '''if revoke-all does not reach other devices end-to-end, TestRun_RevokeAllDevices fails: two clients each set a PIN; A calls revoke-all; B's POST /unlock with the right PIN -> 401 device_revoked; A's unlock -> 204''',
+  ]
+  status = "pending"
