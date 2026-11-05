@@ -198,15 +198,16 @@ function retryAfterOf(res: Response): number | undefined {
 }
 
 /**
- * Perform one API call. Resolves with the JSON body (or undefined on 204)
- * and rejects with an ApiError for any non-2xx status.
+ * Put one call on the wire with body as its exact text. Resolves with the
+ * JSON body (or undefined on 204) and rejects with an ApiError for any
+ * non-2xx status.
  */
-export async function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+async function send<T>(method: Method, path: string, body?: string): Promise<T> {
   const headers: Record<string, string> = { [CSRF_HEADER]: CSRF_VALUE }
   const init: RequestInit = { method, headers, credentials: 'same-origin' }
   if (body !== undefined) {
     headers['Content-Type'] = 'application/json'
-    init.body = JSON.stringify(body)
+    init.body = body
   }
   const res = await fetch(path, init)
   if (res.ok) {
@@ -220,6 +221,16 @@ export async function request<T>(method: Method, path: string, body?: unknown): 
     else onUnauthorized()
   }
   throw err
+}
+
+/**
+ * Perform one API call. Resolves with the JSON body (or undefined on 204)
+ * and rejects with an ApiError for any non-2xx status. Not async: it hands
+ * back send()'s own promise, so a caller settles no later than it would on
+ * send() itself.
+ */
+export function request<T>(method: Method, path: string, body?: unknown): Promise<T> {
+  return send<T>(method, path, body === undefined ? undefined : JSON.stringify(body))
 }
 
 // ---- endpoints -----------------------------------------------------------
@@ -669,6 +680,31 @@ export async function fetchHistory(childId: number, before?: number): Promise<Hi
 /** A data: URL for an <img> from a catalogue icon. */
 export function iconUrl(icon: string): string {
   return 'data:image/svg+xml;base64,' + icon
+}
+
+// ---- setup export and import ---------------------------------------------
+
+/** What an import did. */
+export interface ImportResult {
+  /** Clients in the file this AdGuard does not have; their mappings are kept. */
+  missing_clients: string[]
+  /** False when the setup was stored but AdGuard's rules were not updated yet; the reconciler catches up. */
+  rules_applied: boolean
+}
+
+/** The export file, unknown here because the SPA only saves it: the format is the server's. */
+export function exportSetup(): Promise<unknown> {
+  return request<unknown>('GET', '/api/v1/export')
+}
+
+/**
+ * Restore an export file into an empty install. text is sent as read, never
+ * parsed or re-encoded, so the server names every problem with the file. A
+ * 409 means the install is not empty; a 502 means nothing was stored.
+ */
+export async function importSetup(text: string): Promise<ImportResult> {
+  const r = await send<ImportResult>('POST', '/api/v1/import', text)
+  return { ...r, missing_clients: r.missing_clients ?? [] }
 }
 
 // ---- messages ------------------------------------------------------------
