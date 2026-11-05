@@ -65,6 +65,12 @@
   why = "Simplest control on a phone; multi-value filters are deferred."
   locked = true
 
+[[decisions]]
+  key = "pre_0009_trims"
+  choice = "The service filter finds trims recorded since migration 0009. A service trimmed before 0009 is not found on that grant."
+  why = "Trims before 0009 left no removal row, so the data to match them was never recorded."
+  locked = true
+
 [[deferred]]
   text = "Free-text search of grant history."
   why = "Filters cover the parked need; search has no demand yet."
