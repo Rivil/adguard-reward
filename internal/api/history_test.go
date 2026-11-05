@@ -303,3 +303,327 @@ func TestHistory_GoldenKeys(t *testing.T) {
 		t.Fatalf("empty history body = %s, want grants []", w.Body)
 	}
 }
+
+func TestHistory_ChildZero(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	h.seedLegacyGrant(ada.ID, "youtube")
+
+	if w, _ := h.getHistory(cookie, "/api/v1/children/0/history"); w.Code != http.StatusNotFound {
+		t.Fatalf("GET child 0 history = %d %s, want 404 and no grants", w.Code, w.Body)
+	}
+}
+
+const overviewPath = "/api/v1/history"
+
+func (h *harness) overview(cookie, query string) (*httptest.ResponseRecorder, historyOverviewPageView) {
+	h.t.Helper()
+	w := h.do(http.MethodGet, overviewPath+query, nil, withCookie(cookie))
+	var body historyOverviewPageView
+	if w.Code == http.StatusOK {
+		if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+			h.t.Fatalf("overview body %q: %v", w.Body.String(), err)
+		}
+	}
+	return w, body
+}
+
+func (h *harness) overviewOK(cookie, query string) historyOverviewPageView {
+	h.t.Helper()
+	w, body := h.overview(cookie, query)
+	if w.Code != http.StatusOK {
+		h.t.Fatalf("GET overview %q = %d %s", query, w.Code, w.Body)
+	}
+	return body
+}
+
+func overviewIDs(p historyOverviewPageView) []int64 {
+	out := []int64{}
+	for _, g := range p.Grants {
+		out = append(out, g.ID)
+	}
+	return out
+}
+
+// seedRawGrant writes a grant straight into the tables so a test can reach any
+// (status, end_reason) pair; a nil reason stores NULL.
+func (h *harness) seedRawGrant(childID int64, status string, reason any, started time.Time, services ...string) int64 {
+	h.t.Helper()
+	res, err := h.store.DB().Exec(`INSERT INTO grants (child_id, status, end_reason, started_at, ends_at) VALUES (?, ?, ?, ?, ?)`,
+		childID, status, reason, started.Unix(), started.Add(time.Hour).Unix())
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	id, _ := res.LastInsertId()
+	for _, s := range services {
+		if _, err := h.store.DB().Exec(`INSERT INTO grant_services (grant_id, child_id, service_id, active) VALUES (?, ?, ?, 0)`,
+			id, childID, s); err != nil {
+			h.t.Fatal(err)
+		}
+	}
+	return id
+}
+
+func TestHistoryOverview_GoldenKeys(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+
+	w := h.do(http.MethodGet, overviewPath, nil, withCookie(cookie))
+	for _, want := range []string{`"child":null`, `"grants":[]`, `"next_before":null`} {
+		if !bytes.Contains(w.Body.Bytes(), []byte(want)) {
+			t.Fatalf("empty overview = %d %s, want %s", w.Code, w.Body, want)
+		}
+	}
+
+	ada := h.seedChild("Ada", "Kid phone")
+	h.grantOK(cookie, ada.ID, []string{"tiktok"}, 1800)
+
+	decode := func(query string) map[string]any {
+		t.Helper()
+		w := h.do(http.MethodGet, overviewPath+query, nil, withCookie(cookie))
+		var raw map[string]any
+		if err := json.Unmarshal(w.Body.Bytes(), &raw); err != nil {
+			t.Fatalf("%d %s: %v", w.Code, w.Body, err)
+		}
+		return raw
+	}
+
+	raw := decode("")
+	if got := keysOf(t, raw); !reflect.DeepEqual(got, []string{"child", "grants", "next_before"}) {
+		t.Fatalf("page keys = %v", got)
+	}
+	if raw["child"] != nil {
+		t.Fatalf("unfiltered page child = %v, want null", raw["child"])
+	}
+	g := raw["grants"].([]any)[0]
+	want := []string{"child", "ended_at", "ends_at", "extensions", "id", "services", "started_at", "status"}
+	if got := keysOf(t, g); !reflect.DeepEqual(got, want) {
+		t.Fatalf("grant keys = %v, want %v", got, want)
+	}
+	child := g.(map[string]any)["child"]
+	if got := keysOf(t, child); !reflect.DeepEqual(got, []string{"id", "name"}) {
+		t.Fatalf("grant child keys = %v", got)
+	}
+	if child.(map[string]any)["name"] != "Ada" {
+		t.Fatalf("grant child = %v, want Ada", child)
+	}
+
+	raw = decode("?child=" + itoa(ada.ID))
+	if got := keysOf(t, raw["child"]); !reflect.DeepEqual(got, []string{"id", "name"}) {
+		t.Fatalf("filtered page child keys = %v", got)
+	}
+	if name := raw["child"].(map[string]any)["name"]; name != "Ada" {
+		t.Fatalf("filtered page child name = %v, want Ada", name)
+	}
+}
+
+func TestHistoryOverview_StatusMatchesWire(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	want := map[int64]bool{}
+	for _, status := range []string{store.StatusActive, store.StatusExpired, store.StatusEnded} {
+		for _, reason := range []any{nil, store.EndReasonExpired, store.EndReasonEndedEarly, store.EndReasonPermanentBlock} {
+			want[h.seedRawGrant(ada.ID, status, reason, t0, "youtube")] = true
+		}
+	}
+
+	seen := map[int64]bool{}
+	for _, status := range []string{historyOngoing, historyExpired, historyEndedEarly, historyPermanentBlock, historyEndedUnknown} {
+		for _, g := range h.overviewOK(cookie, "?status="+status).Grants {
+			if g.Status != status {
+				t.Fatalf("?status=%s returned grant %d with status %s", status, g.ID, g.Status)
+			}
+			if seen[g.ID] {
+				t.Fatalf("grant %d appears under two statuses", g.ID)
+			}
+			seen[g.ID] = true
+		}
+	}
+	if !reflect.DeepEqual(seen, want) {
+		t.Fatalf("the five statuses hold %v, want every grant %v", seen, want)
+	}
+}
+
+func TestHistoryOverview_Errors(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	gone := h.seedChild("Gone")
+	if w := h.do(http.MethodDelete, childPath(gone.ID), nil, withCookie(cookie)); w.Code/100 != 2 {
+		t.Fatalf("delete child = %d %s", w.Code, w.Body)
+	}
+	h.seedLegacyGrant(ada.ID, "youtube")
+	const at = "2026-03-08T05:00:00Z"
+
+	for _, query := range []string{
+		"status=bogus",
+		"from=notadate",
+		"until=notadate",
+		"until=2026-01-01",
+		"before=0",
+		"before=-1",
+		"before=abc",
+		"service=",
+		"status=",
+		"from=",
+		"until=",
+		"before=",
+		"child=1&child=2",
+		"service=a&service=b",
+		"status=expired&status=ongoing",
+		"from=" + at + "&from=" + at,
+		"until=" + at + "&until=" + at,
+		"before=1&before=2",
+		"from=2026-03-08T05:00:00+01:00", // an unescaped + decodes to a space
+		"status=%zz",
+		"from=0001-01-01T00:00:00Z", // the zero time, which the store reads as unset
+		"until=0001-01-01T00:00:00Z",
+	} {
+		if w, _ := h.overview(cookie, "?"+query); w.Code != http.StatusBadRequest {
+			t.Errorf("?%s = %d %s, want 400", query, w.Code, w.Body)
+		}
+	}
+	for _, child := range []string{"abc", "", "0", "-1", "999", itoa(gone.ID)} {
+		if w, _ := h.overview(cookie, "?child="+child); w.Code != http.StatusNotFound {
+			t.Errorf("?child=%s = %d %s, want 404", child, w.Code, w.Body)
+		}
+	}
+	if w := h.do(http.MethodGet, overviewPath, nil); w.Code != http.StatusUnauthorized {
+		t.Errorf("overview without a session = %d, want 401", w.Code)
+	}
+
+	w, p := h.overview(cookie, "?from=2026-03-09T00:00:00Z&until=2026-03-08T00:00:00Z")
+	if w.Code != http.StatusOK || !bytes.Contains(w.Body.Bytes(), []byte(`"grants":[]`)) || len(p.Grants) != 0 {
+		t.Errorf("from after until = %d %s, want 200 with grants []", w.Code, w.Body)
+	}
+}
+
+func TestHistoryOverview_FilteredPaging(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	want := []int64{}
+	for i := 0; i < 60; i++ {
+		want = append([]int64{h.seedRawGrant(ada.ID, store.StatusExpired, nil, t0, "youtube")}, want...)
+		h.seedRawGrant(ada.ID, store.StatusExpired, nil, t0, "tiktok")
+	}
+
+	p1 := h.overviewOK(cookie, "?service=youtube")
+	if len(p1.Grants) != 50 || p1.NextBefore == nil || *p1.NextBefore != p1.Grants[49].ID {
+		t.Fatalf("page 1 = %d grants next_before %v, want 50 and the last id", len(p1.Grants), p1.NextBefore)
+	}
+	p2 := h.overviewOK(cookie, "?service=youtube&before="+itoa(*p1.NextBefore))
+	if len(p2.Grants) != 10 || p2.NextBefore != nil {
+		t.Fatalf("page 2 = %d grants next_before %v, want 10 and null", len(p2.Grants), p2.NextBefore)
+	}
+	if got := append(overviewIDs(p1), overviewIDs(p2)...); !reflect.DeepEqual(got, want) {
+		t.Fatalf("walk = %v, want every match once, newest first: %v", got, want)
+	}
+}
+
+func TestHistoryOverview_ClientURL(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	h.seedChild("Ada", "Kid phone")
+	other := h.seedChild("Ben", "Ben phone")
+	cleo := h.seedChild("Cleo", "Cleo phone")
+	if cleo.ID != 3 {
+		t.Fatalf("child id = %d, want 3 — the literal URL names it", cleo.ID)
+	}
+	in := time.Date(2026, 3, 8, 12, 0, 0, 0, time.UTC)
+	match := h.seedRawGrant(cleo.ID, store.StatusExpired, nil, in, "custom:5")
+
+	// One near miss per filter, then filler up to the cursor in the URL.
+	h.seedRawGrant(other.ID, store.StatusExpired, nil, in, "custom:5")
+	h.seedRawGrant(cleo.ID, store.StatusExpired, nil, in, "custom:6")
+	h.seedRawGrant(cleo.ID, store.StatusActive, nil, in, "custom:5")
+	h.seedRawGrant(cleo.ID, store.StatusExpired, nil, in.Add(-24*time.Hour), "custom:5")
+	for id := int64(0); id < 39; {
+		id = h.seedRawGrant(cleo.ID, store.StatusExpired, nil, in.Add(24*time.Hour), "custom:5")
+	}
+	if late := h.seedRawGrant(cleo.ID, store.StatusExpired, nil, in, "custom:5"); late != 40 {
+		t.Fatalf("cursor grant id = %d, want 40 — the literal URL names it", late)
+	}
+
+	p := h.overviewOK(cookie, "?child=3&service=custom%3A5&status=expired&from=2026-03-08T05%3A00%3A00.000Z&until=2026-03-09T04%3A00%3A00.000Z&before=40")
+	if got := overviewIDs(p); !reflect.DeepEqual(got, []int64{match}) {
+		t.Fatalf("client URL = %v, want only [%d]", got, match)
+	}
+}
+
+func TestHistoryOverview_EndToEnd(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	old := h.seedChild("Old", "Old phone") // the highest id, so SQLite reuses it
+
+	trimmed := h.grantOK(cookie, ada.ID, []string{"youtube", "tiktok"}, 1800)
+	h.toggleOK(cookie, ada.ID, "youtube", store.ToggleBlocked)
+
+	p := h.overviewOK(cookie, "?service=youtube")
+	if got := overviewIDs(p); !reflect.DeepEqual(got, []int64{trimmed.ID}) {
+		t.Fatalf("service=youtube = %v, want the trimmed grant [%d]", got, trimmed.ID)
+	}
+	var removed *historyServiceView
+	for i := range p.Grants[0].Services {
+		if p.Grants[0].Services[i].ID == "youtube" {
+			removed = &p.Grants[0].Services[i]
+		}
+	}
+	if removed == nil || removed.RemovedReason == nil || *removed.RemovedReason != store.EndReasonPermanentBlock {
+		t.Fatalf("services = %+v, want youtube marked removed by permanent_block", p.Grants[0].Services)
+	}
+	if p.Grants[0].Child != (historyChildView{ID: ada.ID, Name: "Ada"}) {
+		t.Fatalf("grant child = %+v, want Ada", p.Grants[0].Child)
+	}
+
+	oldGrant := h.seedRawGrant(old.ID, store.StatusExpired, nil, t0, "netflix")
+	if w := h.do(http.MethodDelete, childPath(old.ID), nil, withCookie(cookie)); w.Code/100 != 2 {
+		t.Fatalf("delete child = %d %s", w.Code, w.Body)
+	}
+	if got := overviewIDs(h.overviewOK(cookie, "")); !reflect.DeepEqual(got, []int64{trimmed.ID}) {
+		t.Fatalf("after delete = %v, want no grant %d", got, oldGrant)
+	}
+
+	cleo := h.seedChild("Cleo", "Cleo phone")
+	if cleo.ID != old.ID {
+		t.Fatalf("new child id = %d, want reused %d — the test needs the reuse", cleo.ID, old.ID)
+	}
+	own := h.seedRawGrant(cleo.ID, store.StatusExpired, nil, t0, "disney")
+
+	if got := overviewIDs(h.overviewOK(cookie, "")); !reflect.DeepEqual(got, []int64{own, trimmed.ID}) {
+		t.Fatalf("overview = %v, want [%d %d] without the old child's %d", got, own, trimmed.ID, oldGrant)
+	}
+	p = h.overviewOK(cookie, "?child="+itoa(cleo.ID))
+	if got := overviewIDs(p); !reflect.DeepEqual(got, []int64{own}) || p.Child == nil || p.Child.Name != "Cleo" {
+		t.Fatalf("filtered = %v child %+v, want only [%d] on Cleo's page", got, p.Child, own)
+	}
+}
+
+func TestHistoryOverview_CatalogueDown(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	created := h.grantOK(cookie, ada.ID, []string{"tiktok"}, 1800)
+
+	hits := h.fake.CountRequests("GET", catalogueAllPath)
+	h.overviewOK(cookie, "")
+	if n := h.fake.CountRequests("GET", catalogueAllPath) - hits; n != 0 {
+		t.Fatalf("all-snapshotted overview read the catalogue %d times, want 0", n)
+	}
+
+	legacy := h.seedLegacyGrant(ada.ID, "youtube")
+	h.fake.SetStatus(catalogueAllPath, http.StatusInternalServerError)
+	p := h.overviewOK(cookie, "")
+	if got := overviewIDs(p); !reflect.DeepEqual(got, []int64{legacy, created.ID}) {
+		t.Fatalf("overview = %v, want [%d %d]", got, legacy, created.ID)
+	}
+	if got := serviceNames(p.Grants[1].historyGrantView); got["tiktok"] != "TikTok" {
+		t.Fatalf("snapshotted name with catalogue down = %v, want TikTok", got)
+	}
+	if got := serviceNames(p.Grants[0].historyGrantView); got["youtube"] != "youtube" {
+		t.Fatalf("unsnapshotted name with catalogue down = %v, want bare youtube", got)
+	}
+}
