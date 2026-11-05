@@ -31,7 +31,7 @@ task_seq = 11
   description = "ListHistory joins children in SQL on child_id AND g.id > history_after_grant_id, reads limit+1, reuses historyDetails. The visibility join is one named SQL fragment in history.go, shared with t-5. ListHistory fills per-grant ChildID and ChildName. HistoryFilter carries ChildID and Before here; ChildID 0 means all, a negative or unknown or deleted ChildID is ErrChildNotFound. ListGrantHistory keeps its own child lookup, so id 0 and below stay ErrChildNotFound, and it leaves per-grant ChildID and ChildName zero; its behaviour is unchanged."
   covers = ["c-1", "c-2", "c-3", "c-9"]
   test_contract = ["if child names or details are lost, TestListHistory_AllChildrenNewestFirst fails: interleaved Ada/Ben grants come back id DESC, each with ChildID, ChildName, services, removals and extensions equal to the per-child read", "if the cursor is per-child or the limit is off, TestListHistory_CrossChildPaging fails: 120 grants over 3 children walk 50/50/20 by Before, the union is every id exactly once, HasMore is false on the last page, 51 grants give HasMore true, and exactly 50 give HasMore false", "if the cursor must point at a visible grant or new grants shift the window, TestListHistory_StableCursorAcrossChildren fails: a grant created between pages appears neither in page 2 nor twice, and deleting the child that owns the cursor grant between pages still returns the next older grants with no skip", "if deleted children are dropped in Go after LIMIT, TestListHistory_DeletedChildOmitted fails: 60 newest grants on a deleted child (one still active) over 50 visible grants give a full first page of the 50 visible with HasMore false; 120 grants alternating Ada/Ben with Ben deleted give 50 of Ada's with HasMore true, then 10 with HasMore false", "if the join ignores the watermark, TestListHistory_ReusedIDOmitted fails: delete the highest-id child, create one that gets the same id (asserted), and the old grant is absent both unfiltered and with ChildID set, while the new grant shows the new name and no grant carries that name from before the watermark", "if the child filter conflates unknown with empty, TestListHistory_ChildFilter fails: unknown and deleted ChildID return ErrChildNotFound; a child with no grants returns an empty page with ChildName set; ChildID 0 returns all; an empty install returns an empty non-nil list", "if the shared read regresses the per-child path, the existing TestListGrantHistory_* suite and the internal/store/setup_test.go assertions fail unedited, including the DeepEqual in TestListGrantHistory_Legacy", "if the per-child wrapper forwards id 0 as no filter, TestListGrantHistory_NonPositiveID fails: ListGrantHistory with 0 and -1 returns ErrChildNotFound, and ListHistory with ChildID -1 returns ErrChildNotFound"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-2"
@@ -47,7 +47,7 @@ task_seq = 11
     '''if the migration rewrites grants, TestMigrate0011_GrantsUntouched fails: every grants row is byte-identical before and after, and end_reason stays NULL (locked legacy_end_reason)''',
     '''if ordering breaks, TestMigrate0011_Order fails: schema_migrations holds 0011 directly after 0010, the shape of TestMigrate0009_Order''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-3"
@@ -57,7 +57,7 @@ task_seq = 11
   description = "HistoryFilters type {service, status, from, to}; parseFilters(search), filterParams(f) in fixed order, hasFilters(f), dayBounds(from, to) giving local-midnight instants as UTC ISO, with until the midnight after to. appendPage becomes generic over {id: number} so overview rows keep their child. Pin process.env.TZ = 'America/Havana' at the top of vite.config.ts so one zone holds in the main process and in Stryker's worker threads."
   covers = ["c-5", "c-8"]
   test_contract = ["if the pin is dropped or ignored, the zone control test fails: getTimezoneOffset reads 300 for 2026-01-15 and 240 for 2026-07-15, so a run that fell back to the host zone fails instead of passing by accident", "if a day is computed in UTC or as 24 hours, the dayBounds test fails: 2026-03-08..2026-03-08 gives 2026-03-08T05:00:00.000Z and 2026-03-09T04:00:00.000Z (23-hour day); 2026-11-01..2026-11-01 gives 2026-11-01T04:00:00.000Z and 2026-11-02T05:00:00.000Z (25-hour day)", "if a skipped or repeated midnight breaks, the same test fails: 2026-03-08 has no local midnight in this zone and 2026-11-01 has two, and the instants above are the required answers", "if a day string parses as UTC, the zone test fails: from=2026-03-01 gives 2026-03-01T05:00:00.000Z, not 2026-03-01T00:00:00.000Z", "if an open bound is invented, the dayBounds test fails: only from gives no until, only to gives no from, neither gives {}", "if bad URL values reach the screen, the parseFilters test fails: status=bogus, from=2026-02-31, from=2026-13-01, to=yesterday and service= all parse to null; 2026-02-31 never rolls over to March", "if extreme years leak through, the parseFilters test fails: 0099-01-01 (which new Date reads as 1999) and 9999-12-31 (whose until would serialise as +010000, unparseable by Go) drop to no date filter", "if serialising is lossy or order-dependent, the round-trip test fails: all 16 subsets survive parse(serialise(f)), including services custom:5 and 'a&b=c +', and params come out in one order whatever order they went in", "if appendPage loses row fields, the appendPage test fails: rows carrying a child field keep it after a dedupe by id, and the existing HistoryGrant callers still typecheck"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-4"
@@ -80,7 +80,7 @@ task_seq = 11
     '''if a row changing mid-paging breaks the cursor, TestListHistory_StatusChangesBetweenPages fails: under status=ongoing, a page-1 grant that expires before page 2 causes no skip or repeat among the rest''',
     '''if a filter reopens hidden rows, TestListHistory_FiltersKeepVisibility fails: a service filter never returns a deleted or reused-id child's grant''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-5"
@@ -97,7 +97,7 @@ task_seq = 11
     '''if hidden grants leak, TestListHistoryServices_Hidden fails: a service used only by a deleted child, or only by the earlier owner of a reused id, is not listed''',
     '''if legacy rows or an empty install break, TestListHistoryServices_Legacy fails: a legacy service comes back with Name ""; no grants gives a non-nil empty list''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-6"
@@ -108,7 +108,7 @@ task_seq = 11
   covers = ["c-7", "c-8", "c-9"]
   depends_on = ["t-3"]
   test_contract = ["if the two states collapse, the garbage-list test in api.test.ts fails: /history has historyChild null and badChild false; ?child=, abc, 0, -1, 3.5, 1e2, %203 and the unsafe integer 9007199254740993 each have historyChild null and badChild true", "if refresh() still rebuilds the URL, the App reload test fails: booting at /history?status=expired&service=custom:5&child=3 keeps the URL byte-for-byte with zero pushState calls, and /history?child=abc is not rewritten to /history", "if the login bounce regresses, the existing login-route test fails: refresh() on /login still lands on /", "if PIN unlock loses filters, the App locked test fails: 401 pin_required then unlock leaves the query and historyFilters intact", "if popstate reads only child, the popstate test fails: going back from /history?status=expired to /history?status=ongoing&from=2026-03-01 updates status and from", "if a filter is dropped from the URL, the navigate test fails: navigate('history', {child: 3, filters}) pushes exactly /history?child=3&service=youtube&status=expired&from=2026-10-01&to=2026-10-31 once", "if a query leaks or a store re-notifies, the same test fails: the same call again pushes nothing and does not notify subscribers; navigate('home') pushes / with filters cleared and historyChild null; navigate('history', {child: 2}) pushes /history?child=2 with no earlier service left over; navigate('children', {filters: {service: 'x', status: null, from: null, to: null}}) pushes /children with no query", "if navigate skips filter validation, the navigate test fails: navigate('history', {filters}) with to 9999-12-31 and status bogus pushes bare /history and leaves both null, the same result a reload of that URL gives", "if the client builds a different URL from the server's, the fetchHistoryPage test fails on the literal /api/v1/history?child=3&service=custom%3A5&status=expired&from=2026-03-08T05%3A00%3A00.000Z&until=2026-03-09T04%3A00%3A00.000Z&before=40; no filters requests /api/v1/history with no ?; null lists become []; a 404 rejects with ApiError 404", "if the old types change, make typecheck fails: page.child.name in History.svelte and the grant() fixtures in history.test.ts and History.panel.test.ts stay unedited through this task"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-7"
@@ -128,7 +128,7 @@ task_seq = 11
     '''if the child control resets the rest, the child test fails: choosing All emits child null with filters unchanged''',
     '''if empty options crash the bar, the empty test fails: empty children and services render every control with its All value''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-8"
@@ -139,7 +139,7 @@ task_seq = 11
   covers = ["c-1", "c-2", "c-3", "c-4", "c-5", "c-6", "c-7", "c-9"]
   depends_on = ["t-4"]
   test_contract = ["if grants lose their child or the shape drifts, TestHistoryOverview_GoldenKeys fails: page keys are child, grants, next_before; child is null without a filter and {id,name} with one; grant keys are the per-child set plus child; an unfiltered empty page has \"child\":null and \"grants\":[]", "if the extraction changes the old route, the existing TestHistory_GoldenKeys fails unedited: per-child grants gain no child key", "if the SQL predicate and endStatus drift, TestHistoryOverview_StatusMatchesWire fails: over all 12 (status, end_reason) cells seeded raw, each grant appears under exactly one ?status= and its returned status equals that value, and the five results together hold every grant exactly once", "if parsing is lenient, TestHistoryOverview_Errors fails: status=bogus, from=notadate, until=2026-01-01 (no time), before=0, an empty service, status, from, until or before, and each of child, service, status, from, until repeated are 400; an unescaped + offset in from (decoded as a space) is 400, never an unfiltered 200; child=abc, 0, 999 and a deleted child are 404; no session is 401; from after until is 200 with grants []", "if the cursor drops filters, TestHistoryOverview_FilteredPaging fails: 60 matching among 120 chain through next_before with the same query to 50 + 10 + null, every row matching and none repeated", "if client and server disagree, TestHistoryOverview_ClientURL fails: the literal URL from t-6 (%3A, .000Z) returns 200 and exactly the expected grant", "if a trim or reuse is lost on the wire, TestHistoryOverview_EndToEnd fails: through the real store and engine, a block-trimmed service is found by service= with removed_reason set; DELETE a child, create one reusing the id, and only the new child's grants are listed", "if the catalogue becomes a hard dependency, TestHistoryOverview_CatalogueDown fails: AdGuard Services() returning 500 gives 200 with snapshot names and bare ids; with all snapshots present no catalogue call is made", "if the per-child route starts accepting id 0, TestHistory_ChildZero fails: GET /api/v1/children/0/history stays 404 and never returns another child's grants"]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-9"
@@ -164,7 +164,7 @@ task_seq = 11
     '''if reload doubles the fetch, the App test fails: booting at /history?child=3&status=expired calls exactly /api/v1/me, one history page, one /api/v1/children and one /api/v1/history/services request, and the status select shows Expired''',
     '''if back does not restore, the App test fails: change status, popstate returns the previous filter with list and control reverted; Back to Home then popstate restores the filtered list''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-10"
@@ -182,7 +182,7 @@ task_seq = 11
     '''if the shape or order drifts, TestHistoryServices_Shape fails: keys are exactly services, id, name; no grants gives "services":[]; two services with equal names sort by id; no session gives 401''',
     '''if the mux route collides, TestHistoryServices_Routing fails: /api/v1/history/services returns options, /api/v1/history returns a page, and /api/v1/history/other is 404''',
   ]
-  status = "pending"
+  status = "done"
 
 [[task]]
   id = "t-11"
@@ -199,4 +199,4 @@ task_seq = 11
     '''if per-child links change, the existing test 'each child has a History link to its own history' fails: still /history?child=2 with no other query''',
     '''if a caller of fetchHistory survives, make typecheck fails on the missing export''',
   ]
-  status = "pending"
+  status = "done"
