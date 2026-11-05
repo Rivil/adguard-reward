@@ -1,4 +1,4 @@
-task_seq = 6
+task_seq = 9
 
 [phase]
   id = "export-import"
@@ -108,4 +108,34 @@ task_seq = 6
   description = "Before commit, after the emptiness, catalogue and name clash checks: one Clients read for missing_clients and one AdoptClients(0, nil, union of file clients in first-occurrence order). After commit: Grants.SyncRules called directly, because resyncRules returns nothing and rules_applied needs the error. Test file builds its own harness exposing the engine."
   covers = ["c-5", "c-6"]
   test_contract = ["if adoption runs before the emptiness check, TestImport_NonEmptyNoAdoption fails: a 409 on a seeded install POSTs nothing to AdGuard", "if adoption moves after the commit, TestImport_AdGuardFailure fails: SetUpdateStatus(\"Kid tablet\", 500) gives 502 naming it, ExportSetup empty, Kid phone keeps its addition; clearing the status and retrying gives 200, not 409", "if a clients read failure is ignored, TestImport_ClientsReadDown fails: it gives 502, no rows", "if a missing client blocks import or gets created, TestImport_MissingClient fails: \"Gone phone\" imports with 200, mapping stored, missing_clients [\"Gone phone\"], listed once even when two children share it, no /control/clients/add call", "if a shared client is left inheriting, TestImport_SharedClientAdopted fails: a client under two children ends with use_global_blocked_services false after one /control/clients/update", "if the sync disturbs outside lines, TestImport_RulesOutsideMarkersUntouched fails: UserRules seeded with a comment, blank lines, trailing spaces, non-ASCII and a near-miss marker comment before and after the markers; post-import those lines are identical in value and position, and the region holds ||domain^$client=... for the imported clients", "if imported services don't behave like local ones, TestImport_CustomServiceGrants fails: a grant on an imported service adds its @@ exception under the new id and ending it removes that, outside lines still identical", "if a rules failure rolls back or reports success, TestImport_RulesWriteFails fails: set_rules 500 gives 200, rules_applied false, rows stored; one eng.Reconcile puts the region in place with no re-adoption POST", "if a malformed region is overwritten, TestImport_MalformedRegion fails: it gives 200, rules_applied false, and its marker lines are untouched", "if adoption is skipped, TestImport_TogglesConverge fails, because the reconciler skips clients on the global list: built-in unblocked, built-in blocked and custom unblocked toggles on the second child, ids differing from the source, Kid tablet starting on use_global_blocked_services; after one eng.Reconcile, BlockedServices and the @@ lines match on that child's clients only", "if toggle edges regress, TestImport_ToggleEdges fails: a permanent unblock of a service in the global list is gone from the client after Reconcile; two children with opposite built-in toggles on a shared client leave it open", "if adoption runs before the catalogue or name clash checks, TestImport_RejectedNoAdoption fails: a file mapping a client AdGuard knows, with an unknown built-in and separately a built-in name clash, gives 422 with zero /control/clients/update requests", "if the no-marker append path disturbs outside lines, TestImport_RulesNoMarkers fails: UserRules seeded with parent lines and no markers, post-import those lines are identical in value and position and the region is appended after them", "if the client union is built from a map, TestImport_ClientOrder fails: two missing clients list in first-occurrence file order in missing_clients, and adoption writes clients in that same order"]
+  status = "done"
+
+[[task]]
+  id = "t-7"
+  wave = 5
+  title = "Pin Backup clearing the missing-clients list"
+  files = ["web/src/lib/Settings.test.ts"]
+  description = "Verify remediation (tests only). Kill the BLOCKING survivor Settings.svelte:113 (ArrayDeclaration): runBackup's missingClients = [] reset. No test renders the Backup section after an export, so neither a stale list from an earlier import nor a phantom entry on a clean export is seen. Settings.svelte itself does not change."
+  covers = ["c-1"]
+  test_contract = ["if runBackup seeds missingClients with an entry (the Settings.svelte:113 ArrayDeclaration mutant), the clean-export test fails: a successful export with no prior import shows no missing-clients warning", "if runBackup stops clearing missingClients, the stale-list test fails: an import reporting Gone phone, then a successful export, leaves no Gone phone on screen and no warning"]
+  status = "done"
+
+[[task]]
+  id = "t-8"
+  wave = 5
+  title = "Name the record in file decode problems"
+  files = ["internal/api/setup_file.go", "internal/api/setup_file_test.go"]
+  description = "Verify remediation for the c-4 FLAG: a 400-class decode problem names the field but not the record (unknown field id with no path; buttons.duration with no index). After the header check, decode the top level strictly into per-list raw messages, then strict-decode each element so a problem reads buttons[2].duration or children[1]: unknown field. A nil list must stay nil so the required-lists check still separates absent or null from []."
+  covers = ["c-4"]
+  test_contract = ["if a nested unknown field loses its path, the unknown-field case fails: an id field on the second button is 400 and the message names buttons[1] and id", "if a type error loses its index, the wrong-type case fails: a string duration on the third button is 400 and the message names buttons[2].duration", "if a wrong-typed element prints an empty field, the element case fails: children [5] is 400 naming children[0] with no trailing dot", "if the top level stops being strict, the top-level cases fail: an unknown top-level field and a non-list children are 400 naming that field", "if per-element decoding turns an absent list into an empty one, the existing required-lists table fails: absent or null is rejected naming the field while [] is accepted"]
+  status = "done"
+
+[[task]]
+  id = "t-9"
+  wave = 5
+  title = "Answer 502 when adoption's client read fails"
+  files = ["internal/grants/clients.go", "internal/grants/clients_test.go", "internal/api/children.go", "internal/api/children_test.go", "internal/api/import_adguard_test.go"]
+  description = "Verify remediation for the adguard_failure FLAG: when the Clients read inside AdoptClients fails with an error adguardDown does not match, such as an undecodable 200 body, writeAdoptError answers 500, against the locked any-failure-is-502 and its own doc comment. AdoptClients marks that read's failure with a typed error and writeAdoptError answers it through writeAdGuardError. A store read inside the engine stays 500."
+  covers = ["c-4"]
+  test_contract = ["if AdoptClients returns the read error unmarked, its grants test fails: an undecodable /control/clients body gives the typed read error, and errors.Is still reaches the cause", "if writeAdoptError misses the typed error, the child create test fails: an undecodable clients body on a create with clients is 502 adguard_unavailable with no child row", "if the import path regresses, the import test fails: AdoptClients failing with the typed read error gives 502 and an empty ExportSetup, and a retry gives 200, not 409", "if the 502 widens to store failures, TestChildUpdate_AdoptStoreReadFails fails: a store read failing inside adopt stays 500 internal"]
   status = "done"

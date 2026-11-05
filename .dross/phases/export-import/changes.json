@@ -106,6 +106,56 @@
           "what": "import adopts AdGuard clients before the commit and syncs managed rules after it, reporting missing clients"
         }
       ]
+    },
+    "t-7": {
+      "files": [
+        "web/src/lib/Settings.test.ts"
+      ],
+      "commit": "35cacb9",
+      "completed_at": "2026-11-05T11:04:58.310321Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "Settings — Backup export tests",
+          "loc": "web/src/lib/Settings.test.ts:485",
+          "what": "a successful export resets the missing-clients list, so no stale or phantom names show"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "internal/api/setup_file.go",
+        "internal/api/setup_file_test.go"
+      ],
+      "commit": "556f155",
+      "completed_at": "2026-11-05T11:08:13.485694Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "decodeRecords",
+          "loc": "internal/api/setup_file.go:152",
+          "what": "decodes each file record strictly on its own so a 400 names the record, such as buttons[2].duration"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go",
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/import_adguard_test.go"
+      ],
+      "commit": "04aab68",
+      "completed_at": "2026-11-05T11:12:37.08124Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "ErrClientsRead",
+          "loc": "internal/grants/clients.go:31",
+          "what": "marks a failed client read inside AdoptClients so child writes and import answer 502"
+        }
+      ]
     }
   },
   "reviews": {
@@ -302,6 +352,60 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "handleImport calls a.deps.Grants without the nil guard resyncRules has. This matches the unguarded AdoptClients calls in children.go, and every harness that reaches import wires Grants.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Both new tests run saveFile on real timers, leaving a 40s revoke timer pending after afterEach restores URL. If a worker outlives it, URL.revokeObjectURL may be undefined when it fires. The in-flight export test at Settings.test.ts:560 already does this, so the pattern is not new.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "A wrong-typed element inside a nested list is named only down to the list: clients [5] reports children[0].clients, not children[0].clients[0]. The task record claims only record-level paths, and the new test pins this wording.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "format and version now decode to json.RawMessage and are set from constants, so a duplicate key such as {\"version\":\"x\",\"version\":1} passes; the old strict decode into int refused it with a 400. The last value still wins and is the one checkHeader validated, so the result is harmless.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The doc comment on the Grants interface in internal/api/api.go lists the engine's typed errors (*ErrRevertFailed, *ErrAdoptFailed) but not the new *ErrClientsRead. That file is outside this task's list.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "CreateClient's read has the same gap this task closes for AdoptClients: Engine.baseline returns the Clients error unmarked and writeCreateClientError still relies on adguardDown, so an undecodable 200 there answers 500. It is outside this task's record and not on the import path.",
           "resolution": "non-blocking, left"
         }
       ]
