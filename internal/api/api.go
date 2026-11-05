@@ -43,6 +43,8 @@ type ChildStore interface {
 	ListGrantHistory(ctx context.Context, childID, before int64, limit int) (store.GrantHistory, error)
 	// ListHistory feeds the filtered overview across all children.
 	ListHistory(ctx context.Context, f store.HistoryFilter, limit int) (store.GrantHistory, error)
+	// ListHistoryServices feeds the overview's service filter options.
+	ListHistoryServices(ctx context.Context) ([]store.HistoryServiceOption, error)
 	// ExportSetup, ImportSetup and EnsureEmpty move the whole setup in and
 	// out; the last two speak *store.ErrNotEmpty.
 	ExportSetup(ctx context.Context) (store.Setup, error)
@@ -150,6 +152,7 @@ func (a *API) routes() {
 	a.mux.Handle("POST /api/v1/children/{id}/toggles", a.requireSession(http.HandlerFunc(a.handleToggle)))
 	a.mux.Handle("GET /api/v1/children/{id}/history", a.requireSession(http.HandlerFunc(a.handleHistory)))
 	a.mux.Handle("GET /api/v1/history", a.requireSession(http.HandlerFunc(a.handleHistoryOverview)))
+	a.mux.Handle("GET /api/v1/history/services", a.requireSession(http.HandlerFunc(a.handleHistoryServices)))
 	a.mux.Handle("GET /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClients)))
 	a.mux.Handle("POST /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClientCreate)))
 	a.mux.Handle("POST /api/v1/clients/rename", a.requireSession(http.HandlerFunc(a.handleClientRename)))
