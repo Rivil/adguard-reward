@@ -1890,3 +1890,75 @@
   line = 108
   accepted_in = "pin-unlock"
   reason = "Equivalent mutant: the surviving true->false is passive (onInput never calls preventDefault, so passive is unobservable); a capture:false mutant is killed by 'stop removes the input listeners' and the stopPropagation wake test."
+
+[[accepted]]
+  key = "50fa6eac4e744221"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil && ctx.Err() == nil:"
+  line = 305
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "4740988ef6c38c04"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case n > 0:"
+  line = 307
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "714f27fe60217a48"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case n > 0:"
+  line = 307
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "eb32f9fcff67309c"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil && ctx.Err() == nil:"
+  line = 315
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "105d02322df96350"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case n > 0:"
+  line = 317
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "063e583cf62246c2"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case n > 0:"
+  line = 317
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "0f01ad4fab406eda"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "const left = body?.attempts_remaining"
+  line = 178
+  category = "optional-chain-inside-try"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "5f7f51c4d7ffbc60"
+  file = "web/src/lib/PinPad.svelte"
+  op = "ConditionalExpression"
+  text = "const canSubmit = $derived(!pending && pin.length >= MIN && pin.length <= MAX)"
+  line = 17
+  accepted_in = "pin-unlock"
+  reason = "Equivalent mutant: forces the pin.length <= MAX arm of canSubmit to true, but every write to pin keeps it <= MAX (digitsOnly slices to MAX, press() returns at >= MAX, backspace only shrinks, resets set ''), so the arm is never false. The <= vs < boundary is killed by the 6-digit submit test."

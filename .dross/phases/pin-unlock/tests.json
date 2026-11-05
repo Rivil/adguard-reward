@@ -1,6 +1,6 @@
 {
   "phase": "pin-unlock",
-  "generated_at": "2026-11-04T17:02:31.693594Z",
+  "generated_at": "2026-11-05T06:40:06.908027Z",
   "languages": [
     {
       "name": "go",
@@ -36,11 +36,11 @@
       ],
       "mutation": {
         "Tool": "gremlins",
-        "Killed": 212,
-        "Survived": 20,
+        "Killed": 214,
+        "Survived": 18,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.9137931034482759,
+        "Score": 0.9224137931034483,
         "Surviving": [
           {
             "File": "cmd/adguard-reward/main.go",
@@ -55,69 +55,14 @@
           },
           {
             "File": "internal/api/pin.go",
-            "Line": 99,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "f42fdad62cd23590",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/api/pin.go",
             "Line": 128,
             "Op": "CONDITIONALS_NEGATION",
             "Snippet": "",
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "1702d76e6fc4596c",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/api/unlock.go",
-            "Line": 87,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "6f6a26b327e331f8",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/api/unlock.go",
-            "Line": 111,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "2e088d645f6775d1",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/api/unlock.go",
-            "Line": 152,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "4a5d036d6cf04e7b",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "internal/api/reauth.go",
-            "Line": 59,
-            "Op": "CONDITIONALS_NEGATION",
-            "Snippet": "",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "9fa81f875c787158",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/api/login.go",
@@ -127,8 +72,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "a2174cc1b459ab80",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/api/login.go",
@@ -138,8 +83,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "a2174cc1b459ab80",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/api/login.go",
@@ -149,8 +94,41 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "9633328df008345a",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/unlock.go",
+            "Line": 87,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6f6a26b327e331f8",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/unlock.go",
+            "Line": 111,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "2e088d645f6775d1",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/reauth.go",
+            "Line": 59,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9fa81f875c787158",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -160,8 +138,8 @@
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "50fa6eac4e744221",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -171,8 +149,8 @@
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "50fa6eac4e744221",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -182,8 +160,8 @@
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "4740988ef6c38c04",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -193,8 +171,8 @@
             "NotCovered": true,
             "Origin": "inherited",
             "Key": "714f27fe60217a48",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -204,8 +182,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "eb32f9fcff67309c",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -215,8 +193,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "eb32f9fcff67309c",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -226,8 +204,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "105d02322df96350",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/auth.go",
@@ -237,8 +215,8 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "063e583cf62246c2",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           },
           {
             "File": "internal/auth/middleware.go",
@@ -259,11 +237,11 @@
             "NotCovered": true,
             "Origin": "in-hunk",
             "Key": "149178a83dc6f631",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
           }
         ],
-        "NotCovered": 20
+        "NotCovered": 18
       },
       "measured_on": "local",
       "whole_file": {
@@ -314,52 +292,12 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 677,
-        "Survived": 73,
-        "Timeout": 5,
+        "Killed": 717,
+        "Survived": 36,
+        "Timeout": 2,
         "Errors": 0,
-        "Score": 0.8966887417218543,
+        "Score": 0.9496688741721855,
         "Surviving": [
-          {
-            "File": "web/src/App.svelte",
-            "Line": 50,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "366d8e7cc33bd3b1",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 72,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "4952cfeed1f15d36",
-            "Lifecycle": "accepted",
-            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 74,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "bae8f1c425a0b846",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/api.ts",
-            "Line": 32,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "inherited",
-            "Key": "f1b531569dc325b5",
-            "Lifecycle": "accepted",
-            "Note": "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
-          },
           {
             "File": "web/src/lib/api.ts",
             "Line": 175,
@@ -382,13 +320,43 @@
           },
           {
             "File": "web/src/lib/api.ts",
+            "Line": 177,
+            "Op": "OptionalChaining",
+            "Snippet": "body.grant_id",
+            "Origin": "inherited",
+            "Key": "24dff3c1899b1c9f",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 178,
+            "Op": "OptionalChaining",
+            "Snippet": "body.attempts_remaining",
+            "Origin": "in-hunk",
+            "Key": "0f01ad4fab406eda",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
             "Line": 179,
             "Op": "ConditionalExpression",
             "Snippet": "true",
             "Origin": "in-hunk",
             "Key": "e3ab9850c67d0aaa",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: typeof left === 'number' -\u003e true is guarded by Number.isSafeInteger(left), which rejects every non-number, so behaviour is identical."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 207,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4e298254432a9b95",
+            "Lifecycle": "accepted",
+            "Note": "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
           },
           {
             "File": "web/src/lib/api.ts",
@@ -397,8 +365,8 @@
             "Snippet": "\"\"",
             "Origin": "in-hunk",
             "Key": "6b2ce1298875194f",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -427,8 +395,8 @@
             "Snippet": "\"\"",
             "Origin": "in-hunk",
             "Key": "82334e90e6b24ee2",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -452,23 +420,13 @@
           },
           {
             "File": "web/src/lib/api.ts",
-            "Line": 131,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "8a80d0942480a927",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/api.ts",
             "Line": 190,
             "Op": "ArrayDeclaration",
             "Snippet": "[]",
             "Origin": "in-hunk",
             "Key": "4ac83fba7b317acf",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -477,8 +435,8 @@
             "Snippet": "\"\"",
             "Origin": "in-hunk",
             "Key": "620017a2348cd2ac",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
           },
           {
             "File": "web/src/lib/Home.svelte",
@@ -541,16 +499,6 @@
             "Snippet": "[\"Stryker was here\"]",
             "Origin": "inherited",
             "Key": "332725e64d242d98",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 67,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "4a2c7171134bef4f",
             "Lifecycle": "accepted",
             "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
           },
@@ -655,380 +603,14 @@
             "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
           },
           {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 62,
-            "Op": "ObjectLiteral",
-            "Snippet": "{}",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "f80632835b139f48",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 62,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "9a361592b6ea60c6",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 62,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "9a361592b6ea60c6",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 11,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "1869d91cc4fc6b2d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 11,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "1869d91cc4fc6b2d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 17,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "5f7f51c4d7ffbc60",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 17,
-            "Op": "EqualityOperator",
-            "Snippet": "pin.length \u003c MAX",
-            "Origin": "in-hunk",
-            "Key": "12a803d758a76d8d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 37,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "dfadb1cb3a4a5868",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 44,
-            "Op": "BooleanLiteral",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "7f4a046a4181ced9",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 49,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "76f3502c1fc25bf9",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 88,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "1da642ab74d2d6c3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 88,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "1da642ab74d2d6c3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 88,
-            "Op": "LogicalOperator",
-            "Snippet": "pending \u0026\u0026 pin.length === 0",
-            "Origin": "in-hunk",
-            "Key": "9c1a8daaec0a47ac",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 88,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "1da642ab74d2d6c3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 88,
-            "Op": "EqualityOperator",
-            "Snippet": "pin.length !== 0",
-            "Origin": "in-hunk",
-            "Key": "186d81be0a189eff",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/PinPad.svelte",
-            "Line": 95,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "dcafb6415234dd9a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 40,
-            "Op": "ObjectLiteral",
-            "Snippet": "{}",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "259c448160254f10",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 40,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "87349683edee70fb",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 40,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "87349683edee70fb",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 13,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "7029630d6f25e6d7",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 14,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "5559f22488797719",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 16,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "38a30aba9362d4fd",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 30,
-            "Op": "BooleanLiteral",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "27cbf8378f39fe8d",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 54,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "f2f650fc9996b4a9",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 55,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "a410ee2b0ddf79ff",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 59,
-            "Op": "BlockStatement",
-            "Snippet": "{}",
-            "Origin": "in-hunk",
-            "Key": "ff4bf38c441f2d18",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 60,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "658d5bf93549caef",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 61,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "29a0432f5c420e03",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 62,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "1c99a038b4bed6b8",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 70,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "d36b5fa19dffe1e0",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 75,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "c2ab6c6ccdc1668a",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 78,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "34713ab53d381e0f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 83,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "3c338392e7891aa9",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 90,
-            "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "in-hunk",
-            "Key": "b64a89c7da486729",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 113,
-            "Op": "LogicalOperator",
-            "Snippet": "hasPin === null || error",
-            "Origin": "in-hunk",
-            "Key": "d9d21002cbb9b2c8",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 113,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "ebe8766b2906dfd3",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
             "File": "web/src/lib/activeGrants.ts",
             "Line": 88,
             "Op": "ConditionalExpression",
             "Snippet": "true",
             "Origin": "in-hunk",
             "Key": "245b4e6343fd38eb",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: the guard is 'if (timer !== null) clearInterval(timer)'; forcing it true only adds clearInterval(null), which is a no-op. The false side is killed by activeGrants.test.ts (off-phase wake / stop tests)."
           },
           {
             "File": "web/src/lib/activeGrants.ts",
@@ -1037,8 +619,8 @@
             "Snippet": "false",
             "Origin": "in-hunk",
             "Key": "a5c6f882ad9a267f",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: the surviving true-\u003efalse is passive (onInput never calls preventDefault, so passive is unobservable); a capture:false mutant is killed by 'stop removes the input listeners' and the stopPropagation wake test."
           },
           {
             "File": "web/src/lib/activeGrants.ts",
@@ -1047,8 +629,8 @@
             "Snippet": "true",
             "Origin": "in-hunk",
             "Key": "60acbab3be5b6dfd",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: the guard is 'if (timer !== null) clearInterval(timer)'; forcing it true only adds clearInterval(null), which is a no-op. The false side is killed by activeGrants.test.ts (off-phase wake / stop tests)."
           },
           {
             "File": "web/src/lib/activeGrants.ts",
@@ -1059,9 +641,29 @@
             "Key": "dc864a49300265c3",
             "Lifecycle": "accepted",
             "Note": "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 72,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4952cfeed1f15d36",
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+          },
+          {
+            "File": "web/src/lib/PinPad.svelte",
+            "Line": 17,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "5f7f51c4d7ffbc60",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: forces the pin.length \u003c= MAX arm of canSubmit to true, but every write to pin keeps it \u003c= MAX (digitsOnly slices to MAX, press() returns at \u003e= MAX, backspace only shrinks, resets set ''), so the arm is never false. The \u003c= vs \u003c boundary is killed by the 6-digit submit test."
           }
         ],
-        "NotCovered": 10
+        "NotCovered": 4
       },
       "measured_on": "local",
       "ranges": {
@@ -1077,13 +679,23 @@
             "construct": "ExpressionStatement"
           },
           {
-            "start": 486,
-            "end": 486,
+            "start": 393,
+            "end": 423,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 424,
+            "end": 424,
             "construct": "hunk"
           },
           {
-            "start": 487,
-            "end": 606,
+            "start": 518,
+            "end": 518,
+            "construct": "hunk"
+          },
+          {
+            "start": 519,
+            "end": 675,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1190,7 +802,7 @@
           },
           {
             "start": 45,
-            "end": 135,
+            "end": 252,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1314,6 +926,46 @@
             "start": 50,
             "end": 209,
             "construct": "ExpressionStatement"
+          },
+          {
+            "start": 210,
+            "end": 211,
+            "construct": "hunk"
+          },
+          {
+            "start": 212,
+            "end": 216,
+            "construct": "FunctionDeclaration held"
+          },
+          {
+            "start": 217,
+            "end": 217,
+            "construct": "hunk"
+          },
+          {
+            "start": 218,
+            "end": 218,
+            "construct": "VariableDeclaration value"
+          },
+          {
+            "start": 219,
+            "end": 219,
+            "construct": "VariableDeclaration alertText"
+          },
+          {
+            "start": 220,
+            "end": 220,
+            "construct": "VariableDeclaration tryAgain"
+          },
+          {
+            "start": 221,
+            "end": 221,
+            "construct": "hunk"
+          },
+          {
+            "start": 222,
+            "end": 410,
+            "construct": "ExpressionStatement"
           }
         ],
         "web/src/lib/activeGrants.test.ts": [
@@ -1349,7 +1001,7 @@
           },
           {
             "start": 78,
-            "end": 319,
+            "end": 368,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1413,37 +1065,37 @@
           },
           {
             "start": 961,
-            "end": 1059,
+            "end": 1065,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 1060,
-            "end": 1060,
+            "start": 1066,
+            "end": 1066,
             "construct": "hunk"
           },
           {
-            "start": 1061,
-            "end": 1092,
+            "start": 1067,
+            "end": 1098,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 1093,
-            "end": 1093,
+            "start": 1099,
+            "end": 1099,
             "construct": "hunk"
           },
           {
-            "start": 1094,
-            "end": 1122,
+            "start": 1100,
+            "end": 1128,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 1123,
-            "end": 1123,
+            "start": 1129,
+            "end": 1129,
             "construct": "hunk"
           },
           {
-            "start": 1124,
-            "end": 1136,
+            "start": 1130,
+            "end": 1142,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1679,24 +1331,6 @@
   ],
   "out_of_scope": [
     {
-      "file": "internal/api/grants.go",
-      "line": 157,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "971ea8d8d9b5ff52",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
-    },
-    {
-      "file": "internal/api/grants.go",
-      "line": 158,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "3d175e3325616cdf",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
-    },
-    {
       "file": "internal/api/custom_services.go",
       "line": 153,
       "op": "ARITHMETIC_BASE",
@@ -1713,6 +1347,24 @@
       "key": "476fdd58ed2fe273",
       "lifecycle": "accepted",
       "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 157,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 158,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
     },
     {
       "file": "internal/store/migrate.go",
@@ -1743,7 +1395,10 @@
       ".dross/phases/pin-unlock/panel/verification.md",
       ".dross/phases/pin-unlock/plan.toml",
       ".dross/phases/pin-unlock/spec.toml",
+      ".dross/phases/pin-unlock/tests.json",
+      ".dross/phases/pin-unlock/verify.toml",
       ".dross/project.toml",
+      ".dross/survivors.toml",
       "cmd/adguard-reward/main.go",
       "cmd/adguard-reward/main_test.go",
       "go.mod",
@@ -1796,7 +1451,7 @@
       ".dross/phases/pin-unlock/changes.json": [
         {
           "start": 1,
-          "end": 725
+          "end": 881
         }
       ],
       ".dross/phases/pin-unlock/panel/mvp.md": [
@@ -1826,7 +1481,7 @@
       ".dross/phases/pin-unlock/plan.toml": [
         {
           "start": 1,
-          "end": 227
+          "end": 267
         }
       ],
       ".dross/phases/pin-unlock/spec.toml": [
@@ -1835,10 +1490,32 @@
           "end": 62
         }
       ],
+      ".dross/phases/pin-unlock/tests.json": [
+        {
+          "start": 1,
+          "end": 2499
+        }
+      ],
+      ".dross/phases/pin-unlock/verify.toml": [
+        {
+          "start": 1,
+          "end": 390
+        }
+      ],
       ".dross/project.toml": [
         {
           "start": 3,
           "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 73,
+          "end": 84
+        },
+        {
+          "start": 1758,
+          "end": 1892
         }
       ],
       "cmd/adguard-reward/main.go": [
@@ -1980,7 +1657,7 @@
       "internal/api/pin_test.go": [
         {
           "start": 1,
-          "end": 342
+          "end": 483
         }
       ],
       "internal/api/reauth.go": [
@@ -2024,7 +1701,7 @@
       "internal/api/unlock_test.go": [
         {
           "start": 1,
-          "end": 408
+          "end": 466
         }
       ],
       "internal/auth/auth.go": [
@@ -2107,12 +1784,20 @@
       ],
       "internal/auth/auth_test.go": [
         {
-          "start": 72,
-          "end": 83
+          "start": 11,
+          "end": 11
         },
         {
-          "start": 525,
-          "end": 676
+          "start": 15,
+          "end": 15
+        },
+        {
+          "start": 74,
+          "end": 85
+        },
+        {
+          "start": 527,
+          "end": 870
         }
       ],
       "internal/auth/device.go": [
@@ -2257,8 +1942,12 @@
           "end": 50
         },
         {
-          "start": 486,
-          "end": 606
+          "start": 393,
+          "end": 424
+        },
+        {
+          "start": 518,
+          "end": 675
         }
       ],
       "web/src/lib/Home.svelte": [
@@ -2276,7 +1965,7 @@
       "web/src/lib/PinPad.test.ts": [
         {
           "start": 1,
-          "end": 135
+          "end": 252
         }
       ],
       "web/src/lib/Settings.svelte": [
@@ -2288,7 +1977,7 @@
       "web/src/lib/Settings.test.ts": [
         {
           "start": 1,
-          "end": 209
+          "end": 410
         }
       ],
       "web/src/lib/activeGrants.test.ts": [
@@ -2326,7 +2015,7 @@
         },
         {
           "start": 119,
-          "end": 203
+          "end": 252
         }
       ],
       "web/src/lib/activeGrants.ts": [
@@ -2402,7 +2091,7 @@
         },
         {
           "start": 960,
-          "end": 1136
+          "end": 1142
         }
       ],
       "web/src/lib/api.ts": [
@@ -2494,6 +2183,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "68b9e376cc7a6fe10ac57ccbe75433e4316c8328",
-  "measured_tree": "c2ac94c55b30266bf2e4dc9f36d14de3ea1da722"
+  "measured_commit": "e882d241b7c209beee65dce6f45757f69707c058",
+  "measured_tree": "ad2882097ca2af8e5b581f9a2e0c7e4e80ddacf2"
 }
