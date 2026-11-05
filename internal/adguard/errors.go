@@ -14,6 +14,10 @@ var ErrBadCredentials = errors.New("adguard: bad credentials")
 // throttled attempt is never reported as a wrong password.
 var ErrRateLimited = errors.New("adguard: rate limited")
 
+// ErrBadResponse marks a 2xx answer that does not decode: AdGuard failing with
+// no status or transport error to know it by. The decode error stays wrapped.
+var ErrBadResponse = errors.New("adguard: bad response")
+
 // StatusError is a non-2xx response from AdGuard.
 type StatusError struct {
 	Method  string

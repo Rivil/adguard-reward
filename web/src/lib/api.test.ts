@@ -18,10 +18,12 @@ import {
   listCustomServices,
   updateCustomService,
   endGrant,
+  exportSetup,
   extendGrant,
   fetchHistory,
   historyChild,
   iconUrl,
+  importSetup,
   listButtons,
   listChildren,
   listClients,
@@ -1138,5 +1140,78 @@ describe('messageFor PIN codes', () => {
     expect(messageFor(new ApiError(403, 'reauth_required', 'x'))).toBe('Enter your AdGuard password')
     expect(messageFor(new ApiError(403, 'bad_credentials', 'x'))).toBe('Wrong password')
     expect(messageFor(new ApiError(401, 'bad_credentials', 'x'))).toBe('Wrong username or password')
+  })
+})
+
+describe('setup export and import', () => {
+  const file = {
+    format: 'adguard-reward-export',
+    version: 1,
+    children: [{ name: 'Ada', clients: ['Kid phone'] }],
+    custom_services: [],
+    buttons: [],
+    toggles: [],
+  }
+
+  it('exportSetup GETs the file through request', async () => {
+    const calls = mockFetch(json(200, file))
+    expect(await exportSetup()).toStrictEqual(file)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).toBe('/api/v1/export')
+    expect(calls[0].init.method).toBe('GET')
+    expect(calls[0].init.body).toBeUndefined()
+    expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    expect(calls[0].init.credentials).toBe('same-origin')
+  })
+
+  it('importSetup posts the text as is, never JSON.stringified', async () => {
+    const calls = mockFetch(
+      json(200, { missing_clients: [], rules_applied: true }),
+      json(400, { error: 'bad_request', message: 'invalid JSON' }),
+    )
+    const text = '{"format": "adguard-reward-export"}\n'
+    expect(await importSetup(text)).toStrictEqual({ missing_clients: [], rules_applied: true })
+    expect(calls[0].url).toBe('/api/v1/import')
+    expect(calls[0].init.method).toBe('POST')
+    expect(calls[0].init.body).toBe(text)
+    expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
+    expect(header(calls[0].init, 'Content-Type')).toBe('application/json')
+    expect(calls[0].init.credentials).toBe('same-origin')
+
+    // An empty file still goes to the server, which names the problem.
+    await fails(importSetup(''))
+    expect(calls[1].init.body).toBe('')
+  })
+
+  it('importSetup fills a missing missing_clients and keeps a present one', async () => {
+    mockFetch(
+      json(200, { missing_clients: null, rules_applied: false }),
+      json(200, { missing_clients: ['Kid tablet'], rules_applied: true }),
+    )
+    expect(await importSetup('{}')).toStrictEqual({ missing_clients: [], rules_applied: false })
+    expect((await importSetup('{}')).missing_clients).toStrictEqual(['Kid tablet'])
+  })
+
+  it('a rejected import rejects with the server message', async () => {
+    mockFetch(json(422, { error: 'unprocessable', message: 'buttons[0].child: "Ben" is not in the file' }))
+    const bad = await fails(importSetup('{}'))
+    expect(bad.status).toBe(422)
+    expect(bad.code).toBe('unprocessable')
+    expect(messageFor(bad)).toBe('buttons[0].child: "Ben" is not in the file')
+    expect(unauthorized).not.toHaveBeenCalled()
+  })
+
+  it('both share the 401 handling', async () => {
+    mockFetch(json(401, { error: 'pin_required', message: 'm' }), json(401, { error: 'pin_required', message: 'm' }))
+    await fails(exportSetup())
+    await fails(importSetup('{}'))
+    expect(pinRequired).toHaveBeenCalledTimes(2)
+    expect(unauthorized).not.toHaveBeenCalled()
+
+    mockFetch(json(401, { error: 'unauthorized', message: 'm' }), json(401, { error: 'unauthorized', message: 'm' }))
+    await fails(exportSetup())
+    await fails(importSetup('{}'))
+    expect(unauthorized).toHaveBeenCalledTimes(2)
+    expect(pinRequired).toHaveBeenCalledTimes(2)
   })
 })

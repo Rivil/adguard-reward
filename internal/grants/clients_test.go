@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"reflect"
 	"slices"
 	"strings"
@@ -226,6 +227,23 @@ func TestAdoptClients_Fails(t *testing.T) {
 	var af *ErrAdoptFailed
 	if !errors.As(err, &af) || af.Client != "Kid tablet" {
 		t.Errorf("err = %v, want *ErrAdoptFailed naming Kid tablet", err)
+	}
+}
+
+func TestAdoptClients_ClientsReadFails(t *testing.T) {
+	e := newEnv(t, nil)
+	// A 200 cut short: no status or transport error to know the failure by.
+	e.fake.SetResponse("/control/clients", 200, []byte(`{"clients":[`))
+	err := e.eng.AdoptClients(ctx, 1, nil, []string{"Kid tablet"})
+	var read *ErrClientsRead
+	if !errors.As(err, &read) {
+		t.Fatalf("err = %v, want *ErrClientsRead", err)
+	}
+	if !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Errorf("err = %v, want it to reach the decode failure", err)
+	}
+	if n := e.posts(); n != 0 {
+		t.Errorf("update POSTs = %d, want 0", n)
 	}
 }
 

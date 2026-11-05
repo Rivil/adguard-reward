@@ -687,6 +687,22 @@ func TestChildCreate_AdoptFailNoChild(t *testing.T) {
 	}
 }
 
+// A 200 that does not decode is no status or transport error, but it is still
+// AdGuard failing: 502, not the 500 of a store read.
+func TestChildCreate_ClientsUndecodable(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	h.fake.SetResponse("/control/clients", http.StatusOK, []byte(`{"clients":[`))
+
+	w := h.do(http.MethodPost, "/api/v1/children", map[string]any{"name": "Cy", "clients": []string{"Kid phone"}}, withCookie(cookie))
+	if w.Code != http.StatusBadGateway || decodeErr(t, w).Error != CodeAdGuardUnavailable {
+		t.Errorf("POST Cy with an undecodable clients body: %d %s, want 502 adguard_unavailable", w.Code, w.Body.String())
+	}
+	if got := h.storeNames(); len(got) != 0 {
+		t.Errorf("store children = %v, want none", got)
+	}
+}
+
 func TestChildCreate_NameTakenNoAdGuard(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()
@@ -710,8 +726,8 @@ func (activeReadFails) ListActiveGrants(context.Context) ([]store.Grant, error) 
 	return nil, errors.New("database is locked")
 }
 
-// A store read failing inside adopt is neither *ErrAdoptFailed nor an
-// AdGuard outage: writeAdoptError answers 500 internal, logs it, and the
+// A store read failing inside adopt is neither *ErrAdoptFailed nor
+// *ErrClientsRead: writeAdoptError answers 500 internal, logs it, and the
 // share is not saved.
 func TestChildUpdate_AdoptStoreReadFails(t *testing.T) {
 	logs := &lockedBuffer{}

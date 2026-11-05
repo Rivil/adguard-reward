@@ -88,16 +88,21 @@ func scanChildren(rows *sql.Rows) ([]Child, error) {
 
 // ListChildren returns every child, id ASC, each with its sorted clients.
 func (st *Store) ListChildren(ctx context.Context) ([]Child, error) {
-	rows, err := st.db.QueryContext(ctx, listQuery+` ORDER BY c.id ASC, cc.client_name ASC`)
-	if err != nil {
-		return nil, fmt.Errorf("list children: %w", err)
-	}
-	defer rows.Close()
-	out, err := scanChildren(rows)
+	out, err := loadChildren(ctx, st.db)
 	if err != nil {
 		return nil, fmt.Errorf("list children: %w", err)
 	}
 	return out, nil
+}
+
+// loadChildren reads every child, id ASC, each with its sorted clients.
+func loadChildren(ctx context.Context, q querier) ([]Child, error) {
+	rows, err := q.QueryContext(ctx, listQuery+` ORDER BY c.id ASC, cc.client_name ASC`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return scanChildren(rows)
 }
 
 // GetChild returns one child or ErrChildNotFound.
@@ -139,19 +144,8 @@ func (st *Store) CreateChild(ctx context.Context, name string, clients []string)
 		if err := checkConflicts(ctx, tx, 0, name); err != nil {
 			return err
 		}
-		// The history watermark is read in the insert itself, inside this tx,
-		// so a reused child id never inherits an earlier child's grants.
-		res, err := tx.ExecContext(ctx,
-			`INSERT INTO children (name, created_at, history_after_grant_id)
-			 VALUES (?, ?, (SELECT COALESCE(MAX(id), 0) FROM grants))`, name, time.Now().Unix())
+		id, err := insertChild(ctx, tx, name, clients)
 		if err != nil {
-			return err
-		}
-		id, err := res.LastInsertId()
-		if err != nil {
-			return err
-		}
-		if err := insertClients(ctx, tx, id, clients); err != nil {
 			return err
 		}
 		out, err = getChild(ctx, tx, id)
@@ -225,6 +219,26 @@ func checkConflicts(ctx context.Context, tx *sql.Tx, selfID int64, name string) 
 		return err
 	}
 	return nil
+}
+
+// insertChild adds a child row and its clients, which the caller has already
+// normalised. The history watermark is read in the insert itself, inside the
+// caller's tx, so a reused child id never inherits an earlier child's grants.
+func insertChild(ctx context.Context, tx *sql.Tx, name string, clients []string) (int64, error) {
+	res, err := tx.ExecContext(ctx,
+		`INSERT INTO children (name, created_at, history_after_grant_id)
+		 VALUES (?, ?, (SELECT COALESCE(MAX(id), 0) FROM grants))`, name, time.Now().Unix())
+	if err != nil {
+		return 0, err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return 0, err
+	}
+	if err := insertClients(ctx, tx, id, clients); err != nil {
+		return 0, err
+	}
+	return id, nil
 }
 
 func insertClients(ctx context.Context, tx *sql.Tx, childID int64, clients []string) error {

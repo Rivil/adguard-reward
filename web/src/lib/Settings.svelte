@@ -1,12 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { ApiError, changePin, messageFor, pinStatus, removePin, setPin } from './api'
+  import { ApiError, changePin, exportSetup, importSetup, messageFor, pinStatus, removePin, setPin } from './api'
 
   // This device's PIN. The first PIN needs only the session; changing or
   // removing one re-checks the AdGuard password (locked pin_change_reauth).
   let { onBack }: { onBack: () => void } = $props()
 
   const PIN_RE = /^[0-9]{4,6}$/
+  const EXPORT_NAME = 'adguard-reward-export.json'
+  /** iOS Safari reads the Blob after the click returns, so revoking at once can lose the download. */
+  const REVOKE_AFTER_MS = 40_000
+
+  type Problem = { code: string; text: string }
 
   /** null until GET /api/v1/pin answers. */
   let hasPin = $state<boolean | null>(null)
@@ -14,8 +19,14 @@
   let confirm = $state('')
   let password = $state('')
   let pending = $state(false)
-  let error = $state<{ code: string; text: string } | null>(null)
+  let error = $state<Problem | null>(null)
   let note = $state<string | null>(null)
+
+  // Backup keeps its own state, so its failures never show in the PIN section.
+  let backupPending = $state(false)
+  let backupError = $state<Problem | null>(null)
+  let backupNote = $state<string | null>(null)
+  let missingClients = $state<string[]>([])
 
   function load() {
     void run(async () => {
@@ -24,6 +35,12 @@
   }
 
   onMount(load)
+
+  function failure(err: unknown): Problem {
+    return err instanceof ApiError
+      ? { code: err.code, text: messageFor(err) }
+      : { code: 'network', text: "Can't reach the server — check your connection" }
+  }
 
   /** Run one call; a failure becomes the inline alert and the form keeps what was typed. */
   async function run(fn: () => Promise<void>): Promise<boolean> {
@@ -34,10 +51,7 @@
       await fn()
       return true
     } catch (err) {
-      error =
-        err instanceof ApiError
-          ? { code: err.code, text: messageFor(err) }
-          : { code: 'network', text: "Can't reach the server — check your connection" }
+      error = failure(err)
       return false
     } finally {
       pending = false
@@ -89,6 +103,66 @@
       clearFields()
       note = 'PIN removed'
     }
+  }
+
+  /** Run one Backup call; a failure becomes this section's alert, in the words toProblem picks. */
+  async function runBackup(fn: () => Promise<void>, toProblem: (err: unknown) => Problem) {
+    backupPending = true
+    backupError = null
+    backupNote = null
+    missingClients = []
+    try {
+      await fn()
+    } catch (err) {
+      backupError = toProblem(err)
+    } finally {
+      backupPending = false
+    }
+  }
+
+  /** Download through a temporary link: a bare href would skip request()'s 401 handling. */
+  function saveFile(file: unknown) {
+    const url = URL.createObjectURL(new Blob([JSON.stringify(file, null, 2)], { type: 'application/json' }))
+    const link = document.createElement('a')
+    link.href = url
+    link.download = EXPORT_NAME
+    link.click()
+    setTimeout(() => URL.revokeObjectURL(url), REVOKE_AFTER_MS)
+  }
+
+  function exportFile() {
+    void runBackup(async () => {
+      saveFile(await exportSetup())
+      backupNote = `Downloading ${EXPORT_NAME}`
+    }, failure)
+  }
+
+  /** A 502 keeps the server's message: messageFor's fixed line would drop the client it names. */
+  function importFailure(err: unknown): Problem {
+    if (err instanceof ApiError && err.status === 502) {
+      return { code: err.code, text: `${err.message} — nothing was imported, it's safe to try again` }
+    }
+    return failure(err)
+  }
+
+  async function chooseFile(e: Event) {
+    const input = e.currentTarget as HTMLInputElement
+    const file = input.files?.[0]
+    // Cleared on every pick: a browser fires no change for the file already selected.
+    input.value = ''
+    if (!file || backupPending) return
+    await runBackup(async () => {
+      let text: string
+      try {
+        text = await file.text()
+      } catch {
+        backupError = { code: 'unreadable_file', text: "Can't read that file — choose it again" }
+        return
+      }
+      const result = await importSetup(text)
+      missingClients = result.missing_clients
+      backupNote = result.rules_applied ? 'Setup imported' : 'Setup imported — AdGuard will catch up'
+    }, importFailure)
   }
 </script>
 
@@ -156,6 +230,39 @@
       </form>
     {/if}
   </section>
+
+  <section aria-labelledby="backup-heading">
+    <h2 id="backup-heading">Backup</h2>
+    <p class="hint">
+      The file holds your children, their clients, buttons, custom services and permanent blocks, and no passwords or
+      PINs. Import works only on a fresh install.
+    </p>
+    {#if backupError}
+      <p class="error" role="alert" data-error={backupError.code}>{backupError.text}</p>
+    {/if}
+    {#if backupNote}
+      <div class="note" role="status">
+        <p>{backupNote}</p>
+        {#if missingClients.length > 0}
+          <p>This AdGuard doesn't have these clients. Their mappings are kept and work if the clients appear:</p>
+          <ul>
+            {#each missingClients as name (name)}
+              <li>{name}</li>
+            {/each}
+          </ul>
+        {/if}
+      </div>
+    {/if}
+    <div class="backup">
+      <div class="actions">
+        <button type="button" onclick={exportFile} disabled={backupPending}>Export</button>
+      </div>
+      <label class="field">
+        <span>Import a file</span>
+        <input name="import" type="file" accept=".json,application/json" onchange={chooseFile} disabled={backupPending} />
+      </label>
+    </div>
+  </section>
 </main>
 
 <style>
@@ -167,7 +274,8 @@
   section {
     margin-top: 1rem;
   }
-  form {
+  form,
+  .backup {
     display: grid;
     gap: 0.75rem;
   }

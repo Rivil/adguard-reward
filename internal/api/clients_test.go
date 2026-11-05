@@ -1,7 +1,10 @@
 package api
 
 import (
+	"bytes"
+	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"reflect"
@@ -10,7 +13,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Rivil/adguard-reward/internal/adguard"
 	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
+	"github.com/Rivil/adguard-reward/internal/grants"
+	"github.com/Rivil/adguard-reward/internal/store"
 )
 
 type clientsBody struct {
@@ -415,6 +421,70 @@ func TestCreateClient_ReadUnavailable(t *testing.T) {
 	}
 	if n := h.adds(); n != 0 {
 		t.Errorf("adds = %d, want 0", n)
+	}
+}
+
+// A 200 that does not decode is no status or transport error, but it is still
+// AdGuard failing. Without a child only AddClient's own read sees it.
+func TestCreateClient_ReadUndecodable(t *testing.T) {
+	for _, body := range []string{`{"clients":[`, `{"clients":[{"name":5}]}`} {
+		t.Run(body, func(t *testing.T) {
+			h := newHarness(t, nil, nil)
+			cookie := h.loginOK()
+			ada := h.createOK(cookie, "Ada", "Kid phone")
+			h.fake.SetResponse("/control/clients", http.StatusOK, []byte(body))
+
+			for _, b := range []any{tvBody, withChild(tvBody, ada.ID)} {
+				w := h.postClient(cookie, b)
+				if w.Code != http.StatusBadGateway || decodeErr(t, w).Error != CodeAdGuardUnavailable {
+					t.Errorf("%v: %d %s, want 502 adguard_unavailable", b, w.Code, w.Body.String())
+				}
+			}
+			if n := h.adds(); n != 0 {
+				t.Errorf("adds = %d, want 0", n)
+			}
+		})
+	}
+}
+
+// A store read failing inside the engine is not AdGuard failing: 500 internal,
+// logged, and nothing added.
+func TestCreateClient_StoreReadFails(t *testing.T) {
+	logs := &lockedBuffer{}
+	log := slog.New(slog.NewTextHandler(logs, nil))
+	fake := adguardtest.New(t, adguardtest.Options{User: fakeUser, Pass: fakePass})
+	client, err := adguard.New(fake.URL(), fakeUser, fakePass, adguard.WithLogger(log))
+	if err != nil {
+		t.Fatal(err)
+	}
+	st, err := store.Open(t.TempDir(), log)
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = st.Close() })
+	eng := grants.New(activeReadFails{st}, client, grants.Options{Now: (&clock{t: t0}).Now, ApplyTimeout: harnessApplyTimeout, Log: log})
+	t.Cleanup(eng.Close)
+	a := New(Deps{AdGuard: client, Log: log, Children: st, Grants: eng})
+
+	ada, err := st.CreateChild(context.Background(), "Ada", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body, err := json.Marshal(withChild(tvBody, ada.ID))
+	if err != nil {
+		t.Fatal(err)
+	}
+	w := httptest.NewRecorder()
+	a.handleClientCreate(w, httptest.NewRequest(http.MethodPost, "/api/v1/clients", bytes.NewReader(body)))
+
+	if w.Code != http.StatusInternalServerError {
+		t.Fatalf("POST TV: %d %s, want 500", w.Code, w.Body.String())
+	}
+	if e := decodeErr(t, w); e.Error != "internal" || e.Message != "could not create client" {
+		t.Errorf("error = %+v, want internal / could not create client", e)
+	}
+	if !strings.Contains(logs.String(), "create client failed") {
+		t.Errorf("log %q lacks the create failure", logs.String())
 	}
 }
 
