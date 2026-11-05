@@ -444,6 +444,22 @@ Sessions live in a single-connection WAL SQLite file under `data_dir` (0700 dir 
 
 _introduced 02-auth-sessions · 0a98a31_
 
+### Setup export and import
+
+A parent backs up the install's setup from Settings as one JSON file and restores it into an empty install: `GET /api/v1/export` serves a name-keyed snapshot of children, client mappings, buttons, custom services and permanent toggles, read in one transaction and holding no sessions, device tokens, PIN hashes or credentials. `POST /api/v1/import` validates the whole file first, naming the bad record (such as `buttons[2].duration`), then refuses a non-empty install with 409 and an unknown built-in service with 422. It adopts AdGuard clients before the store commit, so a client write or read failure answers 502 with no rows, restores atomically with fresh ids, and syncs managed rules after the commit, leaving a failed sync to the reconciler. Clients this AdGuard lacks keep their mappings and come back in `missing_clients`. Settings' Backup section saves the export as a Blob and posts a chosen file as raw text.
+
+- Store.ImportSetup — internal/store/setup.go:231
+- parseSetupFile — internal/api/setup_file.go:90
+- decodeRecords — internal/api/setup_file.go:152
+- API.handleExport — internal/api/export.go:45
+- API.handleImport — internal/api/import.go:67
+- API.adoptImportClients — internal/api/import.go:120
+- ErrClientsRead — internal/grants/clients.go:31
+- importSetup — web/src/lib/api.ts:705
+- Settings Backup export tests — web/src/lib/Settings.test.ts:485
+
+_introduced export-import · d1e1996 · 2afe4e9 · c2a0f1b · 2ea07c8_
+
 ### Shared devices
 
 One AdGuard client can belong to several children (the family TV): any owner's grant unblocks its services there, and a service is re-blocked only when no active grant of any owner still covers it on that client, judged on each grant's stored clients (locked: shared_device_rule, grant_coverage_basis). The grant 201 and `GET /grants` name each shared client and its other owners, the blocked view annotates clients with `shared_with` and open services with `unblocked_by` naming the granting child, and the phone shows a passive pre-tap note on buttons and the grant form plus a post-tap 'Also unblocked on …' line — never a confirmation step.
