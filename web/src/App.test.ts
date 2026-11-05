@@ -5,7 +5,7 @@ import { tick } from 'svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.svelte'
-import { historyChild, locked, me, navigate, route, setOnUnauthorized } from './lib/api'
+import { historyChild, historyFilters, locked, me, navigate, route, setOnUnauthorized } from './lib/api'
 
 type Call = { method: string; url: string; init: RequestInit }
 type Answer = () => Response | Promise<Response>
@@ -47,6 +47,7 @@ afterEach(() => {
   history.replaceState(null, '', '/')
   route.set('home')
   historyChild.set(null)
+  historyFilters.set({ service: null, status: null, from: null, to: null, badChild: false })
   locked.set(false)
 })
 
@@ -447,18 +448,98 @@ describe('history route', () => {
     historyChild.set(child)
   }
 
+  /** Point every routing store at url, as loading the module there would. */
+  function bootAt(url: string) {
+    history.replaceState(null, '', url)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
   it('reload on /history?child=3 keeps the query and shows that child', async () => {
     loadAt('/history?child=3', 3)
     const calls = mockFetch({ '/api/v1/me': signedIn, '/api/v1/children/3/history': cleoPage })
     render(App)
 
     expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
-    // refresh() re-navigates after /me; it must carry ?child= through.
     expect(location.pathname + location.search).toBe('/history?child=3')
     expect(get(route)).toBe('history')
     expect(get(historyChild)).toBe(3)
     expect(document.querySelector('[data-grant="7"]')).not.toBeNull()
     expect(calls.map((c) => c.url)).toEqual(['/api/v1/me', '/api/v1/children/3/history'])
+  })
+
+  it('reload leaves a filtered URL byte-for-byte, whatever order it was written in', async () => {
+    const url = '/history?status=expired&service=custom:5&child=3'
+    bootAt(url)
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      mockFetch({ '/api/v1/me': signedIn, '/api/v1/children/3/history': cleoPage })
+      render(App)
+
+      expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
+      expect(location.pathname + location.search).toBe(url)
+      expect(push).toHaveBeenCalledTimes(0)
+      expect(get(historyChild)).toBe(3)
+      expect(get(historyFilters)).toStrictEqual({
+        service: 'custom:5',
+        status: 'expired',
+        from: null,
+        to: null,
+        badChild: false,
+      })
+    } finally {
+      push.mockRestore()
+    }
+  })
+
+  it('reload on a bad child keeps the URL and shows No such child', async () => {
+    const url = '/history?child=abc'
+    bootAt(url)
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      const calls = mockFetch({ '/api/v1/me': signedIn })
+      render(App)
+
+      expect(await screen.findByText('No such child')).toBeTruthy()
+      expect(location.pathname + location.search).toBe(url)
+      expect(push).toHaveBeenCalledTimes(0)
+      expect(get(historyFilters).badChild).toBe(true)
+      expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+    } finally {
+      push.mockRestore()
+    }
+  })
+
+  it('a PIN unlock leaves the query and the filters intact', async () => {
+    const url = '/history?child=3&status=expired&from=2026-03-01'
+    bootAt(url)
+    const filters = { service: null, status: 'expired', from: '2026-03-01', to: null, badChild: false }
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      let unlockedYet = false
+      mockFetch({
+        '/api/v1/me': () =>
+          unlockedYet ? signedIn() : json(401, { error: 'pin_required', message: 'enter your PIN' }),
+        'POST /api/v1/unlock': () => {
+          unlockedYet = true
+          return new Response(null, { status: 204 })
+        },
+        '/api/v1/children/3/history': cleoPage,
+      })
+      render(App)
+      await screen.findByRole('dialog')
+      expect(location.pathname + location.search).toBe(url)
+
+      await fireEvent.input(screen.getByLabelText('PIN'), { target: { value: '1234' } })
+      await fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+
+      expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
+      expect(location.pathname + location.search).toBe(url)
+      expect(push).toHaveBeenCalledTimes(0)
+      expect(get(historyChild)).toBe(3)
+      expect(get(historyFilters)).toStrictEqual(filters)
+    } finally {
+      push.mockRestore()
+    }
   })
 
   it('history needs a session', async () => {

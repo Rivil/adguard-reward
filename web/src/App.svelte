@@ -18,9 +18,9 @@
     try {
       const m = await me()
       username = m.username
-      // A reload on any page stays there, /history keeping its ?child=; only
-      // the login page bounces home.
-      navigate($route === 'login' ? 'home' : $route, { child: $historyChild })
+      // A reload on any page stays there with its URL untouched, so /history
+      // keeps its query byte for byte; only the login page bounces home.
+      if ($route === 'login') navigate('home')
     } catch {
       // pin_required set `locked` through onPinRequired: stay on this URL
       // behind the PIN pad. A plain 401 already routed to login through
