@@ -78,6 +78,7 @@
   target = "grant-history"
 
 [[deferred]]
+  id = "0e8fbea873c1c8b3"
   text = "Export/import carries permanent toggle state alongside children, buttons and custom services."
   why = "export-import owns the file format; nothing to export until this phase lands."
   target = "export-import"

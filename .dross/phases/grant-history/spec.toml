@@ -72,4 +72,3 @@
 [[deferred]]
   text = "Include grant history in the export-import JSON file."
   why = "Milestone scopes export to children, buttons and custom services; export-import decides whether history joins."
-  target = "export-import"
