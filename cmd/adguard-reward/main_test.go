@@ -6,10 +6,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -31,6 +33,7 @@ import (
 
 	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
 	"github.com/Rivil/adguard-reward/internal/auth"
+	"github.com/Rivil/adguard-reward/internal/config"
 	"github.com/Rivil/adguard-reward/internal/store"
 	"github.com/Rivil/adguard-reward/web"
 )
@@ -2239,4 +2242,122 @@ func TestRun_RevokeAllDevices(t *testing.T) {
 	}
 
 	unlockOK(t, c, base, devA)
+}
+
+// ---- export-import: the export file ------------------------------------
+
+// tokenHash is a cookie token as the store keys it: the SHA-256 of its bytes.
+func tokenHash(t *testing.T, raw string) [32]byte {
+	t.Helper()
+	b, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		t.Fatalf("token %q: %v", raw, err)
+	}
+	return sha256.Sum256(b)
+}
+
+// hashForms is a token hash in every text encoding it could be written in.
+func hashForms(h [32]byte) []string {
+	x := hex.EncodeToString(h[:])
+	return []string{
+		x,
+		strings.ToUpper(x),
+		base64.StdEncoding.EncodeToString(h[:]),
+		base64.RawStdEncoding.EncodeToString(h[:]),
+		base64.URLEncoding.EncodeToString(h[:]),
+		base64.RawURLEncoding.EncodeToString(h[:]),
+	}
+}
+
+func TestRun_ExportNoSecrets(t *testing.T) {
+	const (
+		user  = "svc-CANARY-41c8"
+		child = "Ada-positive-control"
+	)
+	fake := adguardtest.New(t, adguardtest.Options{User: user, Pass: svcPass})
+	dataDir := t.TempDir()
+	p := writeConfigIn(t, dataDir, fake.URL(), fmt.Sprintf("ai:\n  api_key: %q\n", aiKey))
+	env := map[string]string{"ADGUARD_REWARD_ADGUARD_USERNAME": user}
+
+	// The config values, as run() itself will load them.
+	cfg, err := config.Load(p, true, envOf(env))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AdGuard.Username != user || cfg.AdGuard.Password.Reveal() != svcPass || cfg.AI.APIKey.Reveal() != aiKey {
+		t.Fatalf("config did not carry the seeds: username %q", cfg.AdGuard.Username)
+	}
+
+	r := start(t, []string{"--config", p}, env)
+	base := "http://" + r.addr
+	c := apiClient(false)
+
+	resp := login(t, c, base, user, svcPass)
+	if resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("login: status %d body %s", resp.StatusCode, b)
+	}
+	session := sessionCookie(t, resp)
+	if session == nil || session.Value == "" {
+		t.Fatal("login set no session cookie")
+	}
+	device := setPIN(t, c, base, session, testPIN)
+	resp = call(t, c, http.MethodPost, base, "/api/v1/children",
+		map[string]any{"name": child, "clients": []string{"Kid phone"}}, withCookie(session.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST child: %d %s", resp.StatusCode, b)
+	}
+
+	resp = call(t, c, http.MethodGet, base, "/api/v1/export", nil, withCookie(session.Value), withDeviceCookie(device.Value))
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET export: %d %s", resp.StatusCode, raw)
+	}
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+	body := string(raw)
+
+	// The hashes and the PIN's PHC string, from the rows the run left behind.
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	sessionHash := tokenHash(t, session.Value)
+	sess, err := st.ByTokenHash(ctx, sessionHash)
+	if err != nil {
+		t.Fatalf("session row: %v", err)
+	}
+	if sess.Username != user {
+		t.Fatalf("session username = %q, want %q", sess.Username, user)
+	}
+	deviceHash := tokenHash(t, device.Value)
+	dev, err := st.DeviceByTokenHash(ctx, deviceHash)
+	if err != nil {
+		t.Fatalf("device row: %v", err)
+	}
+	if ok, err := auth.VerifyPIN(testPIN, dev.PINHash); err != nil || !ok {
+		t.Fatalf("stored PIN hash does not verify: ok=%v err=%v", ok, err)
+	}
+	if !strings.HasPrefix(dev.PINHash, "$argon2id$") {
+		t.Fatal("stored PIN hash is not an Argon2 PHC string")
+	}
+
+	if !strings.Contains(body, child) {
+		t.Fatalf("export lacks the child's name (positive control):\n%s", body)
+	}
+	secrets := []string{session.Value, device.Value, dev.PINHash, cfg.AdGuard.Username, cfg.AdGuard.Password.Reveal(), cfg.AI.APIKey.Reveal()}
+	secrets = append(secrets, hashForms(sessionHash)...)
+	secrets = append(secrets, hashForms(deviceHash)...)
+	for _, secret := range secrets {
+		if strings.Contains(body, secret) {
+			t.Errorf("export contains secret %q:\n%s", secret, body)
+		}
+	}
 }

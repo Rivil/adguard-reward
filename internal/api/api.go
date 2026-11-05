@@ -41,6 +41,11 @@ type ChildStore interface {
 	ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error)
 	// ListGrantHistory feeds the per-child history page.
 	ListGrantHistory(ctx context.Context, childID, before int64, limit int) (store.GrantHistory, error)
+	// ExportSetup, ImportSetup and EnsureEmpty move the whole setup in and
+	// out; the last two speak *store.ErrNotEmpty.
+	ExportSetup(ctx context.Context) (store.Setup, error)
+	ImportSetup(ctx context.Context, s store.Setup) error
+	EnsureEmpty(ctx context.Context) error
 }
 
 // Grants is the slice of *grants.Engine the grant, toggle and client-write
@@ -158,6 +163,7 @@ func (a *API) routes() {
 	a.mux.Handle("POST /api/v1/custom-services", a.requireSession(http.HandlerFunc(a.handleCustomServiceCreate)))
 	a.mux.Handle("PUT /api/v1/custom-services/{id}", a.requireSession(http.HandlerFunc(a.handleCustomServiceUpdate)))
 	a.mux.Handle("DELETE /api/v1/custom-services/{id}", a.requireSession(http.HandlerFunc(a.handleCustomServiceDelete)))
+	a.mux.Handle("GET /api/v1/export", a.requireSession(http.HandlerFunc(a.handleExport)))
 	// Unknown paths are 401 without a session and 404 with one, so the
 	// route table cannot be probed anonymously.
 	a.mux.Handle("/api/v1/", a.requireSession(http.NotFoundHandler()))
