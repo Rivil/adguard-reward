@@ -2062,3 +2062,181 @@ func TestRun_NoraConfig(t *testing.T) {
 		t.Errorf("a login was logged against the proxy's own address:\n%s", out)
 	}
 }
+
+// ---- pin-unlock: device PINs -------------------------------------------
+
+const (
+	testPIN  = "4812"
+	wrongPIN = "0000"
+)
+
+func withDeviceCookie(v string) reqOpt {
+	return func(r *http.Request) { r.AddCookie(&http.Cookie{Name: auth.DeviceCookieName, Value: v}) }
+}
+
+// deviceCookie is the response's single device Set-Cookie, or nil.
+func deviceCookie(t *testing.T, resp *http.Response) *http.Cookie {
+	t.Helper()
+	var found *http.Cookie
+	for _, c := range resp.Cookies() {
+		if c.Name == auth.DeviceCookieName {
+			if found != nil {
+				t.Fatalf("two Set-Cookie headers for %s", auth.DeviceCookieName)
+			}
+			found = c
+		}
+	}
+	return found
+}
+
+// setPIN sets the first PIN on the device behind session and returns the
+// device cookie it issues.
+func setPIN(t *testing.T, c *http.Client, base string, session *http.Cookie, pin string) *http.Cookie {
+	t.Helper()
+	resp := call(t, c, http.MethodPost, base, "/api/v1/pin", map[string]string{"pin": pin}, withCookie(session.Value))
+	if resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST /pin: status %d body %s", resp.StatusCode, b)
+	}
+	dc := deviceCookie(t, resp)
+	if dc == nil || dc.Value == "" {
+		t.Fatal("POST /pin set no device cookie")
+	}
+	return dc
+}
+
+func unlock(t *testing.T, c *http.Client, base string, device *http.Cookie, pin string) *http.Response {
+	t.Helper()
+	return call(t, c, http.MethodPost, base, "/api/v1/unlock", map[string]string{"pin": pin}, withDeviceCookie(device.Value))
+}
+
+// unlockError is the 401 body of a refused unlock.
+type unlockError struct {
+	Error             string `json:"error"`
+	AttemptsRemaining *int   `json:"attempts_remaining"`
+}
+
+// wrongUnlock sends a wrong PIN and asserts the 401 bad_pin with want
+// attempts left.
+func wrongUnlock(t *testing.T, c *http.Client, base string, device *http.Cookie, want int) {
+	t.Helper()
+	resp := unlock(t, c, base, device, wrongPIN)
+	var body unlockError
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("wrong unlock: decode: %v", err)
+	}
+	if resp.StatusCode != http.StatusUnauthorized || body.Error != "bad_pin" || body.AttemptsRemaining == nil || *body.AttemptsRemaining != want {
+		t.Fatalf("wrong unlock: status %d body %+v, want 401 bad_pin attempts_remaining %d", resp.StatusCode, body, want)
+	}
+}
+
+// unlockOK asserts a 204 that mints a session the API accepts.
+func unlockOK(t *testing.T, c *http.Client, base string, device *http.Cookie) {
+	t.Helper()
+	resp := unlock(t, c, base, device, testPIN)
+	if resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("unlock with the right PIN: status %d body %s, want 204", resp.StatusCode, b)
+	}
+	ck := sessionCookie(t, resp)
+	if ck == nil {
+		t.Fatal("unlock set no session cookie")
+	}
+	if me := call(t, c, http.MethodGet, base, "/api/v1/me", nil, withCookie(ck.Value)); me.StatusCode != http.StatusOK {
+		t.Fatalf("/me with the unlocked session: %d", me.StatusCode)
+	}
+}
+
+func TestRun_PinSurvivesRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	dc := setPIN(t, c, base, loginOK(t, c, base), testPIN)
+	wrongUnlock(t, c, base, dc, auth.MaxPINAttempts-1)
+	wrongUnlock(t, c, base, dc, auth.MaxPINAttempts-2)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base2 := "http://" + r2.addr
+	hits := loginHits(fake)
+	// The counter is persisted: the third strike leaves 2, not a fresh 4.
+	wrongUnlock(t, c, base2, dc, auth.MaxPINAttempts-3)
+	unlockOK(t, c, base2, dc)
+	if n := loginHits(fake) - hits; n != 0 {
+		t.Fatalf("unlock made %d /control/login hits, want 0", n)
+	}
+	// A correct PIN reset the counter.
+	wrongUnlock(t, c, base2, dc, auth.MaxPINAttempts-1)
+}
+
+func TestRun_DeviceCookieSecure(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	certPath, keyPath := selfSigned(t, t.TempDir())
+
+	cases := []struct {
+		name   string
+		extra  string
+		scheme string
+		secure bool
+	}{
+		{"plain http", "", "http", false},
+		{"base_url https", "base_url: \"https://reward.example\"\n", "http", true},
+		{"tls listener", fmt.Sprintf("tls:\n  cert: %q\n  key: %q\n", certPath, keyPath), "https", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := start(t, []string{"--config", writeConfig(t, fake.URL(), tc.extra)}, nil)
+			c := apiClient(tc.scheme == "https")
+			base := tc.scheme + "://" + r.addr
+			dc := setPIN(t, c, base, loginOK(t, c, base), testPIN)
+			if dc.Secure != tc.secure {
+				t.Fatalf("device cookie Secure = %v, want %v", dc.Secure, tc.secure)
+			}
+			if !dc.HttpOnly || dc.SameSite != http.SameSiteStrictMode || dc.Path != "/" {
+				t.Fatalf("device cookie attrs HttpOnly=%v SameSite=%v Path=%q, want HttpOnly Strict /", dc.HttpOnly, dc.SameSite, dc.Path)
+			}
+		})
+	}
+}
+
+func TestRun_RevokeAllDevices(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+
+	sessA := loginOK(t, c, base)
+	devA := setPIN(t, c, base, sessA, testPIN)
+	devB := setPIN(t, c, base, loginOK(t, c, base), testPIN)
+
+	resp := call(t, c, http.MethodPost, base, "/api/v1/sessions/revoke-all", nil, withCookie(sessA.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("revoke-all: status %d body %s", resp.StatusCode, b)
+	}
+	var counts struct {
+		RevokedDevices int `json:"revoked_devices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&counts); err != nil || counts.RevokedDevices != 1 {
+		t.Fatalf("revoke-all body %+v err %v, want revoked_devices 1", counts, err)
+	}
+
+	resp = unlock(t, c, base, devB, testPIN)
+	var body unlockError
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("B unlock: decode: %v", err)
+	}
+	if resp.StatusCode != http.StatusUnauthorized || body.Error != "device_revoked" {
+		t.Fatalf("B unlock after revoke-all: status %d body %+v, want 401 device_revoked", resp.StatusCode, body)
+	}
+	if ck := deviceCookie(t, resp); ck == nil || ck.MaxAge >= 0 {
+		t.Fatalf("B unlock after revoke-all: device cookie %+v, want it cleared", ck)
+	}
+
+	unlockOK(t, c, base, devA)
+}

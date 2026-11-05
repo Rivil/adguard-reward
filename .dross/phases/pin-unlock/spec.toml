@@ -1,0 +1,62 @@
+[phase]
+  id = "pin-unlock"
+  title = "pin-unlock"
+  milestone = "v0.2"
+
+[[criteria]]
+  id = "c-1"
+  text = "POST /api/v1/pin {pin} with a valid session sets a PIN for the calling device; anything but 4-6 ASCII digits returns 400; the store holds only an Argon2id hash (PHC format), and a test reads the row and asserts the plaintext PIN appears nowhere in the DB or in debug logs"
+
+[[criteria]]
+  id = "c-2"
+  text = "Setting a PIN issues a device token (256 random bits, only its SHA-256 stored) in its own HttpOnly; SameSite=Strict; Path=/ cookie (Secure under TLS); POST /api/v1/unlock {pin} with a valid device cookie and the correct PIN sets a fresh session cookie and returns 204, and the fake AdGuard records zero /control/login hits"
+
+[[criteria]]
+  id = "c-3"
+  text = "On a device with a PIN the session expires after the locked idle window; the next /api/v1/* request returns 401 with code pin_required while the device cookie is valid (plain 401 otherwise), and the SPA shows a PIN pad instead of the login page; a fake-clock test covers both sides of the window"
+
+[[criteria]]
+  id = "c-4"
+  text = "A wrong PIN returns 401 with attempts_remaining; the 5th consecutive wrong PIN deletes the device token and its PIN hash, clears the device cookie and returns 401 device_revoked, after which the SPA shows the full login page; a correct PIN resets the counter; the counter is persisted, so a restart between attempts does not reset it"
+
+[[criteria]]
+  id = "c-5"
+  text = "A settings screen shows whether this device has a PIN and lets the parent set, change or remove it; change replaces the hash and resets the counter; remove (DELETE /api/v1/pin) deletes the device token and PIN hash and clears the device cookie, while the current session continues under the normal 30-day sliding expiry"
+
+[[criteria]]
+  id = "c-6"
+  text = "POST /api/v1/sessions/revoke-all also deletes every device token of that user except the caller's own; a revoked device's next unlock returns 401 device_revoked and the SPA shows the full login page"
+
+[[criteria]]
+  id = "c-7"
+  text = "Every /api/v1/unlock attempt emits one structured info log line {event: unlock, username, ip, outcome: ok|bad_pin|device_revoked|no_device}; a test asserts the line per outcome and that neither the PIN nor the raw device token appears in any log output"
+
+[[decisions]]
+  key = "idle_window"
+  choice = "On a PIN device the session expires after 15 minutes idle, sliding on every authenticated request"
+  why = "A kid picking up the parent's phone later finds it locked; a burst of reward taps still needs only one PIN entry"
+  locked = true
+
+[[decisions]]
+  key = "device_token_lifetime"
+  choice = "Device token lasts 90 days, sliding on every successful unlock"
+  why = "A phone in daily use never needs a full re-login; a lost or abandoned phone's token dies within a quarter"
+  locked = true
+
+[[decisions]]
+  key = "pin_change_reauth"
+  choice = "Changing or removing an existing PIN requires the AdGuard password, re-checked via /control/login and subject to the login rate limit; setting the first PIN on a device needs only a valid session"
+  why = "Closes the gap where someone holding an unlocked phone sets their own PIN and keeps 90-day access; a first PIN adds no exposure because the device already has a 30-day session"
+  locked = true
+
+[[decisions]]
+  key = "logout_semantics"
+  choice = "POST /api/v1/logout on a PIN device ends the session and deletes the device token and PIN hash; the next visit shows the full login page"
+  why = "Logout keeps meaning logout; the 15-minute idle lock already covers 'lock it now'"
+  locked = true
+
+[[decisions]]
+  key = "unlock_identity"
+  choice = "A device token belongs to the username that set the PIN; unlock mints a session for that username"
+  why = "No user table exists; the device row carries the identity just as a session row does"
+  locked = true

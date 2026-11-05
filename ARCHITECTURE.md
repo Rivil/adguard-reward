@@ -188,6 +188,30 @@ A device AdGuard sees but no persistent client covers (by IP, CIDR or a MAC AdGu
 
 _introduced auto-client-labelling · f82ad7b · ef70342 · 18ec874 · 9605869 · 70bfe89_
 
+### Device PIN unlock
+
+A parent's phone can set a 4–6 digit PIN (`POST /api/v1/pin`, stored only as a salted Argon2id PHC hash) that issues a 90-day sliding `HttpOnly` device cookie and tags the session, which then idles out after 15 minutes; a lapsed tagged session answers 401 `pin_required` and the SPA swaps the route for a full-screen PIN pad, and `POST /api/v1/unlock` trades device cookie + PIN for a fresh session without touching AdGuard. Strikes are reserved before Argon2 and persisted, and the 5th wrong PIN revokes the device (401 `device_revoked` → login page). Every attempt logs one `event=unlock` line with no PIN or token in it. A `/settings` screen sets, changes or removes the PIN; change and remove re-check the AdGuard password under the shared login limiter. Logout and revoke-all delete devices too, and the sweeper drops expired ones.
+
+- VerifyPIN — internal/auth/pin.go:96
+- Manager.expiry — internal/auth/auth.go:222
+- Manager.rejectNoSession — internal/auth/middleware.go:54
+- Store.ReserveAttempt — internal/store/devices.go:80
+- API.handlePinSet — internal/api/pin.go:60
+- API.handlePinRemove — internal/api/pin.go:146
+- API.recheckPassword — internal/api/reauth.go:40
+- API.handleUnlock — internal/api/unlock.go:55
+- API.handleLogout — internal/api/login.go:121
+- run — cmd/adguard-reward/main.go:59
+- locked — web/src/lib/api.ts:131
+- PinPad — web/src/lib/PinPad.svelte:41
+- Settings — web/src/lib/Settings.svelte:65
+- TestRunSweeper_Logs — internal/auth/auth_test.go:762
+- PinPad.test.ts — web/src/lib/PinPad.test.ts:237
+- Settings messages/resets/gates suite — web/src/lib/Settings.test.ts:222
+- waking off the old cadence test — web/src/lib/activeGrants.test.ts:204
+
+_introduced pin-unlock · 8bce358 · b4dbe69 · 8545751 · 958a89c · 5249a91_
+
 ### Global-list migration
 
 When AdGuard's global blocked-services list is non-empty and a mapped client still has `use_global_blocked_services=true`, the home page shows a banner listing exactly which clients gain which service ids; `GET /api/v1/migration` is read-only, `POST /api/v1/migration` writes each client's own list and clears its flag in one locked read-modify-write per client (the global list is never touched), a mid-run failure answers 502 naming the client and keeps earlier writes. "Not now" hides the banner until the next login; nothing is persisted.

@@ -114,12 +114,15 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 	}
 	cancelStartup()
 
-	// The session cookie is Secure whenever the browser reaches us over
-	// TLS: our own listener, or a proxy announced through base_url.
+	// The session and device cookies are Secure whenever the browser
+	// reaches us over TLS: our own listener, or a proxy announced through
+	// base_url. The store doubles as the device store, so the sweeper
+	// clears expired devices along with expired sessions.
 	tlsOn := cfg.TLS.Cert != "" // config.validate guarantees both-or-neither
 	secure := tlsOn || strings.HasPrefix(cfg.BaseURL, "https://")
 	sessions := auth.New(st, auth.Options{
 		Secure:      secure,
+		Devices:     st,
 		Log:         log,
 		ErrorWriter: api.UnauthorizedWriter,
 	})
@@ -130,6 +133,7 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 		Auth:           sessions,
 		Limiter:        ratelimit.New(ratelimit.Defaults()),
 		Sessions:       st,
+		Devices:        st,
 		Children:       st,
 		Grants:         eng,
 		Buttons:        st,

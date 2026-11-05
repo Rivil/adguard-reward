@@ -1,0 +1,2188 @@
+{
+  "phase": "pin-unlock",
+  "generated_at": "2026-11-05T06:40:06.908027Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/api/api.go",
+        "internal/api/errors.go",
+        "internal/api/login.go",
+        "internal/api/login_test.go",
+        "internal/api/pin.go",
+        "internal/api/pin_change_test.go",
+        "internal/api/pin_test.go",
+        "internal/api/reauth.go",
+        "internal/api/reauth_test.go",
+        "internal/api/sessions.go",
+        "internal/api/teardown_test.go",
+        "internal/api/unlock.go",
+        "internal/api/unlock_test.go",
+        "internal/auth/auth.go",
+        "internal/auth/auth_test.go",
+        "internal/auth/device.go",
+        "internal/auth/middleware.go",
+        "internal/auth/middleware_test.go",
+        "internal/auth/pin.go",
+        "internal/auth/pin_test.go",
+        "internal/store/devices.go",
+        "internal/store/devices_test.go",
+        "internal/store/sessions.go",
+        "internal/store/sessions_test.go",
+        "internal/store/store_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 214,
+        "Survived": 18,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9224137931034483,
+        "Surviving": [
+          {
+            "File": "cmd/adguard-reward/main.go",
+            "Line": 43,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "f46f6aab3d37fc49",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
+          },
+          {
+            "File": "internal/api/pin.go",
+            "Line": 128,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "1702d76e6fc4596c",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/login.go",
+            "Line": 93,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a2174cc1b459ab80",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/login.go",
+            "Line": 93,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "a2174cc1b459ab80",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/login.go",
+            "Line": 95,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9633328df008345a",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/unlock.go",
+            "Line": 87,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6f6a26b327e331f8",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/unlock.go",
+            "Line": 111,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "2e088d645f6775d1",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/api/reauth.go",
+            "Line": 59,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "9fa81f875c787158",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 305,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "50fa6eac4e744221",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 305,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "50fa6eac4e744221",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 307,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4740988ef6c38c04",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 307,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "714f27fe60217a48",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 315,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "eb32f9fcff67309c",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 315,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "eb32f9fcff67309c",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 317,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "105d02322df96350",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/auth.go",
+            "Line": 317,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "063e583cf62246c2",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/middleware.go",
+            "Line": 40,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "98794572c2e565fb",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/auth/middleware.go",
+            "Line": 59,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "149178a83dc6f631",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+          }
+        ],
+        "NotCovered": 18
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main.go": "adapter-lacks-range-runner",
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/errors.go": "adapter-lacks-range-runner",
+        "internal/api/login.go": "adapter-lacks-range-runner",
+        "internal/api/login_test.go": "adapter-lacks-range-runner",
+        "internal/api/pin.go": "adapter-lacks-range-runner",
+        "internal/api/pin_change_test.go": "adapter-lacks-range-runner",
+        "internal/api/pin_test.go": "adapter-lacks-range-runner",
+        "internal/api/reauth.go": "adapter-lacks-range-runner",
+        "internal/api/reauth_test.go": "adapter-lacks-range-runner",
+        "internal/api/sessions.go": "adapter-lacks-range-runner",
+        "internal/api/teardown_test.go": "adapter-lacks-range-runner",
+        "internal/api/unlock.go": "adapter-lacks-range-runner",
+        "internal/api/unlock_test.go": "adapter-lacks-range-runner",
+        "internal/auth/auth.go": "adapter-lacks-range-runner",
+        "internal/auth/auth_test.go": "adapter-lacks-range-runner",
+        "internal/auth/device.go": "adapter-lacks-range-runner",
+        "internal/auth/middleware.go": "adapter-lacks-range-runner",
+        "internal/auth/middleware_test.go": "adapter-lacks-range-runner",
+        "internal/auth/pin.go": "adapter-lacks-range-runner",
+        "internal/auth/pin_test.go": "adapter-lacks-range-runner",
+        "internal/store/devices.go": "adapter-lacks-range-runner",
+        "internal/store/devices_test.go": "adapter-lacks-range-runner",
+        "internal/store/sessions.go": "adapter-lacks-range-runner",
+        "internal/store/sessions_test.go": "adapter-lacks-range-runner",
+        "internal/store/store_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/App.svelte",
+        "web/src/App.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/PinPad.svelte",
+        "web/src/lib/PinPad.test.ts",
+        "web/src/lib/Settings.svelte",
+        "web/src/lib/Settings.test.ts",
+        "web/src/lib/activeGrants.test.ts",
+        "web/src/lib/activeGrants.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 717,
+        "Survived": 36,
+        "Timeout": 2,
+        "Errors": 0,
+        "Score": 0.9496688741721855,
+        "Surviving": [
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 175,
+            "Op": "OptionalChaining",
+            "Snippet": "body.error",
+            "Origin": "inherited",
+            "Key": "2bd6098940f4db18",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 176,
+            "Op": "OptionalChaining",
+            "Snippet": "body.message",
+            "Origin": "inherited",
+            "Key": "ab063f347019f075",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 177,
+            "Op": "OptionalChaining",
+            "Snippet": "body.grant_id",
+            "Origin": "inherited",
+            "Key": "24dff3c1899b1c9f",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 178,
+            "Op": "OptionalChaining",
+            "Snippet": "body.attempts_remaining",
+            "Origin": "in-hunk",
+            "Key": "0f01ad4fab406eda",
+            "Lifecycle": "accepted",
+            "Note": "body?.x -\u003e body.x inside readEnvelope's try/catch: a null JSON body throws a TypeError that the catch swallows, leaving code='unknown' and the status-text message exactly as the optional chain does; every other body shape is identical on both paths, so the mutant is equivalent"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 179,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "e3ab9850c67d0aaa",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: typeof left === 'number' -\u003e true is guarded by Number.isSafeInteger(left), which rejects every non-number, so behaviour is identical."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 207,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4e298254432a9b95",
+            "Lifecycle": "accepted",
+            "Note": "always setting Content-Type on body-less requests adds a header the server ignores on GET; init.body stays undefined, no observable behaviour"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 11,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "6b2ce1298875194f",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 47,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "9d6183df834aa3b3",
+            "Lifecycle": "accepted",
+            "Note": "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates, so the mutation never takes effect. The value is asserted (api.test.ts:368 expects '/')."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 50,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "cb4084c4e0eff4fa",
+            "Lifecycle": "accepted",
+            "Note": "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates. The value is asserted (api.test.ts:659 expects '/services')."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 52,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "82334e90e6b24ee2",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 63,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4e3c141d619c1c5f",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (vitest: 2 failures for api.ts:34 → true, 7 for App.svelte:39 → true, verified 2026-09-21); Stryker's per-test coverage attribution misses them on the jsdom/whole-file .svelte legs (ast-unavailable). Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 63,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "2e5c825a43b53d61",
+            "Lifecycle": "accepted",
+            "Note": "'home' → '' in routeFor's skip-guard is equivalent: with the guard gone the loop still reaches PATHS.home ('/') and returns 'home' for '/', and every other pathname resolves exactly as before."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 190,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[]",
+            "Origin": "in-hunk",
+            "Key": "4ac83fba7b317acf",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 259,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "620017a2348cd2ac",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "a6d312f12b091b9b",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 135,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9382694512e2eb73",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 369,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 369,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 35,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "9e7b970f78a207cf",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 36,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "332725e64d242d98",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "6451ace12288b160",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 134,
+            "Op": "EqualityOperator",
+            "Snippet": "(out.grant.shared ?? []).length \u003e= 0",
+            "Origin": "inherited",
+            "Key": "abeb67deb0f8d203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: length \u003e= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 147,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "inherited",
+            "Key": "6232b0be4db10034",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 181,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "85c805b4f0c4fa20",
+            "Lifecycle": "accepted",
+            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 272,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "c8067c4b53b4a89d",
+            "Lifecycle": "accepted",
+            "Note": "The Error message in pickBlock is never read: BlockPicker.pick() catches every onpick rejection without inspecting it (the alert comes from setToggle's toggleNotes), so the message text is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 355,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].code",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 355,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].text",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 411,
+            "Op": "OptionalChaining",
+            "Snippet": "toggleNotes[child.id].code",
+            "Origin": "inherited",
+            "Key": "e59f02659c1e10ad",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 411,
+            "Op": "OptionalChaining",
+            "Snippet": "toggleNotes[child.id].text",
+            "Origin": "inherited",
+            "Key": "e59f02659c1e10ad",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 94,
+            "Op": "OptionalChaining",
+            "Snippet": "stopPolling()",
+            "Origin": "inherited",
+            "Key": "6c8255537ab76c28",
+            "Lifecycle": "accepted",
+            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+          },
+          {
+            "File": "web/src/lib/activeGrants.ts",
+            "Line": 88,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "245b4e6343fd38eb",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: the guard is 'if (timer !== null) clearInterval(timer)'; forcing it true only adds clearInterval(null), which is a no-op. The false side is killed by activeGrants.test.ts (off-phase wake / stop tests)."
+          },
+          {
+            "File": "web/src/lib/activeGrants.ts",
+            "Line": 108,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "a5c6f882ad9a267f",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: the surviving true-\u003efalse is passive (onInput never calls preventDefault, so passive is unobservable); a capture:false mutant is killed by 'stop removes the input listeners' and the stopPropagation wake test."
+          },
+          {
+            "File": "web/src/lib/activeGrants.ts",
+            "Line": 110,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "60acbab3be5b6dfd",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: the guard is 'if (timer !== null) clearInterval(timer)'; forcing it true only adds clearInterval(null), which is a no-op. The false side is killed by activeGrants.test.ts (off-phase wake / stop tests)."
+          },
+          {
+            "File": "web/src/lib/activeGrants.ts",
+            "Line": 114,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "dc864a49300265c3",
+            "Lifecycle": "accepted",
+            "Note": "start() returns the already-registered stop when one exists, so stopCurrent === stop holds whenever stop runs; the guard is equivalent to unconditional."
+          },
+          {
+            "File": "web/src/App.svelte",
+            "Line": 72,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4952cfeed1f15d36",
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+          },
+          {
+            "File": "web/src/lib/PinPad.svelte",
+            "Line": 17,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "5f7f51c4d7ffbc60",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: forces the pin.length \u003c= MAX arm of canSubmit to true, but every write to pin keeps it \u003c= MAX (digitsOnly slices to MAX, press() returns at \u003e= MAX, backspace only shrinks, resets set ''), so the arm is never false. The \u003c= vs \u003c boundary is killed by the 6-digit submit test."
+          }
+        ],
+        "NotCovered": 4
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/App.test.ts": [
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 45,
+            "end": 51,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 393,
+            "end": 423,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 424,
+            "end": 424,
+            "construct": "hunk"
+          },
+          {
+            "start": 518,
+            "end": 518,
+            "construct": "hunk"
+          },
+          {
+            "start": 519,
+            "end": 675,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/PinPad.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "hunk"
+          },
+          {
+            "start": 9,
+            "end": 11,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "hunk"
+          },
+          {
+            "start": 13,
+            "end": 25,
+            "construct": "FunctionDeclaration stubUnlock"
+          },
+          {
+            "start": 26,
+            "end": 26,
+            "construct": "hunk"
+          },
+          {
+            "start": 27,
+            "end": 32,
+            "construct": "FunctionDeclaration setup"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "hunk"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "VariableDeclaration pinInput"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "VariableDeclaration unlockButton"
+          },
+          {
+            "start": 36,
+            "end": 36,
+            "construct": "hunk"
+          },
+          {
+            "start": 37,
+            "end": 39,
+            "construct": "FunctionDeclaration tap"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "hunk"
+          },
+          {
+            "start": 41,
+            "end": 43,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 44,
+            "end": 44,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 252,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Settings.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "hunk"
+          },
+          {
+            "start": 13,
+            "end": 15,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 16,
+            "end": 17,
+            "construct": "hunk"
+          },
+          {
+            "start": 18,
+            "end": 32,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "hunk"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "VariableDeclaration writes"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "VariableDeclaration noContent"
+          },
+          {
+            "start": 36,
+            "end": 36,
+            "construct": "VariableDeclaration status"
+          },
+          {
+            "start": 37,
+            "end": 37,
+            "construct": "hunk"
+          },
+          {
+            "start": 38,
+            "end": 40,
+            "construct": "FunctionDeclaration type"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "hunk"
+          },
+          {
+            "start": 42,
+            "end": 48,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 209,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 210,
+            "end": 211,
+            "construct": "hunk"
+          },
+          {
+            "start": 212,
+            "end": 216,
+            "construct": "FunctionDeclaration held"
+          },
+          {
+            "start": 217,
+            "end": 217,
+            "construct": "hunk"
+          },
+          {
+            "start": 218,
+            "end": 218,
+            "construct": "VariableDeclaration value"
+          },
+          {
+            "start": 219,
+            "end": 219,
+            "construct": "VariableDeclaration alertText"
+          },
+          {
+            "start": 220,
+            "end": 220,
+            "construct": "VariableDeclaration tryAgain"
+          },
+          {
+            "start": 221,
+            "end": 221,
+            "construct": "hunk"
+          },
+          {
+            "start": 222,
+            "end": 410,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/activeGrants.test.ts": [
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "hunk"
+          },
+          {
+            "start": 40,
+            "end": 47,
+            "construct": "FunctionDeclaration grantsForever"
+          },
+          {
+            "start": 48,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 52,
+            "construct": "FunctionDeclaration input"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 78,
+            "end": 368,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/activeGrants.ts": [
+          {
+            "start": 29,
+            "end": 44,
+            "construct": "FunctionDeclaration refresh"
+          },
+          {
+            "start": 62,
+            "end": 65,
+            "construct": "hunk"
+          },
+          {
+            "start": 66,
+            "end": 66,
+            "construct": "VariableDeclaration IDLE_AFTER_MS"
+          },
+          {
+            "start": 67,
+            "end": 68,
+            "construct": "hunk"
+          },
+          {
+            "start": 69,
+            "end": 69,
+            "construct": "VariableDeclaration INPUT_EVENTS"
+          },
+          {
+            "start": 70,
+            "end": 77,
+            "construct": "hunk"
+          },
+          {
+            "start": 79,
+            "end": 120,
+            "construct": "FunctionDeclaration start"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 5,
+            "end": 52,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 93,
+            "end": 93,
+            "construct": "VariableDeclaration pinRequired"
+          },
+          {
+            "start": 95,
+            "end": 100,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 960,
+            "end": 960,
+            "construct": "hunk"
+          },
+          {
+            "start": 961,
+            "end": 1065,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1066,
+            "end": 1066,
+            "construct": "hunk"
+          },
+          {
+            "start": 1067,
+            "end": 1098,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1099,
+            "end": 1099,
+            "construct": "hunk"
+          },
+          {
+            "start": 1100,
+            "end": 1128,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1129,
+            "end": 1129,
+            "construct": "hunk"
+          },
+          {
+            "start": 1130,
+            "end": 1142,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 3,
+            "end": 5,
+            "construct": "hunk"
+          },
+          {
+            "start": 11,
+            "end": 11,
+            "construct": "VariableDeclaration UNLOCK_PATH"
+          },
+          {
+            "start": 13,
+            "end": 39,
+            "construct": "ClassDeclaration ApiError"
+          },
+          {
+            "start": 43,
+            "end": 43,
+            "construct": "TSTypeAliasDeclaration Route"
+          },
+          {
+            "start": 45,
+            "end": 53,
+            "construct": "VariableDeclaration PATHS"
+          },
+          {
+            "start": 60,
+            "end": 60,
+            "construct": "hunk"
+          },
+          {
+            "start": 61,
+            "end": 66,
+            "construct": "FunctionDeclaration routeFor"
+          },
+          {
+            "start": 126,
+            "end": 130,
+            "construct": "hunk"
+          },
+          {
+            "start": 131,
+            "end": 131,
+            "construct": "VariableDeclaration locked"
+          },
+          {
+            "start": 132,
+            "end": 132,
+            "construct": "hunk"
+          },
+          {
+            "start": 133,
+            "end": 136,
+            "construct": "VariableDeclaration onUnauthorized"
+          },
+          {
+            "start": 137,
+            "end": 137,
+            "construct": "hunk"
+          },
+          {
+            "start": 138,
+            "end": 138,
+            "construct": "VariableDeclaration onPinRequired"
+          },
+          {
+            "start": 140,
+            "end": 140,
+            "construct": "hunk"
+          },
+          {
+            "start": 145,
+            "end": 145,
+            "construct": "hunk"
+          },
+          {
+            "start": 146,
+            "end": 148,
+            "construct": "FunctionDeclaration setOnPinRequired"
+          },
+          {
+            "start": 149,
+            "end": 149,
+            "construct": "hunk"
+          },
+          {
+            "start": 154,
+            "end": 159,
+            "construct": "TSInterfaceDeclaration ErrorEnvelope"
+          },
+          {
+            "start": 161,
+            "end": 166,
+            "construct": "TSInterfaceDeclaration Envelope"
+          },
+          {
+            "start": 167,
+            "end": 167,
+            "construct": "hunk"
+          },
+          {
+            "start": 168,
+            "end": 184,
+            "construct": "FunctionDeclaration readEnvelope"
+          },
+          {
+            "start": 186,
+            "end": 189,
+            "construct": "hunk"
+          },
+          {
+            "start": 190,
+            "end": 190,
+            "construct": "VariableDeclaration OWN_401"
+          },
+          {
+            "start": 191,
+            "end": 191,
+            "construct": "hunk"
+          },
+          {
+            "start": 204,
+            "end": 223,
+            "construct": "FunctionDeclaration request"
+          },
+          {
+            "start": 257,
+            "end": 258,
+            "construct": "hunk"
+          },
+          {
+            "start": 259,
+            "end": 259,
+            "construct": "VariableDeclaration PIN"
+          },
+          {
+            "start": 260,
+            "end": 260,
+            "construct": "hunk"
+          },
+          {
+            "start": 261,
+            "end": 264,
+            "construct": "TSInterfaceDeclaration PinStatus"
+          },
+          {
+            "start": 265,
+            "end": 270,
+            "construct": "hunk"
+          },
+          {
+            "start": 271,
+            "end": 273,
+            "construct": "FunctionDeclaration unlock"
+          },
+          {
+            "start": 274,
+            "end": 274,
+            "construct": "hunk"
+          },
+          {
+            "start": 275,
+            "end": 277,
+            "construct": "FunctionDeclaration pinStatus"
+          },
+          {
+            "start": 278,
+            "end": 279,
+            "construct": "hunk"
+          },
+          {
+            "start": 280,
+            "end": 282,
+            "construct": "FunctionDeclaration setPin"
+          },
+          {
+            "start": 283,
+            "end": 284,
+            "construct": "hunk"
+          },
+          {
+            "start": 285,
+            "end": 287,
+            "construct": "FunctionDeclaration changePin"
+          },
+          {
+            "start": 288,
+            "end": 289,
+            "construct": "hunk"
+          },
+          {
+            "start": 290,
+            "end": 292,
+            "construct": "FunctionDeclaration removePin"
+          },
+          {
+            "start": 293,
+            "end": 293,
+            "construct": "hunk"
+          },
+          {
+            "start": 681,
+            "end": 700,
+            "construct": "FunctionDeclaration messageFor"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/App.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable",
+        "web/src/lib/PinPad.svelte": "ast-unavailable",
+        "web/src/lib/Settings.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "go.mod",
+      "reason": "no mutation adapter for .mod"
+    },
+    {
+      "file": "go.sum",
+      "reason": "no mutation adapter for .sum"
+    },
+    {
+      "file": "internal/store/migrations/0010_devices.sql",
+      "reason": "no mutation adapter for .sql"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 157,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 158,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/pin-unlock/REVIEW.md",
+      ".dross/phases/pin-unlock/changes.json",
+      ".dross/phases/pin-unlock/panel/mvp.md",
+      ".dross/phases/pin-unlock/panel/risk.md",
+      ".dross/phases/pin-unlock/panel/synthesis.md",
+      ".dross/phases/pin-unlock/panel/verification.md",
+      ".dross/phases/pin-unlock/plan.toml",
+      ".dross/phases/pin-unlock/spec.toml",
+      ".dross/phases/pin-unlock/tests.json",
+      ".dross/phases/pin-unlock/verify.toml",
+      ".dross/project.toml",
+      ".dross/survivors.toml",
+      "cmd/adguard-reward/main.go",
+      "cmd/adguard-reward/main_test.go",
+      "go.mod",
+      "go.sum",
+      "internal/api/api.go",
+      "internal/api/errors.go",
+      "internal/api/login.go",
+      "internal/api/login_test.go",
+      "internal/api/pin.go",
+      "internal/api/pin_change_test.go",
+      "internal/api/pin_test.go",
+      "internal/api/reauth.go",
+      "internal/api/reauth_test.go",
+      "internal/api/sessions.go",
+      "internal/api/teardown_test.go",
+      "internal/api/unlock.go",
+      "internal/api/unlock_test.go",
+      "internal/auth/auth.go",
+      "internal/auth/auth_test.go",
+      "internal/auth/device.go",
+      "internal/auth/middleware.go",
+      "internal/auth/middleware_test.go",
+      "internal/auth/pin.go",
+      "internal/auth/pin_test.go",
+      "internal/store/devices.go",
+      "internal/store/devices_test.go",
+      "internal/store/migrations/0010_devices.sql",
+      "internal/store/sessions.go",
+      "internal/store/sessions_test.go",
+      "internal/store/store_test.go",
+      "web/src/App.svelte",
+      "web/src/App.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/PinPad.svelte",
+      "web/src/lib/PinPad.test.ts",
+      "web/src/lib/Settings.svelte",
+      "web/src/lib/Settings.test.ts",
+      "web/src/lib/activeGrants.test.ts",
+      "web/src/lib/activeGrants.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts"
+    ],
+    "hunks": {
+      ".dross/phases/pin-unlock/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 35
+        }
+      ],
+      ".dross/phases/pin-unlock/changes.json": [
+        {
+          "start": 1,
+          "end": 881
+        }
+      ],
+      ".dross/phases/pin-unlock/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 157
+        }
+      ],
+      ".dross/phases/pin-unlock/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 287
+        }
+      ],
+      ".dross/phases/pin-unlock/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 406
+        }
+      ],
+      ".dross/phases/pin-unlock/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 283
+        }
+      ],
+      ".dross/phases/pin-unlock/plan.toml": [
+        {
+          "start": 1,
+          "end": 267
+        }
+      ],
+      ".dross/phases/pin-unlock/spec.toml": [
+        {
+          "start": 1,
+          "end": 62
+        }
+      ],
+      ".dross/phases/pin-unlock/tests.json": [
+        {
+          "start": 1,
+          "end": 2499
+        }
+      ],
+      ".dross/phases/pin-unlock/verify.toml": [
+        {
+          "start": 1,
+          "end": 390
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 73,
+          "end": 84
+        },
+        {
+          "start": 1758,
+          "end": 1892
+        }
+      ],
+      "cmd/adguard-reward/main.go": [
+        {
+          "start": 117,
+          "end": 120
+        },
+        {
+          "start": 125,
+          "end": 125
+        },
+        {
+          "start": 136,
+          "end": 136
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 2065,
+          "end": 2242
+        }
+      ],
+      "go.mod": [
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 17,
+          "end": 17
+        }
+      ],
+      "go.sum": [
+        {
+          "start": 15,
+          "end": 16
+        },
+        {
+          "start": 21,
+          "end": 22
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 95,
+          "end": 97
+        },
+        {
+          "start": 107,
+          "end": 108
+        },
+        {
+          "start": 126,
+          "end": 128
+        },
+        {
+          "start": 134,
+          "end": 136
+        }
+      ],
+      "internal/api/errors.go": [
+        {
+          "start": 20,
+          "end": 28
+        }
+      ],
+      "internal/api/login.go": [
+        {
+          "start": 32,
+          "end": 33
+        },
+        {
+          "start": 36,
+          "end": 36
+        },
+        {
+          "start": 41,
+          "end": 57
+        },
+        {
+          "start": 64,
+          "end": 64
+        },
+        {
+          "start": 66,
+          "end": 69
+        },
+        {
+          "start": 71,
+          "end": 72
+        },
+        {
+          "start": 75,
+          "end": 101
+        },
+        {
+          "start": 117,
+          "end": 120
+        },
+        {
+          "start": 123,
+          "end": 133
+        }
+      ],
+      "internal/api/login_test.go": [
+        {
+          "start": 64,
+          "end": 65
+        },
+        {
+          "start": 95,
+          "end": 96
+        },
+        {
+          "start": 105,
+          "end": 105
+        },
+        {
+          "start": 121,
+          "end": 121
+        },
+        {
+          "start": 123,
+          "end": 123
+        }
+      ],
+      "internal/api/pin.go": [
+        {
+          "start": 1,
+          "end": 201
+        }
+      ],
+      "internal/api/pin_change_test.go": [
+        {
+          "start": 1,
+          "end": 241
+        }
+      ],
+      "internal/api/pin_test.go": [
+        {
+          "start": 1,
+          "end": 483
+        }
+      ],
+      "internal/api/reauth.go": [
+        {
+          "start": 1,
+          "end": 70
+        }
+      ],
+      "internal/api/reauth_test.go": [
+        {
+          "start": 1,
+          "end": 207
+        }
+      ],
+      "internal/api/sessions.go": [
+        {
+          "start": 70,
+          "end": 72
+        },
+        {
+          "start": 81,
+          "end": 89
+        },
+        {
+          "start": 91,
+          "end": 93
+        }
+      ],
+      "internal/api/teardown_test.go": [
+        {
+          "start": 1,
+          "end": 231
+        }
+      ],
+      "internal/api/unlock.go": [
+        {
+          "start": 1,
+          "end": 186
+        }
+      ],
+      "internal/api/unlock_test.go": [
+        {
+          "start": 1,
+          "end": 466
+        }
+      ],
+      "internal/auth/auth.go": [
+        {
+          "start": 34,
+          "end": 37
+        },
+        {
+          "start": 56,
+          "end": 58
+        },
+        {
+          "start": 77,
+          "end": 78
+        },
+        {
+          "start": 85,
+          "end": 95
+        },
+        {
+          "start": 103,
+          "end": 105
+        },
+        {
+          "start": 111,
+          "end": 113
+        },
+        {
+          "start": 124,
+          "end": 129
+        },
+        {
+          "start": 145,
+          "end": 147
+        },
+        {
+          "start": 154,
+          "end": 155
+        },
+        {
+          "start": 157,
+          "end": 166
+        },
+        {
+          "start": 177,
+          "end": 177
+        },
+        {
+          "start": 179,
+          "end": 179
+        },
+        {
+          "start": 213,
+          "end": 213
+        },
+        {
+          "start": 220,
+          "end": 240
+        },
+        {
+          "start": 264,
+          "end": 264
+        },
+        {
+          "start": 273,
+          "end": 274
+        },
+        {
+          "start": 281,
+          "end": 281
+        },
+        {
+          "start": 293,
+          "end": 294
+        },
+        {
+          "start": 310,
+          "end": 319
+        }
+      ],
+      "internal/auth/auth_test.go": [
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 15,
+          "end": 15
+        },
+        {
+          "start": 74,
+          "end": 85
+        },
+        {
+          "start": 527,
+          "end": 870
+        }
+      ],
+      "internal/auth/device.go": [
+        {
+          "start": 1,
+          "end": 184
+        }
+      ],
+      "internal/auth/middleware.go": [
+        {
+          "start": 17,
+          "end": 17
+        },
+        {
+          "start": 20,
+          "end": 27
+        },
+        {
+          "start": 32,
+          "end": 32
+        },
+        {
+          "start": 38,
+          "end": 38
+        },
+        {
+          "start": 50,
+          "end": 78
+        }
+      ],
+      "internal/auth/middleware_test.go": [
+        {
+          "start": 1,
+          "end": 466
+        }
+      ],
+      "internal/auth/pin.go": [
+        {
+          "start": 1,
+          "end": 157
+        }
+      ],
+      "internal/auth/pin_test.go": [
+        {
+          "start": 1,
+          "end": 163
+        }
+      ],
+      "internal/store/devices.go": [
+        {
+          "start": 1,
+          "end": 207
+        }
+      ],
+      "internal/store/devices_test.go": [
+        {
+          "start": 1,
+          "end": 456
+        }
+      ],
+      "internal/store/migrations/0010_devices.sql": [
+        {
+          "start": 1,
+          "end": 26
+        }
+      ],
+      "internal/store/sessions.go": [
+        {
+          "start": 19,
+          "end": 19
+        },
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 28,
+          "end": 28
+        },
+        {
+          "start": 35,
+          "end": 35
+        },
+        {
+          "start": 42,
+          "end": 45
+        },
+        {
+          "start": 80,
+          "end": 103
+        }
+      ],
+      "internal/store/sessions_test.go": [
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 240,
+          "end": 331
+        }
+      ],
+      "internal/store/store_test.go": [
+        {
+          "start": 207,
+          "end": 207
+        }
+      ],
+      "web/src/App.svelte": [
+        {
+          "start": 3,
+          "end": 4
+        },
+        {
+          "start": 11,
+          "end": 12
+        },
+        {
+          "start": 25,
+          "end": 29
+        },
+        {
+          "start": 44,
+          "end": 58
+        },
+        {
+          "start": 61,
+          "end": 63
+        },
+        {
+          "start": 74,
+          "end": 75
+        }
+      ],
+      "web/src/App.test.ts": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 50,
+          "end": 50
+        },
+        {
+          "start": 393,
+          "end": 424
+        },
+        {
+          "start": 518,
+          "end": 675
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 283,
+          "end": 283
+        }
+      ],
+      "web/src/lib/PinPad.svelte": [
+        {
+          "start": 1,
+          "end": 148
+        }
+      ],
+      "web/src/lib/PinPad.test.ts": [
+        {
+          "start": 1,
+          "end": 252
+        }
+      ],
+      "web/src/lib/Settings.svelte": [
+        {
+          "start": 1,
+          "end": 195
+        }
+      ],
+      "web/src/lib/Settings.test.ts": [
+        {
+          "start": 1,
+          "end": 410
+        }
+      ],
+      "web/src/lib/activeGrants.test.ts": [
+        {
+          "start": 5,
+          "end": 5
+        },
+        {
+          "start": 39,
+          "end": 53
+        },
+        {
+          "start": 86,
+          "end": 86
+        },
+        {
+          "start": 88,
+          "end": 88
+        },
+        {
+          "start": 96,
+          "end": 96
+        },
+        {
+          "start": 99,
+          "end": 99
+        },
+        {
+          "start": 105,
+          "end": 105
+        },
+        {
+          "start": 114,
+          "end": 114
+        },
+        {
+          "start": 119,
+          "end": 252
+        }
+      ],
+      "web/src/lib/activeGrants.ts": [
+        {
+          "start": 36,
+          "end": 36
+        },
+        {
+          "start": 62,
+          "end": 77
+        },
+        {
+          "start": 81,
+          "end": 100
+        },
+        {
+          "start": 102,
+          "end": 104
+        },
+        {
+          "start": 107,
+          "end": 108
+        },
+        {
+          "start": 110,
+          "end": 111
+        },
+        {
+          "start": 113,
+          "end": 113
+        },
+        {
+          "start": 117,
+          "end": 117
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 10,
+          "end": 10
+        },
+        {
+          "start": 31,
+          "end": 31
+        },
+        {
+          "start": 39,
+          "end": 40
+        },
+        {
+          "start": 44,
+          "end": 44
+        },
+        {
+          "start": 46,
+          "end": 46
+        },
+        {
+          "start": 48,
+          "end": 48
+        },
+        {
+          "start": 50,
+          "end": 50
+        },
+        {
+          "start": 93,
+          "end": 93
+        },
+        {
+          "start": 98,
+          "end": 99
+        },
+        {
+          "start": 960,
+          "end": 1142
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 3,
+          "end": 5
+        },
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 20,
+          "end": 30
+        },
+        {
+          "start": 37,
+          "end": 37
+        },
+        {
+          "start": 43,
+          "end": 43
+        },
+        {
+          "start": 52,
+          "end": 52
+        },
+        {
+          "start": 60,
+          "end": 61
+        },
+        {
+          "start": 126,
+          "end": 138
+        },
+        {
+          "start": 140,
+          "end": 140
+        },
+        {
+          "start": 145,
+          "end": 149
+        },
+        {
+          "start": 158,
+          "end": 158
+        },
+        {
+          "start": 161,
+          "end": 168
+        },
+        {
+          "start": 172,
+          "end": 172
+        },
+        {
+          "start": 178,
+          "end": 179
+        },
+        {
+          "start": 183,
+          "end": 183
+        },
+        {
+          "start": 186,
+          "end": 191
+        },
+        {
+          "start": 216,
+          "end": 221
+        },
+        {
+          "start": 257,
+          "end": 293
+        },
+        {
+          "start": 684,
+          "end": 692
+        }
+      ]
+    },
+    "base": "45ec08497f3f7ec490b19beac71b001dd0274f12",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/PinPad.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Settings.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local",
+  "measured_commit": "e882d241b7c209beee65dce6f45757f69707c058",
+  "measured_tree": "ad2882097ca2af8e5b581f9a2e0c7e4e80ddacf2"
+}

@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -234,5 +235,97 @@ func TestSessions_DeleteExecError(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "no such table") {
 		t.Fatalf("err = %q, want it to name the missing table", err)
+	}
+}
+
+func TestSession_DeviceIDRoundTrip(t *testing.T) {
+	s, _ := openTemp(t)
+	dev, err := s.InsertDevice(ctx, auth.Device{
+		Username: "mum", TokenHash: hash(0xD0), PINHash: testPINHash, CreatedAt: base, ExpiresAt: base,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	in := func(h byte, deviceID int64) int64 {
+		t.Helper()
+		id, err := s.Insert(ctx, auth.Session{
+			Username: "mum", TokenHash: hash(h), CreatedAt: base, LastSeenAt: base,
+			ExpiresAt: base.Add(time.Hour), DeviceID: deviceID,
+		})
+		if err != nil {
+			t.Fatalf("Insert(device %d): %v", deviceID, err)
+		}
+		return id
+	}
+	tagged := in(1, dev)
+	untagged := in(2, 0)
+
+	got, err := s.ByTokenHash(ctx, hash(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.DeviceID != dev {
+		t.Fatalf("tagged session DeviceID = %d, want %d", got.DeviceID, dev)
+	}
+	got, err = s.ByTokenHash(ctx, hash(2))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.DeviceID != 0 {
+		t.Fatalf("untagged session DeviceID = %d, want 0", got.DeviceID)
+	}
+	if v := sessionDeviceID(t, s, untagged); v != "NULL" {
+		t.Fatalf("DeviceID 0 stored as %s, want SQL NULL", v)
+	}
+	if v := sessionDeviceID(t, s, tagged); v != fmt.Sprint(dev) {
+		t.Fatalf("DeviceID %d stored as %s", dev, v)
+	}
+	// ListByUser scans the column too.
+	list, err := s.ListByUser(ctx, "mum")
+	if err != nil || len(list) != 2 || list[0].DeviceID != dev || list[1].DeviceID != 0 {
+		t.Fatalf("ListByUser = %+v, %v; want device ids [%d 0]", list, err, dev)
+	}
+}
+
+func TestSession_SetDevice(t *testing.T) {
+	s, _ := openTemp(t)
+	dev, err := s.InsertDevice(ctx, auth.Device{
+		Username: "mum", TokenHash: hash(0xD0), PINHash: testPINHash, CreatedAt: base, ExpiresAt: base,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	id := insert(t, s, "mum", 1, base)
+
+	exp := base.Add(15 * time.Minute)
+	if err := s.SetDevice(ctx, id, dev, exp); err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.ByTokenHash(ctx, hash(1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.DeviceID != dev || !got.ExpiresAt.Equal(exp) {
+		t.Fatalf("after SetDevice(%d) = %+v, want DeviceID %d, ExpiresAt %v", dev, got, dev, exp)
+	}
+
+	exp = base.Add(30 * 24 * time.Hour)
+	if err := s.SetDevice(ctx, id, 0, exp); err != nil {
+		t.Fatal(err)
+	}
+	if v := sessionDeviceID(t, s, id); v != "NULL" {
+		t.Fatalf("SetDevice(0) stored %s, want NULL", v)
+	}
+	got, _ = s.ByTokenHash(ctx, hash(1))
+	if got.DeviceID != 0 || !got.ExpiresAt.Equal(exp) {
+		t.Fatalf("after SetDevice(0) = %+v", got)
+	}
+
+	if err := s.SetDevice(ctx, id+100, dev, exp); !errors.Is(err, auth.ErrNotFound) {
+		t.Fatalf("SetDevice(missing) err = %v, want ErrNotFound", err)
+	}
+	if err := s.SetDevice(ctx, id, dev+100, exp); err == nil {
+		t.Fatal("SetDevice to a device that does not exist succeeded (foreign key not enforced)")
 	}
 }

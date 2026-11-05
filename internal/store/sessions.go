@@ -16,30 +16,33 @@ var _ auth.SessionStore = (*Store)(nil)
 // Times are stored as Unix seconds UTC and come back truncated to the
 // second, so callers must not expect sub-second round-trips.
 
-const sessionCols = `id, username, token_hash, created_at, last_seen_at, expires_at`
+const sessionCols = `id, username, token_hash, created_at, last_seen_at, expires_at, device_id`
 
 func scanSession(row interface{ Scan(...any) error }) (auth.Session, error) {
 	var (
 		s                            auth.Session
 		hash                         []byte
 		created, lastSeen, expiresAt int64
+		device                       sql.NullInt64
 	)
-	if err := row.Scan(&s.ID, &s.Username, &hash, &created, &lastSeen, &expiresAt); err != nil {
+	if err := row.Scan(&s.ID, &s.Username, &hash, &created, &lastSeen, &expiresAt, &device); err != nil {
 		return auth.Session{}, err
 	}
 	copy(s.TokenHash[:], hash)
 	s.CreatedAt = time.Unix(created, 0).UTC()
 	s.LastSeenAt = time.Unix(lastSeen, 0).UTC()
 	s.ExpiresAt = time.Unix(expiresAt, 0).UTC()
+	s.DeviceID = device.Int64 // NULL reads 0: untagged
 	return s, nil
 }
 
 // Insert stores s and returns its rowid.
 func (st *Store) Insert(ctx context.Context, s auth.Session) (int64, error) {
 	res, err := st.db.ExecContext(ctx,
-		`INSERT INTO sessions (username, token_hash, created_at, last_seen_at, expires_at)
-		 VALUES (?, ?, ?, ?, ?)`,
-		s.Username, s.TokenHash[:], s.CreatedAt.Unix(), s.LastSeenAt.Unix(), s.ExpiresAt.Unix())
+		`INSERT INTO sessions (username, token_hash, created_at, last_seen_at, expires_at, device_id)
+		 VALUES (?, ?, ?, ?, ?, ?)`,
+		s.Username, s.TokenHash[:], s.CreatedAt.Unix(), s.LastSeenAt.Unix(), s.ExpiresAt.Unix(),
+		deviceArg(s.DeviceID))
 	if err != nil {
 		return 0, fmt.Errorf("insert session: %w", err)
 	}
@@ -72,6 +75,30 @@ func (st *Store) Touch(ctx context.Context, id int64, lastSeen, expires time.Tim
 		return fmt.Errorf("touch session: %w", err)
 	}
 	return nil
+}
+
+// SetDevice writes the device tag (0 stores NULL) and expires_at together.
+func (st *Store) SetDevice(ctx context.Context, id, deviceID int64, expires time.Time) error {
+	res, err := st.db.ExecContext(ctx,
+		`UPDATE sessions SET device_id = ?, expires_at = ? WHERE id = ?`,
+		deviceArg(deviceID), expires.Unix(), id)
+	if err != nil {
+		return fmt.Errorf("set session device: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("set session device: %w", err)
+	}
+	if n == 0 {
+		return auth.ErrNotFound
+	}
+	return nil
+}
+
+// deviceArg maps the "no device" 0 to SQL NULL, so the foreign key never
+// sees a device id 0 that cannot exist.
+func deviceArg(id int64) sql.NullInt64 {
+	return sql.NullInt64{Int64: id, Valid: id != 0}
 }
 
 // Delete removes one session by id.

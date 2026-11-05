@@ -7,6 +7,7 @@ import {
   CSRF_HEADER,
   CSRF_VALUE,
   applyMigration,
+  changePin,
   childBlocked,
   createChild,
   createClient,
@@ -27,6 +28,7 @@ import {
   listDevices,
   listGrants,
   listServices,
+  locked,
   login,
   logout,
   me,
@@ -34,12 +36,18 @@ import {
   migrationDismissed,
   migrationOffer,
   navigate,
+  pinStatus,
+  removePin,
   renameClient,
   request,
   route,
+  routeFor,
   saveButtons,
+  setOnPinRequired,
   setOnUnauthorized,
+  setPin,
   toggleService,
+  unlock,
   updateChild,
 } from './api'
 
@@ -82,10 +90,13 @@ async function fails(p: Promise<unknown>): Promise<ApiError> {
 }
 
 let unauthorized: ReturnType<typeof vi.fn<() => void>>
+let pinRequired: ReturnType<typeof vi.fn<() => void>>
 
 beforeEach(() => {
   unauthorized = vi.fn<() => void>()
   setOnUnauthorized(unauthorized)
+  pinRequired = vi.fn<() => void>()
+  setOnPinRequired(pinRequired)
 })
 
 afterEach(() => {
@@ -944,5 +955,188 @@ describe('fetchHistory', () => {
     const anon = await fails(fetchHistory(3))
     expect(anon.status).toBe(401)
     expect(unauthorized).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('PIN lock routing', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/')
+    route.set('home')
+    locked.set(false)
+  })
+
+  it('a fresh load starts unlocked', async () => {
+    vi.resetModules()
+    const m = await import('./api')
+    expect(get(m.locked)).toBe(false)
+  })
+
+  it('pin_required locks instead of signing out', async () => {
+    const calls = mockFetch(json(401, { error: 'pin_required', message: 'enter the PIN' }))
+    const err = await fails(listChildren())
+    expect(calls[0].init.method).toBe('GET')
+    expect(calls[0].url).toBe('/api/v1/children')
+    expect(err.status).toBe(401)
+    expect(err.code).toBe('pin_required')
+    expect(pinRequired).toHaveBeenCalledTimes(1)
+    expect(unauthorized).not.toHaveBeenCalled()
+
+    // Any other 401 code is still signed-out.
+    mockFetch(json(401, { error: 'unauthorized', message: 'authentication required' }))
+    await fails(listChildren())
+    expect(unauthorized).toHaveBeenCalledTimes(1)
+    expect(pinRequired).toHaveBeenCalledTimes(1)
+  })
+
+  it('unlock errors are the caller\'s, never a global handler\'s', async () => {
+    const calls = mockFetch(json(401, { error: 'bad_pin', message: 'wrong PIN', attempts_remaining: 3 }))
+    const bad = await fails(unlock('1111'))
+    expect(calls[0].url).toBe('/api/v1/unlock')
+    expect(calls[0].init.method).toBe('POST')
+    expect(bad.status).toBe(401)
+    expect(bad.code).toBe('bad_pin')
+    expect(bad.attemptsRemaining).toBe(3)
+
+    // Zero is a real count; only a whole, non-negative number is.
+    mockFetch(json(401, { error: 'bad_pin', message: 'wrong PIN', attempts_remaining: 0 }))
+    expect((await fails(unlock('1111'))).attemptsRemaining).toBe(0)
+    for (const left of [2.5, '3', null, -1, true]) {
+      mockFetch(json(401, { error: 'bad_pin', message: 'wrong PIN', attempts_remaining: left }))
+      expect((await fails(unlock('1111'))).attemptsRemaining, String(left)).toBeUndefined()
+    }
+    mockFetch(json(401, { error: 'bad_pin', message: 'wrong PIN' }))
+    expect((await fails(unlock('1111'))).attemptsRemaining).toBeUndefined()
+
+    for (const code of ['device_revoked', 'unauthorized', 'pin_required']) {
+      mockFetch(json(401, { error: code, message: 'm' }))
+      expect((await fails(unlock('1111'))).code).toBe(code)
+    }
+
+    // The login route is exempt the same way, pin_required included.
+    mockFetch(json(401, { error: 'pin_required', message: 'm' }))
+    await fails(login('a', 'b'))
+
+    expect(unauthorized).not.toHaveBeenCalled()
+    expect(pinRequired).not.toHaveBeenCalled()
+  })
+
+  it('attemptsRemaining is read on any error, absent otherwise', async () => {
+    mockFetch(json(409, { error: 'conflict', message: 'm' }))
+    expect((await fails(listChildren())).attemptsRemaining).toBeUndefined()
+    expect(new ApiError(401, 'bad_pin', 'm').attemptsRemaining).toBeUndefined()
+    expect(new ApiError(401, 'bad_pin', 'm', undefined, undefined, 2).attemptsRemaining).toBe(2)
+  })
+
+  it('a failed password re-check keeps the parent signed in', async () => {
+    for (const code of ['bad_credentials', 'reauth_required']) {
+      mockFetch(json(403, { error: code, message: 'm' }))
+      const change = await fails(changePin('4567', 'wrong'))
+      expect(change.status).toBe(403)
+      expect(change.code).toBe(code)
+
+      mockFetch(json(403, { error: code, message: 'm' }))
+      const rm = await fails(removePin('wrong'))
+      expect(rm.status).toBe(403)
+      expect(rm.code).toBe(code)
+    }
+    expect(unauthorized).not.toHaveBeenCalled()
+    expect(pinRequired).not.toHaveBeenCalled()
+  })
+
+  it('the default handlers lock in place and sign out', async () => {
+    history.replaceState(null, '', '/children')
+    vi.resetModules()
+    const m = await import('./api')
+    expect(get(m.route)).toBe('children')
+
+    mockFetch(json(401, { error: 'pin_required', message: 'm' }))
+    await expect(m.listChildren()).rejects.toBeInstanceOf(m.ApiError)
+    expect(get(m.locked)).toBe(true)
+    expect(get(m.route)).toBe('children')
+    expect(location.pathname).toBe('/children')
+
+    // A plain 401 while locked drops the lock and shows the login page.
+    mockFetch(json(401, { error: 'unauthorized', message: 'm' }))
+    await expect(m.listChildren()).rejects.toBeInstanceOf(m.ApiError)
+    expect(get(m.locked)).toBe(false)
+    expect(get(m.route)).toBe('login')
+    expect(location.pathname).toBe('/login')
+  })
+})
+
+describe('PIN endpoints', () => {
+  it('send the wire shape with the CSRF header', async () => {
+    const calls = mockFetch(
+      new Response(null, { status: 204 }),
+      new Response(null, { status: 204 }),
+      new Response(null, { status: 204 }),
+      new Response(null, { status: 204 }),
+      json(200, { has_pin: true }),
+    )
+    expect(await setPin('0123')).toBeUndefined()
+    expect(await changePin('4567', 'pw')).toBeUndefined()
+    expect(await removePin('pw')).toBeUndefined()
+    expect(await unlock('1234')).toBeUndefined()
+    expect(await pinStatus()).toEqual({ has_pin: true })
+
+    const seen = calls.map((c) => [c.init.method, c.url, c.init.body ?? null])
+    expect(seen).toEqual([
+      ['POST', '/api/v1/pin', '{"pin":"0123"}'],
+      ['POST', '/api/v1/pin', '{"pin":"4567","password":"pw"}'],
+      ['DELETE', '/api/v1/pin', '{"password":"pw"}'],
+      ['POST', '/api/v1/unlock', '{"pin":"1234"}'],
+      ['GET', '/api/v1/pin', null],
+    ])
+    for (const c of calls) {
+      expect(header(c.init, CSRF_HEADER)).toBe(CSRF_VALUE)
+      expect(c.init.credentials).toBe('same-origin')
+    }
+    for (const c of calls.slice(0, 4)) expect(header(c.init, 'Content-Type')).toBe('application/json')
+    // A first PIN never carries a password, not even an empty one.
+    expect(JSON.parse(calls[0].init.body as string)).not.toHaveProperty('password')
+  })
+})
+
+describe('settings route', () => {
+  afterEach(() => {
+    history.replaceState(null, '', '/')
+    route.set('home')
+  })
+
+  it('maps the settings route both ways', () => {
+    expect(routeFor('/settings')).toBe('settings')
+    expect(routeFor('/settings/x')).toBe('home')
+
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      navigate('settings')
+      expect(push).toHaveBeenCalledWith(null, '', '/settings')
+    } finally {
+      push.mockRestore()
+    }
+    expect(location.pathname).toBe('/settings')
+    expect(get(route)).toBe('settings')
+
+    history.replaceState(null, '', '/')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('home')
+
+    history.replaceState(null, '', '/settings')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('settings')
+  })
+})
+
+describe('messageFor PIN codes', () => {
+  it('gives the fixed line per code', () => {
+    expect(messageFor(new ApiError(401, 'bad_pin', 'x', undefined, undefined, 3))).toBe('Wrong PIN — 3 attempts left')
+    expect(messageFor(new ApiError(401, 'bad_pin', 'x', undefined, undefined, 1))).toBe('Wrong PIN — 1 attempt left')
+    expect(messageFor(new ApiError(401, 'bad_pin', 'x'))).toBe('Wrong PIN')
+    expect(messageFor(new ApiError(401, 'device_revoked', 'x'))).toBe(
+      'This device was signed out — sign in with your password',
+    )
+    expect(messageFor(new ApiError(403, 'reauth_required', 'x'))).toBe('Enter your AdGuard password')
+    expect(messageFor(new ApiError(403, 'bad_credentials', 'x'))).toBe('Wrong password')
+    expect(messageFor(new ApiError(401, 'bad_credentials', 'x'))).toBe('Wrong username or password')
   })
 })
