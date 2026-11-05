@@ -1,22 +1,22 @@
 [verify]
   phase = "export-import"
-  generated_at = 2026-11-05T11:20:27.066898Z
+  generated_at = 2026-11-05T15:31:43.519033Z
   verdict = "partial"
   finalized = true
-  finalized_at = 2026-11-05T11:48:36.806749Z
-  measured_commit = "0259d3df97fd17f68f06513c73922861d3fe5ee8"
-  measured_tree = "75a19c3e244346c84b71c91371657aa722d74deb"
+  finalized_at = 2026-11-05T15:48:28.254156Z
+  measured_commit = "7e30aa28b43fcf7703666d1c41e92a540bd8f380"
+  measured_tree = "c6186dc1d0dc1c86140b7864e259ce347b3e8e76"
 
 [summary]
   mutation_status = "measured"
   measured_on = "local"
-  mutation_score = 0.9788732394366197
-  mutants_killed = 417
-  mutants_survived = 9
-  mutants_not_covered = 4
+  mutation_score = 0.9683168316831683
+  mutants_killed = 489
+  mutants_survived = 16
+  mutants_not_covered = 11
   mutants_no_block = 0
-  mutants_test_gap = 4
-  mutants_in_scope = 426
+  mutants_test_gap = 11
+  mutants_in_scope = 505
   unclassified_in_scope = 0
   criteria_total = 6
   criteria_covered = 6
@@ -25,14 +25,14 @@
   [[summary.leg]]
     language = "go"
     tool = "gremlins"
-    killed = 237
-    survived = 4
+    killed = 309
+    survived = 11
     timeout = 0
-    in_scope = 241
-    score = 0.983402489626556
-    file_count = 17
+    in_scope = 320
+    score = 0.965625
+    file_count = 24
     measured_on = "local"
-    whole_file = ["cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/children.go — adapter-lacks-range-runner", "internal/api/children_test.go — adapter-lacks-range-runner", "internal/api/export.go — adapter-lacks-range-runner", "internal/api/export_test.go — adapter-lacks-range-runner", "internal/api/import.go — adapter-lacks-range-runner", "internal/api/import_adguard_test.go — adapter-lacks-range-runner", "internal/api/import_test.go — adapter-lacks-range-runner", "internal/api/setup_file.go — adapter-lacks-range-runner", "internal/api/setup_file_test.go — adapter-lacks-range-runner", "internal/grants/clients.go — adapter-lacks-range-runner", "internal/grants/clients_test.go — adapter-lacks-range-runner", "internal/store/buttons.go — adapter-lacks-range-runner", "internal/store/children.go — adapter-lacks-range-runner", "internal/store/setup.go — adapter-lacks-range-runner", "internal/store/setup_test.go — adapter-lacks-range-runner"]
+    whole_file = ["cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/adguard/client.go — adapter-lacks-range-runner", "internal/adguard/client_test.go — adapter-lacks-range-runner", "internal/adguard/clients.go — adapter-lacks-range-runner", "internal/adguard/errors.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/children.go — adapter-lacks-range-runner", "internal/api/children_test.go — adapter-lacks-range-runner", "internal/api/clients.go — adapter-lacks-range-runner", "internal/api/clients_test.go — adapter-lacks-range-runner", "internal/api/export.go — adapter-lacks-range-runner", "internal/api/export_test.go — adapter-lacks-range-runner", "internal/api/import.go — adapter-lacks-range-runner", "internal/api/import_adguard_test.go — adapter-lacks-range-runner", "internal/api/import_test.go — adapter-lacks-range-runner", "internal/api/rename_test.go — adapter-lacks-range-runner", "internal/api/setup_file.go — adapter-lacks-range-runner", "internal/api/setup_file_test.go — adapter-lacks-range-runner", "internal/grants/clients.go — adapter-lacks-range-runner", "internal/grants/clients_test.go — adapter-lacks-range-runner", "internal/store/buttons.go — adapter-lacks-range-runner", "internal/store/children.go — adapter-lacks-range-runner", "internal/store/setup.go — adapter-lacks-range-runner", "internal/store/setup_test.go — adapter-lacks-range-runner"]
 
   [[summary.leg]]
     language = "typescript"
@@ -51,7 +51,7 @@
   id = "c-1"
   status = "covered"
   tests = ["internal/api/export_test.go:TestExport_Contents", "web/src/lib/Settings.test.ts:GETs the export, saves one named Blob and revokes the URL once the save has had time", "web/src/lib/Settings.test.ts:a successful export shows no missing clients", "web/src/lib/Settings.test.ts:an export clears the missing clients an earlier import listed", "web/src/lib/api.test.ts:exportSetup GETs the file through request"]
-  notes = "Golden body pins children, clients, button order, icon, services, duration and domains; the Settings test pins one named Blob. The prior weak status came from survivor Settings.svelte:113, now killed by the two t-7 tests. Remaining in-hunk survivors on this path are accepted equivalents. The real-device save is not provable in jsdom: see the iPhone FLAG."
+  notes = "Golden body pins children, clients, button order, icon, services, duration and domains; the Settings test pins one named Blob. Remaining in-hunk survivors on this path are accepted equivalents. The real-device save is unproven: jsdom cannot show it and the user waived the iPhone check on 2026-11-05."
 
 [[criterion]]
   id = "c-2"
@@ -69,7 +69,7 @@
   id = "c-4"
   status = "covered"
   tests = ["internal/api/import_test.go:TestImport_RejectedWhole", "internal/api/import_test.go:TestImport_UnknownBuiltin", "internal/api/import_adguard_test.go:TestImport_RejectedNoAdoption", "internal/api/import_adguard_test.go:TestImport_AdoptClientsReadFails", "internal/api/setup_file_test.go:TestParseSetupFile_DanglingRefs", "internal/api/setup_file_test.go:TestParseSetupFile_DecodePaths", "internal/api/setup_file_test.go:TestParseSetupFile_NullRecord", "internal/store/setup_test.go:TestSetup_Rollback"]
-  notes = "Table covers invalid JSON, version, duplicate name and domain, dangling child and service; each row asserts the named problem, empty ExportSetup, no AdGuard POST and unchanged UserRules. DecodePaths now pins the record path exactly (buttons[2].duration), closing the prior FLAG. AdoptClientsReadFails pins 502, no rows and a clean retry when the read inside adoption fails, closing the adguard_failure FLAG."
+  notes = "Table covers invalid JSON, version, duplicate name and domain, dangling child and service; each row asserts the named problem, empty ExportSetup, no AdGuard POST and unchanged UserRules. DecodePaths now pins the record path exactly (buttons[2].duration), closing the prior FLAG. AdoptClientsReadFails pins 502, no rows and a clean retry when the read inside adoption fails, closing the adguard_failure FLAG. Quick 7b1c2c6 only widens adguardDown to ErrBadResponse; this mapping is unchanged."
 
 [[criterion]]
   id = "c-5"
@@ -89,20 +89,20 @@
 
 [[finding]]
   severity = "FLAG"
-  text = "c-1: the manual iPhone PWA export check required by the plan has no recorded run. jsdom cannot prove a Blob download saves in an iOS standalone PWA; if it fails, the plan adds a navigator.share task to this phase."
+  text = "Survived mutant internal/adguard/client.go:183 (CONDITIONALS_BOUNDARY, `< 300` to `<= 300`): a literal status 300 reads as success and no test uses one. Inherited line, no criterion claims it. Acceptance 51a958b88e117c6a is wrong for this mutant: the key merges both boundary mutants on the line, and its note says killed by hand with evidence from blocked.go. Hand-applied at 7e30aa2, go test ./internal/... stays green."
 
 [[finding]]
   severity = "NOTE"
-  text = "Prior findings closed: BLOCKING survivor Settings.svelte:113 killed by t-7; c-4 decode-path FLAG fixed by t-8; adguard_failure 500 FLAG fixed by t-9. Traced: writeAdoptError's three callers all go through AdoptClients and baselineFrom reads only the store, so dropping adguardDown there loses no AdGuard failure."
+  text = "The manual iPhone PWA export check was waived by the user on 2026-11-05 and never run. The Blob save in an iOS standalone PWA stays unproven; no navigator.share fallback exists."
 
 [[finding]]
   severity = "NOTE"
-  text = "Out-of-diff: CreateClient has the gap t-9 closed for AdoptClients. Engine.baseline returns the Clients error unmarked and writeCreateClientError (internal/api/clients.go:240) relies on adguardDown, so an undecodable 200 answers 500. Not on the import path."
+  text = "Hand-applied at 7e30aa2 against go test ./internal/...: the other six client.go classify mutants (183, 185, 187) and grants/clients.go 131, 236 and 238 are all killed. This closes the prior doubt that the 236 and 238 evidence came from blocked.go. The acceptance notes still cite the old evidence."
 
 [[finding]]
   severity = "NOTE"
-  text = "All 4 NOT COVERED survivors are inherited lines in internal/grants/clients.go, in scope only because t-9 touched the file, each accepted in an earlier phase. Notes checked against the source: :275 is a non-viable string concatenation; :131, :236 and :238 are switch-case expressions. The hand-kill evidence quoted for :236 and :238 was taken at blocked.go, not this file."
+  text = "Prior out-of-diff CreateClient NOTE closed by quick 7b1c2c6: adguard.ErrBadResponse marks an undecodable 2xx and adguardDown matches it, pinned by TestBadResponse, TestCreateClient_ReadUndecodable and TestRename_ReadUndecodable. The fix differs from state.json's last_action, which describes an Engine.baseline change."
 
 [[finding]]
   severity = "NOTE"
-  text = "Go legs and Settings.svelte are mutated whole-file, so the 0.98 over 426 covers more than this diff. The denominator rose from 350 because t-9 brought children.go and grants/clients.go into scope."
+  text = "Score fell from 0.98 over 426 to 0.97 over 505 because the quick brought internal/adguard and internal/api/clients.go into scope, whole-file. All 11 NOT COVERED survivors are inherited: 7 in adguard/client.go, 4 in grants/clients.go. No new in-hunk survivor."
