@@ -135,6 +135,68 @@ func TestParseSetupFile_Unreadable(t *testing.T) {
 	}
 }
 
+func TestParseSetupFile_DecodePaths(t *testing.T) {
+	// record returns list[i] of m, cloning its first record until i exists.
+	record := func(m map[string]any, list string, i int) map[string]any {
+		items := m[list].([]any)
+		for len(items) <= i {
+			clone := map[string]any{}
+			for k, v := range items[0].(map[string]any) {
+				clone[k] = v
+			}
+			items = append(items, clone)
+		}
+		m[list] = items
+		return items[i].(map[string]any)
+	}
+	cases := []struct {
+		name string
+		edit func(m map[string]any)
+		want string
+	}{
+		{"unknown field on a child", func(m map[string]any) { record(m, "children", 1)["id"] = 7 },
+			`children[1]: unknown field "id"`},
+		{"unknown field on a service", func(m map[string]any) { record(m, "custom_services", 1)["id"] = 7 },
+			`custom_services[1]: unknown field "id"`},
+		{"unknown field on a button", func(m map[string]any) { record(m, "buttons", 1)["id"] = 7 },
+			`buttons[1]: unknown field "id"`},
+		{"unknown field on a toggle", func(m map[string]any) { record(m, "toggles", 1)["id"] = 7 },
+			`toggles[1]: unknown field "id"`},
+		{"wrong type on a button field", func(m map[string]any) { record(m, "buttons", 2)["duration"] = "soon" },
+			"buttons[2].duration: wrong type, found string"},
+		{"wrong type on a list field", func(m map[string]any) { record(m, "children", 1)["clients"] = 5 },
+			"children[1].clients: wrong type, found number"},
+		{"wrong type inside a list field", func(m map[string]any) { record(m, "children", 0)["clients"] = []any{5} },
+			"children[0].clients: wrong type, found number"},
+		{"wrong type on a service field", func(m map[string]any) { record(m, "custom_services", 0)["name"] = 5 },
+			"custom_services[0].name: wrong type, found number"},
+		{"wrong type on a toggle field", func(m map[string]any) { record(m, "toggles", 1)["state"] = 5 },
+			"toggles[1].state: wrong type, found number"},
+		{"wrong-typed record", func(m map[string]any) { m["children"] = []any{5} },
+			"children[0]: wrong type, found number"},
+		{"unknown top-level field", func(m map[string]any) { m["extra"] = true }, `unknown field "extra"`},
+		{"wrong list type", func(m map[string]any) { m["children"] = 5 }, "children: wrong type, found number"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			_, p := parseSetupFile(mapBody(t, tc.edit))
+			if p == nil {
+				t.Fatal("parseSetupFile accepted it")
+			}
+			if p.Status != http.StatusBadRequest || p.Message != tc.want {
+				t.Fatalf("got %d %q, want 400 %q", p.Status, p.Message, tc.want)
+			}
+		})
+	}
+}
+
+// A null record decodes to an empty one, which validation refuses: per-record
+// decoding must not read it as the end of the input.
+func TestParseSetupFile_NullRecord(t *testing.T) {
+	body := mapBody(t, func(m map[string]any) { m["children"] = []any{nil} })
+	assertRefused(t, body, http.StatusUnprocessableEntity, "children[0]")
+}
+
 func TestParseSetupFile_FutureVersion(t *testing.T) {
 	body := []byte(`{"format":"adguard-reward-export","version":2,"future":[]}`)
 	assertRefused(t, body, http.StatusUnprocessableEntity, "version 2")

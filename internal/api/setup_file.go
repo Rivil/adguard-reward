@@ -102,16 +102,70 @@ func parseSetupFile(body []byte) (setupFile, *fileProblem) {
 		return setupFile{}, p
 	}
 
-	var f setupFile
-	dec := json.NewDecoder(bytes.NewReader(body))
-	dec.DisallowUnknownFields()
-	if err := dec.Decode(&f); err != nil {
-		return setupFile{}, decodeProblem(err)
+	f, p := decodeFile(body)
+	if p != nil {
+		return setupFile{}, p
 	}
 	if p := f.validate(); p != nil {
 		return setupFile{}, p
 	}
 	return f, nil
+}
+
+// rawFile is the file's top level with each list left undecoded. A decoder
+// reports a bad field with no index, so records decode one at a time to name
+// theirs. An absent or null list stays nil for validate's required-lists check.
+type rawFile struct {
+	Format         json.RawMessage   `json:"format"`
+	Version        json.RawMessage   `json:"version"`
+	Children       []json.RawMessage `json:"children"`
+	CustomServices []json.RawMessage `json:"custom_services"`
+	Buttons        []json.RawMessage `json:"buttons"`
+	Toggles        []json.RawMessage `json:"toggles"`
+}
+
+// decodeFile strictly decodes a body whose header has passed checkHeader.
+func decodeFile(body []byte) (setupFile, *fileProblem) {
+	var raw rawFile
+	if err := decodeStrict(body, &raw); err != nil {
+		return setupFile{}, decodeProblem("", err)
+	}
+	f := setupFile{Format: setupFileFormat, Version: setupFileVersion}
+	var p *fileProblem
+	if f.Children, p = decodeRecords[fileChild]("children", raw.Children); p != nil {
+		return setupFile{}, p
+	}
+	if f.CustomServices, p = decodeRecords[fileService]("custom_services", raw.CustomServices); p != nil {
+		return setupFile{}, p
+	}
+	if f.Buttons, p = decodeRecords[fileButton]("buttons", raw.Buttons); p != nil {
+		return setupFile{}, p
+	}
+	if f.Toggles, p = decodeRecords[fileToggle]("toggles", raw.Toggles); p != nil {
+		return setupFile{}, p
+	}
+	return f, nil
+}
+
+// decodeRecords decodes one list, naming the record a problem sits in. A nil
+// list stays nil; [] stays empty.
+func decodeRecords[T any](list string, raw []json.RawMessage) ([]T, *fileProblem) {
+	if raw == nil {
+		return nil, nil
+	}
+	out := make([]T, len(raw))
+	for i, record := range raw {
+		if err := decodeStrict(record, &out[i]); err != nil {
+			return nil, decodeProblem(fmt.Sprintf("%s[%d]", list, i), err)
+		}
+	}
+	return out, nil
+}
+
+func decodeStrict(data []byte, into any) error {
+	dec := json.NewDecoder(bytes.NewReader(data))
+	dec.DisallowUnknownFields()
+	return dec.Decode(into)
 }
 
 // checkHeader checks the version first: body `null` has neither field, and is
@@ -131,12 +185,19 @@ func checkHeader(format, version json.RawMessage) *fileProblem {
 	return nil
 }
 
-func decodeProblem(err error) *fileProblem {
+// decodeProblem words a decode failure inside record, which is "" at the top
+// level. A record of the wrong type has no field of its own to name.
+func decodeProblem(record string, err error) *fileProblem {
 	var wrongType *json.UnmarshalTypeError
 	if errors.As(err, &wrongType) {
-		return badFile("%s: wrong type, found %s", wrongType.Field, wrongType.Value)
+		path := strings.Trim(record+"."+wrongType.Field, ".")
+		return badFile("%s: wrong type, found %s", path, wrongType.Value)
 	}
-	return badFile("%s", strings.TrimPrefix(err.Error(), "json: "))
+	message := strings.TrimPrefix(err.Error(), "json: ")
+	if record == "" {
+		return badFile("%s", message)
+	}
+	return badFile("%s: %s", record, message)
 }
 
 // validate checks the file top to bottom, trimming as it goes so that every
