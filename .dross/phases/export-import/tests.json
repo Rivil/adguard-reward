@@ -1,6 +1,6 @@
 {
   "phase": "export-import",
-  "generated_at": "2026-11-05T10:03:24.924951Z",
+  "generated_at": "2026-11-05T11:20:27.066898Z",
   "languages": [
     {
       "name": "go",
@@ -8,6 +8,8 @@
       "files": [
         "cmd/adguard-reward/main_test.go",
         "internal/api/api.go",
+        "internal/api/children.go",
+        "internal/api/children_test.go",
         "internal/api/export.go",
         "internal/api/export_test.go",
         "internal/api/import.go",
@@ -15,6 +17,8 @@
         "internal/api/import_test.go",
         "internal/api/setup_file.go",
         "internal/api/setup_file_test.go",
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go",
         "internal/store/buttons.go",
         "internal/store/children.go",
         "internal/store/setup.go",
@@ -22,18 +26,65 @@
       ],
       "mutation": {
         "Tool": "gremlins",
-        "Killed": 165,
-        "Survived": 0,
+        "Killed": 237,
+        "Survived": 4,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 1,
-        "Surviving": null,
-        "NotCovered": 0
+        "Score": 0.983402489626556,
+        "Surviving": [
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 131,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "ec84ab086867857b",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 236,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "5a75225dd24910cc",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 238,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "d829dbd8a124561a",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 275,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37db173ea9b8e0ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          }
+        ],
+        "NotCovered": 4
       },
       "measured_on": "local",
       "whole_file": {
         "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
         "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/children.go": "adapter-lacks-range-runner",
+        "internal/api/children_test.go": "adapter-lacks-range-runner",
         "internal/api/export.go": "adapter-lacks-range-runner",
         "internal/api/export_test.go": "adapter-lacks-range-runner",
         "internal/api/import.go": "adapter-lacks-range-runner",
@@ -41,6 +92,8 @@
         "internal/api/import_test.go": "adapter-lacks-range-runner",
         "internal/api/setup_file.go": "adapter-lacks-range-runner",
         "internal/api/setup_file_test.go": "adapter-lacks-range-runner",
+        "internal/grants/clients.go": "adapter-lacks-range-runner",
+        "internal/grants/clients_test.go": "adapter-lacks-range-runner",
         "internal/store/buttons.go": "adapter-lacks-range-runner",
         "internal/store/children.go": "adapter-lacks-range-runner",
         "internal/store/setup.go": "adapter-lacks-range-runner",
@@ -58,11 +111,11 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 179,
-        "Survived": 6,
+        "Killed": 180,
+        "Survived": 5,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.9675675675675676,
+        "Score": 0.972972972972973,
         "Surviving": [
           {
             "File": "web/src/lib/Settings.svelte",
@@ -83,16 +136,6 @@
             "Key": "50d693f6282912b6",
             "Lifecycle": "accepted",
             "Note": "Equivalent: missingClients only renders inside {#if backupNote}, backupNote is only set inside runBackup, and runBackup resets missingClients first, so the initial value can never reach the DOM."
-          },
-          {
-            "File": "web/src/lib/Settings.svelte",
-            "Line": 113,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "b78e9982dd1d5b4b",
-            "Lifecycle": "in-diff",
-            "Note": ""
           },
           {
             "File": "web/src/lib/Settings.svelte",
@@ -212,7 +255,7 @@
           },
           {
             "start": 453,
-            "end": 734,
+            "end": 766,
             "construct": "ExpressionStatement"
           }
         ],
@@ -366,15 +409,6 @@
       "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
     },
     {
-      "file": "internal/api/reauth.go",
-      "line": 59,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "9fa81f875c787158",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
       "file": "internal/api/grants.go",
       "line": 157,
       "op": "ARITHMETIC_BASE",
@@ -393,6 +427,15 @@
       "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
     },
     {
+      "file": "internal/api/reauth.go",
+      "line": 59,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9fa81f875c787158",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
       "file": "internal/api/unlock.go",
       "line": 87,
       "op": "CONDITIONALS_NEGATION",
@@ -409,6 +452,33 @@
       "key": "2e088d645f6775d1",
       "lifecycle": "accepted",
       "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/grants/grants.go",
+      "line": 352,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "bc02b0686e411159",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/grants/grants.go",
+      "line": 411,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "6bbce7448c751d07",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/grants/reconcile.go",
+      "line": 85,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "cccf33fd143b660e",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -\u003e err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
     },
     {
       "file": "internal/store/migrate.go",
@@ -439,11 +509,16 @@
       ".dross/phases/export-import/panel/verification.md",
       ".dross/phases/export-import/plan.toml",
       ".dross/phases/export-import/spec.toml",
+      ".dross/phases/export-import/tests.json",
+      ".dross/phases/export-import/verify.toml",
       ".dross/phases/grant-history/spec.toml",
       ".dross/phases/permanent-toggles/spec.toml",
       ".dross/project.toml",
+      ".dross/survivors.toml",
       "cmd/adguard-reward/main_test.go",
       "internal/api/api.go",
+      "internal/api/children.go",
+      "internal/api/children_test.go",
       "internal/api/export.go",
       "internal/api/export_test.go",
       "internal/api/import.go",
@@ -451,6 +526,8 @@
       "internal/api/import_test.go",
       "internal/api/setup_file.go",
       "internal/api/setup_file_test.go",
+      "internal/grants/clients.go",
+      "internal/grants/clients_test.go",
       "internal/store/buttons.go",
       "internal/store/children.go",
       "internal/store/setup.go",
@@ -470,7 +547,7 @@
       ".dross/phases/export-import/changes.json": [
         {
           "start": 1,
-          "end": 310
+          "end": 414
         }
       ],
       ".dross/phases/export-import/panel/mvp.md": [
@@ -500,13 +577,25 @@
       ".dross/phases/export-import/plan.toml": [
         {
           "start": 1,
-          "end": 111
+          "end": 141
         }
       ],
       ".dross/phases/export-import/spec.toml": [
         {
           "start": 1,
           "end": 57
+        }
+      ],
+      ".dross/phases/export-import/tests.json": [
+        {
+          "start": 1,
+          "end": 740
+        }
+      ],
+      ".dross/phases/export-import/verify.toml": [
+        {
+          "start": 1,
+          "end": 112
         }
       ],
       ".dross/phases/permanent-toggles/spec.toml": [
@@ -519,6 +608,12 @@
         {
           "start": 3,
           "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 1965,
+          "end": 2000
         }
       ],
       "cmd/adguard-reward/main_test.go": [
@@ -549,6 +644,30 @@
           "end": 167
         }
       ],
+      "internal/api/children.go": [
+        {
+          "start": 278,
+          "end": 279
+        },
+        {
+          "start": 282,
+          "end": 282
+        },
+        {
+          "start": 288,
+          "end": 288
+        }
+      ],
+      "internal/api/children_test.go": [
+        {
+          "start": 690,
+          "end": 705
+        },
+        {
+          "start": 729,
+          "end": 730
+        }
+      ],
       "internal/api/export.go": [
         {
           "start": 1,
@@ -570,7 +689,7 @@
       "internal/api/import_adguard_test.go": [
         {
           "start": 1,
-          "end": 489
+          "end": 532
         }
       ],
       "internal/api/import_test.go": [
@@ -582,13 +701,37 @@
       "internal/api/setup_file.go": [
         {
           "start": 1,
-          "end": 359
+          "end": 420
         }
       ],
       "internal/api/setup_file_test.go": [
         {
           "start": 1,
-          "end": 460
+          "end": 522
+        }
+      ],
+      "internal/grants/clients.go": [
+        {
+          "start": 27,
+          "end": 40
+        },
+        {
+          "start": 101,
+          "end": 103
+        },
+        {
+          "start": 115,
+          "end": 115
+        }
+      ],
+      "internal/grants/clients_test.go": [
+        {
+          "start": 7,
+          "end": 7
+        },
+        {
+          "start": 233,
+          "end": 249
         }
       ],
       "internal/store/buttons.go": [
@@ -688,7 +831,7 @@
         },
         {
           "start": 411,
-          "end": 734
+          "end": 766
         }
       ],
       "web/src/lib/api.test.ts": [
@@ -735,6 +878,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "d49b8adb80180fd33d9921d7162d7a5adccbc6fc",
-  "measured_tree": "5721969a622a51c5663b904d226e71dc3b73cb85"
+  "measured_commit": "0259d3df97fd17f68f06513c73922861d3fe5ee8",
+  "measured_tree": "75a19c3e244346c84b71c91371657aa722d74deb"
 }
