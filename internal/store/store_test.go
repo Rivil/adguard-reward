@@ -620,3 +620,162 @@ func TestMigrate0009_Order(t *testing.T) {
 		t.Fatalf("schema_migrations = %v, want 0009_grant_history.sql applied right after 0008_service_toggles.sql", applied)
 	}
 }
+
+// seedAt opens dir with the migrations through last and runs seed, so rows can
+// be staged as that older binary would have left them.
+func seedAt(t *testing.T, dir, last string, seed ...string) {
+	t.Helper()
+	old, err := openWith(dir, nil, migrationsThrough(t, last))
+	if err != nil {
+		t.Fatalf("open at %s: %v", last, err)
+	}
+	for _, q := range seed {
+		if _, err := old.DB().Exec(q); err != nil {
+			t.Fatalf("seed at %s: %v", last, err)
+		}
+	}
+	if err := old.Close(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// reusedIDSeed turns the openAt0008 child into one that reused a deleted id:
+// grants 1 and 2 predate it, grant 3 is its own.
+var reusedIDSeed = []string{
+	`UPDATE children SET created_at = 5000 WHERE id = 1`,
+	`UPDATE grants SET started_at = 6000, ends_at = 6600 WHERE id = 3`,
+}
+
+func TestMigrate0011_BackfillsReusedID(t *testing.T) {
+	dir := t.TempDir()
+	openAt0008(t, dir)
+	seedAt(t, dir, "0008_service_toggles.sql", reusedIDSeed...)
+	// Ben's grant 4 started before child 1 was created, so a backfill that
+	// looked past each child's own grants would raise child 1 above it.
+	seedAt(t, dir, "0008_service_toggles.sql",
+		`INSERT INTO children (id, name, created_at) VALUES (2, 'Ben', 100)`,
+		`INSERT INTO grants (id, child_id, status, started_at, ends_at, ended_at) VALUES (4, 2, 'expired', 4000, 4600, 4601)`,
+	)
+
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatalf("Open over 0008: %v", err)
+	}
+	defer s.Close()
+	if w := historyWatermark(t, s, 1); w != 2 {
+		t.Fatalf("watermark = %d, want 2 (the newest of its own grants from before the child)", w)
+	}
+	if w := historyWatermark(t, s, 2); w != 0 {
+		t.Fatalf("Ben's watermark = %d, want 0", w)
+	}
+	if got := historyIDs(mustHistory(t, s, 1, 0, 0)); fmt.Sprint(got) != "[3]" {
+		t.Fatalf("ListGrantHistory = %v, want only [3]", got)
+	}
+	if got := historyIDs(mustOverview(t, s, HistoryFilter{}, 0)); fmt.Sprint(got) != "[4 3]" {
+		t.Fatalf("ListHistory = %v, want [4 3]", got)
+	}
+}
+
+func TestMigrate0011_LeavesOrdinaryChildren(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		seed []string
+	}{
+		{"child older than its grants", nil},
+		{"grant started the second the child was created", []string{`UPDATE children SET created_at = 1000 WHERE id = 1`}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			openAt0008(t, dir)
+			seedAt(t, dir, "0008_service_toggles.sql", tc.seed...)
+
+			s, err := Open(dir, nil)
+			if err != nil {
+				t.Fatalf("Open over 0008: %v", err)
+			}
+			defer s.Close()
+			if w := historyWatermark(t, s, 1); w != 0 {
+				t.Fatalf("watermark = %d, want 0", w)
+			}
+			if got := historyIDs(mustHistory(t, s, 1, 0, 0)); fmt.Sprint(got) != "[3 2 1]" {
+				t.Fatalf("history = %v, want [3 2 1]", got)
+			}
+		})
+	}
+}
+
+func TestMigrate0011_KeepsExistingWatermark(t *testing.T) {
+	dir := t.TempDir()
+	// Grant 9 predates the child, so an unguarded update would move 7 to 9.
+	seedAt(t, dir, "0010_devices.sql",
+		`INSERT INTO children (id, name, created_at, history_after_grant_id) VALUES (1, 'Ada', 5000, 7)`,
+		`INSERT INTO grants (id, child_id, status, started_at, ends_at, ended_at) VALUES (9, 1, 'expired', 1000, 1600, 1601)`,
+	)
+
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatalf("Open over 0010: %v", err)
+	}
+	defer s.Close()
+	if w := historyWatermark(t, s, 1); w != 7 {
+		t.Fatalf("watermark = %d, want the existing 7", w)
+	}
+}
+
+func TestMigrate0011_GrantsUntouched(t *testing.T) {
+	const snapshot = `SELECT id || ' ' || quote(child_id) || ' ' || quote(status) || ' ' || quote(started_at) || ' ' ||
+	                         quote(ends_at) || ' ' || quote(ended_at) || ' ' || quote(end_reason) FROM grants ORDER BY id`
+	dir := t.TempDir()
+	openAt0008(t, dir)
+	seedAt(t, dir, "0010_devices.sql", reusedIDSeed...)
+
+	old, err := openWith(dir, nil, migrationsThrough(t, "0010_devices.sql"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	before := queryStrings(t, old.DB(), snapshot)
+	if err := old.Close(); err != nil {
+		t.Fatal(err)
+	}
+	if len(before) != 3 {
+		t.Fatalf("seed snapshot has %d rows, want 3: %v", len(before), before)
+	}
+
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatalf("Open over 0010: %v", err)
+	}
+	defer s.Close()
+	// Positive control: the migration had work to do on this seed.
+	if w := historyWatermark(t, s, 1); w != 2 {
+		t.Fatalf("watermark = %d, want 2", w)
+	}
+	if after := queryStrings(t, s.DB(), snapshot); fmt.Sprint(after) != fmt.Sprint(before) {
+		t.Fatalf("grants changed by 0011:\n got  %v\n want %v", after, before)
+	}
+	for _, row := range before {
+		if !strings.HasSuffix(row, " NULL") {
+			t.Fatalf("grant row %q, want end_reason NULL (locked legacy_end_reason)", row)
+		}
+	}
+}
+
+func TestMigrate0011_Order(t *testing.T) {
+	dir := t.TempDir()
+	openAt0008(t, dir)
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatalf("Open over 0008: %v", err)
+	}
+	defer s.Close()
+	applied := queryStrings(t, s.DB(), `SELECT name FROM schema_migrations ORDER BY rowid`)
+	i10 := -1
+	for i, n := range applied {
+		if n == "0010_devices.sql" {
+			i10 = i
+		}
+	}
+	if i10 < 0 || i10+1 >= len(applied) || applied[i10+1] != "0011_history_watermark_backfill.sql" {
+		t.Fatalf("schema_migrations = %v, want 0011_history_watermark_backfill.sql applied right after 0010_devices.sql", applied)
+	}
+}
