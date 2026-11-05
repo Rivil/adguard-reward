@@ -97,8 +97,8 @@ func TestImport_RoundTrip(t *testing.T) {
 	if w.Code != http.StatusOK {
 		t.Fatalf("import = %d %s", w.Code, w.Body)
 	}
-	if !strings.Contains(w.Body.String(), `"missing_clients":[]`) {
-		t.Fatalf("body = %s, want an empty missing_clients list", w.Body)
+	if !strings.Contains(w.Body.String(), `"missing_clients":["Shared tv"]`) {
+		t.Fatalf("body = %s, want missing_clients to list Shared tv, which the fake lacks", w.Body)
 	}
 
 	second := dst.exportOK(cookie).Body.Bytes()

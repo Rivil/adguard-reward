@@ -56,6 +56,14 @@ func setupOf(f setupFile) store.Setup {
 // refuses the file whole: read and parse (400, 422), emptiness (409), then one
 // read of AdGuard's catalogue (502 when it fails, 422 for an unknown built-in
 // or a name clash). Nothing is written until all of them pass.
+//
+// AdGuard's clients are then adopted before the store commit, as child create
+// does and for the same reason: the reconciler skips a client still on the
+// global list, so only adoption brings it under the toggles. A failed adoption
+// is 502 with no rows, leaving the install empty for a retry; clients already
+// written keep their additions (locked adguard_failure). Managed rules sync
+// after the commit: a failure there is 200 with rules_applied false, because
+// the rows stand and the reconciler retries the region.
 func (a *API) handleImport(w http.ResponseWriter, r *http.Request) {
 	body, err := io.ReadAll(http.MaxBytesReader(w, r.Body, maxImportBody))
 	if err != nil {
@@ -74,11 +82,63 @@ func (a *API) handleImport(w http.ResponseWriter, r *http.Request) {
 	if !a.checkImportCatalogue(w, r, file) {
 		return
 	}
+	missing, ok := a.adoptImportClients(w, r, file)
+	if !ok {
+		return
+	}
 	if err := a.deps.Children.ImportSetup(r.Context(), setupOf(file)); err != nil {
 		a.writeImportStoreError(w, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, importResult{MissingClients: []string{}})
+	// SyncRules directly: resyncRules drops the error rules_applied reports.
+	applied := true
+	if err := a.deps.Grants.SyncRules(r.Context()); err != nil {
+		a.log.Warn("import setup: managed rules not updated; the reconciler will retry", "err", err)
+		applied = false
+	}
+	writeJSON(w, http.StatusOK, importResult{MissingClients: missing, RulesApplied: applied})
+}
+
+// fileClients lists every client in f once, in first-occurrence order.
+func fileClients(f setupFile) []string {
+	out := []string{}
+	seen := map[string]bool{}
+	for _, c := range f.Children {
+		for _, name := range c.Clients {
+			if !seen[name] {
+				seen[name] = true
+				out = append(out, name)
+			}
+		}
+	}
+	return out
+}
+
+// adoptImportClients returns the file's clients this AdGuard lacks, which keep
+// their mappings (locked missing_clients), and adopts the rest. A false return
+// means the error was written.
+func (a *API) adoptImportClients(w http.ResponseWriter, r *http.Request, f setupFile) ([]string, bool) {
+	res, err := a.deps.AdGuard.Clients(r.Context())
+	if err != nil {
+		a.writeAdGuardError(w, "import setup", err)
+		return nil, false
+	}
+	known := make(map[string]bool, len(res.Persistent))
+	for _, c := range res.Persistent {
+		known[c.Name] = true
+	}
+	clients := fileClients(f)
+	missing := []string{}
+	for _, name := range clients {
+		if !known[name] {
+			missing = append(missing, name)
+		}
+	}
+	if err := a.deps.Grants.AdoptClients(r.Context(), 0, nil, clients); err != nil {
+		a.writeAdoptError(w, "import setup", err)
+		return nil, false
+	}
+	return missing, true
 }
 
 func writeImportReadError(w http.ResponseWriter, err error) {
