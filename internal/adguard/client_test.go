@@ -208,6 +208,18 @@ func TestStatus_SnippetBound(t *testing.T) {
 	}
 }
 
+// 300 is the first status past the 2xx range, so it is an error and never a
+// body to decode.
+func TestStatus_MultipleChoices(t *testing.T) {
+	s := newFake(t)
+	s.SetStatus("/control/status", http.StatusMultipleChoices)
+	_, err := newClient(t, s).Status(context.Background())
+	var se *StatusError
+	if !errors.As(err, &se) || se.Code != http.StatusMultipleChoices {
+		t.Errorf("err = %v, want *StatusError 300", err)
+	}
+}
+
 func TestDo_NoRedirect(t *testing.T) {
 	s := newFake(t)
 	s.SetStatus("/control/status", 302)
