@@ -1,16 +1,34 @@
 <script lang="ts">
-  import { ApiError, fetchHistory, messageFor, type HistoryGrant } from './api'
-  import { appendPage, endTimeOf, formatTime, removedText, statusLabel } from './history'
+  import { untrack } from 'svelte'
+  import {
+    ApiError,
+    fetchHistoryPage,
+    fetchHistoryServices,
+    listChildren,
+    messageFor,
+    navigate,
+    type Child,
+    type ChildRef,
+    type HistoryFilterState,
+    type HistoryServiceOption,
+    type OverviewGrant,
+  } from './api'
+  import { appendPage, endTimeOf, filterParams, formatTime, hasFilters, removedText, statusLabel } from './history'
+  import HistoryFilterBar from './HistoryFilterBar.svelte'
 
-  // One child's grant history (locked history_location): newest first, 50 a
-  // page, with load-more paging further back (locked retention). A missing,
-  // invalid, unknown or deleted child shows "No such child" with the back button.
-  let { child, onBack }: { child: number | null; onBack: () => void } = $props()
+  // The grant history overview (locked screen_structure): every child's grants,
+  // or one child's under the child filter, newest first, 50 a page, with
+  // load-more paging further back (locked retention). The filters live in the
+  // URL: a control pushes through navigate and the values come back as props. A
+  // bad ?child=, or an unknown or deleted child, shows "No such child" with the
+  // back button.
+  let { child, filters, onBack }: { child: number | null; filters: HistoryFilterState; onBack: () => void } = $props()
 
   type Failure = { code: string; text: string }
 
-  let childName = $state<string | null>(null)
-  let grants = $state<HistoryGrant[]>([])
+  /** The child the last page named; a new child filter never shows the old name. */
+  let pageChild = $state<ChildRef | null>(null)
+  let grants = $state<OverviewGrant[]>([])
   let nextBefore = $state<number | null>(null)
   let loaded = $state(false)
   let notFound = $state(false)
@@ -19,9 +37,18 @@
   let loadingMore = $state(false)
   /** A further page failed; the rows already shown stay. */
   let moreError = $state<Failure | null>(null)
+  let children = $state<Child[]>([])
+  let services = $state<HistoryServiceOption[]>([])
 
-  /** Bumped per load so a response for an earlier child never lands. */
+  /** Bumped per load so a response for earlier filters never lands. */
   let generation = 0
+  let optionsAsked = false
+
+  const childName = $derived(pageChild !== null && pageChild.id === child ? pageChild.name : null)
+  const noSuchChild = $derived(filters.badChild || notFound)
+  // What the filters say, not the object saying it: a store update that repeats
+  // them must keep the pages already loaded.
+  const filterKey = $derived(filters.badChild ? 'bad' : `${child}?${filterParams(filters)}`)
 
   function failureOf(err: unknown): Failure {
     return err instanceof ApiError
@@ -29,9 +56,32 @@
       : { code: 'network', text: "Can't reach the server — check your connection" }
   }
 
-  async function load(id: number | null) {
+  async function loadChildren() {
+    try {
+      children = await listChildren()
+    } catch {
+      // The select keeps All and any active filter's stand-in; the list carries on.
+    }
+  }
+
+  async function loadServices() {
+    try {
+      services = await fetchHistoryServices()
+    } catch {
+      // The select keeps All and any active filter's stand-in; the list carries on.
+    }
+  }
+
+  /** Once per mount, at the first load with a bar to fill. */
+  function loadOptions() {
+    if (optionsAsked) return
+    optionsAsked = true
+    void loadChildren()
+    void loadServices()
+  }
+
+  async function load() {
     const gen = ++generation
-    childName = null
     grants = []
     nextBefore = null
     loaded = false
@@ -39,33 +89,32 @@
     loadError = null
     loadingMore = false
     moreError = null
-    if (id === null) {
-      notFound = true
-      return
-    }
+    if (filters.badChild) return
+    loadOptions()
     try {
-      const page = await fetchHistory(id)
+      const page = await fetchHistoryPage(child, filters)
       if (gen !== generation) return
-      childName = page.child.name
+      pageChild = page.child
       grants = page.grants
       nextBefore = page.next_before
       loaded = true
     } catch (err) {
       if (gen !== generation) return
-      if (err instanceof ApiError && err.status === 404) notFound = true
-      else loadError = failureOf(err)
+      if (err instanceof ApiError && err.status === 404) {
+        pageChild = null
+        notFound = true
+      } else loadError = failureOf(err)
     }
   }
 
   async function loadMore() {
-    const id = child
     const before = nextBefore
-    if (loadingMore || id === null || before === null) return
+    if (loadingMore || before === null) return
     const gen = generation
     loadingMore = true
     moreError = null
     try {
-      const page = await fetchHistory(id, before)
+      const page = await fetchHistoryPage(child, filters, before)
       if (gen !== generation) return
       grants = appendPage(grants, page.grants)
       nextBefore = page.next_before
@@ -78,7 +127,8 @@
   }
 
   $effect(() => {
-    void load(child)
+    void filterKey
+    untrack(() => void load())
   })
 </script>
 
@@ -86,19 +136,24 @@
   <h1>{childName === null ? 'History' : `${childName} — history`}</h1>
   <button type="button" onclick={onBack}>Back</button>
 
-  {#if notFound}
+  {#if !noSuchChild}
+    <HistoryFilterBar {child} {filters} {children} {services} onChange={(next) => navigate('history', next)} />
+  {/if}
+
+  {#if noSuchChild}
     <p class="none" data-not-found>No such child</p>
   {:else if loadError}
     <p class="error" role="alert" data-error={loadError.code}>{loadError.text}</p>
-    <button type="button" onclick={() => load(child)}>Retry</button>
+    <button type="button" onclick={load}>Retry</button>
   {:else if loaded}
     {#if grants.length === 0}
-      <p class="none" data-empty>No grants yet</p>
+      <p class="none" data-empty>{hasFilters(filters) ? 'No grants match these filters' : 'No grants yet'}</p>
     {:else}
       <ul class="list">
         {#each grants as g (g.id)}
           {@const ended = endTimeOf(g)}
           <li data-grant={g.id}>
+            <p class="child" data-child={g.child.id}>{g.child.name}</p>
             <div class="row">
               <span class="status" data-status={g.status}>{statusLabel(g.status)}</span>
               <span class="meta">
@@ -170,6 +225,10 @@
     padding: 0.75rem;
     border: 1px solid var(--border);
     border-radius: 0.5rem;
+  }
+  .child {
+    margin: 0;
+    font-weight: 600;
   }
   .row {
     display: flex;

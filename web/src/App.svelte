@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { get } from 'svelte/store'
-  import { historyChild, locked, me, navigate, route } from './lib/api'
+  import { historyChild, historyFilters, locked, me, navigate, route } from './lib/api'
   import Login from './lib/Login.svelte'
   import Home from './lib/Home.svelte'
   import Children from './lib/Children.svelte'
@@ -70,7 +70,7 @@
   {:else if $route === 'services' && username !== null}
     <Services onBack={() => navigate('home')} />
   {:else if $route === 'history' && username !== null}
-    <History child={$historyChild} onBack={() => navigate('home')} />
+    <History child={$historyChild} filters={$historyFilters} onBack={() => navigate('home')} />
   {:else if $route === 'settings' && username !== null}
     <Settings onBack={() => navigate('home')} />
   {:else}
