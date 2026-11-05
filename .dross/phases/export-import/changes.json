@@ -17,6 +17,14 @@
       "completed_at": "2026-11-05T12:04:47.845944Z",
       "notes": "quick: Answer 502 when CreateClient's clients read fails: mark the read in Engine.baseline with *grants.ErrClientsRead and answer it as 502 adguard_unavailable; a store read inside the engine stays 500."
     },
+    "quick-2": {
+      "files": [
+        "internal/adguard/client_test.go"
+      ],
+      "commit": "8748941",
+      "completed_at": "2026-11-05T17:44:20.374621Z",
+      "notes": "quick: Add a status-300 test to internal/adguard/client_test.go so classify's \u003c 300 boundary is pinned: a literal 300 from AdGuard must be a *StatusError, not success. Kills the surviving client.go:183 CONDITIONALS_BOUNDARY mutant flagged in export-import's verify.toml."
+    },
     "t-1": {
       "files": [
         "internal/store/setup.go",
