@@ -24,6 +24,20 @@ func (e *ErrAdoptFailed) Error() string {
 
 func (e *ErrAdoptFailed) Unwrap() error { return e.Err }
 
+// ErrClientsRead marks AdoptClients' read of AdGuard failing, whatever the
+// cause: an undecodable 200 body has no status or transport error to know it
+// by, and only the mark tells it from a store read failing. No client has been
+// written.
+type ErrClientsRead struct {
+	Err error
+}
+
+func (e *ErrClientsRead) Error() string {
+	return fmt.Sprintf("grants: could not read AdGuard's clients: %v", e.Err)
+}
+
+func (e *ErrClientsRead) Unwrap() error { return e.Err }
+
 // CreateClient creates an AdGuard persistent client and, when childID is
 // non-nil, maps it to that child in the same call (locked:
 // new_client_blocked_set_v2). An assigned client gets its own list — the
@@ -84,7 +98,9 @@ func (e *Engine) CreateClient(ctx context.Context, name string, ids []string, ch
 // there (locked: shared_device_rule).
 // A client whose list already holds everything is not written. A client
 // AdGuard does not know is skipped. No added clients means no AdGuard
-// request at all. The first failure is *ErrAdoptFailed naming the client.
+// request at all. A failed read of AdGuard is *ErrClientsRead; a failed store
+// read is returned as it is. The first failed write is *ErrAdoptFailed naming
+// the client.
 func (e *Engine) AdoptClients(ctx context.Context, childID int64, siblings, added []string) error {
 	if len(added) == 0 {
 		return nil
@@ -96,7 +112,7 @@ func (e *Engine) AdoptClients(ctx context.Context, childID int64, siblings, adde
 	defer cancel()
 	res, err := e.ag.Clients(actx)
 	if err != nil {
-		return err
+		return &ErrClientsRead{Err: err}
 	}
 	jb, err := e.baselineFrom(ctx, res, childID, siblings)
 	if err != nil {

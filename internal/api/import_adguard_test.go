@@ -3,6 +3,8 @@ package api
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"io"
 	"log/slog"
 	"net/http"
 	"reflect"
@@ -32,13 +34,20 @@ type importHarness struct {
 
 func newImportHarness(t *testing.T) *importHarness {
 	t.Helper()
+	return newImportHarnessOver(t, func(c *adguard.Client) grants.AdGuard { return c })
+}
+
+// newImportHarnessOver is newImportHarness with the engine's AdGuard wrapped
+// by wrap; the API keeps the plain client.
+func newImportHarnessOver(t *testing.T, wrap func(*adguard.Client) grants.AdGuard) *importHarness {
+	t.Helper()
 	h := newHarness(t, nil, nil)
 	log := slog.New(slog.NewJSONHandler(h.logs, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	client, err := adguard.New(h.fake.URL(), fakeUser, fakePass, adguard.WithLogger(log))
 	if err != nil {
 		t.Fatal(err)
 	}
-	eng := grants.New(h.store, client, grants.Options{Now: h.clock.Now, ApplyTimeout: harnessApplyTimeout, Log: log})
+	eng := grants.New(h.store, wrap(client), grants.Options{Now: h.clock.Now, ApplyTimeout: harnessApplyTimeout, Log: log})
 	t.Cleanup(eng.Close)
 	cfg := ratelimit.Defaults()
 	cfg.Now = h.clock.Now
@@ -214,6 +223,40 @@ func TestImport_ClientsReadDown(t *testing.T) {
 			h.wantNoSetup()
 		})
 	}
+}
+
+// adoptReadFails fails the engine's clients read while fail is set, with an
+// error adguardDown does not match. The import's own read goes through the
+// API's client, so only the read inside AdoptClients fails.
+type adoptReadFails struct {
+	*adguard.Client
+	fail bool
+}
+
+func (a *adoptReadFails) Clients(ctx context.Context) (adguard.ClientsResult, error) {
+	if a.fail {
+		return adguard.ClientsResult{}, fmt.Errorf("adguard: GET /control/clients: decode: %w", io.ErrUnexpectedEOF)
+	}
+	return a.Client.Clients(ctx)
+}
+
+func TestImport_AdoptClientsReadFails(t *testing.T) {
+	ag := &adoptReadFails{fail: true}
+	h := newImportHarnessOver(t, func(c *adguard.Client) grants.AdGuard {
+		ag.Client = c
+		return ag
+	})
+	cookie := h.loginOK()
+	f := clientsFile(fileChild{Name: "Ada", Clients: []string{"Kid phone"}})
+
+	wantProblem(t, h.postImport(cookie, fileBody(t, f)), http.StatusBadGateway, CodeAdGuardUnavailable)
+	h.wantNoSetup()
+	if got := h.updatedClients(); len(got) != 0 {
+		t.Fatalf("updates = %v, want none", got)
+	}
+
+	ag.fail = false
+	h.importOK(cookie, f)
 }
 
 func TestImport_MissingClient(t *testing.T) {

@@ -275,16 +275,17 @@ func asciiFold(s string) string {
 }
 
 // writeAdoptError answers a failed baseline write for op: 502 naming the
-// client for *grants.ErrAdoptFailed, 502 for an AdGuard read failure, 500
-// for anything else (a store read inside the engine).
+// client for *grants.ErrAdoptFailed, 502 for *grants.ErrClientsRead whatever
+// failed the read, 500 for anything else (a store read inside the engine).
 func (a *API) writeAdoptError(w http.ResponseWriter, op string, err error) {
 	var af *grants.ErrAdoptFailed
+	var read *grants.ErrClientsRead
 	switch {
 	case errors.As(err, &af):
 		a.log.Warn(op+": adguard baseline write failed", "client", af.Client, "err", err)
 		writeError(w, http.StatusBadGateway, CodeAdGuardUnavailable,
 			fmt.Sprintf("could not apply the child's blocked services to %s in AdGuard Home — nothing was saved; try again shortly", af.Client))
-	case adguardDown(err):
+	case errors.As(err, &read):
 		a.writeAdGuardError(w, op, err)
 	default:
 		a.log.Error(op+": baseline failed", "err", err)
