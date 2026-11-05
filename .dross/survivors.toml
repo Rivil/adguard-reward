@@ -1962,3 +1962,39 @@
   line = 17
   accepted_in = "pin-unlock"
   reason = "Equivalent mutant: forces the pin.length <= MAX arm of canSubmit to true, but every write to pin keeps it <= MAX (digitsOnly slices to MAX, press() returns at >= MAX, backspace only shrinks, resets set ''), so the arm is never false. The <= vs < boundary is killed by the 6-digit submit test."
+
+[[accepted]]
+  key = "38a30aba9362d4fd"
+  file = "web/src/lib/Settings.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 21
+  accepted_in = "export-import"
+  reason = "Equivalent: onMount(load) calls run(), which sets pending = true in the same synchronous mount, so the initial value is overwritten before anything can observe it. Applied by hand at base and HEAD: Settings.test.ts passes."
+
+[[accepted]]
+  key = "50d693f6282912b6"
+  file = "web/src/lib/Settings.svelte"
+  op = "ArrayDeclaration"
+  text = "let missingClients = $state<string[]>([])"
+  line = 29
+  accepted_in = "export-import"
+  reason = "Equivalent: missingClients only renders inside {#if backupNote}, backupNote is only set inside runBackup, and runBackup resets missingClients first, so the initial value can never reach the DOM."
+
+[[accepted]]
+  key = "9b6d0791ccf4b116"
+  file = "web/src/lib/Settings.svelte"
+  op = "OptionalChaining"
+  text = "const file = input.files?.[0]"
+  line = 150
+  accepted_in = "export-import"
+  reason = "Equivalent in a browser: HTMLInputElement.files is a non-null FileList for type=file (empty on cancel). The ?. exists only for the DOM type's nullable signature; killing it needs a stub of a state the platform cannot produce."
+
+[[accepted]]
+  key = "a931246e74b06901"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return send<T>(method, path, body === undefined ? undefined : JSON.stringify(body))"
+  line = 233
+  accepted_in = "export-import"
+  reason = "Equivalent: JSON.stringify(undefined) returns undefined at runtime, so forcing the ternary to its else branch passes the same value to send(). The ternary exists for JSON.stringify's string return type."

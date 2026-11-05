@@ -1,0 +1,112 @@
+[verify]
+  phase = "export-import"
+  generated_at = 2026-11-05T10:03:24.924951Z
+  verdict = "fail"
+  finalized = true
+  finalized_at = 2026-11-05T10:10:28.372825Z
+  measured_commit = "d49b8adb80180fd33d9921d7162d7a5adccbc6fc"
+  measured_tree = "5721969a622a51c5663b904d226e71dc3b73cb85"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.9828571428571429
+  mutants_killed = 344
+  mutants_survived = 6
+  mutants_not_covered = 0
+  mutants_no_block = 0
+  mutants_test_gap = 0
+  mutants_in_scope = 350
+  unclassified_in_scope = 1
+  criteria_total = 6
+  criteria_covered = 5
+  criteria_uncovered = 1
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 165
+    survived = 0
+    timeout = 0
+    in_scope = 165
+    score = 1.0
+    file_count = 13
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/export.go — adapter-lacks-range-runner", "internal/api/export_test.go — adapter-lacks-range-runner", "internal/api/import.go — adapter-lacks-range-runner", "internal/api/import_adguard_test.go — adapter-lacks-range-runner", "internal/api/import_test.go — adapter-lacks-range-runner", "internal/api/setup_file.go — adapter-lacks-range-runner", "internal/api/setup_file_test.go — adapter-lacks-range-runner", "internal/store/buttons.go — adapter-lacks-range-runner", "internal/store/children.go — adapter-lacks-range-runner", "internal/store/setup.go — adapter-lacks-range-runner", "internal/store/setup_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 179
+    survived = 6
+    timeout = 0
+    in_scope = 185
+    score = 0.9675675675675676
+    file_count = 4
+    measured_on = "local"
+    ranges = ["web/src/lib/Settings.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Settings.test.ts:411-411 (hunk)", "web/src/lib/Settings.test.ts:412-412 (VariableDeclaration EXPORT)", "web/src/lib/Settings.test.ts:413-413 (VariableDeclaration IMPORT)", "web/src/lib/Settings.test.ts:414-414 (hunk)", "web/src/lib/Settings.test.ts:415-415 (VariableDeclaration backup)", "web/src/lib/Settings.test.ts:416-416 (VariableDeclaration pinSection)", "web/src/lib/Settings.test.ts:417-417 (VariableDeclaration posts)", "web/src/lib/Settings.test.ts:418-419 (VariableDeclaration imported)", "web/src/lib/Settings.test.ts:420-421 (VariableDeclaration backupFile)", "web/src/lib/Settings.test.ts:422-423 (hunk)", "web/src/lib/Settings.test.ts:424-429 (FunctionDeclaration renderBackup)", "web/src/lib/Settings.test.ts:430-434 (hunk)", "web/src/lib/Settings.test.ts:435-451 (FunctionDeclaration filePicker)", "web/src/lib/Settings.test.ts:452-452 (hunk)", "web/src/lib/Settings.test.ts:453-734 (ExpressionStatement)", "web/src/lib/Settings.test.ts:8-8 (ImportDeclaration)", "web/src/lib/api.test.ts:1145-1145 (hunk)", "web/src/lib/api.test.ts:1146-1217 (ExpressionStatement)", "web/src/lib/api.test.ts:5-54 (ImportDeclaration)", "web/src/lib/api.ts:201-203 (hunk)", "web/src/lib/api.ts:205-224 (FunctionDeclaration send)", "web/src/lib/api.ts:226-231 (hunk)", "web/src/lib/api.ts:232-234 (FunctionDeclaration request)", "web/src/lib/api.ts:235-235 (hunk)", "web/src/lib/api.ts:685-687 (hunk)", "web/src/lib/api.ts:688-693 (TSInterfaceDeclaration ImportResult)", "web/src/lib/api.ts:694-695 (hunk)", "web/src/lib/api.ts:696-698 (FunctionDeclaration exportSetup)", "web/src/lib/api.ts:699-704 (hunk)", "web/src/lib/api.ts:705-708 (FunctionDeclaration importSetup)", "web/src/lib/api.ts:709-709 (hunk)"]
+    whole_file = ["web/src/lib/Settings.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "weak"
+  tests = ["internal/api/export_test.go:TestExport_Contents", "web/src/lib/Settings.test.ts:GETs the export, saves one named Blob and revokes the URL once the save has had time", "web/src/lib/api.test.ts:exportSetup GETs the file through request"]
+  notes = "Golden body pins children, clients, button order, icon, services, duration and domains; the Settings test pins one named Blob. Weak: in-hunk survivor Settings.svelte:113 sits in the export path, so a stale or phantom missing-clients list on a successful export goes unnoticed; killed by hand with a scratch test. The manual iPhone PWA check was not run."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["cmd/adguard-reward/main_test.go:TestRun_ExportNoSecrets", "internal/api/export_test.go:TestExport_NoSecrets", "internal/api/export_test.go:TestExport_KeyAllowlist"]
+  notes = "Full run() seeds session, device token, PIN PHC hash, AdGuard username and password and AI key, reads each back from its real source, then asserts absence in raw, hex and base64 forms with a positive control; key allowlist blocks a new wire field."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/api/import_test.go:TestImport_RoundTrip", "internal/store/setup_test.go:TestSetup_RoundTrip", "internal/store/setup_test.go:TestSetup_IconRemap", "internal/store/setup_test.go:TestSetup_NameLikeID"]
+  notes = "Second export is bytes.Equal to the first across gapped source and pushed-forward target ids; button service and icon refs resolve to the same-named services; a shared client keeps both holders."
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["internal/api/import_test.go:TestImport_RejectedWhole", "internal/api/import_test.go:TestImport_UnknownBuiltin", "internal/api/import_adguard_test.go:TestImport_RejectedNoAdoption", "internal/api/setup_file_test.go:TestParseSetupFile_DanglingRefs", "internal/store/setup_test.go:TestSetup_Rollback"]
+  notes = "Table covers invalid JSON, version, duplicate name and domain, dangling child and service; each row asserts the named problem, empty ExportSetup, no AdGuard POST and unchanged UserRules. Rollback pins the store tx. See the FLAG on 400-class path detail."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["internal/api/import_adguard_test.go:TestImport_RulesOutsideMarkersUntouched", "internal/api/import_adguard_test.go:TestImport_RulesNoMarkers", "internal/api/import_adguard_test.go:TestImport_CustomServiceGrants", "internal/api/import_adguard_test.go:TestImport_MalformedRegion"]
+  notes = "Awkward outside lines stay identical in value and position with and without markers; an imported service gets its block line, its @@ exception on grant under the fresh id, and loses it on end."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/api/export_test.go:TestExport_Contents", "internal/api/import_test.go:TestImport_RoundTrip", "internal/api/import_adguard_test.go:TestImport_TogglesConverge", "internal/api/import_adguard_test.go:TestImport_ToggleEdges", "internal/store/setup_test.go:TestSetup_ToggleOrder"]
+  notes = "Toggles are in the golden and survive the byte-equal round trip; after one Reconcile, built-in and custom toggles land on the right child's clients only. The reviewer's three t-6 test FLAGs are fixed in the committed tests (client-less read case, Old laptop leak check, usesGlobal asserts)."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/Settings.svelte:113 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/Settings.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "FLAG"
+  text = "c-1: the manual iPhone PWA export check required by the plan was not run (commit 2afe4e9 says so). jsdom cannot prove a Blob download saves in an iOS standalone PWA; if it fails, the plan adds a navigator.share task to this phase."
+
+[[finding]]
+  severity = "FLAG"
+  text = "Locked adguard_failure says any client-write failure returns 502, but writeAdoptError (internal/api/children.go:280) returns 500 when the Clients read inside AdoptClients fails with an error adguardDown does not match. No rows are written either way; rare path, untested."
+
+[[finding]]
+  severity = "FLAG"
+  text = "c-4: 400-class decode problems name the field but not the record: an unknown nested field reports unknown field id with no path, and a type error reports buttons.duration with no index. Tests assert only the bare field name."
+
+[[finding]]
+  severity = "NOTE"
+  text = "Four equivalent survivors accepted this run with reasons in .dross/survivors.toml: Settings.svelte:21, :29, :150 and api.ts:233. Settings.svelte:21 was not listed as a survivor in pin-unlock; it also survives Settings.test.ts at base, so this phase did not regress it, but why pin-unlock did not list it is unexplained."
+
+[[finding]]
+  severity = "NOTE"
+  text = "Settings.svelte is mutated whole-file (no .svelte parser) and all Go legs are whole-file, so the 0.98 score covers more than this diff."
