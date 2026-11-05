@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 )
@@ -20,10 +21,43 @@ const HistoryPageSize = 50
 const visibleGrants = `grants g
 	JOIN children c ON c.id = g.child_id AND g.id > c.history_after_grant_id`
 
-// HistoryFilter narrows ListHistory. Every field's zero value means no filter.
+// How a grant ended, as a parent filters on it. Each stored (status,
+// end_reason) pair falls under exactly one of these.
+const (
+	HistoryOngoing        = "ongoing"
+	HistoryExpired        = "expired"
+	HistoryEndedEarly     = "ended_early"
+	HistoryPermanentBlock = "permanent_block"
+	HistoryEndedUnknown   = "ended_unknown"
+)
+
+// historyStatusConds maps each filter status to its predicate on grants g. Only
+// an ended grant's end_reason decides anything: status alone settles the rest.
+var historyStatusConds = map[string]string{
+	HistoryOngoing:        `g.status = 'active'`,
+	HistoryExpired:        `(g.status = 'expired' OR (g.status = 'ended' AND g.end_reason = 'expired'))`,
+	HistoryEndedEarly:     `(g.status = 'ended' AND g.end_reason = 'ended_early')`,
+	HistoryPermanentBlock: `(g.status = 'ended' AND g.end_reason = 'permanent_block')`,
+	HistoryEndedUnknown:   `(g.status = 'ended' AND g.end_reason IS NULL)`,
+}
+
+// historyServiceCond matches a grant that holds the service or had it trimmed
+// off. EXISTS, not a join, so a grant lists once and keeps all its services.
+const historyServiceCond = `(EXISTS (SELECT 1 FROM grant_services s WHERE s.grant_id = g.id AND s.service_id = ?)
+	OR EXISTS (SELECT 1 FROM grant_service_removals r WHERE r.grant_id = g.id AND r.service_id = ?))`
+
+// HistoryFilter narrows ListHistory; filters combine with AND. Every field's
+// zero value means no filter.
 type HistoryFilter struct {
 	// ChildID picks one child; 0 means every child.
 	ChildID int64
+	// ServiceID is an exact service id, live on the grant or trimmed off it.
+	ServiceID string
+	// Status is one of the History* statuses.
+	Status string
+	// From is inclusive and Until exclusive, both on when the grant started
+	// (locked date_range).
+	From, Until time.Time
 	// Before is the keyset cursor: only grants with a lower id are read.
 	Before int64
 }
@@ -156,7 +190,10 @@ func historyPage(ctx context.Context, tx *sql.Tx, f HistoryFilter, limit int, ou
 }
 
 // historyWhere builds the WHERE clause for f, "" when nothing narrows the read.
-func historyWhere(f HistoryFilter) (string, []any) {
+// Every filter sits here, inside the keyset query, so the limit and HasMore
+// count filtered rows. A Status outside the History* set is an error, never an
+// unfiltered read.
+func historyWhere(f HistoryFilter) (string, []any, error) {
 	var (
 		conds []string
 		args  []any
@@ -164,18 +201,37 @@ func historyWhere(f HistoryFilter) (string, []any) {
 	if f.ChildID != 0 {
 		conds, args = append(conds, `g.child_id = ?`), append(args, f.ChildID)
 	}
+	if f.ServiceID != "" {
+		conds, args = append(conds, historyServiceCond), append(args, f.ServiceID, f.ServiceID)
+	}
+	if f.Status != "" {
+		cond, ok := historyStatusConds[f.Status]
+		if !ok {
+			return "", nil, fmt.Errorf("unknown history status %q", f.Status)
+		}
+		conds = append(conds, cond)
+	}
+	if !f.From.IsZero() {
+		conds, args = append(conds, `g.started_at >= ?`), append(args, f.From.Unix())
+	}
+	if !f.Until.IsZero() {
+		conds, args = append(conds, `g.started_at < ?`), append(args, f.Until.Unix())
+	}
 	if f.Before != 0 {
 		conds, args = append(conds, `g.id < ?`), append(args, f.Before)
 	}
 	if len(conds) == 0 {
-		return "", nil
+		return "", nil, nil
 	}
-	return ` WHERE ` + strings.Join(conds, ` AND `), args
+	return ` WHERE ` + strings.Join(conds, ` AND `), args, nil
 }
 
 // historyGrants reads up to n visible grant rows matching f, newest first.
 func historyGrants(ctx context.Context, tx *sql.Tx, f HistoryFilter, n int) ([]HistoryGrant, error) {
-	where, args := historyWhere(f)
+	where, args, err := historyWhere(f)
+	if err != nil {
+		return nil, err
+	}
 	rows, err := tx.QueryContext(ctx, `
 		SELECT g.id, g.child_id, c.name, g.status, g.end_reason, g.started_at, g.ends_at, g.ended_at
 		  FROM `+visibleGrants+where+`

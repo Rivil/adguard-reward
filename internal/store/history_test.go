@@ -546,3 +546,421 @@ func TestListGrantHistory_LeavesGrantChildZero(t *testing.T) {
 		t.Fatalf("per-child grants = %+v, want child fields left zero", h.Grants)
 	}
 }
+
+// rawGrant is a grant seeded straight into the tables, so a test can reach any
+// (status, end_reason) pair. A blank reason stores NULL. Services go in
+// grant_services, trimmed ones in grant_service_removals.
+type rawGrant struct {
+	child          int64
+	status, reason string
+	started        int64
+	services       []string
+	trimmed        []string
+}
+
+func seedGrant(t *testing.T, s *Store, g rawGrant) int64 {
+	t.Helper()
+	var reason any
+	if g.reason != "" {
+		reason = g.reason
+	}
+	res, err := s.DB().Exec(`INSERT INTO grants (child_id, status, end_reason, started_at, ends_at) VALUES (?, ?, ?, ?, ?)`,
+		g.child, g.status, reason, g.started, g.started+3600)
+	if err != nil {
+		t.Fatalf("seed grant %+v: %v", g, err)
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, svc := range g.services {
+		if _, err := s.DB().Exec(`INSERT INTO grant_services (grant_id, child_id, service_id, active) VALUES (?, ?, ?, 0)`,
+			id, g.child, svc); err != nil {
+			t.Fatalf("seed service %s: %v", svc, err)
+		}
+	}
+	for _, svc := range g.trimmed {
+		if _, err := s.DB().Exec(`INSERT INTO grant_service_removals (grant_id, service_id, removed_at, reason) VALUES (?, ?, ?, 'permanent_block')`,
+			id, svc, g.started+60); err != nil {
+			t.Fatalf("seed removal %s: %v", svc, err)
+		}
+	}
+	return id
+}
+
+func TestListHistory_ServiceIncludesTrimmed(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	two := mustGrant(t, s, ada.ID, []string{"youtube", "tiktok"}, ada.Clients)
+	emptied := mustGrant(t, s, ada.ID, []string{"roblox"}, ada.Clients)
+	other := mustGrant(t, s, ada.ID, []string{"netflix"}, ada.Clients)
+	mustToggle(t, s, ada.ID, "youtube", ToggleBlocked)
+	mustToggle(t, s, ada.ID, "roblox", ToggleBlocked)
+
+	h := mustOverview(t, s, HistoryFilter{ServiceID: "youtube"}, 0)
+	if got := historyIDs(h); !reflect.DeepEqual(got, []int64{two.ID}) {
+		t.Fatalf("service youtube = %v, want only [%d], not %d", got, two.ID, other.ID)
+	}
+	removed := tToggle
+	want := []HistoryService{
+		{ID: "tiktok"},
+		{ID: "youtube", RemovedAt: &removed, RemovedReason: EndReasonPermanentBlock},
+	}
+	if !reflect.DeepEqual(h.Grants[0].Services, want) {
+		t.Fatalf("services = %+v, want all of them with the trimmed one marked", h.Grants[0].Services)
+	}
+
+	var live int
+	if err := s.DB().QueryRow(`SELECT count(*) FROM grant_services WHERE grant_id = ?`, emptied.ID).Scan(&live); err != nil {
+		t.Fatal(err)
+	}
+	if live != 0 {
+		t.Fatalf("emptied grant has %d grant_services rows, want 0 — the test needs a grant trimmed to nothing", live)
+	}
+	h = mustOverview(t, s, HistoryFilter{ServiceID: "roblox"}, 0)
+	if got := historyIDs(h); !reflect.DeepEqual(got, []int64{emptied.ID}) || h.Grants[0].EndReason != EndReasonPermanentBlock {
+		t.Fatalf("service roblox = %+v, want the permanent_block grant %d", h.Grants, emptied.ID)
+	}
+}
+
+func TestListHistory_ServiceFilter(t *testing.T) {
+	dir := t.TempDir()
+	openAt0008(t, dir) // child 1: grant 1 youtube+custom:2, 2 tiktok, 3 youtube; no snapshots
+	s, err := Open(dir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer s.Close()
+
+	ben := mustCreate(t, s, "Ben", "Ben phone")
+	cs := mustService(t, s, "Roblox", "roblox.example")
+	id := CustomServiceID(cs.ID)
+	custom, err := s.CreateGrantNamed(ctx, ben.ID, []string{id}, ben.Clients, t0, t0.Add(time.Hour), map[string]string{id: "Roblox"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustSetStatus(t, s, custom.ID, StatusActive, StatusEnded)
+	if err := s.DeleteCustomService(ctx, cs.ID); err != nil {
+		t.Fatal(err)
+	}
+	// A snapshot that reads like another service's id must not match it.
+	lookalike, err := s.CreateGrantNamed(ctx, ben.ID, []string{"disney"}, ben.Clients, t0, t0.Add(time.Hour), map[string]string{"disney": "tiktok"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		service string
+		want    []int64
+	}{
+		{"tiktok", []int64{2}},
+		{"custom:2", []int64{1}},
+		{"youtube", []int64{3, 1}},
+		{id, []int64{custom.ID}},
+		{"disney", []int64{lookalike.ID}},
+		{"Roblox", []int64{}},
+	} {
+		if got := historyIDs(mustOverview(t, s, HistoryFilter{ServiceID: tc.service}, 0)); !reflect.DeepEqual(got, tc.want) {
+			t.Fatalf("service %q = %v, want %v", tc.service, got, tc.want)
+		}
+	}
+}
+
+func TestListHistory_ServiceNoDuplicates(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "a")
+	id := seedGrant(t, s, rawGrant{child: ada.ID, status: StatusExpired, started: 1000,
+		services: []string{"youtube", "tiktok"}, trimmed: []string{"youtube"}})
+
+	h := mustOverview(t, s, HistoryFilter{ServiceID: "youtube"}, 0)
+	if got := historyIDs(h); !reflect.DeepEqual(got, []int64{id}) || h.HasMore {
+		t.Fatalf("service in both tables = %v HasMore %v, want [%d] once", got, h.HasMore, id)
+	}
+}
+
+func TestListHistory_ServiceExactID(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "a")
+	seedGrant(t, s, rawGrant{child: ada.ID, status: StatusExpired, started: 1000, services: []string{"youtube"}})
+	twelve := seedGrant(t, s, rawGrant{child: ada.ID, status: StatusExpired, started: 1000, services: []string{"custom:12"}})
+	seedGrant(t, s, rawGrant{child: ada.ID, status: StatusExpired, started: 1000, trimmed: []string{"youtube-kids"}})
+
+	if got := historyIDs(mustOverview(t, s, HistoryFilter{ServiceID: "custom:12"}, 0)); !reflect.DeepEqual(got, []int64{twelve}) {
+		t.Fatalf("custom:12 = %v, want [%d]", got, twelve)
+	}
+	for _, service := range []string{"custom:1", "you", "%", "youtube%", "_outube", `' OR 1=1 --`} {
+		if got := historyIDs(mustOverview(t, s, HistoryFilter{ServiceID: service}, 0)); len(got) != 0 {
+			t.Fatalf("service %q = %v, want no match", service, got)
+		}
+	}
+}
+
+func TestListHistory_DateBounds(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "a")
+	const from, until = 10_000, 20_000
+	at := func(sec int64) int64 {
+		return seedGrant(t, s, rawGrant{child: ada.ID, status: StatusExpired, started: sec})
+	}
+	early, first, last, late := at(from-1), at(from), at(until-1), at(until)
+
+	// Started before the range, then ended and was extended inside it.
+	ranInto := at(from - 500)
+	if _, err := s.DB().Exec(`UPDATE grants SET ends_at = ?, ended_at = ? WHERE id = ?`, from+500, from+400, ranInto); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := s.DB().Exec(`INSERT INTO grant_extensions (grant_id, extended_at, old_ends_at, new_ends_at) VALUES (?, ?, ?, ?)`,
+		ranInto, from+100, from-100, from+500); err != nil {
+		t.Fatal(err)
+	}
+
+	unix := func(sec int64) time.Time { return time.Unix(sec, 0).UTC() }
+	for _, tc := range []struct {
+		name string
+		f    HistoryFilter
+		want []int64
+	}{
+		{"both", HistoryFilter{From: unix(from), Until: unix(until)}, []int64{last, first}},
+		{"from only", HistoryFilter{From: unix(from)}, []int64{late, last, first}},
+		{"until only", HistoryFilter{Until: unix(until)}, []int64{ranInto, last, first, early}},
+		{"from after until", HistoryFilter{From: unix(until), Until: unix(from)}, []int64{}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := historyIDs(mustOverview(t, s, tc.f, 0)); !reflect.DeepEqual(got, tc.want) {
+				t.Fatalf("%s = %v, want %v", tc.name, got, tc.want)
+			}
+		})
+	}
+}
+
+func TestListHistory_StatusMatrix(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "a")
+	cells := []struct{ status, reason, want string }{
+		{StatusActive, "", HistoryOngoing},
+		{StatusActive, EndReasonExpired, HistoryOngoing},
+		{StatusActive, EndReasonEndedEarly, HistoryOngoing},
+		{StatusActive, EndReasonPermanentBlock, HistoryOngoing},
+		{StatusExpired, "", HistoryExpired},
+		{StatusExpired, EndReasonExpired, HistoryExpired},
+		{StatusExpired, EndReasonEndedEarly, HistoryExpired},
+		{StatusExpired, EndReasonPermanentBlock, HistoryExpired},
+		{StatusEnded, "", HistoryEndedUnknown},
+		{StatusEnded, EndReasonExpired, HistoryExpired},
+		{StatusEnded, EndReasonEndedEarly, HistoryEndedEarly},
+		{StatusEnded, EndReasonPermanentBlock, HistoryPermanentBlock},
+	}
+	want := map[string][]int64{}
+	for _, c := range cells {
+		// started 1000 puts every ends_at in the past, so a live row is overdue.
+		id := seedGrant(t, s, rawGrant{child: ada.ID, status: c.status, reason: c.reason, started: 1000})
+		want[c.want] = append([]int64{id}, want[c.want]...)
+	}
+
+	total := 0
+	for _, status := range []string{HistoryOngoing, HistoryExpired, HistoryEndedEarly, HistoryPermanentBlock, HistoryEndedUnknown} {
+		got := historyIDs(mustOverview(t, s, HistoryFilter{Status: status}, 0))
+		if !reflect.DeepEqual(got, want[status]) {
+			t.Fatalf("status %s = %v, want %v", status, got, want[status])
+		}
+		total += len(got)
+	}
+	if total != len(cells) {
+		t.Fatalf("the five statuses hold %d grants, want each of the %d exactly once", total, len(cells))
+	}
+}
+
+func TestListHistory_UnknownStatus(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "a")
+	grantN(t, s, ada.ID, 1)
+
+	h, err := s.ListHistory(ctx, HistoryFilter{Status: "bogus"}, 0)
+	if err == nil || len(h.Grants) != 0 {
+		t.Fatalf("status bogus = %+v, %v; want an error and no grants", h, err)
+	}
+}
+
+func TestListHistory_FiltersCombine(t *testing.T) {
+	type row struct {
+		id      int64
+		child   int64
+		service string
+		started int64
+		status  string
+	}
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "a")
+	ben := mustCreate(t, s, "Ben", "b")
+	statuses := []struct{ status, reason, wire string }{
+		{StatusActive, "", HistoryOngoing},
+		{StatusExpired, "", HistoryExpired},
+		{StatusEnded, EndReasonEndedEarly, HistoryEndedEarly},
+		{StatusEnded, "", HistoryEndedUnknown},
+	}
+	var grid []row
+	for _, child := range []int64{ada.ID, ben.ID} {
+		for _, service := range []string{"youtube", "tiktok"} {
+			for day := int64(0); day < 3; day++ {
+				for _, st := range statuses {
+					g := rawGrant{child: child, status: st.status, reason: st.reason, started: 1000 * (day + 1)}
+					if day == 1 { // the middle day's service was trimmed off
+						g.trimmed = []string{service}
+					} else {
+						g.services = []string{service}
+					}
+					grid = append(grid, row{seedGrant(t, s, g), child, service, g.started, st.wire})
+				}
+			}
+		}
+	}
+
+	full := HistoryFilter{
+		ChildID:   ada.ID,
+		ServiceID: "youtube",
+		Status:    HistoryExpired,
+		From:      time.Unix(2000, 0),
+		Until:     time.Unix(3000, 0),
+	}
+	for bits := 0; bits < 32; bits++ {
+		var f HistoryFilter
+		if bits&1 != 0 {
+			f.ChildID = full.ChildID
+		}
+		if bits&2 != 0 {
+			f.ServiceID = full.ServiceID
+		}
+		if bits&4 != 0 {
+			f.Status = full.Status
+		}
+		if bits&8 != 0 {
+			f.From = full.From
+		}
+		if bits&16 != 0 {
+			f.Until = full.Until
+		}
+
+		want := []int64{}
+		for i := len(grid) - 1; i >= 0; i-- {
+			g := grid[i]
+			if (f.ChildID == 0 || g.child == f.ChildID) &&
+				(f.ServiceID == "" || g.service == f.ServiceID) &&
+				(f.Status == "" || g.status == f.Status) &&
+				(f.From.IsZero() || g.started >= f.From.Unix()) &&
+				(f.Until.IsZero() || g.started < f.Until.Unix()) {
+				want = append(want, g.id)
+			}
+		}
+
+		if got := historyIDs(mustOverview(t, s, f, 1000)); !reflect.DeepEqual(got, want) {
+			t.Fatalf("subset %05b = %v, want %v", bits, got, want)
+		}
+		_, walked := walkOverview(t, s, f, 3)
+		if len(want) > 0 && !reflect.DeepEqual(walked, want) {
+			t.Fatalf("subset %05b walked at limit 3 = %v, want %v", bits, walked, want)
+		}
+	}
+}
+
+func TestListHistory_FilteredPaging(t *testing.T) {
+	f := HistoryFilter{ServiceID: "youtube"}
+	seed := func(t *testing.T, s *Store, child int64, service string, n int) []int64 {
+		t.Helper()
+		var ids []int64
+		for i := 0; i < n; i++ {
+			ids = append(ids, seedGrant(t, s, rawGrant{child: child, status: StatusExpired, started: 1000, services: []string{service}}))
+		}
+		return ids
+	}
+
+	t.Run("half of 120 match", func(t *testing.T) {
+		s, _ := openTemp(t)
+		ada := mustCreate(t, s, "Ada", "a")
+		var want []int64
+		for i := 0; i < 60; i++ {
+			want = append(seed(t, s, ada.ID, "youtube", 1), want...)
+			seed(t, s, ada.ID, "tiktok", 1)
+		}
+		sizes, ids := walkOverview(t, s, f, 0)
+		if !reflect.DeepEqual(sizes, []int{50, 10}) || !reflect.DeepEqual(ids, want) {
+			t.Fatalf("walk = sizes %v ids %v, want [50 10] over every match once", sizes, ids)
+		}
+	})
+
+	t.Run("older non-match is not more", func(t *testing.T) {
+		s, _ := openTemp(t)
+		ada := mustCreate(t, s, "Ada", "a")
+		seed(t, s, ada.ID, "tiktok", 1)
+		seed(t, s, ada.ID, "youtube", 50)
+		if h := mustOverview(t, s, f, 0); len(h.Grants) != 50 || h.HasMore {
+			t.Fatalf("page = %d grants HasMore %v, want 50 and no more", len(h.Grants), h.HasMore)
+		}
+	})
+
+	t.Run("51 matches", func(t *testing.T) {
+		s, _ := openTemp(t)
+		ada := mustCreate(t, s, "Ada", "a")
+		ids := seed(t, s, ada.ID, "youtube", 51)
+		h := mustOverview(t, s, f, 0)
+		if len(h.Grants) != 50 || !h.HasMore || h.Grants[49].ID != ids[1] {
+			t.Fatalf("page = %d grants HasMore %v, last %d; want 50 with more ending at %d", len(h.Grants), h.HasMore, h.Grants[49].ID, ids[1])
+		}
+		rest := mustOverview(t, s, HistoryFilter{ServiceID: "youtube", Before: h.Grants[49].ID}, 0)
+		if got := historyIDs(rest); !reflect.DeepEqual(got, []int64{ids[0]}) || rest.HasMore {
+			t.Fatalf("page 2 = %v HasMore %v, want only [%d]", got, rest.HasMore, ids[0])
+		}
+	})
+}
+
+func TestListHistory_StatusChangesBetweenPages(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "a")
+	g1, g2, g3 := grantN(t, s, ada.ID, 1), grantN(t, s, ada.ID, 2), grantN(t, s, ada.ID, 3)
+	g4, g5 := grantN(t, s, ada.ID, 4), grantN(t, s, ada.ID, 5)
+
+	f := HistoryFilter{Status: HistoryOngoing}
+	p1 := mustOverview(t, s, f, 2)
+	if got := historyIDs(p1); !reflect.DeepEqual(got, []int64{g5.ID, g4.ID}) || !p1.HasMore {
+		t.Fatalf("page 1 = %v HasMore %v, want [%d %d] with more", got, p1.HasMore, g5.ID, g4.ID)
+	}
+	// The cursor grant itself stops matching before page 2 is read.
+	mustSetStatus(t, s, g4.ID, StatusActive, StatusExpired)
+
+	f.Before = g4.ID
+	if got := historyIDs(mustOverview(t, s, f, 2)); !reflect.DeepEqual(got, []int64{g3.ID, g2.ID}) {
+		t.Fatalf("page 2 = %v, want [%d %d]", got, g3.ID, g2.ID)
+	}
+	f.Before = g2.ID
+	if got := historyIDs(mustOverview(t, s, f, 2)); !reflect.DeepEqual(got, []int64{g1.ID}) {
+		t.Fatalf("page 3 = %v, want [%d]", got, g1.ID)
+	}
+}
+
+func TestListHistory_FiltersKeepVisibility(t *testing.T) {
+	s, _ := openTemp(t)
+	ben := mustCreate(t, s, "Ben", "Ben phone")
+	gone := mustCreate(t, s, "Gone", "Gone phone")
+	reused := mustCreate(t, s, "Ada", "Kid phone") // the highest id, so SQLite reuses it
+	mustGrant(t, s, gone.ID, []string{"youtube"}, gone.Clients)
+	mustGrant(t, s, reused.ID, []string{"youtube"}, reused.Clients)
+	own := mustGrant(t, s, ben.ID, []string{"youtube"}, ben.Clients)
+	for _, id := range []int64{gone.ID, reused.ID} {
+		if ok, err := s.DeleteChild(ctx, id); err != nil || !ok {
+			t.Fatalf("DeleteChild(%d) = %v, %v", id, ok, err)
+		}
+	}
+	cleo := mustCreate(t, s, "Cleo", "Cleo phone")
+	if cleo.ID != gone.ID {
+		t.Fatalf("new child id = %d, want reused %d — the test needs the reuse", cleo.ID, gone.ID)
+	}
+
+	if got := historyIDs(mustOverview(t, s, HistoryFilter{ServiceID: "youtube"}, 0)); !reflect.DeepEqual(got, []int64{own.ID}) {
+		t.Fatalf("service filter = %v, want only Ben's [%d]", got, own.ID)
+	}
+	if got := historyIDs(mustOverview(t, s, HistoryFilter{ChildID: cleo.ID, ServiceID: "youtube"}, 0)); len(got) != 0 {
+		t.Fatalf("service filter on the reused id = %v, want nothing", got)
+	}
+	if got := historyIDs(mustOverview(t, s, HistoryFilter{Status: HistoryOngoing}, 0)); !reflect.DeepEqual(got, []int64{own.ID}) {
+		t.Fatalf("status filter = %v, want only Ben's [%d]", got, own.ID)
+	}
+}
