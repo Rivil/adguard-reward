@@ -3,6 +3,20 @@
   "base": "milestone/v0.2",
   "base_commit": "5646d775a98a711c5ecdca28b6504dd162d8354f",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "internal/adguard/client.go",
+        "internal/adguard/client_test.go",
+        "internal/adguard/clients.go",
+        "internal/adguard/errors.go",
+        "internal/api/clients.go",
+        "internal/api/clients_test.go",
+        "internal/api/rename_test.go"
+      ],
+      "commit": "7b1c2c6",
+      "completed_at": "2026-11-05T12:04:47.845944Z",
+      "notes": "quick: Answer 502 when CreateClient's clients read fails: mark the read in Engine.baseline with *grants.ErrClientsRead and answer it as 502 adguard_unavailable; a store read inside the engine stays 500."
+    },
     "t-1": {
       "files": [
         "internal/store/setup.go",
