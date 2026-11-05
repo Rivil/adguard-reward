@@ -5,7 +5,7 @@ import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import Home from './Home.svelte'
 import { refresh } from './activeGrants'
-import { historyChild, route, setOnUnauthorized, type BlockedView, type Button, type Child, type Grant, type Service } from './api'
+import { historyChild, historyFilters, navigate, route, setOnUnauthorized, type BlockedView, type Button, type Child, type Grant, type Service } from './api'
 
 type Call = { method: string; url: string; body: string | null }
 type Answer = () => Response | Promise<Response>
@@ -64,6 +64,7 @@ function view(id: number, name: string, over: Partial<BlockedView> = {}): Blocke
 }
 
 const noOffer = () => json(200, { global: [], clients: [] })
+const noFilters = { service: null, status: null, from: null, to: null, badChild: false }
 
 /** A mutable server for Home: grants, buttons, children and the catalogue's health are read live from `state`. */
 function server(over: { buttons?: Button[]; grants?: Grant[]; children?: Child[]; services?: Service[] | 'down' } = {}, extra: Routes = {}) {
@@ -167,6 +168,7 @@ afterEach(() => {
   history.replaceState(null, '', '/')
   route.set('home')
   historyChild.set(null)
+  historyFilters.set(noFilters)
 })
 
 describe('Home', () => {
@@ -1008,6 +1010,60 @@ describe('Home', () => {
     } finally {
       setOnUnauthorized(() => route.set('login'))
     }
+  })
+})
+
+describe('Home links', () => {
+  // The exact name: a child's link is 'History for <name>', so this is only ever the nav's.
+  const overviewLink = () => screen.getByRole('button', { name: 'History' })
+
+  async function expectBareOverview() {
+    await fireEvent.click(overviewLink())
+    expect(location.pathname + location.search).toBe('/history')
+    expect(get(route)).toBe('history')
+    expect(get(historyChild)).toBeNull()
+    expect(get(historyFilters)).toStrictEqual(noFilters)
+  }
+
+  it('the History button sits in the nav and opens the overview', async () => {
+    server()
+    await mountLoaded()
+    expect(screen.getByRole('navigation').contains(overviewLink())).toBe(true)
+    expect(overviewLink().closest('section[data-child]')).toBeNull()
+    await expectBareOverview()
+  })
+
+  it('the History button shows with no children', async () => {
+    server({ children: [], buttons: [] })
+    mount()
+    await screen.findByText('No children yet')
+    await expectBareOverview()
+  })
+
+  it('the History button shows when the grid fails to load', async () => {
+    server({}, {
+      '/api/v1/children': () => {
+        throw new TypeError('Failed to fetch')
+      },
+    })
+    mount()
+    await screen.findByRole('alert')
+    await expectBareOverview()
+  })
+
+  it('the History button leaves earlier filters behind', async () => {
+    server()
+    navigate('history', { child: 1, filters: { service: 'youtube', status: 'expired', from: '2026-03-01', to: '2026-03-08' } })
+    expect(location.search).toBe('?child=1&service=youtube&status=expired&from=2026-03-01&to=2026-03-08')
+    navigate('home')
+    await mountLoaded()
+    await expectBareOverview()
+  })
+
+  it('the overview and a child link are different buttons', async () => {
+    server()
+    await mountLoaded()
+    expect(overviewLink()).not.toBe(screen.getByRole('button', { name: 'History for Ada' }))
   })
 })
 

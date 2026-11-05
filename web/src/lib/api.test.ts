@@ -20,7 +20,6 @@ import {
   endGrant,
   exportSetup,
   extendGrant,
-  fetchHistory,
   fetchHistoryPage,
   fetchHistoryServices,
   historyChild,
@@ -1133,71 +1132,6 @@ describe('fetchHistoryServices', () => {
   it('fills a missing list', async () => {
     mockFetch(json(200, { services: null }))
     expect(await fetchHistoryServices()).toStrictEqual([])
-  })
-})
-
-describe('fetchHistory', () => {
-  const page = {
-    child: { id: 3, name: 'Ada' },
-    grants: [
-      {
-        id: 41,
-        status: 'ended_early',
-        started_at: '2026-09-21T10:00:00Z',
-        ends_at: '2026-09-21T10:40:00Z',
-        ended_at: '2026-09-21T10:20:00Z',
-        services: [
-          { id: 'tiktok', name: 'TikTok', removed_at: null, removed_reason: null },
-          { id: 'youtube', name: 'YouTube', removed_at: '2026-09-21T10:10:00Z', removed_reason: 'permanent_block' },
-        ],
-        extensions: [
-          { at: '2026-09-21T10:05:00Z', old_ends_at: '2026-09-21T10:30:00Z', new_ends_at: '2026-09-21T10:35:00Z' },
-          { at: '2026-09-21T10:06:00Z', old_ends_at: '2026-09-21T10:35:00Z', new_ends_at: '2026-09-21T10:40:00Z' },
-        ],
-      },
-    ],
-    next_before: 41,
-  }
-
-  it('builds the URL with and without before', async () => {
-    const last = { child: page.child, grants: [], next_before: null }
-    const calls = mockFetch(json(200, page), json(200, last))
-    expect(await fetchHistory(3)).toStrictEqual(page)
-    expect(await fetchHistory(3, 40)).toStrictEqual(last)
-    expect(calls.map((c) => [c.init.method, c.url, c.init.body ?? null])).toEqual([
-      ['GET', '/api/v1/children/3/history', null],
-      ['GET', '/api/v1/children/3/history?before=40', null],
-    ])
-    for (const c of calls) {
-      expect(header(c.init, CSRF_HEADER)).toBe(CSRF_VALUE)
-    }
-  })
-
-  it('fills missing lists and cursor', async () => {
-    const bare = { ...page.grants[0], services: null, extensions: undefined }
-    mockFetch(json(200, { child: page.child, grants: [bare] }), json(200, { child: page.child, grants: null }))
-    const got = await fetchHistory(3)
-    expect(got.grants[0].services).toStrictEqual([])
-    expect(got.grants[0].extensions).toStrictEqual([])
-    expect(got.next_before).toBeNull()
-    expect((await fetchHistory(3)).grants).toStrictEqual([])
-  })
-
-  it('rejects with ApiError', async () => {
-    mockFetch(json(404, { error: 'not_found', message: 'child 3 not found' }))
-    const gone = await fails(fetchHistory(3))
-    expect(gone.status).toBe(404)
-    expect(gone.code).toBe('not_found')
-    expect(unauthorized).not.toHaveBeenCalled()
-
-    mockFetch(json(400, { error: 'invalid_request', message: 'bad before' }))
-    const bad = await fails(fetchHistory(3, 40))
-    expect(bad.status).toBe(400)
-
-    mockFetch(json(401, { error: 'unauthorized', message: 'authentication required' }))
-    const anon = await fails(fetchHistory(3))
-    expect(anon.status).toBe(401)
-    expect(unauthorized).toHaveBeenCalledTimes(1)
   })
 })
 

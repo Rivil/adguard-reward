@@ -701,14 +701,6 @@ export interface HistoryGrant {
   extensions: HistoryExtension[]
 }
 
-export interface HistoryPage {
-  child: ChildRef
-  /** Newest first. */
-  grants: HistoryGrant[]
-  /** The cursor for the next (older) page; null on the last page. */
-  next_before: number | null
-}
-
 /** An overview row: a grant and the child it belongs to. */
 export interface OverviewGrant extends HistoryGrant {
   child: ChildRef
@@ -733,18 +725,8 @@ export interface HistoryServiceOption {
 const HISTORY = '/api/v1/history'
 
 /** Fills the lists a history row may arrive without. */
-function historyRows<T extends HistoryGrant>(grants: T[]): T[] {
+function historyRows(grants: OverviewGrant[]): OverviewGrant[] {
   return (grants ?? []).map((g) => ({ ...g, services: g.services ?? [], extensions: g.extensions ?? [] }))
-}
-
-/**
- * One page of a child's grant history, newest first. before is the previous
- * page's next_before; omitted for the first page. A 404 means no such child.
- */
-export async function fetchHistory(childId: number, before?: number): Promise<HistoryPage> {
-  const query = before === undefined ? '' : `?before=${before}`
-  const p = await request<HistoryPage>('GET', `${CHILDREN}/${childId}/history${query}`)
-  return { ...p, grants: historyRows(p.grants), next_before: p.next_before ?? null }
 }
 
 /**
