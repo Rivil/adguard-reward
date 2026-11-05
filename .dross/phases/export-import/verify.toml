@@ -1,11 +1,11 @@
 [verify]
   phase = "export-import"
-  generated_at = 2026-11-05T15:31:43.519033Z
-  verdict = "partial"
+  generated_at = 2026-11-05T17:45:28.482386Z
+  verdict = "pass"
   finalized = true
-  finalized_at = 2026-11-05T15:48:28.254156Z
-  measured_commit = "7e30aa28b43fcf7703666d1c41e92a540bd8f380"
-  measured_tree = "c6186dc1d0dc1c86140b7864e259ce347b3e8e76"
+  finalized_at = 2026-11-05T18:04:53.395587Z
+  measured_commit = "5302e9ef70c05bab893863dd9c21aff4472c268a"
+  measured_tree = "9de8efcfaa99bd37de6915482ee38ad18972678e"
 
 [summary]
   mutation_status = "measured"
@@ -88,8 +88,12 @@
   text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/Settings.svelte (no parser for .svelte); mutating the whole file"
 
 [[finding]]
-  severity = "FLAG"
-  text = "Survived mutant internal/adguard/client.go:183 (CONDITIONALS_BOUNDARY, `< 300` to `<= 300`): a literal status 300 reads as success and no test uses one. Inherited line, no criterion claims it. Acceptance 51a958b88e117c6a is wrong for this mutant: the key merges both boundary mutants on the line, and its note says killed by hand with evidence from blocked.go. Hand-applied at 7e30aa2, go test ./internal/... stays green."
+  severity = "NOTE"
+  text = "Prior FLAG on internal/adguard/client.go:183 closed by quick 8748941. Hand-applied in a scratch copy of 5302e9e: `< 300` to `<= 300` fails only TestStatus_MultipleChoices, `>= 200` to `> 200` fails TestStatus and others, and the unmutated package passes. Gremlins still lists both as NOT COVERED because it attributes no coverage block to switch-case expressions, so the run's counts match the prior run (489 killed, 16 survived)."
+
+[[finding]]
+  severity = "NOTE"
+  text = "Acceptance 51a958b88e117c6a still cites blocked.go evidence from 2026-09-21. Its conclusion now holds for client.go:183, but the note names the wrong file; the other client.go and grants/clients.go acceptances cite the same evidence, and the prior run's hand-applied kills are the real proof for them."
 
 [[finding]]
   severity = "NOTE"
@@ -97,12 +101,8 @@
 
 [[finding]]
   severity = "NOTE"
-  text = "Hand-applied at 7e30aa2 against go test ./internal/...: the other six client.go classify mutants (183, 185, 187) and grants/clients.go 131, 236 and 238 are all killed. This closes the prior doubt that the 236 and 238 evidence came from blocked.go. The acceptance notes still cite the old evidence."
+  text = "Solo-review FLAGs all closed: t-2 by t-8 (record path in decode problems); t-3 cannot occur because fileClients lists each name once before missing_clients is built, pinned by TestImport_ClientOrder; t-6 test FLAGs fixed in the committed tests; t-6 adoption 502 by t-9. The t-6 undeclared import_test.go edit is process only."
 
 [[finding]]
   severity = "NOTE"
-  text = "Prior out-of-diff CreateClient NOTE closed by quick 7b1c2c6: adguard.ErrBadResponse marks an undecodable 2xx and adguardDown matches it, pinned by TestBadResponse, TestCreateClient_ReadUndecodable and TestRename_ReadUndecodable. The fix differs from state.json's last_action, which describes an Engine.baseline change."
-
-[[finding]]
-  severity = "NOTE"
-  text = "Score fell from 0.98 over 426 to 0.97 over 505 because the quick brought internal/adguard and internal/api/clients.go into scope, whole-file. All 11 NOT COVERED survivors are inherited: 7 in adguard/client.go, 4 in grants/clients.go. No new in-hunk survivor."
+  text = "All 11 NOT COVERED survivors are inherited and accepted: 7 in adguard/client.go, 4 in grants/clients.go. No in-diff or unclassified survivor. The 3 in-hunk stryker survivors (Settings.svelte:29, :150, api.ts:233) are accepted equivalents."

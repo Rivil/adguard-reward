@@ -1,6 +1,6 @@
 {
   "phase": "export-import",
-  "generated_at": "2026-11-05T15:31:43.519033Z",
+  "generated_at": "2026-11-05T17:45:28.482386Z",
   "languages": [
     {
       "name": "go",
@@ -635,60 +635,6 @@
       "note": "Killed when applied by hand: flipping to 'yerr != nil' fails TestUnlabelled_UnparseableIPOrder (aa-host/zz-host order inverts; checked 2026-11-01). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
     },
     {
-      "file": "internal/api/grants.go",
-      "line": 157,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "971ea8d8d9b5ff52",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
-    },
-    {
-      "file": "internal/api/grants.go",
-      "line": 158,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "3d175e3325616cdf",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
-    },
-    {
-      "file": "internal/api/reauth.go",
-      "line": 59,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "9fa81f875c787158",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/custom_services.go",
-      "line": 153,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "d6679638cc1e6564",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
-      "file": "internal/api/custom_services.go",
-      "line": 154,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "476fdd58ed2fe273",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
-      "file": "internal/api/pin.go",
-      "line": 128,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "1702d76e6fc4596c",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
       "file": "internal/api/unlock.go",
       "line": 87,
       "op": "CONDITIONALS_NEGATION",
@@ -734,6 +680,69 @@
       "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
     },
     {
+      "file": "internal/api/pin.go",
+      "line": 128,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1702d76e6fc4596c",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 157,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 158,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/reauth.go",
+      "line": 59,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9fa81f875c787158",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/grants/reconcile.go",
+      "line": 85,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "cccf33fd143b660e",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -\u003e err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
       "file": "internal/grants/grants.go",
       "line": 352,
       "op": "CONDITIONALS_NEGATION",
@@ -750,15 +759,6 @@
       "key": "6bbce7448c751d07",
       "lifecycle": "accepted",
       "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/grants/reconcile.go",
-      "line": 85,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "cccf33fd143b660e",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -\u003e err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
     },
     {
       "file": "internal/store/migrate.go",
@@ -834,7 +834,7 @@
       ".dross/phases/export-import/changes.json": [
         {
           "start": 1,
-          "end": 428
+          "end": 436
         }
       ],
       ".dross/phases/export-import/panel/mvp.md": [
@@ -876,7 +876,7 @@
       ".dross/phases/export-import/tests.json": [
         {
           "start": 1,
-          "end": 883
+          "end": 1240
         }
       ],
       ".dross/phases/export-import/verify.toml": [
@@ -939,6 +939,10 @@
         {
           "start": 48,
           "end": 72
+        },
+        {
+          "start": 211,
+          "end": 222
         }
       ],
       "internal/adguard/clients.go": [
@@ -1235,6 +1239,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "7e30aa28b43fcf7703666d1c41e92a540bd8f380",
-  "measured_tree": "c6186dc1d0dc1c86140b7864e259ce347b3e8e76"
+  "measured_commit": "5302e9ef70c05bab893863dd9c21aff4472c268a",
+  "measured_tree": "9de8efcfaa99bd37de6915482ee38ad18972678e"
 }
