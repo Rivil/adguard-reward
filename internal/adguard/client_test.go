@@ -4,7 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"errors"
+	"io"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -41,6 +43,31 @@ func lastRequest(t *testing.T, s *adguardtest.Server, path string) adguardtest.R
 	}
 	t.Fatalf("no recorded request for %s", path)
 	return adguardtest.Request{}
+}
+
+func TestBadResponse(t *testing.T) {
+	var wrongType *json.UnmarshalTypeError
+	cases := []struct {
+		name  string
+		body  string
+		cause func(error) bool
+	}{
+		{"body cut short", `{"clients":[`, func(err error) bool { return errors.Is(err, io.ErrUnexpectedEOF) }},
+		{"field of the wrong type", `{"clients":[{"name":5}]}`, func(err error) bool { return errors.As(err, &wrongType) }},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			s := newFake(t)
+			s.SetResponse("/control/clients", 200, []byte(tc.body))
+			_, err := newClient(t, s).Clients(context.Background())
+			if !errors.Is(err, ErrBadResponse) {
+				t.Fatalf("err = %v, want ErrBadResponse", err)
+			}
+			if !tc.cause(err) {
+				t.Errorf("err = %v, want it to reach the decode failure", err)
+			}
+		})
+	}
 }
 
 func TestLogin_BadCredentials(t *testing.T) {

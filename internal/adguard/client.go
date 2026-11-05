@@ -137,7 +137,7 @@ func (c *Client) do(ctx context.Context, method, path string, in, out any) error
 		return nil
 	}
 	if err := json.NewDecoder(resp.Body).Decode(out); err != nil {
-		return fmt.Errorf("adguard: %s %s: decode: %w", method, path, err)
+		return fmt.Errorf("%w: %s %s: decode: %w", ErrBadResponse, method, path, err)
 	}
 	return nil
 }

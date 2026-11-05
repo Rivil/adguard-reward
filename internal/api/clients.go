@@ -260,13 +260,14 @@ func (a *API) writeCreateClientError(w http.ResponseWriter, name string, err err
 }
 
 // adguardDown reports whether err is AdGuard failing rather than the
-// store: a non-2xx answer, the service credential refused, a transport
-// error or the apply deadline.
+// store: a non-2xx answer, a 2xx that does not decode, the service credential
+// refused, a transport error or the apply deadline.
 func adguardDown(err error) bool {
 	var status *adguard.StatusError
 	var transport *url.Error
 	return errors.As(err, &status) || errors.As(err, &transport) ||
-		errors.Is(err, adguard.ErrBadCredentials) || errors.Is(err, context.DeadlineExceeded)
+		errors.Is(err, adguard.ErrBadCredentials) || errors.Is(err, adguard.ErrBadResponse) ||
+		errors.Is(err, context.DeadlineExceeded)
 }
 
 // catalogueView is one row of GET /api/v1/services: a built-in AdGuard
