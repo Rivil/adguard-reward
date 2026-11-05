@@ -480,6 +480,38 @@ describe('Settings — Backup', () => {
       Object.assign(URL, urlApi)
     })
 
+    // Only a successful export shows the list runBackup reset: import overwrites
+    // it, and a failure hides it with the note.
+    it('a successful export shows no missing clients', async () => {
+      const { saved } = stubDownload()
+      await renderBackup({ [`GET ${EXPORT}`]: () => json(200, file) })
+
+      await fireEvent.click(backup().getByRole('button', { name: 'Export' }))
+      await vi.waitFor(() => expect(saved).toHaveLength(1))
+
+      const note = await backup().findByRole('status')
+      expect(note.textContent?.trim()).toBe('Downloading adguard-reward-export.json')
+      expect(within(note).queryByRole('list')).toBeNull()
+    })
+
+    it('an export clears the missing clients an earlier import listed', async () => {
+      const { saved } = stubDownload()
+      await renderBackup({
+        [`GET ${EXPORT}`]: () => json(200, file),
+        [`POST ${IMPORT}`]: imported(['Gone phone']),
+      })
+      await filePicker()(backupFile())
+      expect(await backup().findByText('Gone phone')).toBeTruthy()
+
+      await fireEvent.click(backup().getByRole('button', { name: 'Export' }))
+      await vi.waitFor(() => expect(saved).toHaveLength(1))
+
+      const note = await backup().findByRole('status')
+      expect(note.textContent?.trim()).toBe('Downloading adguard-reward-export.json')
+      expect(backup().queryByText('Gone phone')).toBeNull()
+      expect(backup().queryByRole('list')).toBeNull()
+    })
+
     it('GETs the export, saves one named Blob and revokes the URL once the save has had time', async () => {
       const { create, revoke, saved } = stubDownload()
       const calls = await renderBackup({ [`GET ${EXPORT}`]: () => json(200, file) })
