@@ -140,9 +140,9 @@ describe('dayBounds', () => {
   })
 
   it('invents no bound the parent did not set', () => {
-    expect(dayBounds('2026-03-01', null)).toEqual({ from: '2026-03-01T05:00:00.000Z' })
-    expect(dayBounds(null, '2026-03-01')).toEqual({ until: '2026-03-02T05:00:00.000Z' })
-    expect(dayBounds(null, null)).toEqual({})
+    expect(dayBounds('2026-03-01', null)).toStrictEqual({ from: '2026-03-01T05:00:00.000Z' })
+    expect(dayBounds(null, '2026-03-01')).toStrictEqual({ until: '2026-03-02T05:00:00.000Z' })
+    expect(dayBounds(null, null)).toStrictEqual({})
   })
 })
 
@@ -176,6 +176,8 @@ describe('parseFilters', () => {
     'to=yesterday',
     'to=2026-3-1',
     'to=2026-03-01T00:00:00Z',
+    'from=x2026-03-01',
+    'to=2026-03-01x',
     'from=',
   ])('treats %s as no filter', (query) => {
     expect(parseFilters(query)).toEqual(NONE)
