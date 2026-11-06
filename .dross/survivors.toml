@@ -1990,15 +1990,6 @@
   reason = "Equivalent: JSON.stringify(undefined) returns undefined at runtime, so forcing the ternary to its else branch passes the same value to send(). The ternary exists for JSON.stringify's string return type."
 
 [[accepted]]
-  key = "e6b705a6c3068af8"
-  file = "web/src/lib/HistoryFilterBar.svelte"
-  op = "StringLiteral"
-  text = "input.value = filters[key] ?? ''"
-  line = 57
-  accepted_in = "history-overview"
-  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
-
-[[accepted]]
   key = "315e6ab0c01bf7ce"
   file = "web/src/lib/HistoryFilterBar.svelte"
   op = "StringLiteral"
@@ -2195,3 +2186,12 @@
   line = 29
   category = "go-string-concat-not-arithmetic"
   accepted_in = "history-overview"
+
+[[accepted]]
+  key = "708406a410221007"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "} else input.value = filters[key] ?? ''"
+  line = 106
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Same mutant as retired e6b705a6c3068af8, rekeyed when t-15 moved the line; jsdom confirmed on 8cc2749 and the one covering test, which asserts '', passes on it."
