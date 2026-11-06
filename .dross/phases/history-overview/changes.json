@@ -62,6 +62,51 @@
         }
       ]
     },
+    "t-12": {
+      "files": [
+        "web/src/lib/history.test.ts"
+      ],
+      "commit": "ee62973",
+      "completed_at": "2026-11-06T07:34:14.525163Z",
+      "landmarks": [
+        {
+          "feature": "history filters",
+          "symbol": "parseFilters",
+          "loc": "web/src/lib/history.ts:94",
+          "what": "tests hold both DAY anchors and that dayBounds sets no key for an unset bound"
+        }
+      ]
+    },
+    "t-13": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.test.ts"
+      ],
+      "commit": "904b6d6",
+      "completed_at": "2026-11-06T07:35:28.518377Z",
+      "landmarks": [
+        {
+          "feature": "history filters",
+          "symbol": "HistoryFilterBar.svelte",
+          "loc": "web/src/lib/HistoryFilterBar.svelte:26",
+          "what": "tests hold the Child N stand-in beside real children and the form's prevented submit"
+        }
+      ]
+    },
+    "t-14": {
+      "files": [
+        "web/src/lib/History.panel.test.ts"
+      ],
+      "commit": "dd81b3c",
+      "completed_at": "2026-11-06T07:36:58.905805Z",
+      "landmarks": [
+        {
+          "feature": "history overview",
+          "symbol": "childName",
+          "loc": "web/src/lib/History.svelte:47",
+          "what": "tests hold a plain History heading while a new child loads and an All-only Service select after its options fail"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/store/migrations/0011_history_watermark_backfill.sql",
@@ -242,6 +287,28 @@
           "kind": "quality",
           "severity": "NOTE",
           "text": "ARCHITECTURE.md:246 still lists fetchHistory at web/src/lib/api.ts:571. That line number was already out of date, and the entry now names a removed export.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-12": {
+      "outcome": "pass",
+      "rounds": 1
+    },
+    "t-13": {
+      "outcome": "pass",
+      "rounds": 1
+    },
+    "t-14": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "Only the services row of the it.each kills the :41 mutant; in the children row the services read succeeds and overwrites any junk initial value with []. The same applies in reverse to the Child assertion. One killing row is enough, so no action is needed.",
           "resolution": "non-blocking, left"
         }
       ]

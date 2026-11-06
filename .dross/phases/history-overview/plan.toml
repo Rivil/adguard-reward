@@ -1,4 +1,4 @@
-task_seq = 11
+task_seq = 14
 
 [phase]
   id = "history-overview"
@@ -199,4 +199,34 @@ task_seq = 11
     '''if per-child links change, the existing test 'each child has a History link to its own history' fails: still /history?child=2 with no other query''',
     '''if a caller of fetchHistory survives, make typecheck fails on the missing export''',
   ]
+  status = "done"
+
+[[task]]
+  id = "t-12"
+  wave = 5
+  title = "Pin the day anchor and unset date bounds"
+  files = ["web/src/lib/history.test.ts"]
+  description = "Verify remediation (tests only). Kill the BLOCKING survivor history.ts:72 (Regex, no ^): parseDay accepts a prefixed value such as x2026-03-01 and no test notices. Add a prefixed and a suffixed day to the parseFilters no-filter list, so both anchors are held directly. Also closes the t-3 review FLAG: the dayBounds 'invents no bound' test uses toEqual, which ignores a key set to undefined; use toStrictEqual. history.ts itself does not change."
+  covers = ["c-5"]
+  test_contract = ["if DAY loses its ^ anchor, the parseFilters no-filter test fails: from=x2026-03-01 reads as no filter", "if DAY loses its $ anchor, the parseFilters no-filter test fails: to=2026-03-01x reads as no filter", "if dayBounds sets an unset bound's key to undefined, the 'invents no bound' test fails under toStrictEqual"]
+  status = "done"
+
+[[task]]
+  id = "t-13"
+  wave = 5
+  title = "Pin the child stand-in and the form submit"
+  files = ["web/src/lib/HistoryFilterBar.test.ts"]
+  description = "Verify remediation (tests only). Kill the BLOCKING survivors HistoryFilterBar.svelte:27 (ConditionalExpression), :29 (StringLiteral) and :61 (ArrowFunction). The stand-in test only uses an empty children list and only asserts the label is not All; nothing submits the form. HistoryFilterBar.svelte itself does not change."
+  covers = ["c-5", "c-9"]
+  test_contract = ["if the stand-in check matches any child (the :27 mutant), the non-empty-list test fails: child 9 with children Ada and Cleo lists All, Ada, Cleo, Child 9 and selects Child 9", "if the stand-in label changes (the :29 mutant), the stand-in test fails: the selected option reads exactly Child 3", "if the form stops preventing default (the :61 mutant), the submit test fails: a cancelable submit event on the Filter history form ends defaultPrevented"]
+  status = "done"
+
+[[task]]
+  id = "t-14"
+  wave = 5
+  title = "Pin the heading during a child load and failed service options"
+  files = ["web/src/lib/History.panel.test.ts"]
+  description = "Verify remediation (tests only). Kill the BLOCKING survivors History.svelte:47 (ConditionalExpression) and :41 (ArrayDeclaration). Nothing asserts the heading while a new child loads, so the old child's name could show under the new filter; the options-failure test never asserts the Service select's options, so junk initial services go unnoticed. History.svelte itself does not change."
+  covers = ["c-4", "c-9"]
+  test_contract = ["if childName stops comparing the page child to the current child (the :47 mutant), the switch test fails: while the new child's page is held, the heading reads plain History, then the new child's name once it lands", "if services starts non-empty (the :41 mutant), the failed-options test fails: after the services read fails, the Service select lists only All"]
   status = "done"
