@@ -63,7 +63,14 @@ describe('HistoryFilterBar', () => {
     bar({ child: 3, filters: { ...NONE, service: 'custom:9' }, children: [], services: [] })
     expect(select('Service').value).toBe('custom:9')
     expect(select('Child').value).toBe('3')
-    expect(shown(select('Child'))).not.toBe('All')
+    expect(shown(select('Child'))).toBe('Child 3')
+  })
+
+  it('lists a filtered child the options lack, beside the children they have', () => {
+    bar({ child: 9 })
+    expect(select('Child').value).toBe('9')
+    expect(shown(select('Child'))).toBe('Child 9')
+    expect(options(select('Child'))).toEqual(['All', 'Ada', 'Cleo', 'Child 9'])
   })
 
   it('swaps the stand-in for the real name when the options arrive', async () => {
@@ -192,5 +199,12 @@ describe('HistoryFilterBar', () => {
     for (const label of ['Child', 'Service', 'How it ended']) expect(shown(select(label))).toBe('All')
     expect(date('From').value).toBe('')
     expect(date('To').value).toBe('')
+  })
+
+  it('never lets a submit reload the page', () => {
+    bar()
+    const submit = new Event('submit', { bubbles: true, cancelable: true })
+    screen.getByRole('form', { name: 'Filter history' }).dispatchEvent(submit)
+    expect(submit.defaultPrevented).toBe(true)
   })
 })
