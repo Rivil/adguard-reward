@@ -1,6 +1,6 @@
 {
   "phase": "history-overview",
-  "generated_at": "2026-11-06T08:09:31.597669Z",
+  "generated_at": "2026-11-06T12:23:55.594783Z",
   "languages": [
     {
       "name": "go",
@@ -61,42 +61,12 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 755,
-        "Survived": 45,
+        "Killed": 392,
+        "Survived": 24,
         "Timeout": 0,
-        "Errors": 0,
-        "Score": 0.94375,
+        "Errors": 2,
+        "Score": 0.9423076923076923,
         "Surviving": [
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 57,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "e6b705a6c3068af8",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
-          },
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 102,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "315e6ab0c01bf7ce",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
-          },
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 111,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "5b8221e61f77c842",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
-          },
           {
             "File": "web/src/lib/History.svelte",
             "Line": 31,
@@ -106,16 +76,6 @@
             "Key": "dfc634b30d2dd4ea",
             "Lifecycle": "accepted",
             "Note": "Equivalent: load() resets grants in the mount effect and the list renders only once loaded is true after a page arrives, overwriting this initial value."
-          },
-          {
-            "File": "web/src/lib/History.svelte",
-            "Line": 37,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "52d6dfd7f539f3a8",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: initial loadingMore is reset to false by load() in the mount effect, and the load-more button only renders after loaded."
           },
           {
             "File": "web/src/lib/History.svelte",
@@ -156,26 +116,6 @@
             "Key": "389072b7543d6c74",
             "Lifecycle": "accepted",
             "Note": "Equivalent: loadMore is reachable only from the Load more button, which renders inside {#if nextBefore !== null}, so before is never null here."
-          },
-          {
-            "File": "web/src/lib/History.svelte",
-            "Line": 183,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "e2e32041a8692c9c",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: rendering the extensions \u003col\u003e unconditionally only adds an empty list with no [data-extension] items when there are no extensions; no visible content changes."
-          },
-          {
-            "File": "web/src/lib/History.svelte",
-            "Line": 183,
-            "Op": "EqualityOperator",
-            "Snippet": "g.extensions.length \u003e= 0",
-            "Origin": "inherited",
-            "Key": "bb7c3aac00f9f965",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: length \u003e= 0 renders an empty \u003col\u003e for zero extensions; no visible content changes."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -338,194 +278,57 @@
             "Note": "Equivalent: Object.hasOwn(LABELS, null) looks up the key 'null', which LABELS lacks, so the result is false with or without the guard."
           },
           {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 134,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "a6d312f12b091b9b",
-            "Lifecycle": "accepted",
-            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 135,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "9382694512e2eb73",
-            "Lifecycle": "accepted",
-            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 370,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "8ef387b402aa021d",
-            "Lifecycle": "accepted",
-            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 370,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "NotCovered": true,
-            "Origin": "inherited",
-            "Key": "8ef387b402aa021d",
-            "Lifecycle": "accepted",
-            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 35,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "inherited",
-            "Key": "9e7b970f78a207cf",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 36,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "inherited",
-            "Key": "332725e64d242d98",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 67,
-            "Op": "BooleanLiteral",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "4a2c7171134bef4f",
-            "Lifecycle": "accepted",
-            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 134,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "6451ace12288b160",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 134,
-            "Op": "EqualityOperator",
-            "Snippet": "(out.grant.shared ?? []).length \u003e= 0",
-            "Origin": "inherited",
-            "Key": "abeb67deb0f8d203",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: length \u003e= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 147,
-            "Op": "ConditionalExpression",
-            "Snippet": "default:",
-            "Origin": "inherited",
-            "Key": "6232b0be4db10034",
-            "Lifecycle": "accepted",
-            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 181,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "inherited",
-            "Key": "85c805b4f0c4fa20",
-            "Lifecycle": "accepted",
-            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 272,
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 106,
             "Op": "StringLiteral",
-            "Snippet": "\"\"",
-            "Origin": "inherited",
-            "Key": "c8067c4b53b4a89d",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "708406a410221007",
             "Lifecycle": "accepted",
-            "Note": "The Error message in pickBlock is never read: BlockPicker.pick() catches every onpick rejection without inspecting it (the alert comes from setToggle's toggleNotes), so the message text is unobservable."
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Same mutant as retired e6b705a6c3068af8, rekeyed when t-15 moved the line; jsdom confirmed on 8cc2749 and the one covering test, which asserts '', passes on it."
           },
           {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 356,
-            "Op": "OptionalChaining",
-            "Snippet": "notes[child.id].code",
-            "Origin": "inherited",
-            "Key": "97404d5a1a2ab537",
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 161,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "315e6ab0c01bf7ce",
             "Lifecycle": "accepted",
-            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
           },
           {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 356,
-            "Op": "OptionalChaining",
-            "Snippet": "notes[child.id].text",
-            "Origin": "inherited",
-            "Key": "97404d5a1a2ab537",
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 170,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "5b8221e61f77c842",
             "Lifecycle": "accepted",
-            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 412,
-            "Op": "OptionalChaining",
-            "Snippet": "toggleNotes[child.id].code",
-            "Origin": "inherited",
-            "Key": "e59f02659c1e10ad",
-            "Lifecycle": "accepted",
-            "Note": "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 412,
-            "Op": "OptionalChaining",
-            "Snippet": "toggleNotes[child.id].text",
-            "Origin": "inherited",
-            "Key": "e59f02659c1e10ad",
-            "Lifecycle": "accepted",
-            "Note": "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
-          },
-          {
-            "File": "web/src/lib/Home.svelte",
-            "Line": 94,
-            "Op": "OptionalChaining",
-            "Snippet": "stopPolling()",
-            "Origin": "inherited",
-            "Key": "6c8255537ab76c28",
-            "Lifecycle": "accepted",
-            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
-          },
-          {
-            "File": "web/src/App.svelte",
-            "Line": 72,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "inherited",
-            "Key": "4952cfeed1f15d36",
-            "Lifecycle": "accepted",
-            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
           }
         ],
-        "NotCovered": 4
+        "NotCovered": 0
       },
       "measured_on": "local",
       "ranges": {
+        "web/src/App.svelte": [
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 17,
+            "end": 33,
+            "construct": "FunctionDeclaration refresh"
+          },
+          {
+            "start": 61,
+            "end": 79,
+            "construct": "IfBlock"
+          }
+        ],
         "web/src/App.test.ts": [
           {
             "start": 8,
@@ -551,173 +354,522 @@
           },
           {
             "start": 7,
-            "end": 7,
+            "end": 15,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "VariableDeclaration CHILDREN"
+          },
+          {
+            "start": 26,
+            "end": 26,
+            "construct": "VariableDeclaration SERVICES"
+          },
+          {
+            "start": 27,
+            "end": 27,
+            "construct": "hunk"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "construct": "VariableDeclaration NO_OPTIONS"
+          },
+          {
+            "start": 32,
+            "end": 37,
+            "construct": "hunk"
+          },
+          {
+            "start": 38,
+            "end": 51,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 56,
+            "construct": "FunctionDeclaration fetched"
+          },
+          {
+            "start": 57,
+            "end": 57,
+            "construct": "hunk"
+          },
+          {
+            "start": 58,
+            "end": 58,
+            "construct": "VariableDeclaration URL3"
+          },
+          {
+            "start": 60,
+            "end": 72,
+            "construct": "FunctionDeclaration grant"
+          },
+          {
+            "start": 74,
+            "end": 80,
+            "construct": "FunctionDeclaration page"
+          },
+          {
+            "start": 82,
+            "end": 82,
+            "construct": "VariableDeclaration URL4"
+          },
+          {
+            "start": 98,
+            "end": 98,
+            "construct": "VariableDeclaration ok"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "construct": "hunk"
+          },
+          {
+            "start": 101,
+            "end": 101,
+            "construct": "VariableDeclaration settle"
+          },
+          {
+            "start": 113,
+            "end": 113,
+            "construct": "VariableDeclaration NONE"
+          },
+          {
+            "start": 114,
+            "end": 114,
+            "construct": "VariableDeclaration BAD_CHILD"
+          },
+          {
+            "start": 115,
+            "end": 115,
+            "construct": "hunk"
+          },
+          {
+            "start": 116,
+            "end": 125,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 126,
+            "end": 126,
+            "construct": "hunk"
+          },
+          {
+            "start": 127,
+            "end": 127,
+            "construct": "VariableDeclaration stopFollowing"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "construct": "hunk"
+          },
+          {
+            "start": 130,
+            "end": 133,
+            "construct": "FunctionDeclaration goTo"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "construct": "hunk"
+          },
+          {
+            "start": 136,
+            "end": 144,
+            "construct": "FunctionDeclaration mountAt"
+          },
+          {
+            "start": 146,
+            "end": 146,
+            "construct": "VariableDeclaration select"
+          },
+          {
+            "start": 147,
+            "end": 147,
+            "construct": "VariableDeclaration shown"
+          },
+          {
+            "start": 148,
+            "end": 148,
+            "construct": "VariableDeclaration options"
+          },
+          {
+            "start": 149,
+            "end": 149,
+            "construct": "VariableDeclaration bar"
+          },
+          {
+            "start": 150,
+            "end": 150,
+            "construct": "hunk"
+          },
+          {
+            "start": 151,
+            "end": 158,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 160,
+            "end": 1000,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/History.svelte": [
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 15,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 16,
+            "end": 16,
             "construct": "ImportDeclaration"
           },
           {
             "start": 17,
             "end": 17,
-            "construct": "VariableDeclaration CHILDREN"
-          },
-          {
-            "start": 18,
-            "end": 18,
-            "construct": "VariableDeclaration SERVICES"
+            "construct": "ImportDeclaration"
           },
           {
             "start": 19,
-            "end": 19,
+            "end": 24,
             "construct": "hunk"
           },
           {
-            "start": 20,
-            "end": 23,
-            "construct": "VariableDeclaration NO_OPTIONS"
+            "start": 25,
+            "end": 25,
+            "construct": "VariableDeclaration"
           },
           {
-            "start": 24,
+            "start": 29,
             "end": 29,
             "construct": "hunk"
           },
           {
             "start": 30,
+            "end": 30,
+            "construct": "VariableDeclaration pageChild"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "VariableDeclaration grants"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "VariableDeclaration children"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "VariableDeclaration services"
+          },
+          {
+            "start": 43,
             "end": 43,
-            "construct": "FunctionDeclaration mockFetch"
+            "construct": "hunk"
           },
           {
             "start": 45,
             "end": 45,
-            "construct": "hunk"
+            "construct": "VariableDeclaration optionsAsked"
           },
           {
             "start": 46,
+            "end": 46,
+            "construct": "hunk"
+          },
+          {
+            "start": 47,
+            "end": 47,
+            "construct": "VariableDeclaration childName"
+          },
+          {
+            "start": 48,
             "end": 48,
-            "construct": "FunctionDeclaration fetched"
+            "construct": "VariableDeclaration noSuchChild"
           },
           {
             "start": 49,
-            "end": 49,
+            "end": 50,
             "construct": "hunk"
           },
           {
-            "start": 50,
-            "end": 50,
-            "construct": "VariableDeclaration URL3"
+            "start": 51,
+            "end": 51,
+            "construct": "VariableDeclaration filterKey"
           },
           {
-            "start": 52,
-            "end": 64,
-            "construct": "FunctionDeclaration grant"
+            "start": 59,
+            "end": 65,
+            "construct": "FunctionDeclaration loadChildren"
           },
           {
             "start": 66,
-            "end": 72,
-            "construct": "FunctionDeclaration page"
+            "end": 66,
+            "construct": "hunk"
+          },
+          {
+            "start": 67,
+            "end": 73,
+            "construct": "FunctionDeclaration loadServices"
           },
           {
             "start": 74,
-            "end": 74,
-            "construct": "VariableDeclaration URL4"
-          },
-          {
-            "start": 90,
-            "end": 90,
-            "construct": "VariableDeclaration ok"
-          },
-          {
-            "start": 91,
-            "end": 92,
+            "end": 75,
             "construct": "hunk"
+          },
+          {
+            "start": 76,
+            "end": 81,
+            "construct": "FunctionDeclaration loadOptions"
+          },
+          {
+            "start": 82,
+            "end": 82,
+            "construct": "hunk"
+          },
+          {
+            "start": 83,
+            "end": 108,
+            "construct": "FunctionDeclaration load"
+          },
+          {
+            "start": 110,
+            "end": 127,
+            "construct": "FunctionDeclaration loadMore"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 135,
+            "end": 207,
+            "construct": "Element main"
+          },
+          {
+            "start": 229,
+            "end": 232,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/lib/HistoryFilterBar.svelte": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 22,
+            "construct": "VariableDeclaration"
+          },
+          {
+            "start": 23,
+            "end": 23,
+            "construct": "hunk"
+          },
+          {
+            "start": 24,
+            "end": 24,
+            "construct": "TSTypeAliasDeclaration DayKey"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 26,
+            "construct": "VariableDeclaration STATUSES"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "construct": "hunk"
+          },
+          {
+            "start": 29,
+            "end": 29,
+            "construct": "VariableDeclaration SETTLE_MS"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "construct": "hunk"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "VariableDeclaration pending"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "VariableDeclaration timer"
+          },
+          {
+            "start": 34,
+            "end": 36,
+            "construct": "hunk"
+          },
+          {
+            "start": 37,
+            "end": 41,
+            "construct": "VariableDeclaration childOptions"
+          },
+          {
+            "start": 42,
+            "end": 46,
+            "construct": "VariableDeclaration serviceOptions"
+          },
+          {
+            "start": 47,
+            "end": 48,
+            "construct": "hunk"
+          },
+          {
+            "start": 49,
+            "end": 53,
+            "construct": "FunctionDeclaration emit"
+          },
+          {
+            "start": 54,
+            "end": 54,
+            "construct": "hunk"
+          },
+          {
+            "start": 55,
+            "end": 57,
+            "construct": "FunctionDeclaration setFilter"
+          },
+          {
+            "start": 58,
+            "end": 59,
+            "construct": "hunk"
+          },
+          {
+            "start": 60,
+            "end": 62,
+            "construct": "FunctionDeclaration flushDay"
+          },
+          {
+            "start": 63,
+            "end": 63,
+            "construct": "hunk"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "construct": "FunctionDeclaration dropDay"
+          },
+          {
+            "start": 68,
+            "end": 68,
+            "construct": "hunk"
+          },
+          {
+            "start": 69,
+            "end": 74,
+            "construct": "FunctionDeclaration holdDay"
+          },
+          {
+            "start": 75,
+            "end": 75,
+            "construct": "hunk"
+          },
+          {
+            "start": 76,
+            "end": 78,
+            "construct": "FunctionDeclaration setStatus"
+          },
+          {
+            "start": 79,
+            "end": 87,
+            "construct": "hunk"
+          },
+          {
+            "start": 88,
+            "end": 92,
+            "construct": "FunctionDeclaration setDay"
           },
           {
             "start": 93,
-            "end": 93,
-            "construct": "VariableDeclaration settle"
-          },
-          {
-            "start": 105,
-            "end": 105,
-            "construct": "VariableDeclaration NONE"
-          },
-          {
-            "start": 106,
-            "end": 106,
-            "construct": "VariableDeclaration BAD_CHILD"
-          },
-          {
-            "start": 107,
-            "end": 107,
+            "end": 100,
             "construct": "hunk"
+          },
+          {
+            "start": 101,
+            "end": 107,
+            "construct": "FunctionDeclaration leaveDay"
           },
           {
             "start": 108,
+            "end": 112,
+            "construct": "hunk"
+          },
+          {
+            "start": 113,
+            "end": 116,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 117,
             "end": 117,
-            "construct": "FunctionDeclaration mount"
+            "construct": "ExpressionStatement"
           },
           {
             "start": 118,
-            "end": 118,
-            "construct": "hunk"
-          },
-          {
-            "start": 119,
             "end": 119,
-            "construct": "VariableDeclaration stopFollowing"
+            "construct": "hunk"
           },
           {
             "start": 120,
-            "end": 121,
+            "end": 175,
+            "construct": "Element form"
+          },
+          {
+            "start": 176,
+            "end": 195,
             "construct": "hunk"
-          },
-          {
-            "start": 122,
-            "end": 125,
-            "construct": "FunctionDeclaration goTo"
-          },
-          {
-            "start": 126,
-            "end": 127,
-            "construct": "hunk"
-          },
-          {
-            "start": 128,
-            "end": 136,
-            "construct": "FunctionDeclaration mountAt"
-          },
-          {
-            "start": 138,
-            "end": 138,
-            "construct": "VariableDeclaration select"
-          },
-          {
-            "start": 139,
-            "end": 139,
-            "construct": "VariableDeclaration shown"
-          },
-          {
-            "start": 140,
-            "end": 140,
-            "construct": "VariableDeclaration options"
-          },
-          {
-            "start": 141,
-            "end": 141,
-            "construct": "VariableDeclaration bar"
-          },
-          {
-            "start": 142,
-            "end": 142,
-            "construct": "hunk"
-          },
-          {
-            "start": 143,
-            "end": 149,
-            "construct": "ExpressionStatement"
-          },
-          {
-            "start": 151,
-            "end": 858,
-            "construct": "ExpressionStatement"
           }
         ],
         "web/src/lib/HistoryFilterBar.test.ts": [
@@ -803,23 +955,60 @@
           },
           {
             "start": 35,
-            "end": 35,
-            "construct": "hunk"
-          },
-          {
-            "start": 36,
             "end": 36,
-            "construct": "ExpressionStatement"
+            "construct": "hunk"
           },
           {
             "start": 37,
             "end": 37,
-            "construct": "hunk"
+            "construct": "VariableDeclaration SETTLE_MS"
           },
           {
             "start": 38,
-            "end": 210,
+            "end": 38,
+            "construct": "VariableDeclaration typeDay"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "VariableDeclaration settled"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "hunk"
+          },
+          {
+            "start": 41,
+            "end": 43,
             "construct": "ExpressionStatement"
+          },
+          {
+            "start": 44,
+            "end": 44,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 406,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Home.svelte": [
+          {
+            "start": 276,
+            "end": 442,
+            "construct": "Element main"
           }
         ],
         "web/src/lib/Home.test.ts": [
@@ -1264,12 +1453,6 @@
             "construct": "hunk"
           }
         ]
-      },
-      "whole_file": {
-        "web/src/App.svelte": "ast-unavailable",
-        "web/src/lib/History.svelte": "ast-unavailable",
-        "web/src/lib/HistoryFilterBar.svelte": "ast-unavailable",
-        "web/src/lib/Home.svelte": "ast-unavailable"
       }
     }
   ],
@@ -1280,6 +1463,42 @@
     }
   ],
   "out_of_scope": [
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 157,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 158,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
     {
       "file": "internal/api/login.go",
       "line": 93,
@@ -1324,42 +1543,6 @@
       "key": "2e088d645f6775d1",
       "lifecycle": "accepted",
       "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/custom_services.go",
-      "line": 153,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "d6679638cc1e6564",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
-      "file": "internal/api/custom_services.go",
-      "line": 154,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "476fdd58ed2fe273",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
-    },
-    {
-      "file": "internal/api/grants.go",
-      "line": 157,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "971ea8d8d9b5ff52",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
-    },
-    {
-      "file": "internal/api/grants.go",
-      "line": 158,
-      "op": "ARITHMETIC_BASE",
-      "language": "go",
-      "key": "3d175e3325616cdf",
-      "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
     },
     {
       "file": "internal/api/pin.go",
@@ -1458,7 +1641,7 @@
       ".dross/phases/history-overview/changes.json": [
         {
           "start": 1,
-          "end": 573
+          "end": 625
         }
       ],
       ".dross/phases/history-overview/panel/mvp.md": [
@@ -1488,25 +1671,25 @@
       ".dross/phases/history-overview/plan.toml": [
         {
           "start": 1,
-          "end": 232
+          "end": 243
         }
       ],
       ".dross/phases/history-overview/spec.toml": [
         {
           "start": 1,
-          "end": 80
+          "end": 86
         }
       ],
       ".dross/phases/history-overview/tests.json": [
         {
           "start": 1,
-          "end": 2284
+          "end": 2257
         }
       ],
       ".dross/phases/history-overview/verify.toml": [
         {
           "start": 1,
-          "end": 234
+          "end": 134
         }
       ],
       ".dross/project.toml": [
@@ -1517,8 +1700,12 @@
       ],
       ".dross/survivors.toml": [
         {
-          "start": 1983,
-          "end": 2099
+          "start": 85,
+          "end": 92
+        },
+        {
+          "start": 1991,
+          "end": 2197
         }
       ],
       "internal/api/api.go": [
@@ -1790,155 +1977,155 @@
         },
         {
           "start": 7,
-          "end": 7
+          "end": 15
         },
         {
-          "start": 17,
-          "end": 29
-        },
-        {
-          "start": 35,
+          "start": 25,
           "end": 37
         },
         {
-          "start": 45,
-          "end": 50
+          "start": 43,
+          "end": 45
         },
         {
-          "start": 52,
-          "end": 52
+          "start": 53,
+          "end": 58
         },
         {
-          "start": 55,
-          "end": 55
+          "start": 60,
+          "end": 60
         },
         {
-          "start": 67,
-          "end": 67
+          "start": 63,
+          "end": 63
         },
         {
-          "start": 69,
-          "end": 70
+          "start": 75,
+          "end": 75
         },
         {
-          "start": 74,
-          "end": 74
+          "start": 77,
+          "end": 78
         },
         {
-          "start": 90,
-          "end": 93
+          "start": 82,
+          "end": 82
         },
         {
-          "start": 105,
-          "end": 128
+          "start": 98,
+          "end": 101
         },
         {
-          "start": 130,
-          "end": 134
+          "start": 113,
+          "end": 136
         },
         {
           "start": 138,
           "end": 142
         },
         {
-          "start": 144,
-          "end": 146
+          "start": 146,
+          "end": 150
         },
         {
-          "start": 207,
-          "end": 207
+          "start": 152,
+          "end": 155
         },
         {
-          "start": 222,
-          "end": 222
+          "start": 216,
+          "end": 216
         },
         {
-          "start": 229,
-          "end": 229
+          "start": 231,
+          "end": 231
         },
         {
-          "start": 237,
-          "end": 237
-        },
-        {
-          "start": 241,
-          "end": 241
-        },
-        {
-          "start": 243,
-          "end": 243
+          "start": 238,
+          "end": 238
         },
         {
           "start": 246,
           "end": 246
         },
         {
-          "start": 249,
+          "start": 250,
           "end": 250
         },
         {
-          "start": 253,
+          "start": 252,
+          "end": 252
+        },
+        {
+          "start": 255,
           "end": 255
         },
         {
-          "start": 260,
-          "end": 275
+          "start": 258,
+          "end": 259
         },
         {
-          "start": 305,
-          "end": 305
+          "start": 262,
+          "end": 264
         },
         {
-          "start": 307,
-          "end": 307
+          "start": 269,
+          "end": 284
         },
         {
-          "start": 319,
-          "end": 320
+          "start": 314,
+          "end": 314
         },
         {
-          "start": 345,
-          "end": 345
+          "start": 316,
+          "end": 316
         },
         {
-          "start": 367,
-          "end": 367
+          "start": 328,
+          "end": 329
         },
         {
-          "start": 374,
-          "end": 374
+          "start": 354,
+          "end": 354
+        },
+        {
+          "start": 376,
+          "end": 376
         },
         {
           "start": 383,
-          "end": 384
+          "end": 383
         },
         {
-          "start": 387,
-          "end": 398
+          "start": 392,
+          "end": 393
         },
         {
-          "start": 428,
-          "end": 428
+          "start": 396,
+          "end": 407
         },
         {
-          "start": 444,
-          "end": 444
+          "start": 437,
+          "end": 437
         },
         {
-          "start": 461,
-          "end": 461
+          "start": 453,
+          "end": 453
         },
         {
-          "start": 463,
-          "end": 463
+          "start": 470,
+          "end": 470
         },
         {
-          "start": 476,
-          "end": 476
+          "start": 472,
+          "end": 472
         },
         {
-          "start": 482,
-          "end": 857
+          "start": 485,
+          "end": 485
+        },
+        {
+          "start": 491,
+          "end": 999
         }
       ],
       "web/src/lib/History.svelte": [
@@ -2022,13 +2209,13 @@
       "web/src/lib/HistoryFilterBar.svelte": [
         {
           "start": 1,
-          "end": 136
+          "end": 195
         }
       ],
       "web/src/lib/HistoryFilterBar.test.ts": [
         {
           "start": 1,
-          "end": 210
+          "end": 406
         }
       ],
       "web/src/lib/Home.svelte": [
@@ -2243,15 +2430,9 @@
       ]
     },
     "base": "6f95bc92498da85d84efbf328ee640bd62f73c61",
-    "source": "git+changes",
-    "degraded": [
-      "stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file",
-      "stryker: AST unavailable for web/src/lib/History.svelte (no parser for .svelte); mutating the whole file",
-      "stryker: AST unavailable for web/src/lib/HistoryFilterBar.svelte (no parser for .svelte); mutating the whole file",
-      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
-    ]
+    "source": "git+changes"
   },
   "measured_on": "local",
-  "measured_commit": "b89f442de0db2fb502d9707b464397427b375b1c",
-  "measured_tree": "185aeefc75c21d3050be8566c0bc7152708d5b2d"
+  "measured_commit": "b925b2fdd2408a58fd649b3f5da4568b202657b9",
+  "measured_tree": "371cb52bb9be126940abb10d0cdfc944f77284a0"
 }
