@@ -1,4 +1,4 @@
-task_seq = 15
+task_seq = 17
 
 [phase]
   id = "history-overview"
@@ -241,3 +241,25 @@ task_seq = 15
   test_contract = ["if each segment still emits, the settle test fails: two change events inside the delay emit once, with the last date", "if the delay never fires by itself, the picker test fails: one change event with no blur emits once after the delay", "if blur loses a pending date, the blur test fails: change then blur emits at once, once, and the input keeps the new date", "if another control drops a pending date, the merge test fails: a date change then a status change emits with both, and the timer adds no second emit", "if clearing waits or a stale date lands, the clear test fails: a pending date then clearing emits null at once and nothing later", "if a rejected date releases an earlier one, the held-back test fails: a valid date then 0202-11-05 emits nothing", "if the timer outlives the bar, the unmount test fails: unmounting with a pending date emits nothing", "if going back keeps a pending date, the popstate test fails: a pending date then popstate emits nothing after the delay, and a blur after that popstate emits nothing"]
   status = "done"
   depends_on = ["t-7"]
+
+[[task]]
+  id = "t-16"
+  wave = 4
+  title = "Show the filter's date after a Back drops a pending one"
+  files = ["web/src/lib/HistoryFilterBar.svelte", "web/src/lib/HistoryFilterBar.test.ts", "web/src/lib/History.panel.test.ts"]
+  description = "Verify FLAG from the t-15 review: after a Back that keeps the bar and leaves filters.from unchanged, dropDay clears the pending date but the focused input keeps showing it until blur, because Svelte has no value change to write. Android's picker keeps focus, so the control can show a date that is not on the filter. The bar's popstate listener must put both date inputs back on filters as well as dropping the pending date; onDestroy and emit keep plain dropDay. The listener can run before the parent passes the restored filters in, which is safe: when the value changed, Svelte writes it afterwards. leaveDay's restore for a held-back date stays. Update the comment above the listener."
+  covers = ["c-5", "c-8"]
+  test_contract = ["if a popstate leaves the pending date in the input, the popstate test fails: a pending date then popstate shows the filter's date before any blur", "if the bar's listener misses the real route order, the panel test fails: a pending From then a Back inside History that keeps from unset shows an empty From with no blur", "if the restore touches only the pending input, the held-back test fails: a rejected date in the input then popstate shows the filter's date"]
+  status = "done"
+  depends_on = ["t-15"]
+
+[[task]]
+  id = "t-17"
+  wave = 5
+  title = "Drop the no-op listener helper from the Back tests"
+  files = ["web/src/lib/History.panel.test.ts"]
+  description = "Verify FLAG from the t-15 review: listenInOrderAdded in History.panel.test.ts has no effect. Neither popstate listener passes options, and api.ts adds its listener at import, before the spy exists. Its comment describes capture listeners that are not in the source. Remove the helper, its calls and its comment. Change no assertion."
+  covers = ["c-8"]
+  test_contract = ["if the helper was doing real work, 'ends on Home with no push' and 'pushes nothing when the bar stays' fail once it is gone"]
+  status = "done"
+  depends_on = ["t-16"]
