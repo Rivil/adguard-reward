@@ -1980,3 +1980,111 @@
   line = 233
   accepted_in = "export-import"
   reason = "Equivalent: JSON.stringify(undefined) returns undefined at runtime, so forcing the ternary to its else branch passes the same value to send(). The ternary exists for JSON.stringify's string return type."
+
+[[accepted]]
+  key = "e6b705a6c3068af8"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "input.value = filters[key] ?? ''"
+  line = 57
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+
+[[accepted]]
+  key = "315e6ab0c01bf7ce"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "value={filters.from ?? ''}"
+  line = 102
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+
+[[accepted]]
+  key = "5b8221e61f77c842"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "value={filters.to ?? ''}"
+  line = 111
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+
+[[accepted]]
+  key = "dfc634b30d2dd4ea"
+  file = "web/src/lib/History.svelte"
+  op = "ArrayDeclaration"
+  text = "let grants = $state<OverviewGrant[]>([])"
+  line = 31
+  accepted_in = "history-overview"
+  reason = "Equivalent: load() resets grants in the mount effect and the list renders only once loaded is true after a page arrives, overwriting this initial value."
+
+[[accepted]]
+  key = "51dc250be148d62e"
+  file = "web/src/lib/History.svelte"
+  op = "StringLiteral"
+  text = "const filterKey = $derived(filters.badChild ? 'bad' : `${child}?${filterParams(filters)}`)"
+  line = 51
+  accepted_in = "history-overview"
+  reason = "Equivalent: filterKey only has to differ between filter sets. Every other key contains a ?, so '' stays as distinct as 'bad', and the value is never shown."
+
+[[accepted]]
+  key = "389072b7543d6c74"
+  file = "web/src/lib/History.svelte"
+  op = "ConditionalExpression"
+  text = "if (loadingMore || before === null) return"
+  line = 112
+  accepted_in = "history-overview"
+  reason = "Equivalent: loadMore is reachable only from the Load more button, which renders inside {#if nextBefore !== null}, so before is never null here."
+
+[[accepted]]
+  key = "21646a60f54848a6"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const own = r === 'history' ? search : ''"
+  line = 102
+  accepted_in = "history-overview"
+  reason = "Equivalent: off the history route own only feeds parseFilters and URLSearchParams; any string with no filter or child key reads as no filters, same as ''."
+
+[[accepted]]
+  key = "ef7d5c3b89c8d878"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "return parseFilters(f === undefined ? '' : filterParams(f).toString())"
+  line = 109
+  accepted_in = "history-overview"
+  reason = "Equivalent: parseFilters of a string naming no filter key returns no filters, same as parsing ''."
+
+[[accepted]]
+  key = "760a8879568afcc5"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const HISTORY = '/api/v1/history'"
+  line = 725
+  accepted_in = "history-overview"
+  reason = "Stryker false survivor (history-overview verify 2026-11-06): static module-level const. Hand-applying HISTORY = '' fails 55 vitest tests, so the suite catches it."
+
+[[accepted]]
+  key = "27cd17be97287dbd"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "const m = v === null ? null : DAY.exec(v)"
+  line = 81
+  accepted_in = "history-overview"
+  reason = "Equivalent: DAY.exec(null) coerces to 'null', which does not match, so m is null exactly as the guard makes it."
+
+[[accepted]]
+  key = "852254c6a0f93b2f"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "return d.getUTCMonth() === month - 1 && d.getUTCDate() === day ? v : null"
+  line = 86
+  accepted_in = "history-overview"
+  reason = "Equivalent: any day overflow also changes the month, so the month check already rejects every date this comparison would catch."
+
+[[accepted]]
+  key = "22fc6e01d4c968b8"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "return v !== null && Object.hasOwn(LABELS, v) ? (v as HistoryStatus) : null"
+  line = 90
+  accepted_in = "history-overview"
+  reason = "Equivalent: Object.hasOwn(LABELS, null) looks up the key 'null', which LABELS lacks, so the result is false with or without the guard."

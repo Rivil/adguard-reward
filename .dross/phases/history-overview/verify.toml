@@ -1,0 +1,234 @@
+[verify]
+  phase = "history-overview"
+  generated_at = 2026-11-06T07:03:14.869588Z
+  verdict = "fail"
+  finalized = true
+  finalized_at = 2026-11-06T07:28:35.402852Z
+  measured_commit = "20f76148e20fd9ca1834d91ca0ddbbe9f713d012"
+  measured_tree = "661b39f7dc81ed0a6ecf4ddd3970e569e8520257"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.942987457240593
+  mutants_killed = 827
+  mutants_survived = 50
+  mutants_not_covered = 5
+  mutants_no_block = 0
+  mutants_test_gap = 0
+  mutants_in_scope = 877
+  unclassified_in_scope = 19
+  criteria_total = 9
+  criteria_covered = 6
+  criteria_uncovered = 3
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 77
+    survived = 0
+    timeout = 0
+    in_scope = 77
+    score = 1.0
+    file_count = 10
+    measured_on = "local"
+    whole_file = ["internal/api/api.go — adapter-lacks-range-runner", "internal/api/history.go — adapter-lacks-range-runner", "internal/api/history_services.go — adapter-lacks-range-runner", "internal/api/history_services_test.go — adapter-lacks-range-runner", "internal/api/history_test.go — adapter-lacks-range-runner", "internal/store/history.go — adapter-lacks-range-runner", "internal/store/history_services.go — adapter-lacks-range-runner", "internal/store/history_services_test.go — adapter-lacks-range-runner", "internal/store/history_test.go — adapter-lacks-range-runner", "internal/store/store_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 750
+    survived = 50
+    timeout = 0
+    in_scope = 800
+    score = 0.9375
+    file_count = 13
+    measured_on = "local"
+    ranges = ["web/src/App.test.ts:426-690 (ExpressionStatement)", "web/src/App.test.ts:45-52 (ExpressionStatement)", "web/src/App.test.ts:8-8 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:105-105 (VariableDeclaration NONE)", "web/src/lib/History.panel.test.ts:106-106 (VariableDeclaration BAD_CHILD)", "web/src/lib/History.panel.test.ts:107-107 (hunk)", "web/src/lib/History.panel.test.ts:108-117 (FunctionDeclaration mount)", "web/src/lib/History.panel.test.ts:118-118 (hunk)", "web/src/lib/History.panel.test.ts:119-119 (VariableDeclaration stopFollowing)", "web/src/lib/History.panel.test.ts:120-121 (hunk)", "web/src/lib/History.panel.test.ts:122-125 (FunctionDeclaration goTo)", "web/src/lib/History.panel.test.ts:126-127 (hunk)", "web/src/lib/History.panel.test.ts:128-136 (FunctionDeclaration mountAt)", "web/src/lib/History.panel.test.ts:138-138 (VariableDeclaration select)", "web/src/lib/History.panel.test.ts:139-139 (VariableDeclaration shown)", "web/src/lib/History.panel.test.ts:140-140 (VariableDeclaration options)", "web/src/lib/History.panel.test.ts:141-141 (VariableDeclaration bar)", "web/src/lib/History.panel.test.ts:142-142 (hunk)", "web/src/lib/History.panel.test.ts:143-149 (ExpressionStatement)", "web/src/lib/History.panel.test.ts:151-843 (ExpressionStatement)", "web/src/lib/History.panel.test.ts:17-17 (VariableDeclaration CHILDREN)", "web/src/lib/History.panel.test.ts:18-18 (VariableDeclaration SERVICES)", "web/src/lib/History.panel.test.ts:19-19 (hunk)", "web/src/lib/History.panel.test.ts:20-23 (VariableDeclaration NO_OPTIONS)", "web/src/lib/History.panel.test.ts:24-29 (hunk)", "web/src/lib/History.panel.test.ts:30-43 (FunctionDeclaration mockFetch)", "web/src/lib/History.panel.test.ts:4-4 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:45-45 (hunk)", "web/src/lib/History.panel.test.ts:46-48 (FunctionDeclaration fetched)", "web/src/lib/History.panel.test.ts:49-49 (hunk)", "web/src/lib/History.panel.test.ts:50-50 (VariableDeclaration URL3)", "web/src/lib/History.panel.test.ts:52-64 (FunctionDeclaration grant)", "web/src/lib/History.panel.test.ts:66-72 (FunctionDeclaration page)", "web/src/lib/History.panel.test.ts:7-7 (ImportDeclaration)", "web/src/lib/History.panel.test.ts:74-74 (VariableDeclaration URL4)", "web/src/lib/History.panel.test.ts:90-90 (VariableDeclaration ok)", "web/src/lib/History.panel.test.ts:91-92 (hunk)", "web/src/lib/History.panel.test.ts:93-93 (VariableDeclaration settle)", "web/src/lib/HistoryFilterBar.test.ts:1-2 (hunk)", "web/src/lib/HistoryFilterBar.test.ts:13-16 (VariableDeclaration SERVICES)", "web/src/lib/HistoryFilterBar.test.ts:17-17 (hunk)", "web/src/lib/HistoryFilterBar.test.ts:18-29 (FunctionDeclaration bar)", "web/src/lib/HistoryFilterBar.test.ts:3-3 (ImportDeclaration)", "web/src/lib/HistoryFilterBar.test.ts:30-30 (hunk)", "web/src/lib/HistoryFilterBar.test.ts:31-31 (VariableDeclaration select)", "web/src/lib/HistoryFilterBar.test.ts:32-32 (VariableDeclaration date)", "web/src/lib/HistoryFilterBar.test.ts:33-33 (VariableDeclaration options)", "web/src/lib/HistoryFilterBar.test.ts:34-34 (VariableDeclaration shown)", "web/src/lib/HistoryFilterBar.test.ts:35-35 (hunk)", "web/src/lib/HistoryFilterBar.test.ts:36-36 (ExpressionStatement)", "web/src/lib/HistoryFilterBar.test.ts:37-37 (hunk)", "web/src/lib/HistoryFilterBar.test.ts:38-196 (ExpressionStatement)", "web/src/lib/HistoryFilterBar.test.ts:4-4 (ImportDeclaration)", "web/src/lib/HistoryFilterBar.test.ts:5-5 (ImportDeclaration)", "web/src/lib/HistoryFilterBar.test.ts:6-6 (ImportDeclaration)", "web/src/lib/HistoryFilterBar.test.ts:7-7 (hunk)", "web/src/lib/HistoryFilterBar.test.ts:8-8 (VariableDeclaration NONE)", "web/src/lib/HistoryFilterBar.test.ts:9-12 (VariableDeclaration CHILDREN)", "web/src/lib/Home.test.ts:1016-1068 (ExpressionStatement)", "web/src/lib/Home.test.ts:1069-1069 (hunk)", "web/src/lib/Home.test.ts:165-172 (ExpressionStatement)", "web/src/lib/Home.test.ts:67-67 (VariableDeclaration noFilters)", "web/src/lib/Home.test.ts:8-8 (ImportDeclaration)", "web/src/lib/api.test.ts:1053-1122 (ExpressionStatement)", "web/src/lib/api.test.ts:1124-1136 (ExpressionStatement)", "web/src/lib/api.test.ts:5-57 (ImportDeclaration)", "web/src/lib/api.test.ts:58-58 (ImportDeclaration)", "web/src/lib/api.test.ts:773-1051 (ExpressionStatement)", "web/src/lib/api.ts:100-100 (hunk)", "web/src/lib/api.ts:101-105 (FunctionDeclaration filtersFor)", "web/src/lib/api.ts:106-107 (hunk)", "web/src/lib/api.ts:108-110 (FunctionDeclaration validFilters)", "web/src/lib/api.ts:111-112 (hunk)", "web/src/lib/api.ts:113-118 (FunctionDeclaration urlFor)", "web/src/lib/api.ts:119-119 (hunk)", "web/src/lib/api.ts:131-134 (hunk)", "web/src/lib/api.ts:135-135 (VariableDeclaration historyFilters)", "web/src/lib/api.ts:136-137 (hunk)", "web/src/lib/api.ts:138-142 (FunctionDeclaration showFilters)", "web/src/lib/api.ts:143-143 (hunk)", "web/src/lib/api.ts:146-149 (hunk)", "web/src/lib/api.ts:151-161 (FunctionDeclaration navigate)", "web/src/lib/api.ts:163-170 (IfStatement)", "web/src/lib/api.ts:56-56 (hunk)", "web/src/lib/api.ts:57-60 (TSInterfaceDeclaration RouteParams)", "web/src/lib/api.ts:6-6 (ImportDeclaration)", "web/src/lib/api.ts:61-62 (hunk)", "web/src/lib/api.ts:63-66 (TSInterfaceDeclaration HistoryFilterState)", "web/src/lib/api.ts:7-7 (ImportDeclaration)", "web/src/lib/api.ts:704-704 (hunk)", "web/src/lib/api.ts:705-707 (TSInterfaceDeclaration OverviewGrant)", "web/src/lib/api.ts:708-708 (hunk)", "web/src/lib/api.ts:709-716 (TSInterfaceDeclaration OverviewPage)", "web/src/lib/api.ts:718-718 (hunk)", "web/src/lib/api.ts:719-723 (TSInterfaceDeclaration HistoryServiceOption)", "web/src/lib/api.ts:724-724 (hunk)", "web/src/lib/api.ts:725-725 (VariableDeclaration HISTORY)", "web/src/lib/api.ts:726-727 (hunk)", "web/src/lib/api.ts:728-730 (FunctionDeclaration historyRows)", "web/src/lib/api.ts:731-731 (hunk)", "web/src/lib/api.ts:733-736 (hunk)", "web/src/lib/api.ts:738-754 (FunctionDeclaration fetchHistoryPage)", "web/src/lib/api.ts:755-756 (hunk)", "web/src/lib/api.ts:757-760 (FunctionDeclaration fetchHistoryServices)", "web/src/lib/history.test.ts:107-107 (hunk)", "web/src/lib/history.test.ts:108-108 (VariableDeclaration NONE)", "web/src/lib/history.test.ts:109-109 (hunk)", "web/src/lib/history.test.ts:110-117 (ExpressionStatement)", "web/src/lib/history.test.ts:118-118 (hunk)", "web/src/lib/history.test.ts:119-147 (ExpressionStatement)", "web/src/lib/history.test.ts:148-148 (hunk)", "web/src/lib/history.test.ts:149-200 (ExpressionStatement)", "web/src/lib/history.test.ts:201-201 (hunk)", "web/src/lib/history.test.ts:202-229 (ExpressionStatement)", "web/src/lib/history.test.ts:230-230 (hunk)", "web/src/lib/history.test.ts:231-239 (ExpressionStatement)", "web/src/lib/history.test.ts:4-15 (ImportDeclaration)", "web/src/lib/history.test.ts:92-106 (ExpressionStatement)", "web/src/lib/history.ts:103-104 (hunk)", "web/src/lib/history.ts:105-112 (FunctionDeclaration filterParams)", "web/src/lib/history.ts:113-114 (hunk)", "web/src/lib/history.ts:115-117 (FunctionDeclaration hasFilters)", "web/src/lib/history.ts:118-124 (hunk)", "web/src/lib/history.ts:125-128 (FunctionDeclaration dayStart)", "web/src/lib/history.ts:129-135 (hunk)", "web/src/lib/history.ts:136-141 (FunctionDeclaration dayBounds)", "web/src/lib/history.ts:2-4 (hunk)", "web/src/lib/history.ts:49-58 (FunctionDeclaration appendPage)", "web/src/lib/history.ts:59-64 (hunk)", "web/src/lib/history.ts:65-70 (TSInterfaceDeclaration HistoryFilters)", "web/src/lib/history.ts:71-71 (hunk)", "web/src/lib/history.ts:72-72 (VariableDeclaration DAY)", "web/src/lib/history.ts:73-75 (hunk)", "web/src/lib/history.ts:76-76 (VariableDeclaration MIN_YEAR)", "web/src/lib/history.ts:77-77 (VariableDeclaration MAX_YEAR)", "web/src/lib/history.ts:78-79 (hunk)", "web/src/lib/history.ts:80-87 (FunctionDeclaration parseDay)", "web/src/lib/history.ts:88-88 (hunk)", "web/src/lib/history.ts:89-91 (FunctionDeclaration parseStatus)", "web/src/lib/history.ts:92-93 (hunk)", "web/src/lib/history.ts:94-102 (FunctionDeclaration parseFilters)", "web/vite.config.ts:10-11 (hunk)", "web/vite.config.ts:12-12 (ExpressionStatement)", "web/vite.config.ts:13-13 (hunk)"]
+    whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/History.svelte — ast-unavailable", "web/src/lib/HistoryFilterBar.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/store/history_test.go:TestListHistory_AllChildrenNewestFirst", "internal/api/history_test.go:TestHistoryOverview_GoldenKeys", "web/src/lib/History.panel.test.ts:needs no child: every row names its child beside its existing detail", "web/src/lib/Home.test.ts:the History button sits in the nav and opens the overview"]
+  notes = "Store test DeepEquals every overview row against the per-child read, and the panel test pins child, status, times, services and extensions per row. No open survivor on this path."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/store/history_test.go:TestListHistory_CrossChildPaging", "internal/store/history_test.go:TestListHistory_StableCursorAcrossChildren", "web/src/lib/History.panel.test.ts:loads more once on two rapid clicks, appends deduped, and hides when done"]
+  notes = "120 grants walk 50/50/20 with every id exactly once; the 50/51 HasMore boundaries are pinned. The History.svelte:112 survivor is accepted as unreachable."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/store/history_test.go:TestListHistory_DeletedChildOmitted", "internal/store/history_test.go:TestListHistory_ReusedIDOmitted", "internal/store/store_test.go:TestMigrate0011_BackfillsReusedID", "internal/api/history_test.go:TestHistoryOverview_EndToEnd"]
+  notes = "Hidden rows are excluded before LIMIT and reused ids stay hidden, filtered or not. Migration 0011 is SQL with no mutation adapter, so its test evidence is behavioural only."
+
+[[criterion]]
+  id = "c-4"
+  status = "weak"
+  tests = ["internal/store/history_test.go:TestListHistory_ServiceIncludesTrimmed", "internal/api/history_test.go:TestHistoryOverview_EndToEnd", "web/src/lib/History.panel.test.ts:lists the served service options, even an id no live catalogue has"]
+  notes = "Filtering and the trimmed-service match are well covered, including a grant trimmed to empty. Downgraded for History.svelte:41: seeding the services state with junk survives, because the failed-options test never asserts the Service select's options."
+
+[[criterion]]
+  id = "c-5"
+  status = "weak"
+  tests = ["internal/store/history_test.go:TestListHistory_DateBounds", "web/src/lib/history.test.ts:spans a 23-hour day whose midnight the clocks skip", "web/src/lib/HistoryFilterBar.test.ts:emits a date once on change, never per input event"]
+  notes = "Range edges and DST days are pinned. Downgraded for history.ts:72: dropping the ^ from DAY passes the full suite when hand-applied, so a value such as x2026-03-01 is accepted as a day and no test notices."
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/store/history_test.go:TestListHistory_StatusMatrix", "internal/api/history_test.go:TestHistoryOverview_StatusMatchesWire", "web/src/lib/HistoryFilterBar.test.ts:offers All and every end status, emitting the status with other filters unchanged"]
+  notes = "All 12 stored cells land under exactly one status, and the wire test ties the SQL predicate to endStatus. The history.ts:90 survivor is accepted as equivalent."
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  tests = ["internal/store/history_test.go:TestListHistory_FiltersCombine", "internal/store/history_test.go:TestListHistory_FilteredPaging", "internal/api/history_test.go:TestHistoryOverview_FilteredPaging", "web/src/lib/History.panel.test.ts:keeps Load more inside the filter and appends deduped"]
+  notes = "All 32 filter subsets match a brute-force Go filter, walked at limit 3. HasMore counts filtered rows only."
+
+[[criterion]]
+  id = "c-8"
+  status = "covered"
+  tests = ["web/src/App.test.ts:reload leaves a filtered URL byte-for-byte, whatever order it was written in", "web/src/App.test.ts:browser back returns the previous filter, in the list and the control", "web/src/App.test.ts:browser back from Home restores the filtered list", "web/src/lib/api.test.ts:going back restores every filter, not just the child"]
+  notes = "Reload keeps the URL with zero pushState calls; back restores list, control and store. The history.ts:72 gap concerns rejecting bad days and is counted under c-5."
+
+[[criterion]]
+  id = "c-9"
+  status = "weak"
+  tests = ["web/src/lib/History.panel.test.ts:selects the child a link names, under its heading", "web/src/App.test.ts:a History link on Home opens the overview with that child selected", "web/src/App.test.ts:reload on a bad child keeps the URL and shows No such child", "internal/api/history_test.go:TestHistoryOverview_Errors"]
+  notes = "Selection and No such child are covered. Downgraded for three in-hunk survivors: History.svelte:47 (old child's name stays in the heading while a new child loads), HistoryFilterBar.svelte:27 (no stand-in when the children list is non-empty but lacks the child) and :29 (stand-in label text unasserted)."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/HistoryFilterBar.svelte:61 (ArrowFunction)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/HistoryFilterBar.svelte:27 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/HistoryFilterBar.svelte:29 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/HistoryFilterBar.svelte:57 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/HistoryFilterBar.svelte:102 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/HistoryFilterBar.svelte:111 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/History.svelte:31 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/History.svelte:41 (ArrayDeclaration)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/History.svelte:47 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/History.svelte:51 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/History.svelte:112 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/api.ts:109 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/api.ts:102 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/api.ts:725 (StringLiteral)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/history.ts:86 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/history.ts:72 (Regex)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/history.ts:72 (Regex)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/history.ts:81 (ConditionalExpression)"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "stryker mutant survived: web/src/lib/history.ts:90 (ConditionalExpression)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0011_history_watermark_backfill.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/History.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/HistoryFilterBar.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "history.ts:72 (Regex, no ^): real gap, confirmed by hand. The full suite passes with the anchor removed, so parseDay accepts x2026-03-01. Add a prefixed value to the parseFilters no-filter list. This mutant shares key 32ca7cc2f84c36f4 with the no-$ mutant, which is a false survivor (1 test fails by hand), so accepting that key would silence this gap too; both stay open."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "History.svelte:47: real gap. Nothing asserts the heading while a new child loads, so the old child's name can show under the new filter, which the pageChild comment rules out."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "History.svelte:41: real gap. The options-failure test never asserts the Service select's options, so junk initial services go unnoticed."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "HistoryFilterBar.svelte:27: real gap. The stand-in test uses an empty children list only; a non-empty list lacking the child is untested."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "HistoryFilterBar.svelte:29: real gap. The test asserts the label is not All, not that it reads Child 3."
+
+[[finding]]
+  severity = "BLOCKING"
+  text = "HistoryFilterBar.svelte:61: real gap, no test reaches it. Nothing submits the form, so preventDefault is unpinned."
+
+[[finding]]
+  severity = "FLAG"
+  text = "t-7 review: Chromium may fire change per month or day segment, giving intermediate dates, extra history entries and refetches. jsdom cannot show this; it needs a real-browser check."
+
+[[finding]]
+  severity = "FLAG"
+  text = "t-9 review: /history?child=3 with no grants says 'No grants yet', not 'No grants match these filters', although locked screen_structure calls child a filter. A panel test pins the current wording."
+
+[[finding]]
+  severity = "FLAG"
+  text = "t-3 review: the dayBounds 'invents no bound' test uses toEqual, which ignores a key set to undefined; toStrictEqual would hold it."
+
+[[finding]]
+  severity = "NOTE"
+  text = "12 of the 19 seeded survivors were accepted after this run with reasons in survivors.toml (11 equivalent, 1 false survivor at api.ts:725, where 55 tests fail by hand). unclassified_in_scope = 19 is the count as measured; 7 remain open (6 real gaps plus the false no-$ regex mutant sharing their key). The next dross verify will recount."
+
+[[finding]]
+  severity = "NOTE"
+  text = "The first run this session crashed Stryker on a TypeScript cast in a Svelte template (HistoryFilterBar.svelte, added in t-7). Quick 0.2.6.1 (879fd82) moved it to setStatus(). Two stale History.svelte acceptances were retired in 20f7614."
+
+[[finding]]
+  severity = "NOTE"
+  text = "ARCHITECTURE.md:246 still lists the removed fetchHistory (t-11 review)."
