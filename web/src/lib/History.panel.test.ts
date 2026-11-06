@@ -632,18 +632,6 @@ describe('History', () => {
     })
 
     describe('with a date pending when the browser goes back', () => {
-      /**
-       * jsdom runs a window's capture listeners first, but in Chromium 156 the
-       * blur reached a pending date before the bar's popstate listener cleared
-       * it. Dropping capture keeps window listeners in the order they were added:
-       * api.ts's route listener, added at import, ahead of the bar's.
-       */
-      function listenInOrderAdded() {
-        const add = window.addEventListener.bind(window)
-        vi.spyOn(window, 'addEventListener').mockImplementation(((type: string, listener: EventListener) =>
-          add(type, listener)) as typeof window.addEventListener)
-      }
-
       /** The pending date, typed on a loaded screen with the delay's clock in the test's hands. */
       async function typeDate(input: HTMLElement) {
         vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
@@ -651,7 +639,6 @@ describe('History', () => {
       }
 
       it('ends on Home with no push when the route change removes the bar', async () => {
-        listenInOrderAdded()
         mockFetch({ [ALL]: [ok(page([grant(9)], null, null))] })
         goTo('/history')
         const view = render(History, { child: null, filters: NONE, onBack: () => {} })
@@ -677,7 +664,6 @@ describe('History', () => {
       })
 
       it('pushes nothing when the bar stays, on a Back inside History', async () => {
-        listenInOrderAdded()
         const expired = `${ALL}?status=expired`
         const calls = mountAt('/history?status=expired', {
           [expired]: [ok(page([grant(9)], null, null))],
@@ -698,7 +684,6 @@ describe('History', () => {
       })
 
       it('shows an empty From with no blur when a Back inside History keeps it unset', async () => {
-        listenInOrderAdded()
         const expired = `${ALL}?status=expired`
         mountAt('/history?status=expired', {
           [expired]: [ok(page([grant(9)], null, null))],
@@ -719,7 +704,6 @@ describe('History', () => {
       })
 
       it('shows the From the URL restored when a Back inside History changes it', async () => {
-        listenInOrderAdded()
         const march = `${ALL}?from=2026-03-01T05%3A00%3A00.000Z`
         const february = `${ALL}?from=2026-02-01T05%3A00%3A00.000Z`
         mountAt('/history?from=2026-03-01', {
