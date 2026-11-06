@@ -2195,3 +2195,21 @@
   line = 106
   accepted_in = "history-overview"
   reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Same mutant as retired e6b705a6c3068af8, rekeyed when t-15 moved the line; jsdom confirmed on 8cc2749 and the one covering test, which asserts '', passes on it."
+
+[[accepted]]
+  key = "a7f22c1a0303dc17"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "fromInput.value = filters.from ?? ''"
+  line = 113
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."
+
+[[accepted]]
+  key = "6eee2cbbaf236a76"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "toInput.value = filters.to ?? ''"
+  line = 114
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."
