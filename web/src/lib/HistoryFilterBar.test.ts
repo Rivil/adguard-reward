@@ -319,6 +319,26 @@ describe('HistoryFilterBar', () => {
       expect(date('From').value).toBe('2026-03-15')
     })
 
+    it.each([
+      { label: 'From', filters: { ...NONE, from: '2026-03-15' }, shows: '2026-03-15' },
+      { label: 'To', filters: { ...NONE, to: '2026-03-31' }, shows: '2026-03-31' },
+      { label: 'From', filters: NONE, shows: '' },
+      { label: 'To', filters: NONE, shows: '' },
+    ])('leaves $label showing "$shows" after a popstate, before any blur', async ({ label, filters, shows }) => {
+      bar({ filters })
+      await typeDay(label, '2026-03-25')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      expect(date(label).value).toBe(shows)
+    })
+
+    it('shows the filters the parent passes in after the popstate, even the date that was pending', async () => {
+      const { rerender } = bar({ filters: MARCH })
+      await typeDay('From', '2026-03-25')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+      await rerender({ filters: { ...NONE, from: '2026-03-25' } })
+      expect(date('From').value).toBe('2026-03-25')
+    })
+
     it('is dropped by the teardown behind a blur from removing the focused input', async () => {
       // Recorded from Chromium 156: the blur lands while the bar is being removed,
       // and Svelte runs teardown right after, in the same synchronous pass.
@@ -362,6 +382,17 @@ describe('HistoryFilterBar', () => {
     await fireEvent.change(date('From'), { target: { value: '0202-11-05' } })
     await fireEvent.blur(date('From'))
     expect(date('From').value).toBe('')
+  })
+
+  it('puts both dates back on the filter at a popstate when they were held back', async () => {
+    const { onChange } = bar({ filters: { ...NONE, from: '2025-11-05', to: '2025-11-30' } })
+    await typeDay('From', '0202-11-05')
+    await typeDay('To', '0202-11-30')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+
+    expect(date('From').value).toBe('2025-11-05')
+    expect(date('To').value).toBe('2025-11-30')
+    expect(onChange).not.toHaveBeenCalled()
   })
 
   it('leaves the other filters alone when choosing All children', async () => {

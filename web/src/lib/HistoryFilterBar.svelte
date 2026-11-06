@@ -31,6 +31,8 @@
   /** The date waiting out SETTLE_MS, not yet on the filter. */
   let pending: { key: DayKey; value: string } | null = null
   let timer: ReturnType<typeof setTimeout> | undefined
+  let fromInput: HTMLInputElement
+  let toInput: HTMLInputElement
 
   // A filter can name something the options do not, while they load or after
   // they fail. It stays listed so the control never reads All with a filter on.
@@ -106,13 +108,22 @@
     } else input.value = filters[key] ?? ''
   }
 
+  function restoreDays() {
+    dropDay()
+    fromInput.value = filters.from ?? ''
+    toInput.value = filters.to ?? ''
+  }
+
   // A Back or Forward that keeps the bar drops a pending date unsent: the timer
-  // would push it over the filters the URL just restored. This runs after the
-  // route listener in api.ts, which is added first, so it cannot cover a Back
-  // that unmounts the bar; leaveDay and onDestroy cover that.
+  // would push it over the filters the URL just restored. Both inputs go back on
+  // filters too, since Svelte writes nothing when a filter kept its value, and
+  // Android's picker keeps focus, so no blur would. This can run before the
+  // parent passes the restored filters in; a value that changed is written after.
+  // It runs after the route listener in api.ts, which is added first, so it
+  // cannot cover a Back that unmounts the bar; leaveDay and onDestroy cover that.
   onMount(() => {
-    window.addEventListener('popstate', dropDay)
-    return () => window.removeEventListener('popstate', dropDay)
+    window.addEventListener('popstate', restoreDays)
+    return () => window.removeEventListener('popstate', restoreDays)
   })
   onDestroy(dropDay)
 </script>
@@ -157,6 +168,7 @@
   <label>
     From
     <input
+      bind:this={fromInput}
       type="date"
       value={filters.from ?? ''}
       onchange={(e) => setDay('from', e.currentTarget.value)}
@@ -166,6 +178,7 @@
   <label>
     To
     <input
+      bind:this={toInput}
       type="date"
       value={filters.to ?? ''}
       onchange={(e) => setDay('to', e.currentTarget.value)}

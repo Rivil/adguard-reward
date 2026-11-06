@@ -697,6 +697,48 @@ describe('History', () => {
         expect(calls).toEqual([expired, ALL])
       })
 
+      it('shows an empty From with no blur when a Back inside History keeps it unset', async () => {
+        listenInOrderAdded()
+        const expired = `${ALL}?status=expired`
+        mountAt('/history?status=expired', {
+          [expired]: [ok(page([grant(9)], null, null))],
+          [ALL]: [ok(page([grant(1)], null, null))],
+        })
+        await waitFor(() => expect(shownIds()).toEqual([9]))
+        const from = screen.getByLabelText('From') as HTMLInputElement
+        from.focus()
+        await typeDate(from)
+        expect(from.value).toBe('2026-04-02')
+
+        goTo('/history')
+        vi.useRealTimers()
+
+        await waitFor(() => expect(shownIds()).toEqual([1]))
+        expect(document.activeElement).toBe(from)
+        expect(from.value).toBe('')
+      })
+
+      it('shows the From the URL restored when a Back inside History changes it', async () => {
+        listenInOrderAdded()
+        const march = `${ALL}?from=2026-03-01T05%3A00%3A00.000Z`
+        const february = `${ALL}?from=2026-02-01T05%3A00%3A00.000Z`
+        mountAt('/history?from=2026-03-01', {
+          [march]: [ok(page([grant(9)], null, null))],
+          [february]: [ok(page([grant(1)], null, null))],
+        })
+        await waitFor(() => expect(shownIds()).toEqual([9]))
+        const from = screen.getByLabelText('From') as HTMLInputElement
+        from.focus()
+        await typeDate(from)
+
+        goTo('/history?from=2026-02-01')
+        vi.useRealTimers()
+
+        await waitFor(() => expect(shownIds()).toEqual([1]))
+        expect(document.activeElement).toBe(from)
+        expect(from.value).toBe('2026-02-01')
+      })
+
       it('still flushes for the in-app Back button, which ends on Home', async () => {
         mockFetch({ [ALL]: [ok(page([grant(9)], null, null))] })
         goTo('/history')
