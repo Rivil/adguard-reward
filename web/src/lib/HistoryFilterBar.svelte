@@ -38,6 +38,10 @@
     onChange({ child, filters: { ...filters, ...next } })
   }
 
+  function setStatus(value: string) {
+    setFilter({ status: (value || null) as HistoryStatus | null })
+  }
+
   /**
    * Chromium fires change on every keystroke of a date segment, so typing a
    * year emits 0002, 0020, 0202, then 2026. A value the URL would drop goes
@@ -83,7 +87,7 @@
     How it ended
     <select
       value={filters.status ?? ''}
-      onchange={(e) => setFilter({ status: (e.currentTarget.value || null) as HistoryStatus | null })}
+      onchange={(e) => setStatus(e.currentTarget.value)}
     >
       <option value="">All</option>
       {#each STATUSES as s (s)}
