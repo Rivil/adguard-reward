@@ -4,7 +4,15 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import History from './History.svelte'
-import { historyChild, historyFilters, type HistoryFilterState, type OverviewGrant, type OverviewPage } from './api'
+import {
+  historyChild,
+  historyFilters,
+  navigate,
+  route,
+  type HistoryFilterState,
+  type OverviewGrant,
+  type OverviewPage,
+} from './api'
 import { formatTime } from './history'
 
 type Answer = () => Response | Promise<Response>
@@ -144,6 +152,7 @@ afterEach(() => {
   for (const stop of stopFollowing) stop()
   stopFollowing = []
   goTo('/')
+  vi.useRealTimers()
   vi.unstubAllGlobals()
   vi.restoreAllMocks()
 })
@@ -563,14 +572,147 @@ describe('History', () => {
       await screen.findByRole('option', { name: 'Roblox' })
       await waitFor(() => expect(shownIds()).toEqual([9]))
       const push = vi.spyOn(history, 'pushState')
+      const control = screen.getByLabelText(label) as HTMLInputElement | HTMLSelectElement
 
-      await fireEvent.change(screen.getByLabelText(label), { target: { value } })
+      // Leaving the control sends a date on without waiting out its settle delay.
+      await fireEvent.change(control, { target: { value } })
+      await fireEvent.blur(control)
 
       await waitFor(() => expect(shownIds()).toEqual([1]))
       await settle()
       expect(push).toHaveBeenCalledExactlyOnceWith(null, '', url)
       expect(location.pathname + location.search).toBe(url)
       expect(calls).toEqual([ALL, api])
+      expect(control.value).toBe(value)
+    })
+
+    it('pushes once and fetches once for a day typed a segment at a time', async () => {
+      // Recorded from Chromium 156: retyping the 15th as 25 fires change for the 2nd, then the 25th.
+      const first = `${ALL}?from=2026-03-15T04%3A00%3A00.000Z`
+      const typed = `${ALL}?from=2026-03-25T04%3A00%3A00.000Z`
+      const calls = mountAt('/history?from=2026-03-15', {
+        [first]: [ok(page([grant(9)], null, null))],
+        [typed]: [ok(page([grant(1)], null, null))],
+      })
+      await waitFor(() => expect(shownIds()).toEqual([9]))
+      const push = vi.spyOn(history, 'pushState')
+      const from = screen.getByLabelText('From') as HTMLInputElement
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+      await fireEvent.change(from, { target: { value: '2026-03-02' } })
+      await fireEvent.change(from, { target: { value: '2026-03-25' } })
+      expect(push).not.toHaveBeenCalled()
+      await vi.advanceTimersByTimeAsync(700)
+      vi.useRealTimers()
+
+      await waitFor(() => expect(shownIds()).toEqual([1]))
+      expect(push).toHaveBeenCalledExactlyOnceWith(null, '', '/history?from=2026-03-25')
+      expect(calls).toEqual([first, typed])
+      expect(from.value).toBe('2026-03-25')
+    })
+
+    it('pushes a pending date and a status together, and nothing when the delay ends', async () => {
+      const both = `${ALL}?status=expired&from=2026-03-25T04%3A00%3A00.000Z`
+      const calls = mountAt('/history', {
+        [ALL]: [ok(page([grant(9)], null, null))],
+        [both]: [ok(page([grant(1)], null, null))],
+      })
+      await waitFor(() => expect(shownIds()).toEqual([9]))
+      const push = vi.spyOn(history, 'pushState')
+      vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+
+      await fireEvent.change(screen.getByLabelText('From'), { target: { value: '2026-03-25' } })
+      await fireEvent.change(select('How it ended'), { target: { value: 'expired' } })
+      await vi.advanceTimersByTimeAsync(700)
+      vi.useRealTimers()
+
+      await waitFor(() => expect(shownIds()).toEqual([1]))
+      expect(push).toHaveBeenCalledExactlyOnceWith(null, '', '/history?status=expired&from=2026-03-25')
+      expect(calls).toEqual([ALL, both])
+    })
+
+    describe('with a date pending when the browser goes back', () => {
+      /**
+       * jsdom runs a window's capture listeners first, but in Chromium 156 the
+       * blur reached a pending date before the bar's popstate listener cleared
+       * it. Dropping capture keeps window listeners in the order they were added:
+       * api.ts's route listener, added at import, ahead of the bar's.
+       */
+      function listenInOrderAdded() {
+        const add = window.addEventListener.bind(window)
+        vi.spyOn(window, 'addEventListener').mockImplementation(((type: string, listener: EventListener) =>
+          add(type, listener)) as typeof window.addEventListener)
+      }
+
+      /** The pending date, typed on a loaded screen with the delay's clock in the test's hands. */
+      async function typeDate(input: HTMLElement) {
+        vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] })
+        await fireEvent.change(input, { target: { value: '2026-04-02' } })
+      }
+
+      it('ends on Home with no push when the route change removes the bar', async () => {
+        listenInOrderAdded()
+        mockFetch({ [ALL]: [ok(page([grant(9)], null, null))] })
+        goTo('/history')
+        const view = render(History, { child: null, filters: NONE, onBack: () => {} })
+        await waitFor(() => expect(shownIds()).toEqual([9]))
+        const from = screen.getByLabelText('From')
+        // Recorded from Chromium 156: removing the focused input fires blur while
+        // popstate is handled, and Svelte removes the DOM before it runs teardown.
+        stopFollowing = [
+          route.subscribe((r) => {
+            if (r === 'history') return
+            from.dispatchEvent(new FocusEvent('blur'))
+            view.unmount()
+          }),
+        ]
+        const push = vi.spyOn(history, 'pushState')
+        await typeDate(from)
+
+        goTo('/')
+        await vi.advanceTimersByTimeAsync(700)
+
+        expect(push).not.toHaveBeenCalled()
+        expect(location.pathname + location.search).toBe('/')
+      })
+
+      it('pushes nothing when the bar stays, on a Back inside History', async () => {
+        listenInOrderAdded()
+        const expired = `${ALL}?status=expired`
+        const calls = mountAt('/history?status=expired', {
+          [expired]: [ok(page([grant(9)], null, null))],
+          [ALL]: [ok(page([grant(1)], null, null))],
+        })
+        await waitFor(() => expect(shownIds()).toEqual([9]))
+        const push = vi.spyOn(history, 'pushState')
+        await typeDate(screen.getByLabelText('From'))
+
+        goTo('/history')
+        await vi.advanceTimersByTimeAsync(700)
+        vi.useRealTimers()
+
+        await waitFor(() => expect(shownIds()).toEqual([1]))
+        expect(push).not.toHaveBeenCalled()
+        expect(location.pathname + location.search).toBe('/history')
+        expect(calls).toEqual([expired, ALL])
+      })
+
+      it('still flushes for the in-app Back button, which ends on Home', async () => {
+        mockFetch({ [ALL]: [ok(page([grant(9)], null, null))] })
+        goTo('/history')
+        render(History, { child: null, filters: NONE, onBack: () => navigate('home') })
+        await waitFor(() => expect(shownIds()).toEqual([9]))
+        const push = vi.spyOn(history, 'pushState')
+        const from = screen.getByLabelText('From')
+        await typeDate(from)
+
+        // Pressing the button takes focus before its click lands.
+        await fireEvent.blur(from)
+        await fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+
+        expect(push.mock.calls.map(([, , url]) => url)).toEqual(['/history?from=2026-04-02', '/'])
+        expect(location.pathname + location.search).toBe('/')
+      })
     })
 
     it('keeps Load more inside the filter and appends deduped', async () => {
