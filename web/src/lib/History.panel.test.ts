@@ -384,6 +384,19 @@ describe('History', () => {
       return { calls, toBob: () => view.rerender({ child: 4, filters: NONE, onBack: () => {} }) }
     }
 
+    it("takes the earlier child's name off the heading while the new child loads", async () => {
+      const held = gated(ok(page([grant(2)], null, BOB)))
+      const { toBob } = mountSwitch({ [URL3]: [ok(page([grant(1)]))], [URL4]: [held.answer] })
+      await screen.findByRole('heading', { name: 'Ada — history' })
+
+      await toBob()
+
+      await screen.findByText('Loading…')
+      expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('History')
+      held.release()
+      await screen.findByRole('heading', { name: 'Bob — history' })
+    })
+
     it("drops the earlier child's first page when it lands late", async () => {
       const late = gated(ok(page([grant(1)])))
       const { toBob } = mountSwitch({ [URL3]: [late.answer], [URL4]: [ok(page([grant(2)], null, BOB))] })
@@ -667,6 +680,8 @@ describe('History', () => {
       await waitFor(() => expect(shownIds()).toEqual([9]))
       await settle()
       expect(screen.queryByRole('alert')).toBeNull()
+      expect(options(select('Child'))).toEqual(['All'])
+      expect(options(select('Service'))).toEqual(['All'])
 
       await fireEvent.change(select('How it ended'), { target: { value: 'expired' } })
 
