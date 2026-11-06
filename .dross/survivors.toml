@@ -2088,3 +2088,12 @@
   line = 90
   accepted_in = "history-overview"
   reason = "Equivalent: Object.hasOwn(LABELS, null) looks up the key 'null', which LABELS lacks, so the result is false with or without the guard."
+
+[[accepted]]
+  key = "32ca7cc2f84c36f4"
+  file = "web/src/lib/history.ts"
+  op = "Regex"
+  text = "const DAY = /^(\\d{4})-(\\d{2})-(\\d{2})$/"
+  line = 72
+  accepted_in = "history-overview"
+  reason = "False survivor, Stryker attribution ceiling: DAY is a module-level regex, so these are static mutants, and Stryker ran only 7 api.test.ts tests against them. Both are killed by hand (history-overview verify, 2026-11-06): dropping ^ fails 'treats from=x2026-03-01 as no filter', dropping $ fails 'treats to=2026-03-01x as no filter' and 'treats to=2026-03-01T00:00:00Z as no filter'. Both mutants share this key."
