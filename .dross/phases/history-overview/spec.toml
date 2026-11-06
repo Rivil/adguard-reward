@@ -71,6 +71,12 @@
   why = "Trims before 0009 left no removal row, so the data to match them was never recorded."
   locked = true
 
+[[decisions]]
+  key = "child_empty_wording"
+  choice = "A child with no grants and no other filter says 'No grants yet'. 'No grants match these filters' is for the service, status and date filters only."
+  why = "User decision 2026-11-06 on the t-9 FLAG: screen_structure governs structure, not wording. The heading already names the child, and a parent arriving from a Home link set no filter."
+  locked = true
+
 [[deferred]]
   text = "Free-text search of grant history."
   why = "Filters cover the parked need; search has no demand yet."

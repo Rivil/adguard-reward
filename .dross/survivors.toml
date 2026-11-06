@@ -82,6 +82,14 @@
   name = "activegrants-clear-null"
   reason = "Equivalent mutant: the guard is 'if (timer !== null) clearInterval(timer)'; forcing it true only adds clearInterval(null), which is a no-op. The false side is killed by activeGrants.test.ts (off-phase wake / stop tests)."
 
+[[category]]
+  name = "go-const-no-cover-block"
+  reason = "A const duration expression has no go-cover block, so gremlins never builds this mutant and no test run can reach it (drain, history-overview, 2026-11-06)."
+
+[[category]]
+  name = "go-string-concat-not-arithmetic"
+  reason = "The + joins string constants into a SQL query. ARITHMETIC_BASE does not apply to string operands, so the mutant cannot compile (drain, history-overview, 2026-11-06)."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -2097,3 +2105,93 @@
   line = 72
   accepted_in = "history-overview"
   reason = "False survivor, Stryker attribution ceiling: DAY is a module-level regex, so these are static mutants, and Stryker ran only 7 api.test.ts tests against them. Both are killed by hand (history-overview verify, 2026-11-06): dropping ^ fails 'treats from=x2026-03-01 as no filter', dropping $ fails 'treats to=2026-03-01x as no filter' and 'treats to=2026-03-01T00:00:00Z as no filter'. Both mutants share this key."
+
+[[accepted]]
+  key = "700a25d7d93f0bd3"
+  file = "cmd/adguard-reward/main.go"
+  op = "ARITHMETIC_BASE"
+  text = "const probeInterval = 60 * time.Second"
+  line = 35
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "41a5722238fc0ad1"
+  file = "cmd/adguard-reward/main.go"
+  op = "ARITHMETIC_BASE"
+  text = "const startupReconcileTimeout = 30 * time.Second"
+  line = 47
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "cec5e17ca1c86585"
+  file = "internal/adguard/client.go"
+  op = "ARITHMETIC_BASE"
+  text = "defaultTimeout = 10 * time.Second"
+  line = 23
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "4272437f2845ec9b"
+  file = "internal/auth/auth.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultLifetime = 30 * 24 * time.Hour"
+  line = 101
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "b24f953d3b22dde7"
+  file = "internal/auth/auth.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultPINIdle = 15 * time.Minute"
+  line = 104
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "8d8d3a6bccb2b0b6"
+  file = "internal/auth/device.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultDeviceLifetime = 90 * 24 * time.Hour"
+  line = 25
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "915e0c8538632290"
+  file = "internal/grants/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "MaxDuration = 24 * time.Hour"
+  line = 32
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "5880ba93575fa224"
+  file = "internal/grants/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultApplyTimeout = 4 * time.Second"
+  line = 36
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "0bf2f883741811ae"
+  file = "internal/store/history_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "FROM ` + visibleGrants + `"
+  line = 25
+  category = "go-string-concat-not-arithmetic"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "1b58719e7c9462e8"
+  file = "internal/store/history_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "FROM ` + visibleGrants + `"
+  line = 29
+  category = "go-string-concat-not-arithmetic"
+  accepted_in = "history-overview"

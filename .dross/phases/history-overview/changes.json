@@ -107,6 +107,23 @@
         }
       ]
     },
+    "t-15": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.svelte",
+        "web/src/lib/HistoryFilterBar.test.ts",
+        "web/src/lib/History.panel.test.ts"
+      ],
+      "commit": "336a9ea",
+      "completed_at": "2026-11-06T12:10:07.911536Z",
+      "landmarks": [
+        {
+          "feature": "history filters",
+          "symbol": "setDay",
+          "loc": "web/src/lib/HistoryFilterBar.svelte:88",
+          "what": "holds a typed date 700ms and emits once so segment edits add no history entries"
+        }
+      ]
+    },
     "t-2": {
       "files": [
         "internal/store/migrations/0011_history_watermark_backfill.sql",
@@ -309,6 +326,41 @@
           "severity": "NOTE",
           "criterion": "c-4",
           "text": "Only the services row of the it.each kills the :41 mutant; in the children row the services read succeeds and overwrites any junk initial value with []. The same applies in reverse to the Child assertion. One killing row is enough, so no action is needed.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-15": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "After a popstate that keeps the bar and leaves filters.from unchanged, dropDay clears the pending date, but the focused input keeps showing it because Svelte has no value change to write. Only the leaveDay else-branch restores the input, so on Android, where the picker keeps focus, it can show a date that is not on the filter until blur. 'pushes nothing when the bar stays, on a Back inside History' does not assert the input's value.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "listenInOrderAdded in History.panel.test.ts has no effect. It strips the options argument from window.addEventListener, but neither popstate listener passes one (api.ts:164, HistoryFilterBar.svelte:114), and the api.ts listener is added at import, before the spy exists. Its comment about jsdom running capture listeners first describes a construct that is not in the source. Remove the helper and its comment.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "A rejected date cancels a pending date only on the same input; 'outlives a rejected date on the other input' pins this. The record says only that a held-back date cancels a pending one, and the contract's example fits the same-input reading, so this is an interpretation rather than a miss.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "A pending From followed by a valid To flushes first and emits twice, rather than merging as a select change does. Each emit carries a date the user chose, and in a real browser blur has normally flushed From already.",
           "resolution": "non-blocking, left"
         }
       ]

@@ -1,4 +1,4 @@
-task_seq = 14
+task_seq = 15
 
 [phase]
   id = "history-overview"
@@ -230,3 +230,14 @@ task_seq = 14
   covers = ["c-4", "c-9"]
   test_contract = ["if childName stops comparing the page child to the current child (the :47 mutant), the switch test fails: while the new child's page is held, the heading reads plain History, then the new child's name once it lands", "if services starts non-empty (the :41 mutant), the failed-options test fails: after the services read fails, the Service select lists only All"]
   status = "done"
+
+[[task]]
+  id = "t-15"
+  wave = 3
+  title = "Settle a typed date before it filters"
+  files = ["web/src/lib/HistoryFilterBar.svelte", "web/src/lib/HistoryFilterBar.test.ts", "web/src/lib/History.panel.test.ts"]
+  description = "Verify FLAG on t-7, confirmed in Chromium 156: editing the day of from=2026-03-15 to 25 pushed two history entries and made two fetches, the first for 2026-03-02, a date nobody chose. Hold a valid date in setDay for a short settle delay (about 700ms) and emit once. Do not emit on blur alone: Android's picker fires change and keeps focus, so the delay must fire by itself. Blur flushes a pending date for that input and must not put the control back on the old filter. Changing any other control flushes first so its onChange carries the pending date. Clearing a date emits at once and cancels a pending one. A held-back date (parseFilters rejects it) stays held back and cancels a pending one. Unmount cancels the timer. The timer reads filters at fire time, not when armed."
+  covers = ["c-5", "c-8"]
+  test_contract = ["if each segment still emits, the settle test fails: two change events inside the delay emit once, with the last date", "if the delay never fires by itself, the picker test fails: one change event with no blur emits once after the delay", "if blur loses a pending date, the blur test fails: change then blur emits at once, once, and the input keeps the new date", "if another control drops a pending date, the merge test fails: a date change then a status change emits with both, and the timer adds no second emit", "if clearing waits or a stale date lands, the clear test fails: a pending date then clearing emits null at once and nothing later", "if a rejected date releases an earlier one, the held-back test fails: a valid date then 0202-11-05 emits nothing", "if the timer outlives the bar, the unmount test fails: unmounting with a pending date emits nothing", "if going back keeps a pending date, the popstate test fails: a pending date then popstate emits nothing after the delay, and a blur after that popstate emits nothing"]
+  status = "done"
+  depends_on = ["t-7"]
