@@ -3,6 +3,14 @@
   "base": "milestone/v0.2",
   "base_commit": "6f95bc92498da85d84efbf328ee640bd62f73c61",
   "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.svelte"
+      ],
+      "commit": "879fd82",
+      "completed_at": "2026-11-06T07:03:02.63805Z",
+      "notes": "quick: Move the `as HistoryStatus | null` cast out of the template in web/src/lib/HistoryFilterBar.svelte:86 into a script function, so Stryker's template parser can read it. No behaviour change. Unblocks the stryker leg of history-overview's verify."
+    },
     "t-1": {
       "files": [
         "internal/store/history.go",
