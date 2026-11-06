@@ -20,8 +20,10 @@ import {
   endGrant,
   exportSetup,
   extendGrant,
-  fetchHistory,
+  fetchHistoryPage,
+  fetchHistoryServices,
   historyChild,
+  historyFilters,
   iconUrl,
   importSetup,
   listButtons,
@@ -51,7 +53,9 @@ import {
   toggleService,
   unlock,
   updateChild,
+  type HistoryStatus,
 } from './api'
+import type { HistoryFilters } from './history'
 
 type Call = { url: string; init: RequestInit }
 
@@ -767,10 +771,13 @@ describe('permanent toggles', () => {
 })
 
 describe('history route', () => {
+  const noFilters: HistoryFilters = { service: null, status: null, from: null, to: null }
+
   afterEach(() => {
     history.replaceState(null, '', '/')
     route.set('home')
     historyChild.set(null)
+    historyFilters.set({ ...noFilters, badChild: false })
   })
 
   it('navigate pushes the child and drops it on the next route', () => {
@@ -811,6 +818,7 @@ describe('history route', () => {
       expect(location.pathname + location.search, String(child)).toBe('/history')
       expect(get(route)).toBe('history')
       expect(get(historyChild), String(child)).toBeNull()
+      expect(get(historyFilters).badChild, String(child)).toBe(false)
     }
 
     navigate('children', { child: 3 })
@@ -818,6 +826,92 @@ describe('history route', () => {
     expect(get(historyChild)).toBeNull()
   })
 
+  it('navigate pushes every filter once, in the fixed order', () => {
+    const filters: HistoryFilters = { service: 'youtube', status: 'expired', from: '2026-10-01', to: '2026-10-31' }
+    const url = '/history?child=3&service=youtube&status=expired&from=2026-10-01&to=2026-10-31'
+    history.replaceState(null, '', '/')
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      navigate('history', { child: 3, filters })
+      expect(push).toHaveBeenCalledTimes(1)
+      expect(push.mock.calls[0][2]).toBe(url)
+      expect(location.pathname + location.search).toBe(url)
+      expect(get(route)).toBe('history')
+      expect(get(historyChild)).toBe(3)
+      expect(get(historyFilters)).toStrictEqual({ ...filters, badChild: false })
+
+      // Same page, same filters: nothing pushed, and no store wakes the screen.
+      const heard = vi.fn()
+      const stop = [route.subscribe(heard), historyChild.subscribe(heard), historyFilters.subscribe(heard)]
+      heard.mockClear()
+      navigate('history', { child: 3, filters: { ...filters } })
+      expect(push).toHaveBeenCalledTimes(1)
+      expect(heard).not.toHaveBeenCalled()
+      stop.forEach((unsubscribe) => unsubscribe())
+
+      navigate('home')
+      expect(push).toHaveBeenCalledTimes(2)
+      expect(push.mock.calls[1][2]).toBe('/')
+      expect(location.pathname + location.search).toBe('/')
+      expect(get(historyChild)).toBeNull()
+      expect(get(historyFilters)).toStrictEqual({ ...noFilters, badChild: false })
+
+      navigate('history', { child: 3, filters })
+      navigate('history', { child: 2 })
+      expect(push).toHaveBeenCalledTimes(4)
+      expect(push.mock.calls[3][2]).toBe('/history?child=2')
+      expect(get(historyFilters)).toStrictEqual({ ...noFilters, badChild: false })
+
+      navigate('children', { filters: { service: 'x', status: null, from: null, to: null } })
+      expect(push).toHaveBeenCalledTimes(5)
+      expect(push.mock.calls[4][2]).toBe('/children')
+      expect(location.pathname + location.search).toBe('/children')
+      expect(get(historyFilters)).toStrictEqual({ ...noFilters, badChild: false })
+    } finally {
+      push.mockRestore()
+    }
+  })
+
+  it('navigate drops the filters a reload of the URL would drop', async () => {
+    const bad: HistoryFilters = { service: null, status: 'bogus' as HistoryStatus, from: null, to: '9999-12-31' }
+    navigate('history', { filters: bad })
+    expect(location.pathname + location.search).toBe('/history')
+    expect(get(historyFilters)).toStrictEqual({ ...noFilters, badChild: false })
+
+    history.replaceState(null, '', '/history?status=bogus&to=9999-12-31')
+    vi.resetModules()
+    const reloaded = await import('./api')
+    expect(get(reloaded.historyFilters)).toStrictEqual({ ...noFilters, badChild: false })
+
+    // One bad value never costs the good ones beside it, and an empty service is no filter.
+    navigate('history', { filters: { service: '', status: 'expired', from: '2026-02-31', to: '2026-03-01' } })
+    expect(location.pathname + location.search).toBe('/history?status=expired&to=2026-03-01')
+    expect(get(historyFilters)).toStrictEqual({ ...noFilters, status: 'expired', to: '2026-03-01', badChild: false })
+  })
+
+  it('navigate leaves a bad child behind', () => {
+    history.replaceState(null, '', '/history?child=abc')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(historyFilters).badChild).toBe(true)
+
+    navigate('history')
+    expect(location.pathname + location.search).toBe('/history')
+    expect(get(historyFilters).badChild).toBe(false)
+  })
+
+  it('a filter value survives the URL it is pushed to', async () => {
+    const filters: HistoryFilters = { ...noFilters, service: 'a&b=c +' }
+    navigate('history', { filters })
+    expect(location.search).toBe('?service=a%26b%3Dc+%2B')
+    vi.resetModules()
+    const reloaded = await import('./api')
+    expect(get(reloaded.historyFilters)).toStrictEqual({ ...filters, badChild: false })
+
+    navigate('history', { filters: { ...noFilters, service: 'custom:5' } })
+    expect(location.search).toBe('?service=custom%3A5')
+  })
+
+  // The first entry names no child at all; the rest name one that cannot be.
   const garbage = [
     '/history',
     '/history?child=',
@@ -827,6 +921,7 @@ describe('history route', () => {
     '/history?child=3.5',
     '/history?child=1e2',
     '/history?child=%203',
+    '/history?child=9007199254740993',
   ]
 
   it('routeFor parses the child at load and rejects garbage', async () => {
@@ -836,6 +931,7 @@ describe('history route', () => {
       const m = await import('./api')
       expect(get(m.route), url).toBe('history')
       expect(get(m.historyChild), url).toBeNull()
+      expect(get(m.historyFilters).badChild, url).toBe(url !== '/history')
     }
 
     history.replaceState(null, '', '/history?child=7')
@@ -843,6 +939,7 @@ describe('history route', () => {
     const ok = await import('./api')
     expect(get(ok.route)).toBe('history')
     expect(get(ok.historyChild)).toBe(7)
+    expect(get(ok.historyFilters).badChild).toBe(false)
 
     // Multi-digit ids parse whole, zeros after the first digit included.
     for (const [url, want] of [
@@ -861,6 +958,26 @@ describe('history route', () => {
     const other = await import('./api')
     expect(get(other.route)).toBe('children')
     expect(get(other.historyChild)).toBeNull()
+
+    // Nor does any other route's query reach the filters.
+    history.replaceState(null, '', '/children?child=abc&status=expired')
+    vi.resetModules()
+    const foreign = await import('./api')
+    expect(get(foreign.historyFilters)).toStrictEqual({ ...noFilters, badChild: false })
+  })
+
+  it('the filters are read from the URL at load', async () => {
+    history.replaceState(null, '', '/history?to=2026-10-31&from=2026-10-01&status=expired&service=custom:5&child=3')
+    vi.resetModules()
+    const m = await import('./api')
+    expect(get(m.historyChild)).toBe(3)
+    expect(get(m.historyFilters)).toStrictEqual({
+      service: 'custom:5',
+      status: 'expired',
+      from: '2026-10-01',
+      to: '2026-10-31',
+      badChild: false,
+    })
   })
 
   it('popstate re-parses the child', () => {
@@ -884,6 +1001,7 @@ describe('history route', () => {
       window.dispatchEvent(new PopStateEvent('popstate'))
       expect(get(route), url).toBe('history')
       expect(get(historyChild), url).toBeNull()
+      expect(get(historyFilters).badChild, url).toBe(url !== '/history')
     }
 
     history.replaceState(null, '', '/history?child=5')
@@ -893,70 +1011,127 @@ describe('history route', () => {
     expect(get(route)).toBe('home')
     expect(get(historyChild)).toBeNull()
   })
-})
 
-describe('fetchHistory', () => {
-  const page = {
-    child: { id: 3, name: 'Ada' },
-    grants: [
-      {
-        id: 41,
-        status: 'ended_early',
-        started_at: '2026-09-21T10:00:00Z',
-        ends_at: '2026-09-21T10:40:00Z',
-        ended_at: '2026-09-21T10:20:00Z',
-        services: [
-          { id: 'tiktok', name: 'TikTok', removed_at: null, removed_reason: null },
-          { id: 'youtube', name: 'YouTube', removed_at: '2026-09-21T10:10:00Z', removed_reason: 'permanent_block' },
-        ],
-        extensions: [
-          { at: '2026-09-21T10:05:00Z', old_ends_at: '2026-09-21T10:30:00Z', new_ends_at: '2026-09-21T10:35:00Z' },
-          { at: '2026-09-21T10:06:00Z', old_ends_at: '2026-09-21T10:35:00Z', new_ends_at: '2026-09-21T10:40:00Z' },
-        ],
-      },
-    ],
-    next_before: 41,
-  }
+  it('going back restores every filter, not just the child', async () => {
+    const older: HistoryFilters = { ...noFilters, status: 'ongoing', from: '2026-03-01' }
+    navigate('history', { filters: older })
+    navigate('history', { filters: { ...noFilters, status: 'expired' } })
+    expect(location.search).toBe('?status=expired')
 
-  it('builds the URL with and without before', async () => {
-    const last = { child: page.child, grants: [], next_before: null }
-    const calls = mockFetch(json(200, page), json(200, last))
-    expect(await fetchHistory(3)).toStrictEqual(page)
-    expect(await fetchHistory(3, 40)).toStrictEqual(last)
-    expect(calls.map((c) => [c.init.method, c.url, c.init.body ?? null])).toEqual([
-      ['GET', '/api/v1/children/3/history', null],
-      ['GET', '/api/v1/children/3/history?before=40', null],
-    ])
-    for (const c of calls) {
-      expect(header(c.init, CSRF_HEADER)).toBe(CSRF_VALUE)
-    }
+    const popped = new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }))
+    history.back()
+    await popped
+
+    expect(location.search).toBe('?status=ongoing&from=2026-03-01')
+    expect(get(historyFilters)).toStrictEqual({ ...older, badChild: false })
   })
 
-  it('fills missing lists and cursor', async () => {
-    const bare = { ...page.grants[0], services: null, extensions: undefined }
-    mockFetch(json(200, { child: page.child, grants: [bare] }), json(200, { child: page.child, grants: null }))
-    const got = await fetchHistory(3)
+  it('popstate clears filters the URL no longer names', () => {
+    history.replaceState(null, '', '/history?service=youtube&to=2026-10-31')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(historyFilters)).toStrictEqual({ ...noFilters, service: 'youtube', to: '2026-10-31', badChild: false })
+
+    history.replaceState(null, '', '/children?service=youtube')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(get(route)).toBe('children')
+    expect(get(historyFilters)).toStrictEqual({ ...noFilters, badChild: false })
+  })
+
+  it('popstate to the same filters does not wake the screen', () => {
+    history.replaceState(null, '', '/history?status=expired')
+    window.dispatchEvent(new PopStateEvent('popstate'))
+
+    const heard = vi.fn()
+    const stop = historyFilters.subscribe(heard)
+    heard.mockClear()
+    window.dispatchEvent(new PopStateEvent('popstate'))
+    expect(heard).not.toHaveBeenCalled()
+    stop()
+  })
+})
+
+describe('fetchHistoryPage', () => {
+  const noFilters: HistoryFilters = { service: null, status: null, from: null, to: null }
+  const ada = { id: 3, name: 'Ada' }
+  const row = {
+    id: 41,
+    status: 'ended_early',
+    started_at: '2026-09-21T10:00:00Z',
+    ends_at: '2026-09-21T10:40:00Z',
+    ended_at: '2026-09-21T10:20:00Z',
+    services: [{ id: 'tiktok', name: 'TikTok', removed_at: null, removed_reason: null }],
+    extensions: [{ at: '2026-09-21T10:05:00Z', old_ends_at: '2026-09-21T10:30:00Z', new_ends_at: '2026-09-21T10:40:00Z' }],
+    child: ada,
+  }
+
+  it('builds the URL the server reads, days as instants and until past the last day', async () => {
+    const calls = mockFetch(json(200, { child: ada, grants: [row], next_before: null }))
+    const filters: HistoryFilters = { service: 'custom:5', status: 'expired', from: '2026-03-08', to: '2026-03-08' }
+    await fetchHistoryPage(3, filters, 40)
+    expect(calls).toHaveLength(1)
+    expect(calls[0].url).toBe(
+      '/api/v1/history?child=3&service=custom%3A5&status=expired&from=2026-03-08T05%3A00%3A00.000Z&until=2026-03-09T04%3A00%3A00.000Z&before=40',
+    )
+    expect(calls[0].init.method).toBe('GET')
+    expect(calls[0].init.body ?? null).toBeNull()
+    expect(header(calls[0].init, CSRF_HEADER)).toBe(CSRF_VALUE)
+  })
+
+  it('sends only what is set', async () => {
+    const empty = () => json(200, { child: null, grants: [], next_before: null })
+    const calls = mockFetch(empty(), empty(), empty(), empty())
+    await fetchHistoryPage(null, noFilters)
+    await fetchHistoryPage(null, noFilters, 40)
+    await fetchHistoryPage(null, { ...noFilters, from: '2026-03-01' })
+    await fetchHistoryPage(3, { ...noFilters, to: '2026-03-01' })
+    expect(calls.map((c) => c.url)).toEqual([
+      '/api/v1/history',
+      '/api/v1/history?before=40',
+      '/api/v1/history?from=2026-03-01T05%3A00%3A00.000Z',
+      '/api/v1/history?child=3&until=2026-03-02T05%3A00%3A00.000Z',
+    ])
+  })
+
+  it('keeps each row and its child', async () => {
+    const page = { child: null, grants: [row], next_before: 41 }
+    mockFetch(json(200, page))
+    expect(await fetchHistoryPage(null, noFilters)).toStrictEqual(page)
+  })
+
+  it('fills missing lists, page child and cursor', async () => {
+    mockFetch(
+      json(200, { child: null, grants: [{ ...row, services: null, extensions: undefined }] }),
+      json(200, { grants: null }),
+    )
+    const got = await fetchHistoryPage(null, noFilters)
     expect(got.grants[0].services).toStrictEqual([])
     expect(got.grants[0].extensions).toStrictEqual([])
+    expect(got.grants[0].child).toStrictEqual(ada)
     expect(got.next_before).toBeNull()
-    expect((await fetchHistory(3)).grants).toStrictEqual([])
+
+    expect(await fetchHistoryPage(null, noFilters)).toStrictEqual({ child: null, grants: [], next_before: null })
   })
 
   it('rejects with ApiError', async () => {
-    mockFetch(json(404, { error: 'not_found', message: 'child 3 not found' }))
-    const gone = await fails(fetchHistory(3))
+    mockFetch(json(404, { error: 'not_found', message: 'child 99 not found' }))
+    const gone = await fails(fetchHistoryPage(99, noFilters))
     expect(gone.status).toBe(404)
     expect(gone.code).toBe('not_found')
     expect(unauthorized).not.toHaveBeenCalled()
+  })
+})
 
-    mockFetch(json(400, { error: 'invalid_request', message: 'bad before' }))
-    const bad = await fails(fetchHistory(3, 40))
-    expect(bad.status).toBe(400)
+describe('fetchHistoryServices', () => {
+  it('reads the options', async () => {
+    const services = [{ id: 'custom:1', name: 'Roblox' }]
+    const calls = mockFetch(json(200, { services }))
+    expect(await fetchHistoryServices()).toStrictEqual(services)
+    expect(calls.map((c) => [c.init.method, c.url])).toEqual([['GET', '/api/v1/history/services']])
+  })
 
-    mockFetch(json(401, { error: 'unauthorized', message: 'authentication required' }))
-    const anon = await fails(fetchHistory(3))
-    expect(anon.status).toBe(401)
-    expect(unauthorized).toHaveBeenCalledTimes(1)
+  it('fills a missing list', async () => {
+    mockFetch(json(200, { services: null }))
+    expect(await fetchHistoryServices()).toStrictEqual([])
   })
 })
 

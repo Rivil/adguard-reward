@@ -3,7 +3,8 @@
 // server's error code, and a 401 outside the login and unlock routes either
 // locks the screen behind the PIN pad (pin_required) or sends the user back
 // to the login page (any other code).
-import { writable } from 'svelte/store'
+import { get, writable } from 'svelte/store'
+import { dayBounds, filterParams, parseFilters, type HistoryFilters } from './history'
 
 export const CSRF_HEADER = 'X-Requested-With'
 export const CSRF_VALUE = 'adguard-reward'
@@ -52,9 +53,16 @@ const PATHS: Record<Route, string> = {
   settings: '/settings',
 }
 
-/** Query parameters a route carries; only 'history' reads child. */
+/** Query parameters a route carries; only 'history' reads them. */
 export interface RouteParams {
   child?: number | null
+  filters?: HistoryFilters
+}
+
+/** The filters /history shows, and whether its ?child= was there but unusable. */
+export interface HistoryFilterState extends HistoryFilters {
+  /** ?child= is present and not a valid id, which is 'No such child', never the overview. */
+  badChild: boolean
 }
 
 /** The route a pathname names; anything unknown is home. */
@@ -89,6 +97,26 @@ function childFor(r: Route, search: string): number | null {
   return r === 'history' ? childIdOf(new URLSearchParams(search).get('child')) : null
 }
 
+/** The filters the URL names; none off the history route. */
+function filtersFor(r: Route, search: string): HistoryFilterState {
+  const own = r === 'history' ? search : ''
+  const q = new URLSearchParams(own)
+  return { ...parseFilters(own), badChild: q.has('child') && childIdOf(q.get('child')) === null }
+}
+
+/** f as a reload of its URL would read it, so a value the URL would drop never reaches the screen. */
+function validFilters(f: HistoryFilters | undefined): HistoryFilters {
+  return parseFilters(f === undefined ? '' : filterParams(f).toString())
+}
+
+/** A route's URL: child first, then the filters in their fixed order. */
+function urlFor(r: Route, child: number | null, filters: HistoryFilters): string {
+  const q = new URLSearchParams(child === null ? '' : `child=${child}`)
+  for (const [key, value] of filterParams(filters)) q.set(key, value)
+  const query = q.toString()
+  return query === '' ? PATHS[r] : `${PATHS[r]}?${query}`
+}
+
 const initialRoute = routeFor(currentPath())
 
 /** The page the SPA is showing, driven by the URL. */
@@ -101,17 +129,34 @@ export const route = writable<Route>(initialRoute)
 export const historyChild = writable<number | null>(childFor(initialRoute, currentSearch()))
 
 /**
+ * The filters the history page shows, from the query on /history. A value that
+ * is not valid is no filter; every field is empty on every other route.
+ */
+export const historyFilters = writable<HistoryFilterState>(filtersFor(initialRoute, currentSearch()))
+
+/** Sets the filters only when they differ: a store of objects notifies on every set. */
+function showFilters(next: HistoryFilterState): void {
+  const shown = get(historyFilters)
+  const same = shown.badChild === next.badChild && filterParams(shown).toString() === filterParams(next).toString()
+  if (!same) historyFilters.set(next)
+}
+
+/**
  * Switch page and push the matching URL. Only 'history' carries a query
- * (?child=N, when params.child is a valid id); every other route pushes its
- * bare path, so no query outlives the page that set it.
+ * (?child=N when params.child is a valid id, then the valid params.filters);
+ * every other route pushes its bare path, so no query outlives the page that
+ * set it. Filters not passed are cleared, and the URL pushed never holds a bad
+ * child.
  */
 export function navigate(r: Route, params: RouteParams = {}): void {
   const child = r === 'history' ? validChild(params.child) : null
-  const url = child === null ? PATHS[r] : `${PATHS[r]}?child=${child}`
+  const filters = validFilters(r === 'history' ? params.filters : undefined)
+  const url = urlFor(r, child, filters)
   if (typeof history !== 'undefined' && currentPath() + currentSearch() !== url) {
     history.pushState(null, '', url)
   }
   historyChild.set(child)
+  showFilters({ ...filters, badChild: false })
   route.set(r)
 }
 
@@ -119,6 +164,7 @@ if (typeof window !== 'undefined') {
   window.addEventListener('popstate', () => {
     const r = routeFor(currentPath())
     historyChild.set(childFor(r, currentSearch()))
+    showFilters(filtersFor(r, currentSearch()))
     route.set(r)
   })
 }
@@ -655,26 +701,62 @@ export interface HistoryGrant {
   extensions: HistoryExtension[]
 }
 
-export interface HistoryPage {
+/** An overview row: a grant and the child it belongs to. */
+export interface OverviewGrant extends HistoryGrant {
   child: ChildRef
+}
+
+export interface OverviewPage {
+  /** The filtered child; null when the page covers every child. */
+  child: ChildRef | null
   /** Newest first. */
-  grants: HistoryGrant[]
+  grants: OverviewGrant[]
   /** The cursor for the next (older) page; null on the last page. */
   next_before: number | null
 }
 
+/** A service that appears in history, live or since deleted. */
+export interface HistoryServiceOption {
+  id: string
+  /** The newest snapshotted name, else the current name, else the bare id. */
+  name: string
+}
+
+const HISTORY = '/api/v1/history'
+
+/** Fills the lists a history row may arrive without. */
+function historyRows(grants: OverviewGrant[]): OverviewGrant[] {
+  return (grants ?? []).map((g) => ({ ...g, services: g.services ?? [], extensions: g.extensions ?? [] }))
+}
+
 /**
- * One page of a child's grant history, newest first. before is the previous
- * page's next_before; omitted for the first page. A 404 means no such child.
+ * One page of the overview, newest first, across every child when child is
+ * null. before is the previous page's next_before; omitted for the first page.
+ * from and to are the parent's local days and leave here as instants; the API's
+ * until is exclusive where the screen's to is inclusive. A 404 means no such child.
  */
-export async function fetchHistory(childId: number, before?: number): Promise<HistoryPage> {
-  const query = before === undefined ? '' : `?before=${before}`
-  const p = await request<HistoryPage>('GET', `${CHILDREN}/${childId}/history${query}`)
-  return {
-    ...p,
-    grants: (p.grants ?? []).map((g) => ({ ...g, services: g.services ?? [], extensions: g.extensions ?? [] })),
-    next_before: p.next_before ?? null,
-  }
+export async function fetchHistoryPage(
+  child: number | null,
+  filters: HistoryFilters,
+  before?: number,
+): Promise<OverviewPage> {
+  const q = new URLSearchParams()
+  if (child !== null) q.set('child', String(child))
+  if (filters.service !== null) q.set('service', filters.service)
+  if (filters.status !== null) q.set('status', filters.status)
+  const { from, until } = dayBounds(filters.from, filters.to)
+  if (from !== undefined) q.set('from', from)
+  if (until !== undefined) q.set('until', until)
+  if (before !== undefined) q.set('before', String(before))
+  const query = q.toString()
+  const p = await request<OverviewPage>('GET', query === '' ? HISTORY : `${HISTORY}?${query}`)
+  return { ...p, child: p.child ?? null, grants: historyRows(p.grants), next_before: p.next_before ?? null }
+}
+
+/** Every service the service filter can pick. */
+export async function fetchHistoryServices(): Promise<HistoryServiceOption[]> {
+  const res = await request<{ services: HistoryServiceOption[] }>('GET', `${HISTORY}/services`)
+  return res.services ?? []
 }
 
 /** A data: URL for an <img> from a catalogue icon. */

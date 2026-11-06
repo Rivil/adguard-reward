@@ -1,0 +1,683 @@
+{
+  "phase": "history-overview",
+  "pr": 16,
+  "base": "milestone/v0.2",
+  "base_commit": "6f95bc92498da85d84efbf328ee640bd62f73c61",
+  "status": "shipped",
+  "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.svelte"
+      ],
+      "commit": "879fd82",
+      "completed_at": "2026-11-06T07:03:02.63805Z",
+      "notes": "quick: Move the `as HistoryStatus | null` cast out of the template in web/src/lib/HistoryFilterBar.svelte:86 into a script function, so Stryker's template parser can read it. No behaviour change. Unblocks the stryker leg of history-overview's verify."
+    },
+    "t-1": {
+      "files": [
+        "internal/store/history.go",
+        "internal/store/history_test.go"
+      ],
+      "commit": "de0e4aa",
+      "completed_at": "2026-11-05T20:23:57.476821Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "ListHistory",
+          "loc": "internal/store/history.go:86",
+          "what": "reads grants across all children newest first, hiding deleted and reused-id children's grants in SQL"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "internal/api/history_services.go",
+        "internal/api/history_services_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "3a57d7a",
+      "completed_at": "2026-11-05T21:18:54.115652Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "handleHistoryServices",
+          "loc": "internal/api/history_services.go:23",
+          "what": "serves the service filter options sorted by name, with snapshot then live catalogue then bare id names"
+        }
+      ]
+    },
+    "t-11": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts"
+      ],
+      "commit": "aaab62e",
+      "completed_at": "2026-11-05T21:22:09.589662Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "Home",
+          "loc": "web/src/lib/Home.svelte:283",
+          "what": "Home's nav links the unfiltered overview and the old per-child fetch client is gone"
+        }
+      ]
+    },
+    "t-12": {
+      "files": [
+        "web/src/lib/history.test.ts"
+      ],
+      "commit": "ee62973",
+      "completed_at": "2026-11-06T07:34:14.525163Z",
+      "landmarks": [
+        {
+          "feature": "history filters",
+          "symbol": "parseFilters",
+          "loc": "web/src/lib/history.ts:94",
+          "what": "tests hold both DAY anchors and that dayBounds sets no key for an unset bound"
+        }
+      ]
+    },
+    "t-13": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.test.ts"
+      ],
+      "commit": "904b6d6",
+      "completed_at": "2026-11-06T07:35:28.518377Z",
+      "landmarks": [
+        {
+          "feature": "history filters",
+          "symbol": "HistoryFilterBar.svelte",
+          "loc": "web/src/lib/HistoryFilterBar.svelte:26",
+          "what": "tests hold the Child N stand-in beside real children and the form's prevented submit"
+        }
+      ]
+    },
+    "t-14": {
+      "files": [
+        "web/src/lib/History.panel.test.ts"
+      ],
+      "commit": "dd81b3c",
+      "completed_at": "2026-11-06T07:36:58.905805Z",
+      "landmarks": [
+        {
+          "feature": "history overview",
+          "symbol": "childName",
+          "loc": "web/src/lib/History.svelte:47",
+          "what": "tests hold a plain History heading while a new child loads and an All-only Service select after its options fail"
+        }
+      ]
+    },
+    "t-15": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.svelte",
+        "web/src/lib/HistoryFilterBar.test.ts",
+        "web/src/lib/History.panel.test.ts"
+      ],
+      "commit": "336a9ea",
+      "completed_at": "2026-11-06T12:10:07.911536Z",
+      "landmarks": [
+        {
+          "feature": "history filters",
+          "symbol": "setDay",
+          "loc": "web/src/lib/HistoryFilterBar.svelte:88",
+          "what": "holds a typed date 700ms and emits once so segment edits add no history entries"
+        }
+      ]
+    },
+    "t-16": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.svelte",
+        "web/src/lib/HistoryFilterBar.test.ts",
+        "web/src/lib/History.panel.test.ts"
+      ],
+      "commit": "a7e6f57",
+      "completed_at": "2026-11-06T12:41:09.921326Z",
+      "landmarks": [
+        {
+          "feature": "history overview filters",
+          "symbol": "restoreDays",
+          "loc": "web/src/lib/HistoryFilterBar.svelte:111",
+          "what": "a Back that keeps the bar puts both date inputs back on the filters"
+        }
+      ]
+    },
+    "t-17": {
+      "files": [
+        "web/src/lib/History.panel.test.ts"
+      ],
+      "commit": "ed24a6e",
+      "completed_at": "2026-11-06T12:42:48.523378Z",
+      "landmarks": [
+        {
+          "feature": "history overview filters",
+          "symbol": "with a date pending when the browser goes back",
+          "loc": "web/src/lib/History.panel.test.ts:634",
+          "what": "the Back tests run on the real listener order with no spy over addEventListener"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/store/migrations/0011_history_watermark_backfill.sql",
+        "internal/store/store_test.go"
+      ],
+      "commit": "9ab64b7",
+      "completed_at": "2026-11-05T20:29:39.641898Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "0011_history_watermark_backfill",
+          "loc": "internal/store/migrations/0011_history_watermark_backfill.sql:7",
+          "what": "raises the watermark of children that reused a deleted id before 0009 so they stop showing the earlier child's grants"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "web/src/lib/history.ts",
+        "web/src/lib/history.test.ts",
+        "web/vite.config.ts"
+      ],
+      "commit": "c86775d",
+      "completed_at": "2026-11-05T20:34:04.633Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "parseFilters",
+          "loc": "web/src/lib/history.ts:94",
+          "what": "reads and writes history filters in the URL and turns local days into the API's date bounds"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/store/history.go",
+        "internal/store/history_test.go"
+      ],
+      "commit": "ad0236a",
+      "completed_at": "2026-11-05T20:39:20.444231Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "historyWhere",
+          "loc": "internal/store/history.go:196",
+          "what": "applies service, date and end-status filters inside the keyset query so paging counts filtered rows"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/store/history_services.go",
+        "internal/store/history_services_test.go"
+      ],
+      "commit": "0cde781",
+      "completed_at": "2026-11-05T20:42:13.605147Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "ListHistoryServices",
+          "loc": "internal/store/history_services.go:38",
+          "what": "lists every service in visible history with its newest snapshot name, including trimmed and deleted custom services"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/App.svelte",
+        "web/src/App.test.ts"
+      ],
+      "commit": "cc5fd51",
+      "completed_at": "2026-11-05T20:49:37.902115Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "historyFilters",
+          "loc": "web/src/lib/api.ts:135",
+          "what": "keeps history filters in the URL through navigation, reload and back, and fetches filtered pages and service options"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "web/src/lib/HistoryFilterBar.svelte",
+        "web/src/lib/HistoryFilterBar.test.ts"
+      ],
+      "commit": "1bc116c",
+      "completed_at": "2026-11-05T20:56:03.410358Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "HistoryFilterBar",
+          "loc": "web/src/lib/HistoryFilterBar.svelte:46",
+          "what": "filter controls for child, service, end status and dates that hold back half-typed dates"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "internal/api/history.go",
+        "internal/api/history_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "4af3d79",
+      "completed_at": "2026-11-05T21:05:37.875632Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "handleHistoryOverview",
+          "loc": "internal/api/history.go:134",
+          "what": "serves GET /api/v1/history with strict filter parsing, each grant naming its child"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "web/src/lib/History.svelte",
+        "web/src/lib/History.panel.test.ts",
+        "web/src/App.svelte",
+        "web/src/App.test.ts"
+      ],
+      "commit": "3746c44",
+      "completed_at": "2026-11-05T21:15:45.387616Z",
+      "landmarks": [
+        {
+          "feature": "grant history overview",
+          "symbol": "History",
+          "loc": "web/src/lib/History.svelte:140",
+          "what": "the History screen lists every child's grants under the filter bar and reloads only when the filters change"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "Migration 0009 defaults history_after_grant_id to 0, so a child that reused a deleted id before that migration has no watermark. Through the visibleGrants join, the old child's grants now also appear on the cross-child overview under the current child's name. The limitation is pre-existing and this diff cannot fix it, but c-3's 'never' does not hold for that legacy data.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "In TestListHistory_ReusedIDOmitted, the 'before the watermark' loop checks g.ID \u003c= oldGrant.ID, while the real watermark is benGrant.ID. This loses no coverage, because the exact id-list DeepEqual just above it already pins the result.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-10": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "The name sort is bytewise and case-sensitive, so lower-case bare ids sort after every capitalised name. This meets 'sorted by name, then id', and TestHistoryServices_CatalogueDown pins it deliberately, but a parent may see an unnamed service at the bottom of the filter list.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-11": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "ARCHITECTURE.md:246 still lists fetchHistory at web/src/lib/api.ts:571. That line number was already out of date, and the entry now names a removed export.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-12": {
+      "outcome": "pass",
+      "rounds": 1
+    },
+    "t-13": {
+      "outcome": "pass",
+      "rounds": 1
+    },
+    "t-14": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "Only the services row of the it.each kills the :41 mutant; in the children row the services read succeeds and overwrites any junk initial value with []. The same applies in reverse to the Child assertion. One killing row is enough, so no action is needed.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-15": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "After a popstate that keeps the bar and leaves filters.from unchanged, dropDay clears the pending date, but the focused input keeps showing it because Svelte has no value change to write. Only the leaveDay else-branch restores the input, so on Android, where the picker keeps focus, it can show a date that is not on the filter until blur. 'pushes nothing when the bar stays, on a Back inside History' does not assert the input's value.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "listenInOrderAdded in History.panel.test.ts has no effect. It strips the options argument from window.addEventListener, but neither popstate listener passes one (api.ts:164, HistoryFilterBar.svelte:114), and the api.ts listener is added at import, before the spy exists. Its comment about jsdom running capture listeners first describes a construct that is not in the source. Remove the helper and its comment.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "A rejected date cancels a pending date only on the same input; 'outlives a rejected date on the other input' pins this. The record says only that a held-back date cancels a pending one, and the contract's example fits the same-input reading, so this is an interpretation rather than a miss.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "A pending From followed by a valid To flushes first and emits twice, rather than merging as a select change does. Each emit carries a date the user chose, and in a real browser blur has normally flushed From already.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-16": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "listenInOrderAdded, used by both new panel tests, only strips listener options, and the bar passes none, so it does not change listener order here. Its comment about capture listeners does not match the current bar. The order the tests rely on comes from api.ts adding its listener at import. This predates the diff.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "jsdom's synchronous dispatch runs restoreDays before the parent's props arrive. A real browser can run microtasks between listeners, so the props may arrive first. restoreDays is safe in both orders, but the tests only exercise the first.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-17": {
+      "outcome": "pass",
+      "rounds": 1
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-3",
+          "text": "Every 0011 test seeds a single child, so nothing fails if the `g.child_id = children.id` correlation is dropped from the subquery. The description scopes the backfill to that child_id's grants; a second child with older grants in the seed would pin this.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The migration comment says a grant that started before its child existed 'can only be' an earlier child's, and that children created since 0009 are left alone. Both assume a monotonic clock: a child at watermark 0 whose grant has started_at \u003c created_at after a backwards clock step would have that grant and every lower id permanently hidden. The task description mandates this rule, so no action is needed.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "The started_at \u003c created_at test relies on the host clock never having stepped backwards. A watermark-0 child, including one created after 0009 when no grants existed, would lose its own earlier grants from history if one started while the clock was behind its created_at. So the migration comment's 'left alone' holds only for children created after 0009 with a non-zero watermark. The task record specifies this heuristic, so no action is needed.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "The zone control test cannot tell Havana from US Eastern. America/New_York also reads offsets 300 and 240 on those dates, and its 2026 DST changes fall on the same days, so every dayBounds expectation comes out identical there. If the pin were dropped on a New York-zone host, the test named 'runs in America/Havana' and the dayBounds tests would all still pass, which is the accidental pass the contract wants to rule out. The offsets are the ones the contract prescribes, so this is not an unmet contract. Adding new Date(2026, 2, 8).getHours() === 1 would separate the zones, because that midnight exists in New York but is skipped in Havana.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The TZ pin in web/vite.config.ts runs at config load, so it also applies to vite dev and vite build, not just tests. This is harmless today because nothing in the build reads local time.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "filterParams and hasFilters test for !== null, so service: '' would write service= and count as a filter, while parseFilters reads that back as null. parseFilters never produces '', but a later UI that binds an empty select option must map it to null.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "The 'invents no bound' dayBounds test uses toEqual, which treats a key set to undefined as absent, so {from: x, until: undefined} would pass. The current conditional spreads are correct, but toStrictEqual would hold 'only from gives no until' as a real key-absence check for callers that iterate the keys into query params.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "process.env.TZ in vite.config.ts also runs for vite build and dev, not only tests. The task record asks for this placement, and nothing in the config or the sw-precache plugin reads local time, so it is harmless.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-7",
+          "text": "TestListHistory_FiltersKeepVisibility has its names swapped: the id Cleo actually reuses is gone.ID, while the child named reused (with the comment 'the highest id, so SQLite reuses it') stays deleted. The assertions are still correct and cover both a deleted child and a reused id, so only the naming and comment mislead.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-6",
+          "text": "The status mapping now exists twice: historyStatusConds in internal/store/history.go and endStatus in internal/api/history.go, each with its own constants. They agree on all 12 cells today, but no test ties them together, so a later change to one could make the filter disagree with the status shown.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "The description says 'the newest grant's snapshot name', but the query takes the newest grant that has a snapshot, so a newer unnamed grant keeps an older name instead of reading empty. This is deliberate, documented in the query comment and tested in TestListHistoryServices_NewestName. It fits CreateGrantNamed, which stores no row for a service with no name, and it doesn't conflict with the test_contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "With refresh() navigating only login -\u003e home, a reload no longer normalises other URLs: /nope stays in the address bar while showing home, and /children?child=7 keeps its query. The task record asks for this and it looks harmless, but it narrows the navigate doc comment's 'no query outlives the page that set it' to in-app navigation.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "navigate's same-URL check compares raw strings, so after booting at a hand-written URL such as /history?service=custom:5, navigating with identical filters pushes one extra entry at /history?service=custom%3A5. The stores do not re-notify, so the only effect is a back-button step that changes nothing on screen.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "Undeclared file: the diff includes .playwright-mcp/page-2026-11-05T20-50-17-063Z.yml, an empty tool artefact that is outside the task's files and not covered by .gitignore. Leave it out of the commit and ignore the directory.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "setDay drops an out-of-range date without resetting the input. If a parent stops at 0202-11-05 and tabs away while filters.from is 2025-11-05, the input keeps showing 0202-11-05. Svelte's set_value returns early because the prop did not change, so a later change to another filter does not correct it. The date control then disagrees with the active filter, and no test covers leaving a half-typed year.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "The guard only suppresses years outside 1000-9998. Chromium's per-segment change events on month and day produce valid dates, so editing a complete date can still emit more than once (month 1 then 12). The contract's one-change-one-emit holds, but the parent wiring will see intermediate filter values, each of which may trigger a fetch or URL update.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "With services: [], the unknown-value test asserts only select.value, not the bare-id text. The label is asserted only with non-empty services. Both cases share one code path, so the risk is low.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The test comment says the year sequence was recorded from Chromium 156, but the only browser artefact in the diff is an empty file, so the diff itself does not evidence the real-browser check the description asks for.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-5",
+          "text": "setDay only holds back dates parseFilters rejects, so intermediate month or day edits that form a real date should still emit. If Chromium fires change on each key of those segments, as the setDay comment says it does for the year, typing a two-digit month over an existing date produces two onChange calls, two pushState entries and two refetches. Deleting one segment of a set date also gives value '' and clears the filter mid-edit. Results stay valid, but Back steps through the partial edits and no test covers these paths.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "With services [], the unknown-value test asserts select.value but not the option's text. The bare-id label is only asserted with a non-empty list; both cases share one code path, so the risk is small.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "historyFilter parses from/until into time.Time, and historyWhere treats IsZero as unset. A well-formed until=0001-01-01T00:00:00Z therefore returns an unfiltered page instead of an empty one, which is the outcome the historyFilter comment rules out. The client's dayBounds cannot realistically produce it, so this is a rare path. A set flag or rejecting the zero instant would close it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The historyFilter comment says a filter is never lost to a typo, but unknown keys are ignored, so ?servce=youtube returns an unfiltered 200. The test_contract does not require rejecting unknown keys, so only the comment overclaims.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The handleHistoryOverview comment says an empty parameter is 400, but an empty child is 404 through the non-numeric branch. TestHistoryOverview_Errors pins the 404 and the contract's empty-parameter list leaves child out, so the behaviour is right and the comment is loose.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "handleHistory still reads the cursor via r.URL.Query(), which drops undecodable pairs, so GET /api/v1/children/{id}/history?before=%zz returns the first page with 200, while the overview answers 400 through url.ParseQuery. This behaviour predates the diff and the extraction preserves it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestHistoryOverview_EndToEnd drives the trim through the real engine, but seeds the deleted and reusing children's grants with raw inserts. Visibility is decided only by the store's watermark join, so coverage of the id-reuse claim is not weakened.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-9",
+          "text": "The empty-state choice uses hasFilters(filters), which ignores child, so /history?child=3 with no grants shows 'No grants yet' rather than 'No grants match these filters', although locked screen_structure calls child a filter. The wording is still true for that child and History.panel.test.ts pins it ('shows \"No grants yet\" for a child with no grants'), but the test_contract line on filtered empty pages only exercises status. Confirm this reading is intended.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "fetchHistory and HistoryPage in web/src/lib/api.ts now have no production caller, only api.test.ts. api.ts is outside this task's file list, so leaving them is correct here, but they are candidates for later removal.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 'reload on /history?child=3' App test loosened from an exact call list to toContain. No coverage is lost, because the new 'a reload reads the page and each option source exactly once' test asserts the exact calls.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
+}

@@ -235,20 +235,31 @@ _introduced 05-phone-ui-buttons-pwa · 60f0d6c_
 
 ### Grant history
 
-Every grant keeps a record of how it ran, never pruned: migration 0009 adds `end_reason` (expired / ended early / permanent block, derived in `SetGrantStatus`), one `grant_extensions` row per extend with old and new end, a `grant_service_removals` row when a block toggle trims a service from a live grant (written in the trim's transaction), per-service display-name snapshots written atomically at create from the catalogue already loaded (no extra AdGuard read), and a `history_after_grant_id` watermark set in `CreateChild` so a reused child id never inherits an earlier child's grants. `GET /api/v1/children/{id}/history` serves a one-transaction, keyset-paged read (newest first, 50 per page) whose names resolve snapshot → live catalogue → bare id, reading the catalogue only when a snapshot is missing; pre-upgrade `ended` rows report reason unknown rather than a guessed one. The phone's History screen (`history?child=N`, reached from a per-child link on Home, kept across reload) lists each grant's services with removed markers, start, end, end status and extensions, with deduped Load more paging; history survives restart and a grant overdue across downtime is recorded expired once a pass reverts it.
+Every grant keeps a record of how it ran, never pruned: migration 0009 adds `end_reason` (expired / ended early / permanent block, derived in `SetGrantStatus`), one `grant_extensions` row per extend with old and new end, a `grant_service_removals` row when a block toggle trims a service from a live grant (written in the trim's transaction), per-service display-name snapshots written atomically at create from the catalogue already loaded (no extra AdGuard read), and a `history_after_grant_id` watermark set in `CreateChild` so a reused child id never inherits an earlier child's grants. `GET /api/v1/children/{id}/history` serves a one-transaction, keyset-paged read (newest first, 50 per page) whose names resolve snapshot → live catalogue → bare id, reading the catalogue only when a snapshot is missing; pre-upgrade `ended` rows report reason unknown rather than a guessed one. `GET /api/v1/history` reads every child's grants through the same `visibleGrants` join, so deleted and reused-id children stay out, with strict parsing of child, service, date and end-status filters applied inside the keyset query so paging counts filtered rows; `GET /api/v1/history/services` lists every service in visible history for the filter. Migration 0011 raises the watermark of children that reused a deleted id before 0009. The phone's History screen (`/history`, opened from Home's nav or, with that child selected, a per-child link) lists each grant's child, services with removed markers, start, end, end status and extensions, with deduped Load more paging. Its filters live in the URL, so they survive reload and Back; a typed date settles for 700ms before it filters, and a Back that keeps the bar drops a pending date and puts both date inputs back on the filters. History survives restart and a grant overdue across downtime is recorded expired once a pass reverts it.
 
 - 0009_grant_history.sql — internal/store/migrations/0009_grant_history.sql:1
 - Store.ExtendGrant — internal/store/grants.go:165
 - trimGrant — internal/store/toggles.go:80
-- Store.ListGrantHistory — internal/store/history.go:64
+- 0011_history_watermark_backfill.sql — internal/store/migrations/0011_history_watermark_backfill.sql:7
+- Store.ListHistory — internal/store/history.go:120
+- historyWhere — internal/store/history.go:196
+- Store.ListGrantHistory — internal/store/history.go:144
+- Store.ListHistoryServices — internal/store/history_services.go:38
 - API.handleGrantCreate — internal/api/grants.go:197
-- API.handleHistory — internal/api/history.go:82
-- fetchHistory — web/src/lib/api.ts:571
-- History.loadMore — web/src/lib/History.svelte:60
-- App.svelte — web/src/App.svelte:50
-- TestRun_OverdueGrantExpiredAtStartup — cmd/adguard-reward/main_test.go:1210
+- API.handleHistory — internal/api/history.go:100
+- API.handleHistoryOverview — internal/api/history.go:134
+- API.handleHistoryServices — internal/api/history_services.go:23
+- parseFilters — web/src/lib/history.ts:94
+- historyFilters — web/src/lib/api.ts:135
+- fetchHistoryPage — web/src/lib/api.ts:738
+- HistoryFilterBar.setDay — web/src/lib/HistoryFilterBar.svelte:90
+- HistoryFilterBar.restoreDays — web/src/lib/HistoryFilterBar.svelte:111
+- History.loadMore — web/src/lib/History.svelte:110
+- Home History button — web/src/lib/Home.svelte:283
+- App.svelte — web/src/App.svelte:72
+- TestRun_OverdueGrantExpiredAtStartup — cmd/adguard-reward/main_test.go:1213
 
-_introduced grant-history · a753b94 · cd5f7bf · 63ad04c · e0bfd83_
+_introduced grant-history · a753b94 · cd5f7bf · 63ad04c · e0bfd83 · extended history-overview · 3746c44_
 
 ### Grant persistence
 

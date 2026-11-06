@@ -60,11 +60,13 @@
   locked = true
 
 [[deferred]]
+  id = "d47c603435232302"
   text = "Combined grant-history view across all children."
   why = "Per-child view meets the milestone criterion; cross-child overview is a separate screen."
   target = "history-overview"
 
 [[deferred]]
+  id = "c35e43cce952aa0e"
   text = "History filters / search by service, date range or end reason."
   why = "Paged newest-first list is enough until history volume makes it painful."
   target = "history-overview"

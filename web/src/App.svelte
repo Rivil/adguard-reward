@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { get } from 'svelte/store'
-  import { historyChild, locked, me, navigate, route } from './lib/api'
+  import { historyChild, historyFilters, locked, me, navigate, route } from './lib/api'
   import Login from './lib/Login.svelte'
   import Home from './lib/Home.svelte'
   import Children from './lib/Children.svelte'
@@ -18,9 +18,9 @@
     try {
       const m = await me()
       username = m.username
-      // A reload on any page stays there, /history keeping its ?child=; only
-      // the login page bounces home.
-      navigate($route === 'login' ? 'home' : $route, { child: $historyChild })
+      // A reload on any page stays there with its URL untouched, so /history
+      // keeps its query byte for byte; only the login page bounces home.
+      if ($route === 'login') navigate('home')
     } catch {
       // pin_required set `locked` through onPinRequired: stay on this URL
       // behind the PIN pad. A plain 401 already routed to login through
@@ -70,7 +70,7 @@
   {:else if $route === 'services' && username !== null}
     <Services onBack={() => navigate('home')} />
   {:else if $route === 'history' && username !== null}
-    <History child={$historyChild} onBack={() => navigate('home')} />
+    <History child={$historyChild} filters={$historyFilters} onBack={() => navigate('home')} />
   {:else if $route === 'settings' && username !== null}
     <Settings onBack={() => navigate('home')} />
   {:else}

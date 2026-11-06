@@ -5,7 +5,7 @@ import { tick } from 'svelte'
 import { get } from 'svelte/store'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import App from './App.svelte'
-import { historyChild, locked, me, navigate, route, setOnUnauthorized } from './lib/api'
+import { historyChild, historyFilters, locked, me, navigate, route, setOnUnauthorized } from './lib/api'
 
 type Call = { method: string; url: string; init: RequestInit }
 type Answer = () => Response | Promise<Response>
@@ -47,6 +47,7 @@ afterEach(() => {
   history.replaceState(null, '', '/')
   route.set('home')
   historyChild.set(null)
+  historyFilters.set({ service: null, status: null, from: null, to: null, badChild: false })
   locked.set(false)
 })
 
@@ -423,22 +424,46 @@ describe('settings route', () => {
 })
 
 describe('history route', () => {
+  const row = (id: number) => ({
+    id,
+    child: { id: 3, name: 'Cleo' },
+    status: 'expired',
+    started_at: '2026-10-01T10:00:00Z',
+    ends_at: '2026-10-01T11:00:00Z',
+    ended_at: '2026-10-01T11:00:00Z',
+    services: [{ id: 'youtube', name: 'YouTube', removed_at: null, removed_reason: null }],
+    extensions: [],
+  })
+
   const cleoPage = () =>
     json(200, {
       child: { id: 3, name: 'Cleo' },
-      grants: [
-        {
-          id: 7,
-          status: 'expired',
-          started_at: '2026-10-01T10:00:00Z',
-          ends_at: '2026-10-01T11:00:00Z',
-          ended_at: '2026-10-01T11:00:00Z',
-          services: [{ id: 'youtube', name: 'YouTube', removed_at: null, removed_reason: null }],
-          extensions: [],
-        },
-      ],
+      grants: [row(7)],
       next_before: null,
     })
+
+  /** The overview's two option reads, answered empty. */
+  const noOptions: Routes = {
+    '/api/v1/children': noChildren,
+    '/api/v1/history/services': () => json(200, { services: [] }),
+  }
+
+  /** What leaving /history for Home reads. */
+  const home: Routes = {
+    ...noOptions,
+    '/api/v1/buttons': () => json(200, { buttons: [] }),
+    '/api/v1/services': () => json(200, { services: [] }),
+    '/api/v1/grants': () => json(200, { grants: [] }),
+    '/api/v1/migration': () => json(200, { global: [], clients: [] }),
+  }
+
+  const rows = (...ids: number[]) => () =>
+    json(200, { child: null, grants: ids.map(row), next_before: null })
+
+  const shownIds = () =>
+    [...document.querySelectorAll('li[data-grant]')].map((el) => Number((el as HTMLElement).dataset.grant))
+
+  const shownStatus = () => (screen.getByLabelText('How it ended') as HTMLSelectElement).selectedOptions[0]?.textContent
 
   /** Start the SPA as a browser reload at /history?child=3 would. */
   function loadAt(url: string, child: number | null) {
@@ -447,18 +472,171 @@ describe('history route', () => {
     historyChild.set(child)
   }
 
+  /** Lets any fetch the screen should not make go out before the test counts them. */
+  const settle = () => new Promise((r) => setTimeout(r, 30))
+
+  /** Point every routing store at url, as loading the module there would. */
+  function bootAt(url: string) {
+    history.replaceState(null, '', url)
+    window.dispatchEvent(new PopStateEvent('popstate'))
+  }
+
   it('reload on /history?child=3 keeps the query and shows that child', async () => {
     loadAt('/history?child=3', 3)
-    const calls = mockFetch({ '/api/v1/me': signedIn, '/api/v1/children/3/history': cleoPage })
+    const calls = mockFetch({ '/api/v1/me': signedIn, '/api/v1/history?child=3': cleoPage, ...noOptions })
     render(App)
 
     expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
-    // refresh() re-navigates after /me; it must carry ?child= through.
     expect(location.pathname + location.search).toBe('/history?child=3')
     expect(get(route)).toBe('history')
     expect(get(historyChild)).toBe(3)
     expect(document.querySelector('[data-grant="7"]')).not.toBeNull()
-    expect(calls.map((c) => c.url)).toEqual(['/api/v1/me', '/api/v1/children/3/history'])
+    expect(calls.map((c) => c.url)).toContain('/api/v1/history?child=3')
+  })
+
+  it('a reload reads the page and each option source exactly once', async () => {
+    bootAt('/history?child=3&status=expired')
+    const calls = mockFetch({ '/api/v1/me': signedIn, '/api/v1/history?child=3&status=expired': cleoPage, ...noOptions })
+    render(App)
+
+    await screen.findByRole('heading', { name: 'Cleo — history' })
+    await settle()
+    expect(calls.map((c) => c.url).sort()).toEqual([
+      '/api/v1/children',
+      '/api/v1/history/services',
+      '/api/v1/history?child=3&status=expired',
+      '/api/v1/me',
+    ])
+    expect(shownStatus()).toBe('Expired')
+  })
+
+  it('browser back returns the previous filter, in the list and the control', async () => {
+    bootAt('/history?status=ongoing')
+    const calls = mockFetch({
+      '/api/v1/me': signedIn,
+      '/api/v1/history?status=ongoing': rows(1),
+      '/api/v1/history?status=expired': rows(2),
+      ...noOptions,
+    })
+    render(App)
+    await vi.waitFor(() => expect(shownIds()).toEqual([1]))
+
+    await fireEvent.change(screen.getByLabelText('How it ended'), { target: { value: 'expired' } })
+    await vi.waitFor(() => expect(shownIds()).toEqual([2]))
+    expect(location.search).toBe('?status=expired')
+    expect(shownStatus()).toBe('Expired')
+
+    history.back()
+
+    await vi.waitFor(() => expect(shownIds()).toEqual([1]))
+    expect(location.search).toBe('?status=ongoing')
+    expect(shownStatus()).toBe('Ongoing')
+    expect(get(historyFilters).status).toBe('ongoing')
+    expect(calls.filter((c) => c.url.startsWith('/api/v1/history?')).map((c) => c.url)).toEqual([
+      '/api/v1/history?status=ongoing',
+      '/api/v1/history?status=expired',
+      '/api/v1/history?status=ongoing',
+    ])
+  })
+
+  it('browser back from Home restores the filtered list', async () => {
+    bootAt('/history?status=expired')
+    const calls = mockFetch({ '/api/v1/me': signedIn, '/api/v1/history?status=expired': rows(2), ...home })
+    render(App)
+    await vi.waitFor(() => expect(shownIds()).toEqual([2]))
+
+    await fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    await screen.findByText(/Signed in as/)
+    expect(location.pathname + location.search).toBe('/')
+
+    history.back()
+
+    await vi.waitFor(() => expect(shownIds()).toEqual([2]))
+    expect(location.pathname + location.search).toBe('/history?status=expired')
+    expect(shownStatus()).toBe('Expired')
+    expect(screen.queryByText(/Signed in as/)).toBeNull()
+    // Leaving must not reload the screen under the cleared filters on its way out.
+    expect(calls.map((c) => c.url)).not.toContain('/api/v1/history')
+  })
+
+  it('reload leaves a filtered URL byte-for-byte, whatever order it was written in', async () => {
+    const url = '/history?status=expired&service=custom:5&child=3'
+    bootAt(url)
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      mockFetch({
+        '/api/v1/me': signedIn,
+        '/api/v1/history?child=3&service=custom%3A5&status=expired': cleoPage,
+        ...noOptions,
+      })
+      render(App)
+
+      expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
+      expect(location.pathname + location.search).toBe(url)
+      expect(push).toHaveBeenCalledTimes(0)
+      expect(get(historyChild)).toBe(3)
+      expect(get(historyFilters)).toStrictEqual({
+        service: 'custom:5',
+        status: 'expired',
+        from: null,
+        to: null,
+        badChild: false,
+      })
+    } finally {
+      push.mockRestore()
+    }
+  })
+
+  it('reload on a bad child keeps the URL and shows No such child', async () => {
+    const url = '/history?child=abc'
+    bootAt(url)
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      const calls = mockFetch({ '/api/v1/me': signedIn })
+      render(App)
+
+      expect(await screen.findByText('No such child')).toBeTruthy()
+      expect(location.pathname + location.search).toBe(url)
+      expect(push).toHaveBeenCalledTimes(0)
+      expect(get(historyFilters).badChild).toBe(true)
+      expect(calls.map((c) => c.url)).toEqual(['/api/v1/me'])
+    } finally {
+      push.mockRestore()
+    }
+  })
+
+  it('a PIN unlock leaves the query and the filters intact', async () => {
+    const url = '/history?child=3&status=expired&from=2026-03-01'
+    bootAt(url)
+    const filters = { service: null, status: 'expired', from: '2026-03-01', to: null, badChild: false }
+    const push = vi.spyOn(history, 'pushState')
+    try {
+      let unlockedYet = false
+      mockFetch({
+        '/api/v1/me': () =>
+          unlockedYet ? signedIn() : json(401, { error: 'pin_required', message: 'enter your PIN' }),
+        'POST /api/v1/unlock': () => {
+          unlockedYet = true
+          return new Response(null, { status: 204 })
+        },
+        '/api/v1/history?child=3&status=expired&from=2026-03-01T05%3A00%3A00.000Z': cleoPage,
+        ...noOptions,
+      })
+      render(App)
+      await screen.findByRole('dialog')
+      expect(location.pathname + location.search).toBe(url)
+
+      await fireEvent.input(screen.getByLabelText('PIN'), { target: { value: '1234' } })
+      await fireEvent.click(screen.getByRole('button', { name: 'Unlock' }))
+
+      expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
+      expect(location.pathname + location.search).toBe(url)
+      expect(push).toHaveBeenCalledTimes(0)
+      expect(get(historyChild)).toBe(3)
+      expect(get(historyFilters)).toStrictEqual(filters)
+    } finally {
+      push.mockRestore()
+    }
   })
 
   it('history needs a session', async () => {
@@ -476,12 +654,8 @@ describe('history route', () => {
     loadAt('/history?child=3', 3)
     mockFetch({
       '/api/v1/me': signedIn,
-      '/api/v1/children/3/history': cleoPage,
-      '/api/v1/children': noChildren,
-      '/api/v1/buttons': () => json(200, { buttons: [] }),
-      '/api/v1/services': () => json(200, { services: [] }),
-      '/api/v1/grants': () => json(200, { grants: [] }),
-      '/api/v1/migration': () => json(200, { global: [], clients: [] }),
+      '/api/v1/history?child=3': cleoPage,
+      ...home,
     })
     render(App)
     await screen.findByRole('heading', { name: 'Cleo — history' })
@@ -495,16 +669,13 @@ describe('history route', () => {
     expect(screen.queryByRole('heading', { name: 'Cleo — history' })).toBeNull()
   })
 
-  it('a History link on Home opens that child', async () => {
+  it('a History link on Home opens the overview with that child selected', async () => {
     const cleo = { id: 3, name: 'Cleo', clients: ['Kid phone'] }
     mockFetch({
       '/api/v1/me': signedIn,
+      ...home,
       '/api/v1/children': () => json(200, { children: [cleo] }),
-      '/api/v1/buttons': () => json(200, { buttons: [] }),
-      '/api/v1/services': () => json(200, { services: [] }),
-      '/api/v1/grants': () => json(200, { grants: [] }),
-      '/api/v1/migration': () => json(200, { global: [], clients: [] }),
-      '/api/v1/children/3/history': cleoPage,
+      '/api/v1/history?child=3': cleoPage,
     })
     render(App)
 
@@ -513,6 +684,8 @@ describe('history route', () => {
     expect(await screen.findByRole('heading', { name: 'Cleo — history' })).toBeTruthy()
     expect(location.pathname + location.search).toBe('/history?child=3')
     expect(screen.queryByText(/Signed in as/)).toBeNull()
+    const select = screen.getByLabelText('Child') as HTMLSelectElement
+    await vi.waitFor(() => expect(select.selectedOptions[0]?.textContent).toBe('Cleo'))
   })
 })
 

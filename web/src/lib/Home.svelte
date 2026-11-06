@@ -280,6 +280,7 @@
     <button type="button" onclick={() => navigate('children')}>Children</button>
     <button type="button" onclick={() => navigate('buttons')}>Buttons</button>
     <button type="button" onclick={() => navigate('services')}>Services</button>
+    <button type="button" onclick={() => navigate('history')}>History</button>
     <button type="button" onclick={() => navigate('settings')}>Settings</button>
     <button type="button" onclick={signOut} disabled={pending}>Log out</button>
   </nav>
