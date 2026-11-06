@@ -1,6 +1,6 @@
 {
   "phase": "history-overview",
-  "generated_at": "2026-11-06T12:23:55.594783Z",
+  "generated_at": "2026-11-06T13:06:57.373655Z",
   "languages": [
     {
       "name": "go",
@@ -61,11 +61,11 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 392,
-        "Survived": 24,
+        "Killed": 395,
+        "Survived": 26,
         "Timeout": 0,
         "Errors": 2,
-        "Score": 0.9423076923076923,
+        "Score": 0.9382422802850356,
         "Surviving": [
           {
             "File": "web/src/lib/History.svelte",
@@ -116,6 +116,56 @@
             "Key": "389072b7543d6c74",
             "Lifecycle": "accepted",
             "Note": "Equivalent: loadMore is reachable only from the Load more button, which renders inside {#if nextBefore !== null}, so before is never null here."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 108,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "708406a410221007",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Same mutant as retired e6b705a6c3068af8, rekeyed when t-15 moved the line; jsdom confirmed on 8cc2749 and the one covering test, which asserts '', passes on it."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 113,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "a7f22c1a0303dc17",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 114,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "6eee2cbbaf236a76",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 173,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "315e6ab0c01bf7ce",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 183,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "5b8221e61f77c842",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -276,36 +326,6 @@
             "Key": "22fc6e01d4c968b8",
             "Lifecycle": "accepted",
             "Note": "Equivalent: Object.hasOwn(LABELS, null) looks up the key 'null', which LABELS lacks, so the result is false with or without the guard."
-          },
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 106,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "708406a410221007",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Same mutant as retired e6b705a6c3068af8, rekeyed when t-15 moved the line; jsdom confirmed on 8cc2749 and the one covering test, which asserts '', passes on it."
-          },
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 161,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "315e6ab0c01bf7ce",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
-          },
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 170,
-            "Op": "StringLiteral",
-            "Snippet": "\"Stryker was here!\"",
-            "Origin": "in-hunk",
-            "Key": "5b8221e61f77c842",
-            "Lifecycle": "accepted",
-            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
           }
         ],
         "NotCovered": 0
@@ -398,14 +418,14 @@
             "construct": "FunctionDeclaration fetched"
           },
           {
-            "start": 57,
-            "end": 57,
-            "construct": "hunk"
-          },
-          {
             "start": 58,
             "end": 58,
             "construct": "VariableDeclaration URL3"
+          },
+          {
+            "start": 59,
+            "end": 59,
+            "construct": "hunk"
           },
           {
             "start": 60,
@@ -458,11 +478,6 @@
             "construct": "FunctionDeclaration mount"
           },
           {
-            "start": 126,
-            "end": 126,
-            "construct": "hunk"
-          },
-          {
             "start": 127,
             "end": 127,
             "construct": "VariableDeclaration stopFollowing"
@@ -486,6 +501,11 @@
             "start": 136,
             "end": 144,
             "construct": "FunctionDeclaration mountAt"
+          },
+          {
+            "start": 145,
+            "end": 145,
+            "construct": "hunk"
           },
           {
             "start": 146,
@@ -519,7 +539,7 @@
           },
           {
             "start": 160,
-            "end": 1000,
+            "end": 1026,
             "construct": "ExpressionStatement"
           }
         ],
@@ -748,127 +768,147 @@
           },
           {
             "start": 34,
-            "end": 36,
+            "end": 34,
+            "construct": "VariableDeclaration fromInput"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "VariableDeclaration toInput"
+          },
+          {
+            "start": 36,
+            "end": 38,
             "construct": "hunk"
           },
           {
-            "start": 37,
-            "end": 41,
+            "start": 39,
+            "end": 43,
             "construct": "VariableDeclaration childOptions"
           },
           {
-            "start": 42,
-            "end": 46,
+            "start": 44,
+            "end": 48,
             "construct": "VariableDeclaration serviceOptions"
           },
           {
-            "start": 47,
-            "end": 48,
+            "start": 49,
+            "end": 50,
             "construct": "hunk"
           },
           {
-            "start": 49,
-            "end": 53,
+            "start": 51,
+            "end": 55,
             "construct": "FunctionDeclaration emit"
           },
           {
-            "start": 54,
-            "end": 54,
+            "start": 56,
+            "end": 56,
             "construct": "hunk"
           },
           {
-            "start": 55,
-            "end": 57,
+            "start": 57,
+            "end": 59,
             "construct": "FunctionDeclaration setFilter"
           },
           {
-            "start": 58,
-            "end": 59,
+            "start": 60,
+            "end": 61,
             "construct": "hunk"
           },
           {
-            "start": 60,
-            "end": 62,
+            "start": 62,
+            "end": 64,
             "construct": "FunctionDeclaration flushDay"
           },
           {
-            "start": 63,
-            "end": 63,
+            "start": 65,
+            "end": 65,
             "construct": "hunk"
           },
           {
-            "start": 64,
-            "end": 67,
+            "start": 66,
+            "end": 69,
             "construct": "FunctionDeclaration dropDay"
           },
           {
-            "start": 68,
-            "end": 68,
+            "start": 70,
+            "end": 70,
             "construct": "hunk"
           },
           {
-            "start": 69,
-            "end": 74,
+            "start": 71,
+            "end": 76,
             "construct": "FunctionDeclaration holdDay"
           },
           {
-            "start": 75,
-            "end": 75,
+            "start": 77,
+            "end": 77,
             "construct": "hunk"
           },
           {
-            "start": 76,
-            "end": 78,
+            "start": 78,
+            "end": 80,
             "construct": "FunctionDeclaration setStatus"
           },
           {
-            "start": 79,
-            "end": 87,
+            "start": 81,
+            "end": 89,
             "construct": "hunk"
           },
           {
-            "start": 88,
-            "end": 92,
+            "start": 90,
+            "end": 94,
             "construct": "FunctionDeclaration setDay"
           },
           {
-            "start": 93,
-            "end": 100,
+            "start": 95,
+            "end": 102,
             "construct": "hunk"
           },
           {
-            "start": 101,
-            "end": 107,
+            "start": 103,
+            "end": 109,
             "construct": "FunctionDeclaration leaveDay"
           },
           {
-            "start": 108,
-            "end": 112,
+            "start": 110,
+            "end": 110,
             "construct": "hunk"
           },
           {
-            "start": 113,
-            "end": 116,
-            "construct": "ExpressionStatement"
+            "start": 111,
+            "end": 115,
+            "construct": "FunctionDeclaration restoreDays"
           },
           {
-            "start": 117,
-            "end": 117,
-            "construct": "ExpressionStatement"
-          },
-          {
-            "start": 118,
-            "end": 119,
+            "start": 116,
+            "end": 123,
             "construct": "hunk"
           },
           {
-            "start": 120,
-            "end": 175,
+            "start": 124,
+            "end": 127,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 128,
+            "end": 128,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "construct": "hunk"
+          },
+          {
+            "start": 131,
+            "end": 188,
             "construct": "Element form"
           },
           {
-            "start": 176,
-            "end": 195,
+            "start": 189,
+            "end": 208,
             "construct": "hunk"
           }
         ],
@@ -1000,7 +1040,7 @@
           },
           {
             "start": 50,
-            "end": 406,
+            "end": 437,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1464,22 +1504,40 @@
   ],
   "out_of_scope": [
     {
-      "file": "internal/api/custom_services.go",
-      "line": 153,
-      "op": "ARITHMETIC_BASE",
+      "file": "internal/api/reauth.go",
+      "line": 59,
+      "op": "CONDITIONALS_NEGATION",
       "language": "go",
-      "key": "d6679638cc1e6564",
+      "key": "9fa81f875c787158",
       "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
     },
     {
-      "file": "internal/api/custom_services.go",
-      "line": 154,
-      "op": "ARITHMETIC_BASE",
+      "file": "internal/api/pin.go",
+      "line": 128,
+      "op": "CONDITIONALS_NEGATION",
       "language": "go",
-      "key": "476fdd58ed2fe273",
+      "key": "1702d76e6fc4596c",
       "lifecycle": "accepted",
-      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/unlock.go",
+      "line": 87,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "6f6a26b327e331f8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/unlock.go",
+      "line": 111,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "2e088d645f6775d1",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
     },
     {
       "file": "internal/api/grants.go",
@@ -1498,6 +1556,24 @@
       "key": "3d175e3325616cdf",
       "lifecycle": "accepted",
       "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
     },
     {
       "file": "internal/api/login.go",
@@ -1523,42 +1599,6 @@
       "op": "CONDITIONALS_NEGATION",
       "language": "go",
       "key": "9633328df008345a",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/unlock.go",
-      "line": 87,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "6f6a26b327e331f8",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/unlock.go",
-      "line": 111,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "2e088d645f6775d1",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/pin.go",
-      "line": 128,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "1702d76e6fc4596c",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/reauth.go",
-      "line": 59,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "9fa81f875c787158",
       "lifecycle": "accepted",
       "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
     },
@@ -1641,7 +1681,7 @@
       ".dross/phases/history-overview/changes.json": [
         {
           "start": 1,
-          "end": 625
+          "end": 681
         }
       ],
       ".dross/phases/history-overview/panel/mvp.md": [
@@ -1671,7 +1711,7 @@
       ".dross/phases/history-overview/plan.toml": [
         {
           "start": 1,
-          "end": 243
+          "end": 265
         }
       ],
       ".dross/phases/history-overview/spec.toml": [
@@ -1683,13 +1723,13 @@
       ".dross/phases/history-overview/tests.json": [
         {
           "start": 1,
-          "end": 2257
+          "end": 2438
         }
       ],
       ".dross/phases/history-overview/verify.toml": [
         {
           "start": 1,
-          "end": 134
+          "end": 141
         }
       ],
       ".dross/project.toml": [
@@ -1705,7 +1745,7 @@
         },
         {
           "start": 1991,
-          "end": 2197
+          "end": 2215
         }
       ],
       "internal/api/api.go": [
@@ -1989,10 +2029,10 @@
         },
         {
           "start": 53,
-          "end": 58
+          "end": 56
         },
         {
-          "start": 60,
+          "start": 58,
           "end": 60
         },
         {
@@ -2017,14 +2057,14 @@
         },
         {
           "start": 113,
-          "end": 136
+          "end": 121
         },
         {
-          "start": 138,
-          "end": 142
+          "start": 123,
+          "end": 123
         },
         {
-          "start": 146,
+          "start": 127,
           "end": 150
         },
         {
@@ -2125,7 +2165,7 @@
         },
         {
           "start": 491,
-          "end": 999
+          "end": 1025
         }
       ],
       "web/src/lib/History.svelte": [
@@ -2209,13 +2249,13 @@
       "web/src/lib/HistoryFilterBar.svelte": [
         {
           "start": 1,
-          "end": 195
+          "end": 208
         }
       ],
       "web/src/lib/HistoryFilterBar.test.ts": [
         {
           "start": 1,
-          "end": 406
+          "end": 437
         }
       ],
       "web/src/lib/Home.svelte": [
@@ -2433,6 +2473,6 @@
     "source": "git+changes"
   },
   "measured_on": "local",
-  "measured_commit": "b925b2fdd2408a58fd649b3f5da4568b202657b9",
-  "measured_tree": "371cb52bb9be126940abb10d0cdfc944f77284a0"
+  "measured_commit": "78b2eeff85093c36ec36e83f184a5c05af8e0041",
+  "measured_tree": "90603dd9c8fd234c9e6b9a9e31364aec4014e1a8"
 }
