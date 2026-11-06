@@ -1,6 +1,6 @@
 {
   "phase": "history-overview",
-  "generated_at": "2026-11-06T07:03:14.869588Z",
+  "generated_at": "2026-11-06T08:09:31.597669Z",
   "languages": [
     {
       "name": "go",
@@ -61,43 +61,12 @@
       ],
       "mutation": {
         "Tool": "stryker",
-        "Killed": 750,
-        "Survived": 50,
+        "Killed": 755,
+        "Survived": 45,
         "Timeout": 0,
         "Errors": 0,
-        "Score": 0.9375,
+        "Score": 0.94375,
         "Surviving": [
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 61,
-            "Op": "ArrowFunction",
-            "Snippet": "() =\u003e undefined",
-            "NotCovered": true,
-            "Origin": "in-hunk",
-            "Key": "374725f636d1da71",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 27,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "e9d251172c34fafc",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/HistoryFilterBar.svelte",
-            "Line": 29,
-            "Op": "StringLiteral",
-            "Snippet": "``",
-            "Origin": "in-hunk",
-            "Key": "5f073fc4318578f4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
           {
             "File": "web/src/lib/HistoryFilterBar.svelte",
             "Line": 57,
@@ -105,8 +74,8 @@
             "Snippet": "\"Stryker was here!\"",
             "Origin": "in-hunk",
             "Key": "e6b705a6c3068af8",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
           },
           {
             "File": "web/src/lib/HistoryFilterBar.svelte",
@@ -115,8 +84,8 @@
             "Snippet": "\"Stryker was here!\"",
             "Origin": "in-hunk",
             "Key": "315e6ab0c01bf7ce",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
           },
           {
             "File": "web/src/lib/HistoryFilterBar.svelte",
@@ -125,8 +94,8 @@
             "Snippet": "\"Stryker was here!\"",
             "Origin": "in-hunk",
             "Key": "5b8221e61f77c842",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
           },
           {
             "File": "web/src/lib/History.svelte",
@@ -135,8 +104,8 @@
             "Snippet": "[\"Stryker was here\"]",
             "Origin": "in-hunk",
             "Key": "dfc634b30d2dd4ea",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: load() resets grants in the mount effect and the list renders only once loaded is true after a page arrives, overwriting this initial value."
           },
           {
             "File": "web/src/lib/History.svelte",
@@ -150,33 +119,13 @@
           },
           {
             "File": "web/src/lib/History.svelte",
-            "Line": 41,
-            "Op": "ArrayDeclaration",
-            "Snippet": "[\"Stryker was here\"]",
-            "Origin": "in-hunk",
-            "Key": "fdf1be342b98a97f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/History.svelte",
-            "Line": 47,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "7ab49ec524166ba8",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/History.svelte",
             "Line": 51,
             "Op": "StringLiteral",
             "Snippet": "\"\"",
             "Origin": "in-hunk",
             "Key": "51dc250be148d62e",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: filterKey only has to differ between filter sets. Every other key contains a ?, so '' stays as distinct as 'bad', and the value is never shown."
           },
           {
             "File": "web/src/lib/History.svelte",
@@ -205,8 +154,8 @@
             "Snippet": "false",
             "Origin": "in-hunk",
             "Key": "389072b7543d6c74",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: loadMore is reachable only from the Load more button, which renders inside {#if nextBefore !== null}, so before is never null here."
           },
           {
             "File": "web/src/lib/History.svelte",
@@ -235,8 +184,8 @@
             "Snippet": "\"Stryker was here!\"",
             "Origin": "in-hunk",
             "Key": "ef7d5c3b89c8d878",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: parseFilters of a string naming no filter key returns no filters, same as parsing ''."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -265,8 +214,8 @@
             "Snippet": "\"Stryker was here!\"",
             "Origin": "in-hunk",
             "Key": "21646a60f54848a6",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: off the history route own only feeds parseFilters and URLSearchParams; any string with no filter or child key reads as no filters, same as ''."
           },
           {
             "File": "web/src/lib/api.ts",
@@ -335,8 +284,58 @@
             "Snippet": "\"\"",
             "Origin": "in-hunk",
             "Key": "760a8879568afcc5",
-            "Lifecycle": "in-diff",
-            "Note": ""
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (history-overview verify 2026-11-06): static module-level const. Hand-applying HISTORY = '' fails 55 vitest tests, so the suite catches it."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 86,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "852254c6a0f93b2f",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: any day overflow also changes the month, so the month check already rejects every date this comparison would catch."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 72,
+            "Op": "Regex",
+            "Snippet": "/(\\d{4})-(\\d{2})-(\\d{2})$/",
+            "Origin": "in-hunk",
+            "Key": "32ca7cc2f84c36f4",
+            "Lifecycle": "accepted",
+            "Note": "False survivor, Stryker attribution ceiling: DAY is a module-level regex, so these are static mutants, and Stryker ran only 7 api.test.ts tests against them. Both are killed by hand (history-overview verify, 2026-11-06): dropping ^ fails 'treats from=x2026-03-01 as no filter', dropping $ fails 'treats to=2026-03-01x as no filter' and 'treats to=2026-03-01T00:00:00Z as no filter'. Both mutants share this key."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 72,
+            "Op": "Regex",
+            "Snippet": "/^(\\d{4})-(\\d{2})-(\\d{2})/",
+            "Origin": "in-hunk",
+            "Key": "32ca7cc2f84c36f4",
+            "Lifecycle": "accepted",
+            "Note": "False survivor, Stryker attribution ceiling: DAY is a module-level regex, so these are static mutants, and Stryker ran only 7 api.test.ts tests against them. Both are killed by hand (history-overview verify, 2026-11-06): dropping ^ fails 'treats from=x2026-03-01 as no filter', dropping $ fails 'treats to=2026-03-01x as no filter' and 'treats to=2026-03-01T00:00:00Z as no filter'. Both mutants share this key."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 81,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "27cd17be97287dbd",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: DAY.exec(null) coerces to 'null', which does not match, so m is null exactly as the guard makes it."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 90,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "22fc6e01d4c968b8",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: Object.hasOwn(LABELS, null) looks up the key 'null', which LABELS lacks, so the result is false with or without the guard."
           },
           {
             "File": "web/src/lib/Home.svelte",
@@ -521,59 +520,9 @@
             "Key": "4952cfeed1f15d36",
             "Lifecycle": "accepted",
             "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
-          },
-          {
-            "File": "web/src/lib/history.ts",
-            "Line": 86,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "852254c6a0f93b2f",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/history.ts",
-            "Line": 72,
-            "Op": "Regex",
-            "Snippet": "/(\\d{4})-(\\d{2})-(\\d{2})$/",
-            "Origin": "in-hunk",
-            "Key": "32ca7cc2f84c36f4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/history.ts",
-            "Line": 72,
-            "Op": "Regex",
-            "Snippet": "/^(\\d{4})-(\\d{2})-(\\d{2})/",
-            "Origin": "in-hunk",
-            "Key": "32ca7cc2f84c36f4",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/history.ts",
-            "Line": 81,
-            "Op": "ConditionalExpression",
-            "Snippet": "false",
-            "Origin": "in-hunk",
-            "Key": "27cd17be97287dbd",
-            "Lifecycle": "in-diff",
-            "Note": ""
-          },
-          {
-            "File": "web/src/lib/history.ts",
-            "Line": 90,
-            "Op": "ConditionalExpression",
-            "Snippet": "true",
-            "Origin": "in-hunk",
-            "Key": "22fc6e01d4c968b8",
-            "Lifecycle": "in-diff",
-            "Note": ""
           }
         ],
-        "NotCovered": 5
+        "NotCovered": 4
       },
       "measured_on": "local",
       "ranges": {
@@ -767,7 +716,7 @@
           },
           {
             "start": 151,
-            "end": 843,
+            "end": 858,
             "construct": "ExpressionStatement"
           }
         ],
@@ -869,7 +818,7 @@
           },
           {
             "start": 38,
-            "end": 196,
+            "end": 210,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1157,27 +1106,27 @@
           },
           {
             "start": 149,
-            "end": 200,
+            "end": 202,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 201,
-            "end": 201,
+            "start": 203,
+            "end": 203,
             "construct": "hunk"
           },
           {
-            "start": 202,
-            "end": 229,
+            "start": 204,
+            "end": 231,
             "construct": "ExpressionStatement"
           },
           {
-            "start": 230,
-            "end": 230,
+            "start": 232,
+            "end": 232,
             "construct": "hunk"
           },
           {
-            "start": 231,
-            "end": 239,
+            "start": 233,
+            "end": 241,
             "construct": "ExpressionStatement"
           }
         ],
@@ -1332,42 +1281,6 @@
   ],
   "out_of_scope": [
     {
-      "file": "internal/api/unlock.go",
-      "line": 87,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "6f6a26b327e331f8",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/unlock.go",
-      "line": 111,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "2e088d645f6775d1",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/reauth.go",
-      "line": 59,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "9fa81f875c787158",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
-      "file": "internal/api/pin.go",
-      "line": 128,
-      "op": "CONDITIONALS_NEGATION",
-      "language": "go",
-      "key": "1702d76e6fc4596c",
-      "lifecycle": "accepted",
-      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
-    },
-    {
       "file": "internal/api/login.go",
       "line": 93,
       "op": "CONDITIONALS_NEGATION",
@@ -1391,6 +1304,24 @@
       "op": "CONDITIONALS_NEGATION",
       "language": "go",
       "key": "9633328df008345a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/unlock.go",
+      "line": 87,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "6f6a26b327e331f8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/unlock.go",
+      "line": 111,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "2e088d645f6775d1",
       "lifecycle": "accepted",
       "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
     },
@@ -1431,6 +1362,24 @@
       "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
     },
     {
+      "file": "internal/api/pin.go",
+      "line": 128,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1702d76e6fc4596c",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/reauth.go",
+      "line": 59,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9fa81f875c787158",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
       "file": "internal/store/migrate.go",
       "line": 25,
       "op": "ARITHMETIC_BASE",
@@ -1460,6 +1409,8 @@
       ".dross/phases/history-overview/panel/verification.md",
       ".dross/phases/history-overview/plan.toml",
       ".dross/phases/history-overview/spec.toml",
+      ".dross/phases/history-overview/tests.json",
+      ".dross/phases/history-overview/verify.toml",
       ".dross/project.toml",
       ".dross/survivors.toml",
       "internal/api/api.go",
@@ -1507,7 +1458,7 @@
       ".dross/phases/history-overview/changes.json": [
         {
           "start": 1,
-          "end": 506
+          "end": 573
         }
       ],
       ".dross/phases/history-overview/panel/mvp.md": [
@@ -1537,7 +1488,7 @@
       ".dross/phases/history-overview/plan.toml": [
         {
           "start": 1,
-          "end": 202
+          "end": 232
         }
       ],
       ".dross/phases/history-overview/spec.toml": [
@@ -1546,10 +1497,28 @@
           "end": 80
         }
       ],
+      ".dross/phases/history-overview/tests.json": [
+        {
+          "start": 1,
+          "end": 2284
+        }
+      ],
+      ".dross/phases/history-overview/verify.toml": [
+        {
+          "start": 1,
+          "end": 234
+        }
+      ],
       ".dross/project.toml": [
         {
           "start": 3,
           "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 1983,
+          "end": 2099
         }
       ],
       "internal/api/api.go": [
@@ -1944,28 +1913,32 @@
           "end": 384
         },
         {
-          "start": 415,
-          "end": 415
+          "start": 387,
+          "end": 398
         },
         {
-          "start": 431,
-          "end": 431
+          "start": 428,
+          "end": 428
         },
         {
-          "start": 448,
-          "end": 448
+          "start": 444,
+          "end": 444
         },
         {
-          "start": 450,
-          "end": 450
+          "start": 461,
+          "end": 461
         },
         {
           "start": 463,
           "end": 463
         },
         {
-          "start": 469,
-          "end": 842
+          "start": 476,
+          "end": 476
+        },
+        {
+          "start": 482,
+          "end": 857
         }
       ],
       "web/src/lib/History.svelte": [
@@ -2055,7 +2028,7 @@
       "web/src/lib/HistoryFilterBar.test.ts": [
         {
           "start": 1,
-          "end": 196
+          "end": 210
         }
       ],
       "web/src/lib/Home.svelte": [
@@ -2245,7 +2218,7 @@
         },
         {
           "start": 100,
-          "end": 238
+          "end": 240
         }
       ],
       "web/src/lib/history.ts": [
@@ -2279,6 +2252,6 @@
     ]
   },
   "measured_on": "local",
-  "measured_commit": "20f76148e20fd9ca1834d91ca0ddbbe9f713d012",
-  "measured_tree": "661b39f7dc81ed0a6ecf4ddd3970e569e8520257"
+  "measured_commit": "b89f442de0db2fb502d9707b464397427b375b1c",
+  "measured_tree": "185aeefc75c21d3050be8566c0bc7152708d5b2d"
 }
