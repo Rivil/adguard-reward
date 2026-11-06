@@ -1676,15 +1676,6 @@
   reason = "Equivalent: the second pushState argument (title) is ignored by browsers and jsdom."
 
 [[accepted]]
-  key = "ec73d5656295bf3a"
-  file = "web/src/lib/History.svelte"
-  op = "ArrayDeclaration"
-  text = "let grants = $state<HistoryGrant[]>([])"
-  line = 13
-  accepted_in = "grant-history"
-  reason = "Equivalent: initial grants value is overwritten by load() (grants = []) in the mount effect, and the list only renders once loaded is true after a page arrives."
-
-[[accepted]]
   key = "52d6dfd7f539f3a8"
   file = "web/src/lib/History.svelte"
   op = "BooleanLiteral"
@@ -1737,15 +1728,6 @@
   line = 43
   accepted_in = "grant-history"
   reason = "Equivalent: REMOVED_REASONS[null] is undefined, so forcing the lookup yields the same falsy reason and the same fallback text as the null branch."
-
-[[accepted]]
-  key = "4f13ab2bafd98088"
-  file = "web/src/lib/History.svelte"
-  op = "ConditionalExpression"
-  text = "if (loadingMore || id === null || before === null) return"
-  line = 63
-  accepted_in = "grant-history"
-  reason = "Equivalent (two mutants, id===null->false and before===null->false): loadMore is only reachable from the Load more button, which renders only inside {#if nextBefore !== null} on the loaded branch; a null child takes the notFound branch so no button exists, and a same-tick second click is stopped by the loadingMore guard (set before the await). Both null checks are defensive and unreachable from the UI."
 
 [[accepted]]
   key = "a449124a3ffdc745"
