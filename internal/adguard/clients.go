@@ -127,7 +127,7 @@ func decodeField(raw map[string]json.RawMessage, key string, dst any) error {
 		return nil
 	}
 	if err := json.Unmarshal(v, dst); err != nil {
-		return fmt.Errorf("adguard: /control/clients: field %q: %w", key, err)
+		return fmt.Errorf("%w: /control/clients: field %q: %w", ErrBadResponse, key, err)
 	}
 	return nil
 }

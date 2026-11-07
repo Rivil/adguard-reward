@@ -3,6 +3,8 @@ package grants
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"net/http"
 	"reflect"
 	"slices"
 	"strings"
@@ -10,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/Rivil/adguard-reward/internal/rules"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
 
@@ -90,8 +93,11 @@ func TestReconcile_NoopNoWrites(t *testing.T) {
 	if st := empty.reconcile(); st != (Stats{}) {
 		t.Errorf("Stats with no grants = %+v, want zero", st)
 	}
-	if n := len(empty.fake.Requests()); n != 0 {
-		t.Errorf("no active grants but %d requests were made", n)
+	// With no grants the pass still converges the managed region: one
+	// user_rules read, no clients read and — nothing to manage — no write.
+	reqs := empty.fake.Requests()
+	if len(reqs) != 1 || reqs[0].Method != "GET" || reqs[0].Path != "/control/filtering/status" {
+		t.Errorf("no active grants: requests %+v, want only GET /control/filtering/status", reqs)
 	}
 }
 
@@ -490,4 +496,429 @@ func TestReconcile_WritesCountsActual(t *testing.T) {
 	}
 	e.wantBlocks("Old laptop", "youtube", true)
 	e.wantBlocks("Kid phone", "youtube", false)
+}
+
+func TestReconcile_RegionNoGrants(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ann", "kid-phone")
+	// Stored straight into the store: nothing has written the region yet.
+	if _, err := e.st.CreateCustomService(ctx, "Portal", []string{"a.com"}); err != nil {
+		t.Fatal(err)
+	}
+	st := e.reconcile()
+	if st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	want := []string{rules.BeginMarker, "||a.com^$client='kid-phone'", rules.EndMarker}
+	if got := e.fake.UserRules(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("user_rules %q, want %q", got, want)
+	}
+	if n := e.gets(); n != 0 {
+		t.Errorf("no grants but %d clients reads", n)
+	}
+}
+
+func TestReconcile_RegionTamper(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ann", "kid-phone")
+	e.createService("Portal", "a.com", "b.com")
+	want := e.region()
+
+	// A manual edit inside the markers: a block line gone, an exception
+	// added; plus a parent's own line outside them.
+	all := e.fake.UserRules()
+	tampered := []string{"! mine"}
+	for _, l := range all {
+		if l == "||a.com^$client='kid-phone'" {
+			continue
+		}
+		tampered = append(tampered, l)
+		if l == rules.BeginMarker {
+			tampered = append(tampered, "@@||a.com^$client='kid-phone'")
+		}
+	}
+	tampered = append(tampered, "||outside.example^")
+	e.fake.SetUserRules(tampered)
+
+	if st := e.reconcile(); st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got := e.region(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want restored %q", got, want)
+	}
+	if got, w := e.outside(), []string{"! mine", "||outside.example^"}; !reflect.DeepEqual(got, w) {
+		t.Fatalf("outside the markers %q, want %q", got, w)
+	}
+
+	posts := e.setRulesPosts()
+	if st := e.reconcile(); st.RulesWritten != 0 {
+		t.Fatalf("second pass Stats %+v, want RulesWritten 0", st)
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("converged pass issued %d set_rules POSTs", n)
+	}
+}
+
+func TestReconcile_RegionClientsDown(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "kid-phone")
+	r := e.createService("Portal", "a.com")
+	e.create(kid.ID, []string{r.Service.ServiceID()}, []string{"kid-phone"})
+	want := e.region()
+	e.fake.SetUserRules([]string{rules.BeginMarker, "||stale^", rules.EndMarker})
+
+	e.fake.SetStatus("/control/clients", http.StatusBadGateway)
+	st, err := e.eng.Reconcile(ctx)
+	if err == nil {
+		t.Fatal("Reconcile: nil error with /control/clients down")
+	}
+	if st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got := e.region(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q despite the clients outage", got, want)
+	}
+}
+
+func TestReconcile_OverdueCustom(t *testing.T) {
+	e := newEnv(t, withNoTimers)
+	kid := e.child("Ann", "kid-phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	g := e.seedOverdue(kid.ID, []string{svc}, []string{"kid-phone"})
+	if err := e.eng.SyncRules(ctx); err != nil {
+		t.Fatal(err)
+	}
+	if len(e.exceptions()) != 1 {
+		t.Fatalf("setup: exceptions %q", e.exceptions())
+	}
+
+	st := e.reconcile()
+	if st.Reverted != 1 {
+		t.Fatalf("Stats %+v, want one reverted", st)
+	}
+	e.wantStatus(g.ID, store.StatusExpired)
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("exceptions after the pass %q, want none", got)
+	}
+	if got, want := e.region(), []string{"||a.com^$client='kid-phone'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q", got, want)
+	}
+}
+
+func TestReconcile_AppliedFalse(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ann", "kid-phone")
+	e.fake.SetStatus(setRulesPath, http.StatusInternalServerError)
+	r, err := e.eng.CreateService(ctx, "Portal", []string{"a.com"})
+	if err != nil || r.Applied {
+		t.Fatalf("setup: %+v %v, want Applied=false", r, err)
+	}
+	e.fake.SetResponse(setRulesPath, 0, nil)
+
+	if st := e.reconcile(); st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got, want := e.region(), []string{"||a.com^$client='kid-phone'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q", got, want)
+	}
+}
+
+func TestReconcile_Malformed(t *testing.T) {
+	e := newEnv(t, nil)
+	e.offGlobal("youtube", "tiktok")
+	kid := e.child("Ann", "Kid phone", "Kid tablet")
+	e.createService("Portal", "a.com")
+	g := e.create(kid.ID, []string{"youtube"}, both)
+	e.setBlocked("Kid tablet", "youtube", "tiktok") // drift: re-blocked in AdGuard's UI
+
+	broken := []string{"||x^", rules.BeginMarker, "||y^"}
+	e.fake.SetUserRules(broken)
+	posts := e.setRulesPosts()
+
+	st, err := e.eng.Reconcile(ctx)
+	if err != nil {
+		t.Fatalf("Reconcile: %v, want nil (malformed region is logged, not fatal)", err)
+	}
+	if st.Repaired != 1 || st.RulesWritten != 0 {
+		t.Fatalf("Stats %+v, want the drift repaired and no rules write", st)
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("%d set_rules POSTs into a malformed region", n)
+	}
+	if !reflect.DeepEqual(e.fake.UserRules(), broken) {
+		t.Fatalf("user_rules changed: %q", e.fake.UserRules())
+	}
+	if logs := e.logs.String(); !strings.Contains(logs, "level=ERROR") || !strings.Contains(logs, "malformed") {
+		t.Fatalf("malformed region not logged at error:\n%s", logs)
+	}
+	e.wantBlocks("Kid tablet", "youtube", false)
+	e.wantStatus(g.Grant.ID, store.StatusActive)
+}
+
+func TestReconcile_HalfEndedGrant(t *testing.T) {
+	e := newEnv(t, nil)
+	kid := e.child("Ann", "Kid phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	res := e.create(kid.ID, []string{"youtube", svc}, []string{"Kid phone"})
+	want := e.exceptions()
+	if len(want) != 1 {
+		t.Fatalf("setup: exceptions %q", want)
+	}
+
+	e.fake.SetUpdateStatus("Kid phone", http.StatusInternalServerError)
+	var rf *ErrRevertFailed
+	if err := e.eng.End(ctx, res.Grant.ID); !errors.As(err, &rf) {
+		t.Fatalf("End: %v, want *ErrRevertFailed", err)
+	}
+	if got := e.exceptions(); len(got) != 0 {
+		t.Fatalf("after the half-failed End: exceptions %q, want none", got)
+	}
+	e.fake.SetUpdateStatus("Kid phone", 0)
+
+	if st := e.reconcile(); st.RulesWritten != 1 {
+		t.Fatalf("Stats %+v, want RulesWritten 1", st)
+	}
+	if got := e.exceptions(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("exceptions after one pass %q, want %q", got, want)
+	}
+	e.wantStatus(res.Grant.ID, store.StatusActive)
+}
+
+// Permanent toggles (locked drift_enforcement): the toggle half of a pass
+// converges every toggled built-in service to intent.
+
+func TestReconcile_ToggleDrift(t *testing.T) {
+	t.Run("unblocked re-added", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.fakeClient("kid-phone", "tiktok")
+		kid := e.child("Ann", "kid-phone")
+		e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+		e.fake.MutateClient("kid-phone", func(m map[string]json.RawMessage) {
+			m["blocked_services"] = json.RawMessage(`["tiktok","youtube"]`)
+		})
+
+		st := e.reconcile()
+		if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"tiktok"}) {
+			t.Errorf("kid-phone = %v, want [tiktok] (youtube permanently unblocked)", got)
+		}
+		if st.Repaired != 1 || st.Writes != 1 {
+			t.Errorf("Stats = %+v, want Repaired 1 Writes 1", st)
+		}
+	})
+
+	t.Run("blocked removed", func(t *testing.T) {
+		e := newEnv(t, nil)
+		e.fakeClient("kid-phone", "tiktok", "youtube")
+		kid := e.child("Ann", "kid-phone")
+		e.seedToggle(kid.ID, "tiktok", store.ToggleBlocked)
+		e.setBlocked("kid-phone", "youtube")
+
+		st := e.reconcile()
+		if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"tiktok", "youtube"}) {
+			t.Errorf("kid-phone = %v, want [tiktok youtube] (tiktok permanently blocked)", got)
+		}
+		if st.Repaired != 1 || st.Writes != 1 {
+			t.Errorf("Stats = %+v, want Repaired 1 Writes 1", st)
+		}
+	})
+}
+
+func TestReconcile_ToggleNoop(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "youtube", "netflix")
+	e.fakeClient("tv", "tiktok")
+	kid := e.child("Ann", "kid-phone", "tv")
+	e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+	e.seedToggle(kid.ID, "tiktok", store.ToggleBlocked)
+
+	if st := e.reconcile(); st.Writes != 2 {
+		t.Fatalf("first pass Stats = %+v, want Writes 2 (youtube off kid-phone, tiktok on)", st)
+	}
+	posts, rulesPosts := e.posts(), e.setRulesPosts()
+	st := e.reconcile()
+	if n := e.posts() - posts + e.setRulesPosts() - rulesPosts; n != 0 {
+		t.Errorf("converged pass issued %d POSTs, want 0", n)
+	}
+	if st.Writes != 0 || st.Repaired != 0 {
+		t.Errorf("converged pass Stats = %+v, want Writes 0 Repaired 0", st)
+	}
+	if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"netflix", "tiktok"}) {
+		t.Errorf("kid-phone = %v, want [netflix tiktok]", got)
+	}
+}
+
+func TestReconcile_UntoggledUntouched(t *testing.T) {
+	for name, toggled := range map[string]bool{"no toggle rows": false, "another service toggled": true} {
+		t.Run(name, func(t *testing.T) {
+			e := newEnv(t, nil)
+			e.fakeClient("kid-phone", "tiktok")
+			kid := e.child("Ann", "kid-phone")
+			if toggled {
+				e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+			}
+			// The parent blocks netflix in AdGuard's UI: AdGuard owns it.
+			e.setBlocked("kid-phone", "netflix", "tiktok")
+			posts := e.posts()
+
+			e.reconcile()
+			if n := e.posts() - posts; n != 0 {
+				t.Errorf("pass issued %d update POSTs, want 0", n)
+			}
+			if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"netflix", "tiktok"}) {
+				t.Errorf("kid-phone = %v, want the parent's [netflix tiktok] untouched", got)
+			}
+		})
+	}
+}
+
+func TestReconcile_BlockYieldsToGrant(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("a-phone")
+	e.fakeClient("tv", "youtube")
+	e.fakeClient("c-phone", "youtube")
+	a := e.child("Ann", "a-phone", "tv")
+	c := e.child("Cal", "c-phone", "tv")
+	e.create(c.ID, youtube, []string{"c-phone", "tv"})
+	e.seedToggle(a.ID, "youtube", store.ToggleBlocked)
+	tvUpdates := e.updatesTo("tv")
+
+	for pass := 1; pass <= 3; pass++ {
+		e.reconcile()
+		if e.blocks("tv", "youtube") {
+			t.Fatalf("pass %d: tv = %v, want youtube absent (Cal's live grant holds it open)", pass, e.blocked("tv"))
+		}
+		if !e.blocks("a-phone", "youtube") {
+			t.Fatalf("pass %d: a-phone = %v, want youtube blocked (Ann's permanent block)", pass, e.blocked("a-phone"))
+		}
+	}
+	if n := e.updatesTo("tv") - tvUpdates; n != 0 {
+		t.Errorf("3 passes wrote tv %d times, want 0 (no fight with the grant)", n)
+	}
+}
+
+func TestReconcile_OverdueThenBlock(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "youtube") // tiktok open: the grant below unblocked it
+	kid := e.child("Ann", "kid-phone")
+	e.seedToggle(kid.ID, "tiktok", store.ToggleBlocked)
+	g := e.seedOverdue(kid.ID, []string{"tiktok"}, []string{"kid-phone"})
+
+	st := e.reconcile()
+	e.wantStatus(g.ID, store.StatusExpired)
+	if st.Reverted != 1 {
+		t.Errorf("Stats = %+v, want Reverted 1", st)
+	}
+	if got := e.blocked("kid-phone"); !reflect.DeepEqual(got, []string{"tiktok", "youtube"}) {
+		t.Errorf("kid-phone = %v, want [tiktok youtube] (the expired grant no longer holds tiktok open)", got)
+	}
+}
+
+func TestReconcile_ConvergesToggle(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "tiktok")
+	e.fakeClient("kid-tablet", "tiktok", "youtube")
+	kid := e.child("Ann", "kid-phone", "kid-tablet")
+	// A toggle whose write did not land on kid-tablet.
+	e.seedToggle(kid.ID, "youtube", store.ToggleUnblocked)
+	e.fake.SetUpdateStatus("kid-tablet", http.StatusInternalServerError)
+
+	if st := e.reconcile(); st.Repaired != 0 || st.Writes != 1 {
+		t.Fatalf("faulted pass Stats = %+v, want Repaired 0 Writes 1", st)
+	}
+	e.wantBlocks("kid-tablet", "youtube", true)
+
+	e.fake.SetUpdateStatus("kid-tablet", 0)
+	st := e.reconcile()
+	if got := e.blocked("kid-tablet"); !reflect.DeepEqual(got, []string{"tiktok"}) {
+		t.Errorf("kid-tablet = %v, want [tiktok] after the fault cleared", got)
+	}
+	if st.Repaired != 1 {
+		t.Errorf("Stats = %+v, want Repaired 1", st)
+	}
+}
+
+// togglesFailAfter fails ListServiceToggles once armed, after letting ok
+// more calls through.
+type togglesFailAfter struct {
+	*store.Store
+	mu  sync.Mutex
+	ok  int
+	err error
+}
+
+func (s *togglesFailAfter) arm(ok int, err error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.ok, s.err = ok, err
+}
+
+func (s *togglesFailAfter) ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error) {
+	s.mu.Lock()
+	fail := s.err != nil && s.ok == 0
+	if s.err != nil && s.ok > 0 {
+		s.ok--
+	}
+	err := s.err
+	s.mu.Unlock()
+	if fail {
+		return nil, err
+	}
+	return s.Store.ListServiceToggles(ctx)
+}
+
+func TestReconcile_ToggleReadFailure(t *testing.T) {
+	boom := errors.New("database is locked")
+	for _, tc := range []struct {
+		name string
+		// ok is how many toggle reads succeed first. The overdue grant's
+		// revert is the pass's first read: with 1 it expires and the toggle
+		// half's read is the one that fails; with 0 the revert fails closed
+		// too (locked revert_baseline_v2) and the grant waits.
+		ok      int
+		overdue string
+	}{
+		{"toggle half's read", 1, store.StatusExpired},
+		{"every read", 0, store.StatusActive},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			var fs *togglesFailAfter
+			e := newEnvStore(t, nil, func(st *store.Store) Store {
+				fs = &togglesFailAfter{Store: st}
+				return fs
+			})
+			e.fakeClient("kid-phone", "tiktok")
+			e.fakeClient("tv")
+			ann := e.child("Ann", "kid-phone")
+			ben := e.child("Ben", "tv")
+			svc := e.createService("Portal", "a.com").Service.ServiceID()
+			e.seedToggle(ann.ID, svc, store.ToggleUnblocked)
+			e.seedToggle(ann.ID, "youtube", store.ToggleUnblocked)
+			if err := e.eng.SyncRules(ctx); err != nil {
+				t.Fatal(err)
+			}
+			// Toggle drift on kid-phone; a live grant drifted and an overdue
+			// one on tv.
+			e.create(ben.ID, []string{"roblox"}, []string{"tv"})
+			g := e.seedOverdue(ben.ID, []string{"steam"}, []string{"tv"})
+			e.setBlocked("kid-phone", "tiktok", "youtube")
+			e.setBlocked("tv", "roblox")
+			phone, rulesPosts := e.updatesTo("kid-phone"), e.setRulesPosts()
+			fs.arm(tc.ok, boom)
+
+			if _, err := e.eng.Reconcile(ctx); !errors.Is(err, boom) {
+				t.Fatalf("Reconcile err = %v, want the toggle read error", err)
+			}
+			if n := e.updatesTo("kid-phone") - phone; n != 0 {
+				t.Errorf("%d toggle writes to kid-phone after a failed read, want 0", n)
+			}
+			e.wantBlocks("kid-phone", "youtube", true)
+			if n := e.setRulesPosts() - rulesPosts; n != 0 {
+				t.Errorf("%d set_rules POSTs after a failed read, want 0 (region fail-closed)", n)
+			}
+			// The grant half still ran.
+			e.wantBlocks("tv", "roblox", false)
+			e.wantStatus(g.ID, tc.overdue)
+			e.wantBlocks("tv", "steam", tc.overdue == store.StatusExpired)
+		})
+	}
 }

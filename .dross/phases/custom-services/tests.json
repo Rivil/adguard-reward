@@ -1,0 +1,2630 @@
+{
+  "phase": "custom-services",
+  "generated_at": "2026-11-03T07:08:35.264979Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/client.go",
+        "internal/adguard/rules.go",
+        "internal/adguard/rules_test.go",
+        "internal/api/api.go",
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go",
+        "internal/api/buttons.go",
+        "internal/api/buttons_test.go",
+        "internal/api/catalogue_test.go",
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/clients.go",
+        "internal/api/custom_services.go",
+        "internal/api/custom_services_test.go",
+        "internal/api/grants.go",
+        "internal/api/grants_test.go",
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go",
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go",
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go",
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go",
+        "internal/grants/rename.go",
+        "internal/grants/rename_test.go",
+        "internal/grants/rules.go",
+        "internal/grants/rules_test.go",
+        "internal/rules/domain.go",
+        "internal/rules/domain_test.go",
+        "internal/rules/region.go",
+        "internal/rules/region_test.go",
+        "internal/rules/render.go",
+        "internal/rules/render_test.go",
+        "internal/store/custom_services.go",
+        "internal/store/custom_services_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 570,
+        "Survived": 61,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9033280507131537,
+        "Surviving": [
+          {
+            "File": "cmd/adguard-reward/main.go",
+            "Line": 43,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "f46f6aab3d37fc49",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on the package-level 'reconcileInterval = 60 * time.Second' initializer: package var init runs before coverage counters exist, so gremlins attributes no block to it. The production cadence is pinned behaviourally by TestRun_ReconcilerDrift (drift still present 500 ms on at the 60 s value); a mutated constant would only be observable by a tautological equality test."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 183,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "51a958b88e117c6a",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 183,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9430031ee34baa69",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 183,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "51a958b88e117c6a",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 183,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9430031ee34baa69",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 185,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "68505a7be9631dc8",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 185,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "68505a7be9631dc8",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/client.go",
+            "Line": 187,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "cfecbf0de85b0129",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 105,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "fbcbc76509425f22",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 124,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 199,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 218,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "71be988b0a00e5a4",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 235,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ecfa87bc8060128",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 324,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "2c52925716d27eaf",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 431,
+            "Op": "INCREMENT_DECREMENT",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "02e04620e8b34819",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 432,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "31c90b7c2c61feca",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant in the test double's max-in-flight tracker: \u003e vs \u003e= only differs when filterInFlight == filterMaxFlight, where the assignment rewrites the same value (hand-applied 2026-11-02: tests pass, as expected for an equivalent)."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 432,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "3188cf890a3ee017",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 447,
+            "Op": "INCREMENT_DECREMENT",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "24f1c500a12e3a58",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 637,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "d1ef95a7df479858",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 638,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6366333d825413bd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 668,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 677,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 115,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "96ff237bdd4c77ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 124,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "82d078c2c4de2ddd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 105,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "fbcbc76509425f22",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 199,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "37d3fbc9535346b0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 218,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "71be988b0a00e5a4",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 235,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ecfa87bc8060128",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: RemoveClient: no client \" + name inside a panic() guarding misuse of the test double (removing a client that does not exist): string - string does not compile (not viable) and no test calls RemoveClient with an unknown name."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 324,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "2c52925716d27eaf",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 431,
+            "Op": "INCREMENT_DECREMENT",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "02e04620e8b34819",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 432,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "31c90b7c2c61feca",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant in the test double's max-in-flight tracker: \u003e vs \u003e= only differs when filterInFlight == filterMaxFlight, where the assignment rewrites the same value (hand-applied 2026-11-02: tests pass, as expected for an equivalent)."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 432,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "3188cf890a3ee017",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 447,
+            "Op": "INCREMENT_DECREMENT",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "24f1c500a12e3a58",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 637,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "d1ef95a7df479858",
+            "Lifecycle": "accepted",
+            "Note": "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 638,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "6366333d825413bd",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 668,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "4ddb8c8c56a75fe0",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/adguard/adguardtest/server.go",
+            "Line": 677,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9824007bce1a8b3d",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"adguardtest: ...\" + err.Error() inside panic() on a fixture-corruption / marshal-failure branch of the test double: string - string does not compile (not viable) and the branch is unreachable with the embedded fixtures."
+          },
+          {
+            "File": "internal/api/grants.go",
+            "Line": 157,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "971ea8d8d9b5ff52",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+          },
+          {
+            "File": "internal/api/grants.go",
+            "Line": 158,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "3d175e3325616cdf",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+          },
+          {
+            "File": "internal/api/clients.go",
+            "Line": 284,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "e39161b598da64d9",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/api/custom_services.go",
+            "Line": 153,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "d6679638cc1e6564",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/api/custom_services.go",
+            "Line": 154,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "476fdd58ed2fe273",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 162,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "d80e2d09b950a6b5",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 162,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 162,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "91ca0896550367aa",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/blocked/blocked.go",
+            "Line": 165,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "55673a2b65311747",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 112,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "ec84ab086867857b",
+            "Lifecycle": "accepted",
+            "Note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/clients.go",
+            "Line": 193,
+            "Op": "ARITHMETIC_BASE",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "37db173ea9b8e0ba",
+            "Lifecycle": "accepted",
+            "Note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+          },
+          {
+            "File": "internal/grants/grants.go",
+            "Line": 306,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "149b5b8d30816792",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (case err == nil -\u003e err != nil in Engine.revert: go test ./internal/grants fails TestReconcile_StartArmsTimers and TestReconcile_MissingClient, verified 2026-09-21); gremlins reports NotCovered because the empty case body has no coverage block. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/grants/reconcile.go",
+            "Line": 69,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "cccf33fd143b660e",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -\u003e err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/rules/region.go",
+            "Line": 51,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "891c4e5dcff99373",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/rules/region.go",
+            "Line": 51,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "891c4e5dcff99373",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/rules/region.go",
+            "Line": 57,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f20868ec245ab68d",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/rules/region.go",
+            "Line": 57,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f20868ec245ab68d",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          },
+          {
+            "File": "internal/rules/region.go",
+            "Line": 57,
+            "Op": "CONDITIONALS_BOUNDARY",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "304c22427bc9c248",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: the case only applies when exactly one BeginMarker and one EndMarker line exist, and a single line cannot equal both, so begin == end is unreachable and begin \u003c end vs begin \u003c= end behave identically (hand-applied 2026-11-02: tests pass, as expected for an equivalent)."
+          },
+          {
+            "File": "internal/rules/region.go",
+            "Line": 57,
+            "Op": "CONDITIONALS_NEGATION",
+            "Snippet": "",
+            "NotCovered": true,
+            "Origin": "in-hunk",
+            "Key": "f20868ec245ab68d",
+            "Lifecycle": "accepted",
+            "Note": "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+          }
+        ],
+        "NotCovered": 61
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "cmd/adguard-reward/main.go": "adapter-lacks-range-runner",
+        "cmd/adguard-reward/main_test.go": "adapter-lacks-range-runner",
+        "internal/adguard/adguardtest/server.go": "adapter-lacks-range-runner",
+        "internal/adguard/client.go": "adapter-lacks-range-runner",
+        "internal/adguard/rules.go": "adapter-lacks-range-runner",
+        "internal/adguard/rules_test.go": "adapter-lacks-range-runner",
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/blocked.go": "adapter-lacks-range-runner",
+        "internal/api/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/api/buttons.go": "adapter-lacks-range-runner",
+        "internal/api/buttons_test.go": "adapter-lacks-range-runner",
+        "internal/api/catalogue_test.go": "adapter-lacks-range-runner",
+        "internal/api/children.go": "adapter-lacks-range-runner",
+        "internal/api/children_test.go": "adapter-lacks-range-runner",
+        "internal/api/clients.go": "adapter-lacks-range-runner",
+        "internal/api/custom_services.go": "adapter-lacks-range-runner",
+        "internal/api/custom_services_test.go": "adapter-lacks-range-runner",
+        "internal/api/grants.go": "adapter-lacks-range-runner",
+        "internal/api/grants_test.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked.go": "adapter-lacks-range-runner",
+        "internal/blocked/blocked_test.go": "adapter-lacks-range-runner",
+        "internal/grants/clients.go": "adapter-lacks-range-runner",
+        "internal/grants/clients_test.go": "adapter-lacks-range-runner",
+        "internal/grants/grants.go": "adapter-lacks-range-runner",
+        "internal/grants/grants_test.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile.go": "adapter-lacks-range-runner",
+        "internal/grants/reconcile_test.go": "adapter-lacks-range-runner",
+        "internal/grants/rename.go": "adapter-lacks-range-runner",
+        "internal/grants/rename_test.go": "adapter-lacks-range-runner",
+        "internal/grants/rules.go": "adapter-lacks-range-runner",
+        "internal/grants/rules_test.go": "adapter-lacks-range-runner",
+        "internal/rules/domain.go": "adapter-lacks-range-runner",
+        "internal/rules/domain_test.go": "adapter-lacks-range-runner",
+        "internal/rules/region.go": "adapter-lacks-range-runner",
+        "internal/rules/region_test.go": "adapter-lacks-range-runner",
+        "internal/rules/render.go": "adapter-lacks-range-runner",
+        "internal/rules/render_test.go": "adapter-lacks-range-runner",
+        "internal/store/custom_services.go": "adapter-lacks-range-runner",
+        "internal/store/custom_services_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/App.svelte",
+        "web/src/App.test.ts",
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts",
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/ServiceIcon.svelte",
+        "web/src/lib/ServiceIcon.test.ts",
+        "web/src/lib/Services.svelte",
+        "web/src/lib/Services.test.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 795,
+        "Survived": 45,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 0.9464285714285714,
+        "Surviving": [
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 122,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "a6d312f12b091b9b",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 123,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9382694512e2eb73",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 212,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "bc76e085b2a98272",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 221,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "7f673034875137a4",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 311,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 311,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8ef387b402aa021d",
+            "Lifecycle": "accepted",
+            "Note": "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 30,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "9e7b970f78a207cf",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 31,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "332725e64d242d98",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 55,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "4a2c7171134bef4f",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 122,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "6451ace12288b160",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: inside the applied/partial guard, forcing the shared-length test true sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 122,
+            "Op": "EqualityOperator",
+            "Snippet": "(out.grant.shared ?? []).length \u003e= 0",
+            "Origin": "inherited",
+            "Key": "abeb67deb0f8d203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: length \u003e= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 135,
+            "Op": "ConditionalExpression",
+            "Snippet": "default:",
+            "Origin": "inherited",
+            "Key": "6232b0be4db10034",
+            "Lifecycle": "accepted",
+            "Note": "The switch's default arm only returns (applied/ignored need no note); rewriting the arm changes nothing observable."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 169,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "85c805b4f0c4fa20",
+            "Lifecycle": "accepted",
+            "Note": "acceptCurrentOffer is reachable only from the Extend button inside the dialog rendered when offer !== null; the null guard is unreachable defensive code."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 223,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "84cebad2af320e60",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 297,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].code",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 297,
+            "Op": "OptionalChaining",
+            "Snippet": "notes[child.id].text",
+            "Origin": "inherited",
+            "Key": "97404d5a1a2ab537",
+            "Lifecycle": "accepted",
+            "Note": "Both optional chains sit inside {#if notes[child.id]}, so the object is never nullish where they run."
+          },
+          {
+            "File": "web/src/lib/Home.svelte",
+            "Line": 82,
+            "Op": "OptionalChaining",
+            "Snippet": "stopPolling()",
+            "Origin": "inherited",
+            "Key": "6c8255537ab76c28",
+            "Lifecycle": "accepted",
+            "Note": "stopPolling is assigned in onMount, which always runs before onDestroy; the optional call can never see null."
+          },
+          {
+            "File": "web/src/lib/Services.svelte",
+            "Line": 22,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "6fac435270d9bb93",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: pending's initial false -\u003e true is unobservable because onMount's run() sets pending = true before any test or user can see the DOM, and finally resets it, so every observable state is identical."
+          },
+          {
+            "File": "web/src/lib/Services.svelte",
+            "Line": 55,
+            "Op": "BooleanLiteral",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "98d03b837dfb088c",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return true -\u003e false is unobservable."
+          },
+          {
+            "File": "web/src/lib/Services.svelte",
+            "Line": 61,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "74abd16500e92203",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return false -\u003e true is unobservable."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 57,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "9d3b09a97aead0f5",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 65,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "NotCovered": true,
+            "Origin": "inherited",
+            "Key": "8b4f0513f10ed864",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: the [] arm is only reachable with a null catalogue, where nothing reads shown (lazy $derived, template null branch never renders the list)"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 22,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "286edbfec9fcea7e",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 53,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "5c1a2fb452a2128c",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: with the null guard forced false, sharedDevices(null, children) finds no child with id null and returns [], the same as the guarded branch."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 57,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "9f8c19698c217d12",
+            "Lifecycle": "accepted",
+            "Note": "The `unknown` $derived is read only inside the {:else} branch that renders when services !== null, and Svelte 5 deriveds evaluate lazily on read — so the services === null arm of its initializer (the [] literal and the null check itself) never executes in any render. Both mutants on that arm are equivalent by construction; confirmed by hand (GrantForm.test.ts green with [] -\u003e ['Stryker was here'] and services === null -\u003e false applied, 2026-09-22)."
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 64,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "511b6f39daef4909",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: shown is a lazy $derived read only inside the template's services!==null branch; the null guard exists for the type checker and is never evaluated with a null catalogue"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 66,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "46f8922b47508734",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: with an empty needle the filter path returns every service because x.includes('') is always true; the early return is an optimisation"
+          },
+          {
+            "File": "web/src/lib/GrantForm.svelte",
+            "Line": 66,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "inherited",
+            "Key": "969ac8ba8b79e0da",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: comparing needle to a non-empty literal sends the empty query down the filter path, which returns every service since x.includes('') is always true"
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 26,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "cac773d5866378f2",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 32,
+            "Op": "BooleanLiteral",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "958c5408e188c7cb",
+            "Lifecycle": "accepted",
+            "Note": "Initial $state value that load() overwrites in onMount before any child form can render; no observable difference."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 96,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "e528d9de6aadadb5",
+            "Lifecycle": "accepted",
+            "Note": "run() is never called with reloadOnError=false — the parameter always carries its default, so 'if (reloadOnError)' → true is equivalent."
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 210,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "634ff18332a41d80",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: null \u003e i is false for every row index i \u003e= 0, so the editing !== null guard only narrows the type"
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 210,
+            "Op": "EqualityOperator",
+            "Snippet": "editing \u003e= i",
+            "Origin": "inherited",
+            "Key": "c11e6591b162d114",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: editing === i is handled by the preceding branch, so \u003e and \u003e= agree on every reachable state"
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 250,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "23578fa82aec08f8",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: the 'up !== null \u0026\u0026' onclick guard is redundant with disabled={... || up === null}; a disabled button never fires click"
+          },
+          {
+            "File": "web/src/lib/Buttons.svelte",
+            "Line": 253,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "3d5c69513cfd827e",
+            "Lifecycle": "accepted",
+            "Note": "equivalent: the 'down !== null \u0026\u0026' onclick guard is redundant with disabled={... || down === null}; a disabled button never fires click"
+          },
+          {
+            "File": "web/src/lib/ServiceIcon.svelte",
+            "Line": 13,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "7c2390c767e9930a",
+            "Lifecycle": "accepted",
+            "Note": "Feature guard for browsers without Intl.Segmenter. jsdom/Node always provide it, so forcing the guard true is unobservable in any test environment; the grapheme behaviour it protects is pinned by ServiceIcon.test.ts:32 (family-emoji case)."
+          },
+          {
+            "File": "web/src/lib/ServiceIcon.svelte",
+            "Line": 13,
+            "Op": "LogicalOperator",
+            "Snippet": "typeof Intl !== 'undefined' || 'Segmenter' in Intl",
+            "Origin": "in-hunk",
+            "Key": "a48d90340229f456",
+            "Lifecycle": "accepted",
+            "Note": "\u0026\u0026 -\u003e || on the Intl.Segmenter feature guard: Intl is always defined in jsdom/Node, so both forms evaluate true; equivalent in every test environment."
+          },
+          {
+            "File": "web/src/lib/ServiceIcon.svelte",
+            "Line": 13,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "7c2390c767e9930a",
+            "Lifecycle": "accepted",
+            "Note": "Feature guard for browsers without Intl.Segmenter. jsdom/Node always provide it, so forcing the guard true is unobservable in any test environment; the grapheme behaviour it protects is pinned by ServiceIcon.test.ts:32 (family-emoji case)."
+          },
+          {
+            "File": "web/src/lib/ServiceIcon.svelte",
+            "Line": 13,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "37bd6dcd60a08004",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant at col 25: typeof Intl !== 'undefined' -\u003e typeof Intl !== \"\" is always true (typeof never yields an empty string), the same as the accepted guard mutants on this line. The 'Segmenter' literal mutant on this line is killed by ServiceIcon.test.ts:32 (family emoji)."
+          },
+          {
+            "File": "web/src/lib/ServiceIcon.svelte",
+            "Line": 14,
+            "Op": "ObjectLiteral",
+            "Snippet": "{}",
+            "Origin": "in-hunk",
+            "Key": "654ac3271c555fa6",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: granularity 'grapheme' is Intl.Segmenter's documented default, so {granularity:'grapheme'} -\u003e {} segments identically."
+          },
+          {
+            "File": "web/src/lib/ServiceIcon.svelte",
+            "Line": 15,
+            "Op": "OptionalChaining",
+            "Snippet": "seg.segment(t)[Symbol.iterator]().next().value.segment",
+            "Origin": "in-hunk",
+            "Key": "979484f15856d4c9",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent mutant: letterOf returns '?' for a blank trimmed name before segmenting (line 11), so the first segment's value is never undefined and dropping ?. cannot throw."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 21,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "f1b531569dc325b5",
+            "Lifecycle": "accepted",
+            "Note": "ApiError.name is diagnostic only; callers discriminate with instanceof, never by name"
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 35,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "9d6183df834aa3b3",
+            "Lifecycle": "accepted",
+            "Note": "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates, so the mutation never takes effect. The value is asserted (api.test.ts:368 expects '/')."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 38,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "cb4084c4e0eff4fa",
+            "Lifecycle": "accepted",
+            "Note": "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates. The value is asserted (api.test.ts:659 expects '/services')."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 341,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "74d2fbec3ff0b092",
+            "Lifecycle": "accepted",
+            "Note": "Stryker static-mutant ceiling: module-level CUSTOM_SERVICES const is evaluated once at import, before the per-test mutant switch activates. The URL is asserted for GET/POST/PUT/DELETE (api.test.ts:606-609)."
+          }
+        ],
+        "NotCovered": 8
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/App.test.ts": [
+          {
+            "start": 323,
+            "end": 323,
+            "construct": "hunk"
+          },
+          {
+            "start": 324,
+            "end": 389,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Buttons.test.ts": [
+          {
+            "start": 110,
+            "end": 860,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/GrantForm.test.ts": [
+          {
+            "start": 336,
+            "end": 336,
+            "construct": "hunk"
+          },
+          {
+            "start": 337,
+            "end": 371,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Home.test.ts": [
+          {
+            "start": 990,
+            "end": 990,
+            "construct": "hunk"
+          },
+          {
+            "start": 991,
+            "end": 1098,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/ServiceIcon.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "hunk"
+          },
+          {
+            "start": 7,
+            "end": 9,
+            "construct": "FunctionDeclaration avatar"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "hunk"
+          },
+          {
+            "start": 11,
+            "end": 59,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Services.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "TSTypeAliasDeclaration Call"
+          },
+          {
+            "start": 9,
+            "end": 9,
+            "construct": "TSTypeAliasDeclaration Answer"
+          },
+          {
+            "start": 10,
+            "end": 10,
+            "construct": "hunk"
+          },
+          {
+            "start": 11,
+            "end": 13,
+            "construct": "FunctionDeclaration json"
+          },
+          {
+            "start": 14,
+            "end": 15,
+            "construct": "hunk"
+          },
+          {
+            "start": 16,
+            "end": 31,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "hunk"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "VariableDeclaration portal"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "VariableDeclaration school"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "VariableDeclaration noContent"
+          },
+          {
+            "start": 36,
+            "end": 36,
+            "construct": "hunk"
+          },
+          {
+            "start": 37,
+            "end": 39,
+            "construct": "FunctionDeclaration nameInput"
+          },
+          {
+            "start": 40,
+            "end": 42,
+            "construct": "FunctionDeclaration domainsInput"
+          },
+          {
+            "start": 43,
+            "end": 45,
+            "construct": "FunctionDeclaration rows"
+          },
+          {
+            "start": 46,
+            "end": 50,
+            "construct": "FunctionDeclaration row"
+          },
+          {
+            "start": 51,
+            "end": 54,
+            "construct": "FunctionDeclaration fill"
+          },
+          {
+            "start": 55,
+            "end": 62,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 63,
+            "end": 63,
+            "construct": "hunk"
+          },
+          {
+            "start": 64,
+            "end": 67,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 68,
+            "end": 68,
+            "construct": "hunk"
+          },
+          {
+            "start": 69,
+            "end": 321,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 5,
+            "end": 41,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 589,
+            "end": 589,
+            "construct": "hunk"
+          },
+          {
+            "start": 590,
+            "end": 649,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 650,
+            "end": 650,
+            "construct": "hunk"
+          },
+          {
+            "start": 651,
+            "end": 670,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 11,
+            "end": 27,
+            "construct": "ClassDeclaration ApiError"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "TSTypeAliasDeclaration Route"
+          },
+          {
+            "start": 33,
+            "end": 39,
+            "construct": "VariableDeclaration PATHS"
+          },
+          {
+            "start": 195,
+            "end": 203,
+            "construct": "TSInterfaceDeclaration Service"
+          },
+          {
+            "start": 314,
+            "end": 317,
+            "construct": "FunctionDeclaration listServices"
+          },
+          {
+            "start": 319,
+            "end": 326,
+            "construct": "FunctionDeclaration childBlocked"
+          },
+          {
+            "start": 328,
+            "end": 330,
+            "construct": "hunk"
+          },
+          {
+            "start": 331,
+            "end": 339,
+            "construct": "TSInterfaceDeclaration CustomService"
+          },
+          {
+            "start": 340,
+            "end": 340,
+            "construct": "hunk"
+          },
+          {
+            "start": 341,
+            "end": 341,
+            "construct": "VariableDeclaration CUSTOM_SERVICES"
+          },
+          {
+            "start": 342,
+            "end": 342,
+            "construct": "hunk"
+          },
+          {
+            "start": 343,
+            "end": 346,
+            "construct": "FunctionDeclaration listCustomServices"
+          },
+          {
+            "start": 347,
+            "end": 348,
+            "construct": "hunk"
+          },
+          {
+            "start": 349,
+            "end": 351,
+            "construct": "FunctionDeclaration createCustomService"
+          },
+          {
+            "start": 352,
+            "end": 352,
+            "construct": "hunk"
+          },
+          {
+            "start": 353,
+            "end": 355,
+            "construct": "FunctionDeclaration updateCustomService"
+          },
+          {
+            "start": 356,
+            "end": 357,
+            "construct": "hunk"
+          },
+          {
+            "start": 358,
+            "end": 360,
+            "construct": "FunctionDeclaration deleteCustomService"
+          },
+          {
+            "start": 361,
+            "end": 361,
+            "construct": "hunk"
+          }
+        ]
+      },
+      "whole_file": {
+        "web/src/App.svelte": "ast-unavailable",
+        "web/src/lib/Buttons.svelte": "ast-unavailable",
+        "web/src/lib/GrantForm.svelte": "ast-unavailable",
+        "web/src/lib/Home.svelte": "ast-unavailable",
+        "web/src/lib/ServiceIcon.svelte": "ast-unavailable",
+        "web/src/lib/Services.svelte": "ast-unavailable"
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/adguard/adguardtest/testdata/filtering_status.json",
+      "reason": "no mutation adapter for .json"
+    },
+    {
+      "file": "internal/store/migrations/0007_custom_services.sql",
+      "reason": "no mutation adapter for .sql"
+    },
+    {
+      "file": "web/package.json",
+      "reason": "no mutation adapter for .json"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/adguard/devices.go",
+      "line": 154,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "b6d0a47a51b5e218",
+      "lifecycle": "accepted",
+      "note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/devices.go",
+      "line": 154,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "b6d0a47a51b5e218",
+      "lifecycle": "accepted",
+      "note": "Case body executes under go test -coverprofile (count \u003e= 1, checked 2026-11-01) and the case's behaviour is asserted by the phase's tests; gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/devices.go",
+      "line": 156,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "e36715b66a65a1bc",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand: flipping to 'xerr != nil' fails TestUnlabelled_UnparseableIPOrder (checked 2026-11-01, sibling :157 mutants killed by gremlins in the same run). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/adguard/devices.go",
+      "line": 158,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "602256014df6b282",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand: flipping to 'yerr != nil' fails TestUnlabelled_UnparseableIPOrder (aa-host/zz-host order inverts; checked 2026-11-01). Gremlins attributes no coverage block to switch-case expressions, marks it NotCovered and never runs it. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 79,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1fa25d4f40ebe7f5",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (go test ./internal/blocked fails on each of the four mutants at blocked.go:98/101, verified 2026-09-21); gremlins reports NotCovered because it attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/milestones/v0.2.toml",
+      ".dross/phases/custom-services/REVIEW.md",
+      ".dross/phases/custom-services/changes.json",
+      ".dross/phases/custom-services/panel/mvp.md",
+      ".dross/phases/custom-services/panel/risk.md",
+      ".dross/phases/custom-services/panel/synthesis.md",
+      ".dross/phases/custom-services/panel/verification.md",
+      ".dross/phases/custom-services/plan.toml",
+      ".dross/phases/custom-services/spec.toml",
+      ".dross/phases/custom-services/tests.json",
+      ".dross/phases/custom-services/verify.toml",
+      ".dross/project.toml",
+      ".dross/survivors.toml",
+      "cmd/adguard-reward/main.go",
+      "cmd/adguard-reward/main_test.go",
+      "internal/adguard/adguardtest/server.go",
+      "internal/adguard/adguardtest/testdata/filtering_status.json",
+      "internal/adguard/client.go",
+      "internal/adguard/rules.go",
+      "internal/adguard/rules_test.go",
+      "internal/api/api.go",
+      "internal/api/blocked.go",
+      "internal/api/blocked_test.go",
+      "internal/api/buttons.go",
+      "internal/api/buttons_test.go",
+      "internal/api/catalogue_test.go",
+      "internal/api/children.go",
+      "internal/api/children_test.go",
+      "internal/api/clients.go",
+      "internal/api/custom_services.go",
+      "internal/api/custom_services_test.go",
+      "internal/api/grants.go",
+      "internal/api/grants_test.go",
+      "internal/blocked/blocked.go",
+      "internal/blocked/blocked_test.go",
+      "internal/grants/clients.go",
+      "internal/grants/clients_test.go",
+      "internal/grants/grants.go",
+      "internal/grants/grants_test.go",
+      "internal/grants/reconcile.go",
+      "internal/grants/reconcile_test.go",
+      "internal/grants/rename.go",
+      "internal/grants/rename_test.go",
+      "internal/grants/rules.go",
+      "internal/grants/rules_test.go",
+      "internal/rules/domain.go",
+      "internal/rules/domain_test.go",
+      "internal/rules/region.go",
+      "internal/rules/region_test.go",
+      "internal/rules/render.go",
+      "internal/rules/render_test.go",
+      "internal/store/custom_services.go",
+      "internal/store/custom_services_test.go",
+      "internal/store/migrations/0007_custom_services.sql",
+      "web/package.json",
+      "web/src/App.svelte",
+      "web/src/App.test.ts",
+      "web/src/lib/Buttons.svelte",
+      "web/src/lib/Buttons.test.ts",
+      "web/src/lib/GrantForm.svelte",
+      "web/src/lib/GrantForm.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Home.test.ts",
+      "web/src/lib/ServiceIcon.svelte",
+      "web/src/lib/ServiceIcon.test.ts",
+      "web/src/lib/Services.svelte",
+      "web/src/lib/Services.test.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts"
+    ],
+    "hunks": {
+      ".dross/milestones/v0.2.toml": [
+        {
+          "start": 1,
+          "end": 12
+        }
+      ],
+      ".dross/phases/custom-services/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 45
+        }
+      ],
+      ".dross/phases/custom-services/changes.json": [
+        {
+          "start": 1,
+          "end": 935
+        }
+      ],
+      ".dross/phases/custom-services/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 206
+        }
+      ],
+      ".dross/phases/custom-services/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 367
+        }
+      ],
+      ".dross/phases/custom-services/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 470
+        }
+      ],
+      ".dross/phases/custom-services/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 433
+        }
+      ],
+      ".dross/phases/custom-services/plan.toml": [
+        {
+          "start": 1,
+          "end": 265
+        }
+      ],
+      ".dross/phases/custom-services/spec.toml": [
+        {
+          "start": 1,
+          "end": 82
+        }
+      ],
+      ".dross/phases/custom-services/tests.json": [
+        {
+          "start": 1,
+          "end": 2616
+        }
+      ],
+      ".dross/phases/custom-services/verify.toml": [
+        {
+          "start": 1,
+          "end": 142
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 1283,
+          "end": 1516
+        }
+      ],
+      "cmd/adguard-reward/main.go": [
+        {
+          "start": 127,
+          "end": 136
+        }
+      ],
+      "cmd/adguard-reward/main_test.go": [
+        {
+          "start": 1362,
+          "end": 1647
+        }
+      ],
+      "internal/adguard/adguardtest/server.go": [
+        {
+          "start": 22,
+          "end": 22
+        },
+        {
+          "start": 84,
+          "end": 88
+        },
+        {
+          "start": 104,
+          "end": 106
+        },
+        {
+          "start": 370,
+          "end": 402
+        },
+        {
+          "start": 429,
+          "end": 435
+        },
+        {
+          "start": 444,
+          "end": 452
+        },
+        {
+          "start": 501,
+          "end": 504
+        },
+        {
+          "start": 617,
+          "end": 645
+        }
+      ],
+      "internal/adguard/adguardtest/testdata/filtering_status.json": [
+        {
+          "start": 1,
+          "end": 16
+        }
+      ],
+      "internal/adguard/client.go": [
+        {
+          "start": 38,
+          "end": 39
+        }
+      ],
+      "internal/adguard/rules.go": [
+        {
+          "start": 1,
+          "end": 50
+        }
+      ],
+      "internal/adguard/rules_test.go": [
+        {
+          "start": 1,
+          "end": 195
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 54,
+          "end": 57
+        },
+        {
+          "start": 67,
+          "end": 72
+        },
+        {
+          "start": 85,
+          "end": 87
+        },
+        {
+          "start": 139,
+          "end": 142
+        }
+      ],
+      "internal/api/blocked.go": [
+        {
+          "start": 23,
+          "end": 23
+        },
+        {
+          "start": 33,
+          "end": 36
+        },
+        {
+          "start": 47,
+          "end": 48
+        },
+        {
+          "start": 63,
+          "end": 63
+        },
+        {
+          "start": 80,
+          "end": 80
+        },
+        {
+          "start": 98,
+          "end": 100
+        },
+        {
+          "start": 104,
+          "end": 104
+        },
+        {
+          "start": 106,
+          "end": 106
+        },
+        {
+          "start": 115,
+          "end": 115
+        },
+        {
+          "start": 121,
+          "end": 121
+        },
+        {
+          "start": 130,
+          "end": 153
+        }
+      ],
+      "internal/api/blocked_test.go": [
+        {
+          "start": 411,
+          "end": 507
+        }
+      ],
+      "internal/api/buttons.go": [
+        {
+          "start": 54,
+          "end": 54
+        },
+        {
+          "start": 85,
+          "end": 86
+        },
+        {
+          "start": 149,
+          "end": 149
+        },
+        {
+          "start": 151,
+          "end": 151
+        }
+      ],
+      "internal/api/buttons_test.go": [
+        {
+          "start": 363,
+          "end": 452
+        }
+      ],
+      "internal/api/catalogue_test.go": [
+        {
+          "start": 1,
+          "end": 180
+        }
+      ],
+      "internal/api/children.go": [
+        {
+          "start": 144,
+          "end": 145
+        },
+        {
+          "start": 171,
+          "end": 171
+        },
+        {
+          "start": 204,
+          "end": 205
+        },
+        {
+          "start": 248,
+          "end": 248
+        },
+        {
+          "start": 295,
+          "end": 295
+        },
+        {
+          "start": 297,
+          "end": 297
+        },
+        {
+          "start": 312,
+          "end": 312
+        },
+        {
+          "start": 315,
+          "end": 328
+        }
+      ],
+      "internal/api/children_test.go": [
+        {
+          "start": 316,
+          "end": 316
+        },
+        {
+          "start": 423,
+          "end": 423
+        },
+        {
+          "start": 537,
+          "end": 537
+        },
+        {
+          "start": 544,
+          "end": 550
+        },
+        {
+          "start": 664,
+          "end": 665
+        },
+        {
+          "start": 668,
+          "end": 671
+        },
+        {
+          "start": 767,
+          "end": 853
+        }
+      ],
+      "internal/api/clients.go": [
+        {
+          "start": 272,
+          "end": 294
+        },
+        {
+          "start": 296,
+          "end": 319
+        },
+        {
+          "start": 322,
+          "end": 322
+        },
+        {
+          "start": 325,
+          "end": 331
+        },
+        {
+          "start": 333,
+          "end": 335
+        }
+      ],
+      "internal/api/custom_services.go": [
+        {
+          "start": 1,
+          "end": 238
+        }
+      ],
+      "internal/api/custom_services_test.go": [
+        {
+          "start": 1,
+          "end": 416
+        }
+      ],
+      "internal/api/grants.go": [
+        {
+          "start": 189,
+          "end": 191
+        },
+        {
+          "start": 234,
+          "end": 234
+        },
+        {
+          "start": 236,
+          "end": 236
+        },
+        {
+          "start": 252,
+          "end": 261
+        }
+      ],
+      "internal/api/grants_test.go": [
+        {
+          "start": 628,
+          "end": 694
+        }
+      ],
+      "internal/blocked/blocked.go": [
+        {
+          "start": 28,
+          "end": 34
+        },
+        {
+          "start": 39,
+          "end": 39
+        },
+        {
+          "start": 46,
+          "end": 52
+        },
+        {
+          "start": 95,
+          "end": 95
+        },
+        {
+          "start": 141,
+          "end": 144
+        },
+        {
+          "start": 147,
+          "end": 147
+        },
+        {
+          "start": 152,
+          "end": 152
+        },
+        {
+          "start": 172,
+          "end": 185
+        },
+        {
+          "start": 255,
+          "end": 265
+        }
+      ],
+      "internal/blocked/blocked_test.go": [
+        {
+          "start": 414,
+          "end": 483
+        }
+      ],
+      "internal/grants/clients.go": [
+        {
+          "start": 69,
+          "end": 71
+        },
+        {
+          "start": 148,
+          "end": 149
+        },
+        {
+          "start": 179,
+          "end": 181
+        },
+        {
+          "start": 187,
+          "end": 195
+        }
+      ],
+      "internal/grants/clients_test.go": [
+        {
+          "start": 9,
+          "end": 9
+        },
+        {
+          "start": 382,
+          "end": 430
+        }
+      ],
+      "internal/grants/grants.go": [
+        {
+          "start": 41,
+          "end": 42
+        },
+        {
+          "start": 45,
+          "end": 45
+        },
+        {
+          "start": 49,
+          "end": 87
+        },
+        {
+          "start": 101,
+          "end": 105
+        },
+        {
+          "start": 117,
+          "end": 117
+        },
+        {
+          "start": 188,
+          "end": 197
+        },
+        {
+          "start": 202,
+          "end": 217
+        },
+        {
+          "start": 226,
+          "end": 231
+        },
+        {
+          "start": 236,
+          "end": 238
+        },
+        {
+          "start": 240,
+          "end": 243
+        },
+        {
+          "start": 265,
+          "end": 265
+        },
+        {
+          "start": 283,
+          "end": 284
+        },
+        {
+          "start": 286,
+          "end": 289
+        },
+        {
+          "start": 347,
+          "end": 351
+        },
+        {
+          "start": 353,
+          "end": 358
+        },
+        {
+          "start": 399,
+          "end": 405
+        },
+        {
+          "start": 419,
+          "end": 423
+        }
+      ],
+      "internal/grants/grants_test.go": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 19,
+          "end": 19
+        },
+        {
+          "start": 875,
+          "end": 1189
+        }
+      ],
+      "internal/grants/reconcile.go": [
+        {
+          "start": 5,
+          "end": 5
+        },
+        {
+          "start": 11,
+          "end": 11
+        },
+        {
+          "start": 17,
+          "end": 18
+        },
+        {
+          "start": 20,
+          "end": 24
+        },
+        {
+          "start": 35,
+          "end": 41
+        },
+        {
+          "start": 57,
+          "end": 84
+        },
+        {
+          "start": 87,
+          "end": 87
+        },
+        {
+          "start": 134,
+          "end": 134
+        },
+        {
+          "start": 156,
+          "end": 157
+        },
+        {
+          "start": 179,
+          "end": 181
+        }
+      ],
+      "internal/grants/reconcile_test.go": [
+        {
+          "start": 6,
+          "end": 7
+        },
+        {
+          "start": 15,
+          "end": 15
+        },
+        {
+          "start": 96,
+          "end": 100
+        },
+        {
+          "start": 500,
+          "end": 685
+        }
+      ],
+      "internal/grants/rename.go": [
+        {
+          "start": 44,
+          "end": 45
+        }
+      ],
+      "internal/grants/rename_test.go": [
+        {
+          "start": 13,
+          "end": 13
+        },
+        {
+          "start": 322,
+          "end": 363
+        }
+      ],
+      "internal/grants/rules.go": [
+        {
+          "start": 1,
+          "end": 155
+        }
+      ],
+      "internal/grants/rules_test.go": [
+        {
+          "start": 1,
+          "end": 319
+        }
+      ],
+      "internal/rules/domain.go": [
+        {
+          "start": 1,
+          "end": 61
+        }
+      ],
+      "internal/rules/domain_test.go": [
+        {
+          "start": 1,
+          "end": 72
+        }
+      ],
+      "internal/rules/region.go": [
+        {
+          "start": 1,
+          "end": 65
+        }
+      ],
+      "internal/rules/region_test.go": [
+        {
+          "start": 1,
+          "end": 167
+        }
+      ],
+      "internal/rules/render.go": [
+        {
+          "start": 1,
+          "end": 131
+        }
+      ],
+      "internal/rules/render_test.go": [
+        {
+          "start": 1,
+          "end": 273
+        }
+      ],
+      "internal/store/custom_services.go": [
+        {
+          "start": 1,
+          "end": 392
+        }
+      ],
+      "internal/store/custom_services_test.go": [
+        {
+          "start": 1,
+          "end": 293
+        }
+      ],
+      "internal/store/migrations/0007_custom_services.sql": [
+        {
+          "start": 1,
+          "end": 20
+        }
+      ],
+      "web/package.json": [
+        {
+          "start": 4,
+          "end": 4
+        }
+      ],
+      "web/src/App.svelte": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 17,
+          "end": 17
+        },
+        {
+          "start": 45,
+          "end": 46
+        }
+      ],
+      "web/src/App.test.ts": [
+        {
+          "start": 323,
+          "end": 389
+        }
+      ],
+      "web/src/lib/Buttons.svelte": [
+        {
+          "start": 16,
+          "end": 16
+        },
+        {
+          "start": 291,
+          "end": 291
+        },
+        {
+          "start": 374,
+          "end": 376
+        }
+      ],
+      "web/src/lib/Buttons.test.ts": [
+        {
+          "start": 818,
+          "end": 850
+        }
+      ],
+      "web/src/lib/GrantForm.svelte": [
+        {
+          "start": 14,
+          "end": 14
+        },
+        {
+          "start": 16,
+          "end": 16
+        },
+        {
+          "start": 139,
+          "end": 139
+        }
+      ],
+      "web/src/lib/GrantForm.test.ts": [
+        {
+          "start": 336,
+          "end": 371
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 23,
+          "end": 23
+        },
+        {
+          "start": 108,
+          "end": 110
+        },
+        {
+          "start": 112,
+          "end": 112
+        },
+        {
+          "start": 235,
+          "end": 235
+        },
+        {
+          "start": 284,
+          "end": 284
+        },
+        {
+          "start": 327,
+          "end": 327
+        }
+      ],
+      "web/src/lib/Home.test.ts": [
+        {
+          "start": 990,
+          "end": 1098
+        }
+      ],
+      "web/src/lib/ServiceIcon.svelte": [
+        {
+          "start": 1,
+          "end": 50
+        }
+      ],
+      "web/src/lib/ServiceIcon.test.ts": [
+        {
+          "start": 1,
+          "end": 59
+        }
+      ],
+      "web/src/lib/Services.svelte": [
+        {
+          "start": 1,
+          "end": 272
+        }
+      ],
+      "web/src/lib/Services.test.ts": [
+        {
+          "start": 1,
+          "end": 321
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 13,
+          "end": 13
+        },
+        {
+          "start": 16,
+          "end": 18
+        },
+        {
+          "start": 589,
+          "end": 670
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 16,
+          "end": 16
+        },
+        {
+          "start": 31,
+          "end": 31
+        },
+        {
+          "start": 33,
+          "end": 39
+        },
+        {
+          "start": 196,
+          "end": 196
+        },
+        {
+          "start": 199,
+          "end": 199
+        },
+        {
+          "start": 201,
+          "end": 202
+        },
+        {
+          "start": 316,
+          "end": 316
+        },
+        {
+          "start": 324,
+          "end": 324
+        },
+        {
+          "start": 328,
+          "end": 361
+        }
+      ]
+    },
+    "base": "d409e27a5094c78a9d699b1ef9356f01ed9cc438",
+    "source": "git+changes",
+    "degraded": [
+      "stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Buttons.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/GrantForm.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/ServiceIcon.svelte (no parser for .svelte); mutating the whole file",
+      "stryker: AST unavailable for web/src/lib/Services.svelte (no parser for .svelte); mutating the whole file"
+    ]
+  },
+  "measured_on": "local",
+  "measured_commit": "ccb0c7af22dfbf93cb382afacf828920397d6feb",
+  "measured_tree": "eec2ec17dc4a4d3d6a3bae749552c1a797872f0d"
+}

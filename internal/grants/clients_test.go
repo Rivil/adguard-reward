@@ -4,8 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"io"
 	"reflect"
 	"slices"
+	"strings"
 	"testing"
 	"time"
 
@@ -228,6 +230,23 @@ func TestAdoptClients_Fails(t *testing.T) {
 	}
 }
 
+func TestAdoptClients_ClientsReadFails(t *testing.T) {
+	e := newEnv(t, nil)
+	// A 200 cut short: no status or transport error to know the failure by.
+	e.fake.SetResponse("/control/clients", 200, []byte(`{"clients":[`))
+	err := e.eng.AdoptClients(ctx, 1, nil, []string{"Kid tablet"})
+	var read *ErrClientsRead
+	if !errors.As(err, &read) {
+		t.Fatalf("err = %v, want *ErrClientsRead", err)
+	}
+	if !errors.Is(err, io.ErrUnexpectedEOF) {
+		t.Errorf("err = %v, want it to reach the decode failure", err)
+	}
+	if n := e.posts(); n != 0 {
+		t.Errorf("update POSTs = %d, want 0", n)
+	}
+}
+
 // TestCreateClient_Serialised holds the engine mutex itself: a CreateClient
 // that takes e.mu reaches AdGuard only after the Unlock, so no grant can
 // apply or revert between its baseline read and its add.
@@ -377,4 +396,135 @@ func TestAdopt_AllCovered(t *testing.T) {
 		t.Errorf("update POSTs = %d, want 0 (baseline within current plus held)", n)
 	}
 	e.wantOwn("Kid phone", "tiktok")
+}
+
+func TestAdoptClients_NoCustomLeak(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	e.create(ada.ID, []string{"youtube", svc}, []string{"Kid phone"})
+
+	// Kid tablet inherits the global list, so adoption writes its own list:
+	// the baseline must not carry the grant's custom id.
+	e.adopt(ada.ID, []string{"Kid phone"}, []string{"Kid tablet"})
+	if e.usesGlobal("Kid tablet") {
+		t.Fatal("setup: Kid tablet still on the global list, adoption wrote nothing")
+	}
+	if err := e.eng.CreateClient(ctx, "TV", tvIDs, ptr(ada.ID)); err != nil {
+		t.Fatal(err)
+	}
+	if e.adds() != 1 {
+		t.Fatalf("adds = %d, want 1", e.adds())
+	}
+	e.noCustomInClientWrites()
+	for _, name := range []string{"Kid tablet", "TV"} {
+		for _, id := range e.blocked(name) {
+			if strings.HasPrefix(id, "custom:") {
+				t.Fatalf("%s blocked_services holds %s", name, id)
+			}
+		}
+	}
+}
+
+func TestCreateClient_ResyncsRules(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	e.createService("Portal", "a.com")
+	if got, want := e.region(), []string{"||a.com^$client='Kid phone'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("setup region %q", got)
+	}
+	if err := e.eng.CreateClient(ctx, "TV", tvIDs, ptr(ada.ID)); err != nil {
+		t.Fatal(err)
+	}
+	if got, want := e.region(), []string{"||a.com^$client='Kid phone'|'TV'"}; !reflect.DeepEqual(got, want) {
+		t.Fatalf("region after CreateClient %q, want %q", got, want)
+	}
+
+	// An unassigned client is not a child's: no rule names it.
+	if err := e.eng.CreateClient(ctx, "Dad laptop", []string{"192.168.1.40"}, nil); err != nil {
+		t.Fatal(err)
+	}
+	noLineContains(t, e.fake.UserRules(), "Dad laptop")
+}
+
+// Permanent toggles in the baseline (locked new_client_blocked_set_v2).
+
+func TestCreateClient_BaselineToggles(t *testing.T) {
+	e := newEnv(t, nil)
+	// kid-phone has not converged yet: it still blocks youtube.
+	e.fakeClient("kid-phone", "youtube")
+	e.fakeClient("den")
+	ann := e.child("Ann", "kid-phone")
+	e.seedToggle(ann.ID, "youtube", store.ToggleUnblocked)
+	e.seedToggle(ann.ID, "tiktok", store.ToggleBlocked)
+
+	e.createClient("TV", ptr(ann.ID))
+	e.wantOwn("TV", "tiktok")
+
+	e.adopt(ann.ID, []string{"kid-phone"}, []string{"den"})
+	e.wantOwn("den", "tiktok")
+}
+
+func TestCreateClient_BaselineGrantAndUnblock(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("kid-phone", "tiktok", "youtube")
+	ann := e.child("Ann", "kid-phone")
+	e.create(ann.ID, []string{"tiktok", "youtube"}, []string{"kid-phone"})
+	e.seedToggle(ann.ID, "youtube", store.ToggleUnblocked)
+
+	e.createClient("TV", ptr(ann.ID))
+	e.wantOwn("TV", "tiktok")
+}
+
+func TestAdoptClients_SharedPermanentOpen(t *testing.T) {
+	e := newEnv(t, nil)
+	e.fakeClient("a-phone", "tiktok", "youtube")
+	e.fakeClient("tv", "roblox") // youtube open: Ben unblocked it
+	ann := e.child("Ann", "a-phone")
+	ben := e.child("Ben", "tv")
+	e.seedToggle(ben.ID, "youtube", store.ToggleUnblocked)
+
+	e.adopt(ann.ID, []string{"a-phone"}, []string{"tv"})
+	e.wantOwn("tv", "roblox", "tiktok")
+}
+
+func TestBaseline_SharedSiblingPermanent(t *testing.T) {
+	e := newEnv(t, nil)
+	e.setBlocked("Kid phone", "tiktok") // youtube open: Ada unblocked it
+	ada := e.child("Ada", "Kid phone")
+	ben := e.child("Ben", "Kid phone")
+	e.seedToggle(ada.ID, "youtube", store.ToggleUnblocked)
+
+	// Kid phone is open for Ada's reason, not Ben's.
+	e.createClient("Ben tv", ptr(ben.ID))
+	e.wantOwn("Ben tv", "tiktok", "youtube")
+
+	if err := e.eng.CreateClient(ctx, "Ada tv", []string{"192.168.1.31"}, ptr(ada.ID)); err != nil {
+		t.Fatal(err)
+	}
+	e.wantOwn("Ada tv", "tiktok")
+}
+
+func TestCreateClient_ToggleReadFails(t *testing.T) {
+	var fs *toggleFailStore
+	e := newEnvStore(t, nil, func(st *store.Store) Store {
+		fs = &toggleFailStore{Store: st}
+		return fs
+	})
+	ann := e.child("Ann", "Kid phone")
+	boom := errors.New("database is locked")
+	fs.set(boom)
+
+	if err := e.eng.CreateClient(ctx, "TV", tvIDs, ptr(ann.ID)); !errors.Is(err, boom) {
+		t.Fatalf("CreateClient err = %v, want the toggle read error", err)
+	}
+	if n := e.adds(); n != 0 {
+		t.Errorf("adds = %d, want 0 (no baseline without the toggles)", n)
+	}
+	if err := e.eng.AdoptClients(ctx, ann.ID, []string{"Kid phone"}, []string{"Old laptop"}); !errors.Is(err, boom) {
+		t.Fatalf("AdoptClients err = %v, want the toggle read error", err)
+	}
+	if n := e.posts(); n != 0 {
+		t.Errorf("update POSTs = %d, want 0", n)
+	}
 }

@@ -25,14 +25,48 @@ const (
 // that holds it; Grants are the active grants of every child, each with the
 // clients stored on it. Both may be nil — the view then carries no
 // shared/unblocked-by annotations.
+//
+// Custom are the stored custom services, folded after the catalogue. Their
+// state comes from intent, not from AdGuard's user_rules: on each present
+// client a custom service is unblocked iff an active grant in Grants (of any
+// child) covers it there, else blocked. So Custom needs Grants to be the
+// complete set of active grants; a caller that could not read them passes no
+// Custom rather than report a false "blocked".
+//
+// Toggles are the stored permanent toggles of every child (locked
+// shared_client_scope). Only a toggle by an owner of a client affects that
+// client: a custom service is also open on a present client when an owner
+// of it — Self, or a child Owners lists for it — has it permanently
+// unblocked; another owner's unblock is attributed in UnblockedBy. A custom
+// fold needs Toggles complete for the same reason it needs Grants complete.
+// nil leaves the view exactly as without toggles.
 type Input struct {
 	Clients  []adguard.PersistentClient
 	Global   []string
 	Services []adguard.Service
+	Custom   []CustomService
 	Mapped   []string
 	Self     int64
 	Owners   map[string][]ChildRef
 	Grants   []GrantCover
+	Toggles  []Toggle
+}
+
+// Toggle is a stored permanent toggle: State is "blocked" or "unblocked".
+type Toggle struct {
+	ChildID   int64
+	ServiceID string
+	State     string
+}
+
+// ToggleUnblocked is the Toggle state that opens a service.
+const ToggleUnblocked = "unblocked"
+
+// CustomService is a stored custom service as the fold needs it: its
+// catalogue id ("custom:<n>") and name. It has no icon.
+type CustomService struct {
+	ID   string
+	Name string
 }
 
 // ChildRef names a child.
@@ -50,11 +84,13 @@ type GrantCover struct {
 	Clients  []string
 }
 
-// Unblock attributes an open service on a client to another child's grant.
+// Unblock attributes an open service on a client to another child: to one
+// of its grants, or — Permanent, GrantID 0 — to its permanent unblock.
 type Unblock struct {
-	Client  string   `json:"client"`
-	GrantID int64    `json:"grant_id"`
-	Child   ChildRef `json:"child"`
+	Client    string   `json:"client"`
+	GrantID   int64    `json:"grant_id"`
+	Child     ChildRef `json:"child"`
+	Permanent bool     `json:"permanent"`
 }
 
 // ClientState is one mapped client's presence in AdGuard. A missing client
@@ -72,12 +108,17 @@ type ClientState struct {
 // clients on which the service is NOT blocked, sorted; it is empty (never
 // nil) unless State is partial. UnblockedBy names, per present client that
 // does not block the service, each active grant of ANOTHER child covering
-// the service on that client — sorted by (client, grant id), never nil.
+// the service on that client, and each other owner of it with a permanent
+// unblock — sorted by (client, grant id, child id), so a permanent entry
+// (grant id 0) leads; never nil. Toggle is Self's own stored intent for the
+// service ("blocked" / "unblocked"), or "" when Self never toggled it.
 type ServiceState struct {
 	ID          string
 	Name        string
 	Icon        string
+	Custom      bool
 	State       string
+	Toggle      string
 	Differs     []string
 	UnblockedBy []Unblock
 }
@@ -122,23 +163,28 @@ func Compute(in Input) View {
 		presents = append(presents, present{name: name, set: set})
 	}
 
-	for _, svc := range in.Services {
-		st := ServiceState{ID: svc.ID, Name: svc.Name, Icon: svc.Icon, Differs: []string{}, UnblockedBy: []Unblock{}}
+	// fold computes one service's state over the present clients;
+	// blocked reports whether p blocks it.
+	fold := func(st ServiceState, blocked func(p present) bool) ServiceState {
+		st.Differs, st.UnblockedBy = []string{}, []Unblock{}
 		blockedOn := 0
 		for _, p := range presents {
-			if p.set[svc.ID] {
+			if blocked(p) {
 				blockedOn++
 				continue
 			}
 			st.Differs = append(st.Differs, p.name)
-			st.UnblockedBy = append(st.UnblockedBy, unblockedBy(in, p.name, svc.ID)...)
+			st.UnblockedBy = append(st.UnblockedBy, unblockedBy(in, p.name, st.ID)...)
 		}
 		sort.Slice(st.UnblockedBy, func(i, j int) bool {
 			a, b := st.UnblockedBy[i], st.UnblockedBy[j]
 			if a.Client != b.Client {
 				return a.Client < b.Client
 			}
-			return a.GrantID < b.GrantID
+			if a.GrantID != b.GrantID {
+				return a.GrantID < b.GrantID
+			}
+			return a.Child.ID < b.Child.ID
 		})
 		switch {
 		case len(presents) > 0 && blockedOn == len(presents):
@@ -151,7 +197,23 @@ func Compute(in Input) View {
 			st.State = StatePartial
 			sort.Strings(st.Differs)
 		}
-		view.Services = append(view.Services, st)
+		st.Toggle = selfToggle(in, st.ID)
+		return st
+	}
+
+	for _, svc := range in.Services {
+		view.Services = append(view.Services, fold(
+			ServiceState{ID: svc.ID, Name: svc.Name, Icon: svc.Icon},
+			func(p present) bool { return p.set[svc.ID] },
+		))
+	}
+	for _, svc := range in.Custom {
+		view.Services = append(view.Services, fold(
+			ServiceState{ID: svc.ID, Name: svc.Name, Custom: true},
+			func(p present) bool {
+				return !covered(in.Grants, svc.ID, p.name) && !permanentlyOpen(in, svc.ID, p.name)
+			},
+		))
 	}
 	return view
 }
@@ -218,7 +280,53 @@ func unblockedBy(in Input, client, service string) []Unblock {
 		}
 		out = append(out, Unblock{Client: client, GrantID: g.ID, Child: g.Child})
 	}
+	for _, o := range in.Owners[client] {
+		if o.ID != in.Self && toggleOf(in, o.ID, service) == ToggleUnblocked {
+			out = append(out, Unblock{Client: client, Child: o, Permanent: true})
+		}
+	}
 	return out
+}
+
+// toggleOf returns child's stored toggle state for service, or "".
+func toggleOf(in Input, child int64, service string) string {
+	for _, t := range in.Toggles {
+		if t.ChildID == child && t.ServiceID == service {
+			return t.State
+		}
+	}
+	return ""
+}
+
+// selfToggle is Self's own toggle state for service, or "".
+func selfToggle(in Input, service string) string {
+	return toggleOf(in, in.Self, service)
+}
+
+// permanentlyOpen reports whether an owner of client — Self, which owns
+// every mapped client, or a child Owners lists for it — has service
+// permanently unblocked.
+func permanentlyOpen(in Input, service, client string) bool {
+	if toggleOf(in, in.Self, service) == ToggleUnblocked {
+		return true
+	}
+	for _, o := range in.Owners[client] {
+		if toggleOf(in, o.ID, service) == ToggleUnblocked {
+			return true
+		}
+	}
+	return false
+}
+
+// covered reports whether any active grant (of any child) covers service on
+// client, per the grant's stored clients.
+func covered(grants []GrantCover, service, client string) bool {
+	for _, g := range grants {
+		if slices.Contains(g.Services, service) && slices.Contains(g.Clients, client) {
+			return true
+		}
+	}
+	return false
 }
 
 func toSet(ids []string) map[string]bool {

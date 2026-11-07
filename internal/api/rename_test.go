@@ -134,6 +134,21 @@ func TestRename_Unavailable(t *testing.T) {
 	}
 }
 
+func TestRename_ReadUndecodable(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.createOK(cookie, "Ada", "Kid phone")
+	h.fake.SetResponse("/control/clients", http.StatusOK, []byte(`{"clients":[`))
+
+	w := h.postRename(cookie, "Kid phone", "Ada phone")
+	if w.Code != http.StatusBadGateway || decodeErr(t, w).Error != CodeAdGuardUnavailable {
+		t.Errorf("%d %s, want 502 adguard_unavailable", w.Code, w.Body.String())
+	}
+	if got := h.decodeChild(h.do(http.MethodGet, childPath(ada.ID), nil, withCookie(cookie))).Clients; !slices.Equal(got, []string{"Kid phone"}) {
+		t.Errorf("Ada clients = %v, want unchanged [Kid phone]", got)
+	}
+}
+
 func TestRename_CSRF(t *testing.T) {
 	h := newHarness(t, nil, nil)
 	cookie := h.loginOK()

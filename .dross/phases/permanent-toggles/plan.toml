@@ -1,0 +1,172 @@
+task_seq = 12
+
+[phase]
+  id = "permanent-toggles"
+
+# Wire conventions (agreed in panel synthesis, panel/synthesis.md; all 8 disagreements took the provisional default):
+# - store: service_toggles(child_id FK children ON DELETE CASCADE, service_id TEXT, state CHECK IN ('blocked','unblocked'),
+#   updated_at, PK(child_id, service_id)) + AFTER DELETE ON custom_services trigger dropping 'custom:' || OLD.id
+# - SetServiceToggle(ctx, childID, serviceID, state, at) (ToggleChange{Trimmed *store.Grant (pre-trim), Ended bool}, error);
+#   at most one grant trimmed (grant_services_live_idx). ListServiceToggles(ctx) ordered by (child_id, service_id)
+# - engine: Toggle(ctx, childID, serviceID, state) (ToggleResult{Applied, Failed []string, Clients []string, Grant *{ID, Ended}}, error)
+# - HTTP: POST /api/v1/children/{id}/toggles {service_id, state} -> 200 {service_id, state, applied, failed[],
+#   shared[{client, others}], grant:{id, ended}|null}; 404 unknown child, 400 bad body/state, 422 unknown service,
+#   502 catalogue unreadable (nothing stored)
+# - blocked view: each service gains toggle "blocked"|"unblocked"|null; unblocked_by[] entries gain permanent:bool (grant_id 0);
+#   view reads toggles via ChildStore.ListServiceToggles (no new Deps field)
+# - precedence per (client, toggled built-in): OPEN if any current owner has it unblocked or any active grant covers it there;
+#   else BLOCK if any owner has it blocked; else AdGuard-owned (no write)
+# - a block writes the child's mapped clients ∪ the trimmed grant's stored clients
+# - partial rows offer both Unblock and Block
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Store toggles with atomic grant trim"
+  files = ["internal/store/migrations/0008_service_toggles.sql", "internal/store/toggles.go", "internal/store/toggles_test.go", "internal/store/custom_services_test.go"]
+  description = '''service_toggles table + AFTER DELETE ON custom_services trigger. SetServiceToggle upserts; for state=blocked the SAME tx deletes the child's active grant_services row for that service and ends a grant left with none (status ended, ended_at=at), returning the pre-trim grant. ListServiceToggles lists all.'''
+  covers = ["c-2", "c-4"]
+  test_contract = [
+    '''if trim is not atomic with the upsert, TestSetToggle_TrimAtomic fails: an injected failure after the upsert leaves neither the toggle row nor a trimmed grant; state "maybe" -> error, no row, grant still [tiktok,youtube]''',
+    '''if an emptied grant stays active, TestSetToggle_EndsEmptyGrant fails: grant {youtube} + block youtube -> Ended true, GetGrant status "ended", ListActiveGrants empty, CreateGrant(child, [youtube]) then succeeds instead of *ErrGrantOverlap''',
+    '''if trimming is mis-scoped, TestSetToggle_TrimScope fails: grant {tiktok,youtube} -> block youtube leaves [tiktok] active with ends_at unchanged and Trimmed carrying the pre-trim stored clients; child 2's active youtube grant and child 1's expired youtube grant untouched; state=unblocked trims nothing (Trimmed nil, Ended false)''',
+    '''if set is not an upsert, TestSetToggle_Upsert fails: blocked then unblocked -> one row, unblocked''',
+    '''if bad input persists, TestSetToggle_Invalid fails: unknown child 99 -> ErrChildNotFound, no row''',
+    '''if toggles dangle, TestToggles_Cascade fails: DeleteChild(1) drops only child 1's rows; DeleteCustomService(1) drops custom:1 rows, keeps custom:10 (no prefix LIKE) and built-ins''',
+    '''if intent does not persist, TestToggles_Persist fails: set, Close, store.Open same dir -> identical ListServiceToggles; the custom_services_test migration-order check fails unless 0008_service_toggles.sql is last''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Pure intent planner: open-wins and revert-v2"
+  files = ["internal/grants/shared.go", "internal/grants/shared_test.go", "internal/grants/intent.go", "internal/grants/intent_test.go"]
+  description = "Grants-local toggle{childID int64; serviceID, state string} type (t-5 maps store rows onto it). permanentOpen(children, toggles) -> client -> services any CURRENT owner has unblocked. dropOpen(plan, open) removes those per client (a client left empty drops out); revertPlan's signature is unchanged. togglePlan(children, toggles, active) -> per client {remove, add} under the precedence: OPEN if any current owner has it unblocked or any active grant covers it there; else BLOCK if any owner has it blocked; else AdGuard-owned (no write). Built-in toggled services only. Pure, no I/O."
+  covers = ["c-3"]
+  test_contract = ["if revert ignores permanent unblocks, TestRevertPlan_PermanentOpen fails: grant [youtube,tiktok] on [kid-phone], youtube unblocked for the owner -> dropOpen(revertPlan(...), permanentOpen(...)) == {kid-phone:[tiktok]}", "if \"any owner\" is read from the grant, TestRevertPlan_SharedOwner fails: tv owned by A+B, B unblocked youtube, A's grant covers tv+a-phone -> tv omitted, a-phone [youtube]; B unmapped from tv -> tv re-blocked", "if dropOpen leaves empty entries, TestDropOpen_EmptiesClient fails: {tv:[youtube]} with tv open on youtube -> tv key absent (so revert issues no Add for tv)", "if ref-counting regresses, the existing TestRevertPlan_* cases pass byte-for-byte unmodified (revertPlan signature unchanged)", "if block beats open, TestTogglePlan_OpenWins fails: A blocks, B unblocks youtube, shared tv -> tv remove contains youtube, add lacks youtube; a-phone add contains youtube", "if a block fights a live grant, TestTogglePlan_GrantHolds fails: C's active grant covers youtube on shared tv, A blocks -> tv add lacks youtube", "if custom ids reach blocked_services, TestTogglePlan_BuiltinOnly fails: custom:1 toggles appear in no remove/add list", "if untoggled services are touched, TestTogglePlan_AdGuardOwned fails: no toggle rows -> empty plan for every client"]
+  status = "done"
+
+[[task]]
+  id = "t-3"
+  wave = 1
+  title = "Fold permanent toggles into the blocked view"
+  files = ["internal/blocked/blocked.go", "internal/blocked/blocked_test.go"]
+  description = '''Input gains Toggles. ServiceState gains Toggle (self's intent or ""). Custom service open on a present client iff a grant covers it OR an owner of that client has it unblocked. UnblockedBy adds {client, child, GrantID:0, Permanent:true} for another owner's permanent unblock on a shared client.'''
+  covers = ["c-5"]
+  test_contract = [
+    '''if self intent is lost, TestCompute_ToggleState fails: self unblocked youtube (absent everywhere) -> State "unblocked", Toggle "unblocked"; self blocked tiktok -> Toggle "blocked"; untoggled -> ""''',
+    '''if a custom permanent reads wrong, TestCompute_CustomPermanent fails: custom:1, no grants, self unblocked -> unblocked; self blocked -> blocked; only B's unblock on shared tv -> partial, Differs [tv]''',
+    '''if attribution is lost, TestCompute_PermanentUnblockedBy fails: B unblocked youtube, tv shared -> A's UnblockedBy [{tv, B, GrantID:0, Permanent:true}]; self's own toggle never in UnblockedBy''',
+    '''if ordering drifts, TestCompute_PermanentAndGrant fails: B's toggle + B's grant 5 on tv -> two entries, permanent (id 0) first, then grant 5''',
+    '''if a non-owner's toggle leaks, TestCompute_ForeignToggle fails: toggle by a child owning none of the mapped clients changes no state and adds no UnblockedBy''',
+    '''if nil Toggles changes today's output, TestCompute_NoToggles fails: existing fixtures with Toggles nil produce byte-identical Views''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-4"
+  wave = 1
+  title = "SPA toggle client and pure view helpers"
+  files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts", "web/src/lib/toggles.ts", "web/src/lib/toggles.test.ts"]
+  description = "api.ts: toggleService(childId, serviceId, state) -> POST /api/v1/children/{id}/toggles {service_id, state}; ToggleResult {service_id, state, applied, failed[], shared[{client, others}], grant:{id, ended}|null} (arrays default [], grant null); ServiceState.toggle, Unblock.permanent; childBlocked normalises missing fields. toggles.ts: shown, openOn (copied from Home and extended for permanent entries; t-10 removes Home's copy), controlFor -> ('unblock'|'block')[] = state-derived (blocked -> unblock, partial -> both, unblocked -> none) ∪ reverse of self's toggle ('unblocked' -> block, 'blocked' -> unblock), always ordered unblock before block; pickerOptions(catalogue, view, query)."
+  covers = ["c-1", "c-2", "c-5"]
+  test_contract = ["if the client hits the wrong endpoint, api.test 'toggle service' fails: toggleService(3,'custom:1','blocked') -> POST /api/v1/children/3/toggles {service_id:'custom:1',state:'blocked'} with CSRF", "if result fields can be undefined, api.test 'toggle result defaults' fails: body without failed/shared/grant -> [] / [] / null; blocked view without toggle/permanent -> null / false", "if errors lose detail, api.test 'toggle errors' fails: 422 -> ApiError code unprocessable", "if toggled-unblocked rows stay hidden, toggles.test 'shown' fails: {unblocked, toggle 'unblocked', unblocked_by []} kept; {unblocked, toggle null, unblocked_by []} dropped", "if the wrong controls are offered, toggles.test 'controlFor' fails: blocked -> ['unblock']; partial -> ['unblock','block']; toggle 'unblocked' -> ['block']; unblocked-by-other-only -> []", "if the picker offers blocked services, toggles.test 'pickerOptions' fails: blocked [youtube], partial [tiktok] over [youtube,tiktok,netflix,custom:1] -> [tiktok,netflix,custom:1]; \"NET\" -> [netflix]; \"zzz\" -> []", "if permanent attribution reads as a grant, toggles.test 'openOn' fails: {tv, B, permanent} -> \"tv by B (permanent)\"; grant entries unchanged", "if state/toggle disagreement hides a control, toggles.test 'controlFor disagree' fails: {state 'blocked', toggle 'unblocked'} -> ['unblock','block']; {state 'unblocked', toggle 'blocked'} -> ['unblock']; {state 'blocked', toggle 'blocked'} -> ['unblock']"]
+  status = "done"
+
+[[task]]
+  id = "t-5"
+  wave = 2
+  title = "Revert and region honour stored toggles"
+  files = ["internal/grants/grants.go", "internal/grants/rules.go", "internal/grants/grants_test.go", "internal/grants/rules_test.go"]
+  description = "Store interface gains SetServiceToggle/ListServiceToggles (rows mapped to t-2's toggle type). New applyPlan(actx, plan) (failed []string, writes int) applies {remove, add} per client: client gone -> skipped, use_global -> failed (global list never written), other error -> failed; Toggle (t-8) and Reconcile (t-9) use it. revert does NOT use applyPlan: it keeps its own AddBlockedServices loop (use_global -> per-client write + warn, never failed, as today) but iterates dropOpen(revertPlan(g, active), permanentOpen), reading toggles + children fail-closed. syncRules reads toggles (fail-closed) and desiredRegion adds a Cover over the child's current clients per unblocked custom toggle. grants_test.go gains a shared seedToggle test helper so the wave-3 tasks t-8 and t-9 reuse it (children come from the existing env.child in clients_test.go)."
+  covers = ["c-3", "c-4"]
+  depends_on = ["t-1", "t-2"]
+  test_contract = ["if expiry re-blocks a permanent unblock, TestExpire_KeepsPermanentUnblock fails: grant [youtube,tiktok] on kid-phone+tv, youtube unblocked, Advance past ends_at -> youtube absent on both, tiktok present on both, status expired", "if End differs, TestEnd_KeepsPermanentUnblock fails: same through End, status ended", "if a co-owner's unblock is ignored end-to-end, TestRevert_CoOwnerUnblock fails: A's grant on youtube over [a-phone,tv], B (co-owner of tv) unblocked youtube -> End adds on a-phone, no Add for tv", "if a toggles read failure re-blocks blind, TestRevert_ToggleReadFailure fails: ListServiceToggles error -> *ErrRevertFailed, 0 /control/clients/update POSTs, grant still active", "if a toggles read failure drops permanent exceptions, TestSyncRules_ToggleReadFailure fails: 0 set_rules POSTs", "if the region drops a custom unblock, TestSyncRules_PermanentCover fails: custom:1 unblocked for A (kid-phone, tv) -> one @@||a.com^$client='kid-phone'|'tv'; A's custom:1 grant expiring leaves it byte-identical", "if a tick loses it, TestSyncRules_ToggleSurvivesEdit fails: SetUserRules removes the @@ line inside the markers -> next Reconcile restores it", "if restart loses intent, TestStart_RestartKeepsToggles fails: toggles on youtube + custom:1 and an overdue grant on both, reopen store, new Engine, Start -> grant expired, youtube absent, @@ line present; a second Reconcile writes 0 (Writes 0, RulesWritten 0)", "if ref-counting regresses, the existing TestEngine_SharedExpiryKeepsOther passes unmodified", "if applyPlan mishandles a client, TestApplyPlan fails: a client AdGuard no longer has -> not in failed, no write; a use_global client -> in failed, global blocked_services unwritten; SetUpdateStatus(tablet,500) -> failed [tablet]; writes counts issued updates only", "if revert fails global-list clients, TestExpire_GlobalClient fails: grant [youtube] over kid-phone + kid-tablet (use_global_blocked_services true), Advance past ends_at -> status expired, no timer, youtube in kid-tablet's per-client blocked_services; a fresh CreateGrant(child, [youtube]) then succeeds (no *ErrGrantOverlap)"]
+  status = "done"
+
+[[task]]
+  id = "t-6"
+  wave = 2
+  title = "Expose toggle state in the blocked API"
+  files = ["internal/api/api.go", "internal/api/blocked.go", "internal/api/blocked_test.go"]
+  description = '''ChildStore gains ListServiceToggles (main already wires the store as Children). handleBlocked passes toggles to Compute and serves toggle (null when "") and unblocked_by[].permanent. A failed toggles read leaves custom services out with a warn, toggle null, never a 500.'''
+  covers = ["c-5"]
+  depends_on = ["t-1", "t-3"]
+  test_contract = [
+    '''if toggle state is not served, TestBlocked_Toggle fails: child unblocked youtube -> {state "unblocked", toggle "unblocked"}; untoggled -> "toggle":null with the key present''',
+    '''if other owners' unblocks are hidden, TestBlocked_PermanentUnblockedBy fails: Bob unblocked custom:1, tv shared -> Ann's custom:1 partial, unblocked_by [{client:"tv", grant_id:0, child:{id,name:"Bob"}, permanent:true}]''',
+    '''if an outage lies or 500s, TestBlocked_TogglesDown fails: ListServiceToggles error -> 200, built-ins with toggle null, no custom:* entries''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-7"
+  wave = 2
+  title = "Searchable block picker component"
+  files = ["web/src/lib/BlockPicker.svelte", "web/src/lib/BlockPicker.test.ts"]
+  description = '''"Block a service…" button opens a search input over pickerOptions; picking calls onpick once, disables options while pending, closes after it resolves; empty result shows a no-match message.'''
+  covers = ["c-2"]
+  depends_on = ["t-4"]
+  test_contract = [
+    '''if blocked services leak in, BlockPicker.test 'excludes blocked' fails: youtube blocked -> no youtube row; options exactly the unblocked/partial set''',
+    '''if search is case-sensitive or misses custom, BlockPicker.test 'search' fails: "TIK" -> only TikTok; "por" -> custom "School Portal"; "zzz" -> no-match message''',
+    '''if a pick double-fires, BlockPicker.test 'pick once' fails: two rapid clicks -> onpick once, options disabled while pending, closed after resolve''',
+    '''if custom rows render a broken image, BlockPicker.test 'custom avatar' fails: Portal shows "P", no <img>''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-8"
+  wave = 3
+  title = "Engine Toggle for built-ins: trim, write, mutex"
+  files = ["internal/grants/toggle.go", "internal/grants/toggle_test.go"]
+  description = "Toggle(ctx, childID, serviceID, state) (ToggleResult{Applied, Failed, Clients, Grant *{ID, Ended}}, error) under e.mu with one ApplyTimeout context: custom id must exist (*ErrUnknownService, nothing stored); SetServiceToggle; stop an Ended grant's timer. Both built-in directions write through applyPlan, so a use_global client lands in Failed either way: unblock -> applyPlan(togglePlan(...)), whose remove covers every mapped client; block -> applyPlan(togglePlan for the child's mapped clients ∪ dropOpen(revertPlan(pre-trim grant restricted to the blocked service, active), permanentOpen)) so the trimmed grant's stored (even unmapped) clients are re-blocked, best-effort for the unmapped ones per the toggle_partial_apply exception. Clients = the clients on which the requested state now holds by this toggle (failed ones included; a client held open by another owner's unblock or a live grant is excluded); t-11 derives the shared report from it. Known limitation (accepted, phase 04 precedent): a use_global client is reported in Failed and stays unconverged until migrated off the global list. Custom ids store intent and trim here; their region write is t-12."
+  covers = ["c-1", "c-2", "c-3"]
+  depends_on = ["t-5"]
+  test_contract = ["if unblock misses a client, TestToggle_UnblockAll fails: child on kid-phone, tablet, tv (shared) -> youtube absent on all three, Applied true, Clients all three", "if unblock_during_grant writes or trims, TestToggle_UnblockDuringGrant fails: grant on youtube over all the child's clients -> 0 /control/clients/update POSTs, services/ends_at unchanged, timer armed; at expiry youtube stays absent", "if block_during_grant leaves it covered, TestToggle_BlockDuringGrant fails: grant [youtube,tiktok] -> youtube present on every grant client in-call, tiktok absent, grant active [tiktok], timer armed; expiry re-adds only tiktok", "if an emptied grant keeps its timer, TestToggle_BlockEndsGrant fails: grant [youtube] -> Grant{Ended:true}, fakeClock.pending()==0, later Advance issues no update POST", "if a trimmed grant's old device stays open, TestToggle_BlockOldDevice fails: grant stored on old-tablet (since unmapped) -> youtube added on old-tablet too", "if a block overrides a co-owner, TestToggle_BlockSharedHeldOpen fails: B unblocked youtube, A blocks -> a-phone present, tv untouched and not in Failed", "if partial failure strands intent, TestToggle_PartialApply fails: SetUpdateStatus(tablet,500) -> Applied false, Failed [tablet], row stored, nil error; clients read 502 -> Failed every client, 0 update POSTs; use_global client -> in Failed, global list unwritten", "if the custom check races delete, TestToggle_UnknownCustom fails: DeleteService(1) then Toggle custom:1 (and custom:99) -> *ErrUnknownService, no row", "if the mutex is skipped, TestToggle_RaceExpiry fails: 50 runs of unblock youtube concurrent with expiry -> youtube absent on every client every run", "if re-toggling rewrites, TestToggle_Idempotent fails: second identical unblock -> 0 update POSTs", "if the 5 s budget is unbounded, TestToggle_Deadline fails: Hang /control/clients/update 10 s with default ApplyTimeout (4 s) -> returns within 4.5 s, Applied false", "if Clients over-reports, TestToggle_ClientsGoverned fails: B unblocked youtube on shared tv, A blocks -> Clients [a-phone]; C's live youtube grant on tv, A blocks -> Clients excludes tv; A unblocks -> Clients every mapped client incl. tv; tablet 500 -> tablet in both Failed and Clients", "if the off-owner exception is mis-scoped, TestToggle_BlockOldDeviceFails fails: grant stored on old-tablet (since unmapped), SetUpdateStatus(old-tablet,500), block youtube -> Applied false, old-tablet in Failed, grant trimmed; after clearing the fault a Reconcile issues 0 update POSTs to old-tablet (best-effort per toggle_partial_apply exception)", "if an unblock on a global-list device reports success, TestToggle_GlobalBothDirections fails: kid-tablet use_global_blocked_services true; unblock youtube -> Applied false, Failed [kid-tablet], no write to kid-tablet; block youtube -> same; the global blocked_services list is never written"]
+  status = "done"
+
+[[task]]
+  id = "t-9"
+  wave = 3
+  title = "Reconciler converges toggles; baseline respects them"
+  files = ["internal/grants/reconcile.go", "internal/grants/reconcile_test.go", "internal/grants/clients.go", "internal/grants/clients_test.go"]
+  description = "Toggle half after the grant half (re-reading active grants) runs applyPlan(togglePlan(...)) over present, non-global clients, counted in Stats.Writes/Repaired. Any toggles/children/grants/clients read failure skips the toggle half (the region half is already fail-closed in t-5's syncRules). baselineFrom (new/adopted devices) follows locked new_client_blocked_set_v2: (known-sibling union or global list) ∪ built-ins under the child's active grants or any child's active grant stored on a known sibling (existing clause, kept) ∪ built-ins permanently unblocked on a known sibling by an owner of it who does not own the new client ∪ the child's permanent blocks, minus services permanently unblocked by any owner of the new client (child or co-owner), subtracted last."
+  covers = ["c-1", "c-2", "c-4"]
+  depends_on = ["t-5"]
+  test_contract = ["if drift is not undone, TestReconcile_ToggleDrift fails: youtube unblocked, MutateClient re-adds it -> one pass removes it; tiktok blocked, parent removes it -> one pass re-adds it", "if a converged pass writes, TestReconcile_ToggleNoop fails: second pass -> 0 POSTs", "if AdGuard-owned services are touched, TestReconcile_UntoggledUntouched fails: no toggle rows, parent changes netflix -> 0 update POSTs", "if the reconciler fights a grant, TestReconcile_BlockYieldsToGrant fails: A blocked youtube, C's live grant covers shared tv -> tv keeps youtube absent across 3 passes", "if an overdue grant's services stay open, TestReconcile_OverdueThenBlock fails: overdue grant on tiktok + block toggle on tiktok -> one pass leaves tiktok present", "if partial apply never converges, TestReconcile_ConvergesToggle fails: toggle row seeded via store.SetServiceToggle with kid-tablet still carrying youtube, fault cleared -> one pass removes it (store-seeded so this task does not need t-8)", "if a read failure converges from partial data, TestReconcile_ToggleReadFailure fails: ListServiceToggles error -> 0 toggle writes and 0 set_rules POSTs (region half fail-closed, t-5), grant half still runs (an overdue grant still expires)", "if a new device ignores toggles, TestCreateClient_BaselineToggles fails: youtube unblocked, tiktok blocked, sibling still blocks youtube -> new client excludes youtube, includes tiktok; same through AdoptClients", "if the unblock subtraction runs before the grant union, TestCreateClient_BaselineGrantAndUnblock fails: youtube under the child's live grant AND permanently unblocked -> new client excludes youtube; tiktok under the live grant only -> new client includes tiktok", "if a co-owner's permanent unblock is ignored on adoption, TestAdoptClients_SharedPermanentOpen fails: tv owned by B, B unblocked youtube, A's siblings block youtube, PUT adds tv to A -> tv's list excludes youtube (no write adds it)", "if a co-owner's permanent unblock leaks onto a new device, TestBaseline_SharedSiblingPermanent fails: Kid phone shared by Ada and Ben, Ada permanently unblocked youtube, Ben gets new tv -> tv's list contains youtube; the existing TestBaseline_SharedSiblingGrant still passes unmodified"]
+  status = "done"
+
+[[task]]
+  id = "t-10"
+  wave = 3
+  title = "Home: toggle controls, picker, refresh"
+  files = ["web/src/lib/Home.svelte", "web/src/lib/Home.test.ts"]
+  description = "Home drops its local openOn and hide-unblocked filter in favour of toggles.ts (shown, openOn, controlFor). Rows render controlFor's buttons; BlockPicker at the foot of the child's view. A toggle POSTs once (inflight guard), then refetches that child's blocked view and active grants; applied=false -> alert naming failed clients; shared -> notice naming devices and owners."
+  covers = ["c-1", "c-2", "c-5"]
+  depends_on = ["t-4", "t-7"]
+  test_contract = ["if row controls are wrong, Home.test 'toggle controls' fails: blocked row only Unblock (click -> POST state 'unblocked'); partial row both; toggled-unblocked row listed \"unblocked\" with only Block", "if today's hiding regresses, Home.test 'untoggled unblocked hidden' fails: unblocked, toggle null, unblocked_by [] -> not listed", "if a toggle is not reversible, Home.test 'reverse' fails: Unblock youtube -> refetched row still listed with Block; Block -> POST {state:'blocked'} and the refetched row shows Unblock", "if a double tap sends twice, Home.test 'toggle inflight' fails: two clicks before resolve -> one /toggles fetch", "if the view goes stale, Home.test 'toggle refresh' fails: after resolve the blocked view and GET /api/v1/grants are each fetched again", "if partial apply / shared / errors are hidden, Home.test 'toggle outcome' fails: {applied:false, failed:['tablet']} -> role=alert naming tablet; shared [{tv,[B]}] -> status naming tv and B; 502 -> role=alert, row unchanged", "if the picker is not wired, Home.test 'picker blocks' fails: open \"Block a service…\", pick TikTok -> POST {service_id:'tiktok',state:'blocked'} then blocked view refetched", "if attribution reads as a grant, Home.test 'permanent attribution' fails: {tv, Bob, permanent} renders \"tv by Bob (permanent)\", not \"Bob's grant\"", "amend (verify BLOCKING, Home.svelte:254 r.failed.join(', ') -> join('') survives): if a multi-client partial toggle stops listing clients comma-separated, Home.test 'toggle outcome' fails: {applied:false, failed:['tablet','tv']} -> role=alert text contains 'except on tablet, tv'. Test-only amend: Home.svelte must not change."]
+  status = "done"
+
+[[task]]
+  id = "t-11"
+  wave = 4
+  title = "Toggle endpoint with validation and shared report"
+  files = ["internal/api/toggles.go", "internal/api/toggles_test.go", "internal/api/api.go", "cmd/adguard-reward/main_test.go"]
+  description = "POST /api/v1/children/{id}/toggles {service_id, state}: bounded strict body; 404 unknown child before any AdGuard call; the catalogue read gets its own 1 s deadline (timeout or error -> 502, nothing stored) and Toggle's 4 s ApplyTimeout covers every AdGuard write, so AdGuard I/O fits in 5 s; time spent waiting on e.mu is outside the budget (accepted, as for the phase 04 grants POST); built-in id must be in the live catalogue (422); engine Toggle; 200 {service_id, state, applied, failed, shared (sharedOf over ToggleResult.Clients — only devices the toggle governs, per shared_client_scope 'affected'), grant:{id, ended}|null}. Grants interface gains Toggle."
+  covers = ["c-1", "c-2"]
+  depends_on = ["t-6", "t-8"]
+  test_contract = ["if junk reaches blocked_services, TestToggle_UnknownService fails: \"nope\", \"custom:\", \"custom:99\" -> 422, no row, 0 update POSTs", "if bad input is accepted, TestToggle_BadBody fails: state \"open\", missing service_id, unknown field, two objects -> 400 each, no row", "if the unknown child touches AdGuard, TestToggle_UnknownChild fails: child 99 -> 404, 0 AdGuard requests", "if a catalogue outage stores intent, TestToggle_CatalogueDown fails: blocked_services/all 502 -> 502, ListServiceToggles empty", "if the shared report is wrong, TestToggle_SharedReport fails: tv co-owned by B -> shared [{client:\"tv\", others:[{id:B,...}]}], present even when applied=false; none shared -> []", "if partial apply becomes an error, TestToggle_PartialIs200 fails: Failed [tablet] -> 200 {applied:false, failed:[\"tablet\"]}", "if trims are not reported, TestToggle_GrantReport fails: block youtube under grant 7 {youtube} -> grant {id:7, ended:true}; no grant involved -> grant null", "if CSRF/session gating is missing, TestToggle_Auth fails: no session -> 401, no CSRF -> 403, no row", "if wiring or the 5 s budget breaks, TestRun_ToggleEndToEnd fails: boot run(), POST unblock youtube for a child on 2 clients -> response within 5 s and both lack youtube in the fake; POST block -> both contain it", "if a slow catalogue blows the 5 s budget, TestToggle_CatalogueSlow fails: Hang blocked_services/all 10 s -> 502 returned within 5 s, ListServiceToggles empty", "if the budget splits wrong, TestToggle_SlowCatalogueThenHang fails: blocked_services/all answers after 800 ms, /control/clients/update hangs 10 s -> 200 {applied:false} returned within 5 s, toggle row stored", "if shared names a device the toggle did not reach, TestToggle_SharedHeldOpen fails: B unblocked youtube on shared tv, A blocks youtube -> shared [] (tv held open by B); A unblocks -> shared [{client:\"tv\", others:[B]}]"]
+  status = "done"
+
+[[task]]
+  id = "t-12"
+  wave = 4
+  title = "Toggle custom services via managed region"
+  files = ["internal/grants/toggle.go", "internal/grants/toggle_custom.go", "internal/grants/toggle_custom_test.go"]
+  description = "Toggle on a custom:<n> id runs syncRules after storing intent, sharing Toggle's ApplyTimeout actx, so the managed region gains/loses the @@ exception for the child's clients within the call. Clients follows t-8's governed-client rule: an unblock lists every mapped client; a block excludes a shared client still held open by another owner's custom unblock or a live grant covering that custom service there. set_rules failure, timeout or a malformed region -> Applied false, Failed = child's clients, row stored, nil error."
+  covers = ["c-1", "c-2"]
+  test_contract = ["if a custom unblock skips the region, TestToggle_CustomUnblock fails: unblock custom:1 -> one @@||a.com^ line over the child's clients, block line unchanged", "if a custom block leaves the exception, TestToggle_CustomBlockUnderGrant fails: block custom:1 under a {custom:1} grant -> @@ line gone, grant ended", "if a region failure becomes an error or loses intent, TestToggle_CustomRegionFailure fails: set_rules 500 or malformed region -> Applied false, Failed = child's clients, row stored, nil error", "if the custom path is unbounded, TestToggle_CustomDeadline fails: Hang set_rules 10 s with default ApplyTimeout (4 s) -> returns within 4.5 s, Applied false, Failed = child's clients, row stored", "if custom Clients over-reports, TestToggle_CustomClientsGoverned fails: B custom-unblocked custom:1 on shared tv, A blocks custom:1 -> Clients excludes tv and the region keeps tv's @@ line; A unblocks custom:1 -> Clients includes tv"]
+  status = "done"
+  depends_on = ["t-8"]

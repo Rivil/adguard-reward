@@ -340,7 +340,8 @@ func blockedVia(t *testing.T, d grantsDirect, children ChildStore, g Grants, id 
 	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(w.Body.String(), ":null") {
+	// toggle is the one field that is null by contract (never toggled).
+	if strings.Contains(strings.ReplaceAll(w.Body.String(), `"toggle":null`, ""), ":null") {
 		t.Errorf("degraded body serialises a null: %s", w.Body.String())
 	}
 	return body
@@ -406,5 +407,242 @@ func TestBlocked_ChildrenReadFails(t *testing.T) {
 	}
 	if got, want := stateOf(body), stateOf(healthy); !reflect.DeepEqual(got, want) {
 		t.Errorf("states = %v, want unchanged %v", got, want)
+	}
+}
+
+// blockedCustomVia is blockedVia with Deps.CustomServices set to cs; it also
+// returns the raw body so the wire shape can be checked key by key.
+func blockedCustomVia(t *testing.T, d grantsDirect, cs CustomServiceStore, g Grants, id int64) (blockedBody, string) {
+	t.Helper()
+	deps := d.a.deps
+	deps.Children, deps.Grants, deps.CustomServices = d.store, g, cs
+	r := httptest.NewRequest(http.MethodGet, childPath(id)+"/blocked", nil)
+	r.SetPathValue("id", itoa(id))
+	w := httptest.NewRecorder()
+	New(deps).handleBlocked(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("blocked view: %d %s, want 200", w.Code, w.Body.String())
+	}
+	var body blockedBody
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	return body, w.Body.String()
+}
+
+// customFixture seeds Ada on Kid phone and a custom service Portal.
+func customFixture(t *testing.T, d grantsDirect) store.Child {
+	t.Helper()
+	ctx := context.Background()
+	ada, err := d.store.CreateChild(ctx, "Ada", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.eng.CreateService(ctx, "Portal", []string{"a.com"}); err != nil {
+		t.Fatal(err)
+	}
+	return ada
+}
+
+func TestBlocked_CustomReadFailure(t *testing.T) {
+	d := newGrantsDirect(t)
+	ada := customFixture(t, d)
+
+	healthy, _ := blockedCustomVia(t, d, d.store, d.eng, ada.ID)
+	if p := serviceRow(healthy, "custom:1"); p == nil || p.State != "blocked" {
+		t.Fatalf("precondition: healthy custom:1 = %+v, want blocked", p)
+	}
+
+	for name, run := range map[string]func() blockedBody{
+		"custom list": func() blockedBody {
+			b, _ := blockedCustomVia(t, d, &countingCustom{inner: d.store, err: errors.New("database is locked")}, d.eng, ada.ID)
+			return b
+		},
+		"grants": func() blockedBody {
+			b, _ := blockedCustomVia(t, d, d.store, listFailingGrants{d.eng}, ada.ID)
+			return b
+		},
+	} {
+		body := run()
+		if p := serviceRow(body, "custom:1"); p != nil {
+			t.Errorf("%s read failed: custom:1 still reported as %+v", name, p)
+		}
+		if yt := serviceRow(body, "youtube"); yt == nil {
+			t.Errorf("%s read failed: built-ins missing", name)
+		}
+	}
+}
+
+func TestBlocked_CustomJSON(t *testing.T) {
+	d := newGrantsDirect(t)
+	ada := customFixture(t, d)
+	if _, err := d.eng.Create(context.Background(), ada.ID, []string{"custom:1"}, ada.Clients, 30*time.Minute); err != nil {
+		t.Fatal(err)
+	}
+	_, raw := blockedCustomVia(t, d, d.store, d.eng, ada.ID)
+	var doc struct {
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.Unmarshal([]byte(raw), &doc); err != nil {
+		t.Fatal(err)
+	}
+	var custom, builtin map[string]any
+	for _, s := range doc.Services {
+		switch s["id"] {
+		case "custom:1":
+			custom = s
+		case "youtube":
+			builtin = s
+		}
+	}
+	want := map[string]any{
+		"id": "custom:1", "name": "Portal", "icon": "", "custom": true,
+		"state": "unblocked", "toggle": nil, "differs": []any{}, "unblocked_by": []any{},
+	}
+	if !reflect.DeepEqual(custom, want) {
+		t.Fatalf("custom entry %v, want %v", custom, want)
+	}
+	if builtin == nil || builtin["custom"] != false {
+		t.Fatalf("built-in entry %v, want custom:false", builtin)
+	}
+}
+
+// failingToggles is a ChildStore whose toggles read fails.
+type failingToggles struct{ ChildStore }
+
+func (failingToggles) ListServiceToggles(context.Context) ([]store.ServiceToggle, error) {
+	return nil, errors.New("database is locked")
+}
+
+// blockedRaw serves the blocked view with children as Deps.Children and the
+// real store as CustomServices; it returns the decoded body and each
+// service's raw JSON object by id.
+func blockedRaw(t *testing.T, d grantsDirect, children ChildStore, id int64) (blockedBody, map[string]map[string]json.RawMessage) {
+	t.Helper()
+	deps := d.a.deps
+	deps.Children, deps.Grants, deps.CustomServices = children, d.eng, d.store
+	r := httptest.NewRequest(http.MethodGet, childPath(id)+"/blocked", nil)
+	r.SetPathValue("id", itoa(id))
+	w := httptest.NewRecorder()
+	New(deps).handleBlocked(w, r)
+	if w.Code != http.StatusOK {
+		t.Fatalf("blocked view: %d %s, want 200", w.Code, w.Body.String())
+	}
+	var body blockedBody
+	if err := json.Unmarshal(w.Body.Bytes(), &body); err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Services []map[string]json.RawMessage `json:"services"`
+	}
+	if err := json.Unmarshal(w.Body.Bytes(), &doc); err != nil {
+		t.Fatal(err)
+	}
+	byID := map[string]map[string]json.RawMessage{}
+	for _, s := range doc.Services {
+		var id string
+		if err := json.Unmarshal(s["id"], &id); err != nil {
+			t.Fatal(err)
+		}
+		byID[id] = s
+	}
+	return body, byID
+}
+
+func mustToggle(t *testing.T, d grantsDirect, childID int64, service, state string) {
+	t.Helper()
+	if _, err := d.store.SetServiceToggle(context.Background(), childID, service, state, t0); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBlocked_Toggle(t *testing.T) {
+	d := newGrantsDirect(t)
+	ada, err := d.store.CreateChild(context.Background(), "Ada", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	mustToggle(t, d, ada.ID, "youtube", "unblocked")
+	// The applied unblock: youtube is gone from Kid phone's own list.
+	d.fake.MutateClient("Kid phone", func(c map[string]json.RawMessage) {
+		c["blocked_services"] = json.RawMessage(`["tiktok"]`)
+	})
+
+	body, raw := blockedRaw(t, d, d.store, ada.ID)
+	yt := serviceRow(body, "youtube")
+	if yt == nil || yt.State != "unblocked" || yt.Toggle == nil || *yt.Toggle != "unblocked" {
+		t.Fatalf("youtube = %+v, want state unblocked, toggle unblocked", yt)
+	}
+	tk, ok := raw["tiktok"]["toggle"]
+	if !ok {
+		t.Fatalf("tiktok has no toggle key: %v", raw["tiktok"])
+	}
+	if string(tk) != "null" {
+		t.Fatalf("untoggled tiktok toggle = %s, want null", tk)
+	}
+}
+
+func TestBlocked_PermanentUnblockedBy(t *testing.T) {
+	d := newGrantsDirect(t)
+	ctx := context.Background()
+	ann, err := d.store.CreateChild(ctx, "Ann", []string{"Kid phone", "Old laptop"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob, err := d.store.CreateChild(ctx, "Bob", []string{"Kid phone"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := d.eng.CreateService(ctx, "Portal", []string{"a.com"}); err != nil {
+		t.Fatal(err)
+	}
+	mustToggle(t, d, bob.ID, "custom:1", "unblocked")
+
+	body, raw := blockedRaw(t, d, d.store, ann.ID)
+	p := serviceRow(body, "custom:1")
+	if p == nil || p.State != "partial" || !reflect.DeepEqual(p.Differs, []string{"Kid phone"}) || p.Toggle != nil {
+		t.Fatalf("Ann's custom:1 = %+v, want partial differing on Kid phone, toggle null", p)
+	}
+	var entries []map[string]any
+	if err := json.Unmarshal(raw["custom:1"]["unblocked_by"], &entries); err != nil {
+		t.Fatal(err)
+	}
+	want := []map[string]any{{
+		"client": "Kid phone", "grant_id": float64(0), "permanent": true,
+		"child": map[string]any{"id": float64(bob.ID), "name": "Bob"},
+	}}
+	if !reflect.DeepEqual(entries, want) {
+		t.Fatalf("unblocked_by = %v, want %v", entries, want)
+	}
+}
+
+func TestBlocked_TogglesDown(t *testing.T) {
+	d := newGrantsDirect(t)
+	ada := customFixture(t, d)
+	mustToggle(t, d, ada.ID, "youtube", "blocked")
+	mustToggle(t, d, ada.ID, "custom:1", "unblocked")
+
+	healthy, _ := blockedRaw(t, d, d.store, ada.ID)
+	if yt := serviceRow(healthy, "youtube"); yt == nil || yt.Toggle == nil || *yt.Toggle != "blocked" {
+		t.Fatalf("precondition: healthy youtube = %+v, want toggle blocked", yt)
+	}
+	if p := serviceRow(healthy, "custom:1"); p == nil {
+		t.Fatal("precondition: healthy view lacks custom:1")
+	}
+
+	body, raw := blockedRaw(t, d, failingToggles{d.store}, ada.ID)
+	if len(body.Services) == 0 {
+		t.Fatal("no services in degraded view")
+	}
+	for _, s := range body.Services {
+		if strings.HasPrefix(s.ID, "custom:") {
+			t.Fatalf("toggles down: %s still reported as %+v", s.ID, s)
+		}
+		if string(raw[s.ID]["toggle"]) != "null" {
+			t.Fatalf("toggles down: %s toggle = %s, want null", s.ID, raw[s.ID]["toggle"])
+		}
+	}
+	if got, want := stateOf(body)["youtube"], stateOf(healthy)["youtube"]; !reflect.DeepEqual(got, want) {
+		t.Fatalf("youtube state = %v, want unchanged %v", got, want)
 	}
 }

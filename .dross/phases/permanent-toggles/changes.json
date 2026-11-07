@@ -1,0 +1,513 @@
+{
+  "phase": "permanent-toggles",
+  "pr": 12,
+  "base": "milestone/v0.2",
+  "base_commit": "210c74b2b08e52b44f72f3c2f8f76c3600aa0bc1",
+  "status": "complete",
+  "tasks": {
+    "quick-1": {
+      "files": [
+        "internal/blocked/blocked_test.go",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "453970f",
+      "completed_at": "2026-11-03T14:57:22.571787Z",
+      "notes": "quick: kill the 10 open survivors with tests"
+    },
+    "t-1": {
+      "files": [
+        "internal/store/migrations/0008_service_toggles.sql",
+        "internal/store/toggles.go",
+        "internal/store/toggles_test.go",
+        "internal/store/custom_services_test.go"
+      ],
+      "commit": "e7a7c6d",
+      "completed_at": "2026-11-03T13:34:40.991404Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "Store.SetServiceToggle",
+          "loc": "internal/store/toggles.go:43",
+          "what": "upserts per-(child, service) toggle intent and, for a block, trims and possibly ends the child's live grant in the same transaction"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/activeGrants.ts",
+        "web/src/lib/activeGrants.test.ts"
+      ],
+      "commit": "ccc715a",
+      "completed_at": "2026-11-03T20:11:25.515605Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "setToggle",
+          "loc": "web/src/lib/Home.svelte:237",
+          "what": "Home rows offer Unblock/Block per controlFor plus a Block-a-service picker; one in-flight toggle per child, refetch blocked view and grants, alert on partial apply naming every failed client, notice on shared devices"
+        },
+        {
+          "feature": "active grants panel",
+          "symbol": "refresh",
+          "loc": "web/src/lib/activeGrants.ts:29",
+          "what": "fresh mode waits out an in-flight poll and polls again so a toggle never shows a pre-toggle grant list"
+        }
+      ]
+    },
+    "t-11": {
+      "files": [
+        "internal/api/toggles.go",
+        "internal/api/toggles_test.go",
+        "internal/api/api.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "273289b",
+      "completed_at": "2026-11-03T14:20:30.563166Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "API.handleToggle",
+          "loc": "internal/api/toggles.go:62",
+          "what": "POST /api/v1/children/{id}/toggles: strict body, 404 before AdGuard, 1 s catalogue check (502/422), engine Toggle, 200 with applied/failed/shared/grant"
+        }
+      ]
+    },
+    "t-12": {
+      "files": [
+        "internal/grants/toggle.go",
+        "internal/grants/toggle_custom.go",
+        "internal/grants/toggle_custom_test.go"
+      ],
+      "commit": "cc23401",
+      "completed_at": "2026-11-03T14:23:06.407556Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "Engine.toggleCustom",
+          "loc": "internal/grants/toggle_custom.go:20",
+          "what": "custom-service toggles converge the managed user_rules region within Toggle's ApplyTimeout; region failure leaves intent stored, Applied false, Failed = child's clients"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/grants/shared.go",
+        "internal/grants/shared_test.go",
+        "internal/grants/intent.go",
+        "internal/grants/intent_test.go"
+      ],
+      "commit": "a16f52a",
+      "completed_at": "2026-11-03T13:36:56.306267Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "togglePlan",
+          "loc": "internal/grants/intent.go:91",
+          "what": "pure planner: per-client open-wins blocked_services plan for toggled built-ins, plus permanentOpen/dropOpen to keep permanent unblocks out of revert"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go"
+      ],
+      "commit": "8464c65",
+      "completed_at": "2026-11-03T13:39:00.949278Z",
+      "landmarks": [
+        {
+          "feature": "blocked-services view",
+          "symbol": "permanentlyOpen",
+          "loc": "internal/blocked/blocked.go:309",
+          "what": "blocked view reports self's toggle per service, opens custom services an owner permanently unblocked, and attributes other owners' permanent unblocks in UnblockedBy"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/toggles.ts",
+        "web/src/lib/toggles.test.ts"
+      ],
+      "commit": "5ec2e7a",
+      "completed_at": "2026-11-03T13:42:04.80763Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "controlFor",
+          "loc": "web/src/lib/toggles.ts:44",
+          "what": "SPA toggleService client plus pure helpers deciding which rows show, which Unblock/Block controls each row offers, and the block picker's options"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/grants/grants.go",
+        "internal/grants/rules.go",
+        "internal/grants/grants_test.go",
+        "internal/grants/rules_test.go"
+      ],
+      "commit": "85a3fde",
+      "completed_at": "2026-11-03T13:50:38.426748Z",
+      "landmarks": [
+        {
+          "feature": "grant lifecycle",
+          "symbol": "Engine.revert",
+          "loc": "internal/grants/grants.go:318",
+          "what": "revert skips services any current owner permanently unblocked (fail-closed on toggle/children reads); applyPlan added; managed region keeps @@ covers for unblocked custom toggles"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "internal/api/api.go",
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go"
+      ],
+      "commit": "9d3f4ee",
+      "completed_at": "2026-11-03T13:52:51.962719Z",
+      "landmarks": [
+        {
+          "feature": "blocked-services view",
+          "symbol": "API.toggleInputs",
+          "loc": "internal/api/blocked.go:146",
+          "what": "GET /children/{id}/blocked serves each service's toggle (null when untoggled) and permanent unblocked_by entries; a failed toggles read nulls toggles and drops custom services"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "web/src/lib/BlockPicker.svelte",
+        "web/src/lib/BlockPicker.test.ts"
+      ],
+      "commit": "988aca0",
+      "completed_at": "2026-11-03T13:54:14.024707Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "BlockPicker",
+          "loc": "web/src/lib/BlockPicker.svelte:31",
+          "what": "searchable 'Block a service…' picker over the catalogue minus blocked services; one pick per open, disabled while pending, closes on resolve"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "internal/grants/toggle.go",
+        "internal/grants/toggle_test.go"
+      ],
+      "commit": "bb2c072",
+      "completed_at": "2026-11-03T14:00:18.864027Z",
+      "landmarks": [
+        {
+          "feature": "permanent service toggles",
+          "symbol": "Engine.Toggle",
+          "loc": "internal/grants/toggle.go:54",
+          "what": "stores a child's permanent toggle under the engine mutex, trims/ends the covering grant on block, and writes built-ins via applyPlan within one ApplyTimeout"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "internal/grants/reconcile.go"
+      ],
+      "commit": "71d537f",
+      "completed_at": "2026-11-03T16:40:04.388175Z",
+      "landmarks": [
+        {
+          "feature": "permanent toggles",
+          "symbol": "Engine.reconcileToggles",
+          "loc": "internal/grants/reconcile.go:165",
+          "what": "documents the drift pass's deliberate second clients read before applyPlan writes"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-2",
+          "text": "In TestSetToggle_EndsEmptyGrant the closing CreateGrant(child, [youtube]) would succeed even if the grant were never ended, because the trim already deleted the youtube grant_services row; the GetGrant status and ListActiveGrants checks are what actually catch an emptied grant staying active.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "TestToggles_Cascade assumes mustService assigns ids 1..10 in order on a fresh DB; this holds for an INTEGER PRIMARY KEY but is implicit.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-10": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "New 'toggle outcome' step kills the join('') mutant at Home.svelte:254: the two-client partial response must render 'except on tablet, tv', and the waitFor keys off data-error changing from 'network' to 'partial', so it cannot match the previous alert.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-11": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "handleToggle reads all children to check the id and then reuses that list for sharedOf, so the 404 check costs no extra store call; a child deleted between the two reads is handled by the ErrChildNotFound branch on the engine error",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestToggle_CatalogueSlow also asserts \u003c 2 s, which pins the catalogue read to its own 1 s deadline rather than just the overall 5 s",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-12": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "customGoverned reads children/toggles/active grants and syncRules then reads them again; redundant under mu but harmless",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "On a custom block whose region write fails, Failed lists every mapped client (per the record) while Clients leaves out a shared client held open by another owner, so Failed can name a client not in Clients; the built-in path sets Clients = Failed when its reads fail",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "permanentOpen, dropOpen, togglePlan and the toggle type have no non-test caller yet (wired by t-5); a linter run with staticcheck U1000 would flag them as unused until then",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The file-header comment in internal/grants/shared.go still says these helpers take no ownership input; dropOpen's open argument is derived from current ownership, so the header is now slightly misleading",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "togglePlan treats any state other than store.ToggleUnblocked as blocked; this is safe given the store's CHECK constraint on state",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "TestCompute_NoToggles compares nil against empty Toggles and checks that no Toggle or permanent entry appears; it does not compare against the output from before this change. The existing exact-View test TestCompute (full want []ServiceState) still covers byte-identity for the main fixture, so the contract holds in practice.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "toggleOf does a linear scan of Toggles for every (service, client, owner) lookup; fine at household scale.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "pickerOptions excludes only rows whose state is 'blocked', so a service with toggle 'blocked' whose state has not caught up yet (still 'unblocked' or 'partial') stays in the picker. Picking it again would just repeat the block. This matches the record, which says to exclude already-blocked services by state.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "toggles.ts is not yet imported by Home.svelte, which keeps its own shown/openOn until t-10. That is expected under the task record.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "applyPlan has no production caller in this diff; only TestApplyPlan exercises it until t-8 (Toggle) and t-9 (Reconcile) wire it in, as the task record says.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "revert now also needs ListChildren to succeed, so a failed children read keeps an overdue grant active where before it would have expired. This is the intended fail-closed behaviour, and the 'children' subtest of TestRevert_ToggleReadFailure covers it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "In applyPlan, writes is counted before each Remove/Add call. If a concurrent edit makes the adguard client's read-modify-write a no-op, the count can be one higher than the POSTs actually sent. This is harmless for stats.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "blockedVia's no-null check now strips every \"toggle\":null before scanning, so a stray null toggle in a degraded body can no longer trip it; acceptable since toggle is null by contract, and TestBlocked_Toggle and TestBlocked_TogglesDown check the toggle field directly",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "When toggles cannot be read, built-in states still come from AdGuard while toggle is null; this matches the described outage behaviour",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "'pick once' second click lands on an already-disabled button, so the `if (pending) return` guard in pick() is not exercised on its own; the disabled attribute alone satisfies the test. The guard is still sound defence.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "pick() swallows onpick rejections by design (caller reports); the extra 'stays open for a retry' test pins that behaviour.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-2",
+          "text": "When the read of children, toggles or active grants fails, Toggle sets Clients = sortedSet(child.Clients). For a block this over-reports clients held open by a co-owner's unblock or a live grant. It also leaves out the trimmed grant's unmapped clients even though they are in Failed, which breaks the documented rule that failed clients are included in Clients.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "In TestToggle_BlockOldDeviceFails, the check that a later Reconcile sends 0 update POSTs to old-tablet passes no matter what in the current tree: Reconcile only re-removes services a live grant has opened, and does not converge toggles. It only protects against a future sibling change that converges toggles on unmapped clients.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Custom ids return Applied true with no region write. That matches the record, which gives the region write to t-12, but the result claims success before anything reaches AdGuard.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "On a block, a mapped client held open by another owner is planned as a remove (it comes from togglePlan). If that client uses AdGuard's global blocked-services list, it lands in Failed even though it is held open. This follows the description's 'togglePlan for the child's mapped clients'.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-2",
+          "text": "togglePlanFor counts a client in Clients whenever it is in the plan, but applyPlan silently skips clients AdGuard no longer has (not failed). A deleted or renamed client, especially a trimmed grant's unmapped stored client, is then reported in Clients even though the requested state does not hold there, which can over-report to t-11's shared report.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "togglePlanFor's store reads use the caller's ctx rather than actx. If the caller cancels after SetServiceToggle commits, every target is reported failed with no write. The intent is stored and the reconciler converges the mapped clients, except the unmapped trimmed ones, which the best-effort exception leaves open.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "reconcileToggles reads ag.Clients to diff the plan, then applyPlan reads ag.Clients again for the same diff: a non-converged pass costs two GETs, and the Reconcile doc comment ('reads AdGuard once for itself') is now stale",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "applyPlan does not mark a client failed on ErrClientNotFound, so reconcileToggles counts it in Stats.Repaired and logs it as converged (only when the client vanishes mid-pass)",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
+}

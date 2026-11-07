@@ -1,0 +1,141 @@
+task_seq = 9
+
+[phase]
+  id = "export-import"
+
+# Wire conventions (agreed in panel synthesis, panel/synthesis.md; all 13 disagreements took the provisional default):
+# - GET /api/v1/export -> 200 {format:"adguard-reward-export", version:1, children:[{name,clients}],
+#   custom_services:[{name,domains}], buttons:[{label,child,services,icon,duration}], toggles:[{child,service,state}]}.
+#   duration is whole seconds. No Content-Disposition header: the SPA downloads through fetch and a Blob (D-10).
+# - The file holds no row ids and no timestamps. Toggles sort by (child name, service ref); children, services and
+#   buttons keep stored order, which import reproduces.
+# - Custom refs are "custom:<name>" strings beside built-in ids (D-5). "custom:12" in a file is a NAME, never a row id:
+#   store.ParseCustomID and IsCustomServiceID must not be used on file refs.
+# - Toggles are a top-level list naming the child (D-6). Header is format plus version (D-7).
+# - POST /api/v1/import takes the raw file body, 8 MiB limit, over-limit is 400 with a size message (D-9).
+#   -> 200 {missing_clients:[], rules_applied:true} (D-8) | 400 bad_request | 409 conflict | 422 unprocessable |
+#   502 adguard_unavailable, all {error, message}. 409 on import only ever means the install is not empty.
+# - The API reaches the store by widening ChildStore with ExportSetup, ImportSetup, EnsureEmpty; no new Deps field (D-3).
+# - The c-2 secret proof sits in t-4 at both api and cmd level; only cmd can seed svcPass and the AI key (D-4).
+# - The SPA POSTs the raw file text, never parses or re-encodes it (D-12). Backup is a section in Settings.svelte (D-11).
+# - Client names containing CR or LF are NOT rejected: decodeChild accepts them and Render skips them, so rejecting
+#   would make a stored mapping export a file its own import refuses (D-13).
+# - A custom service named like a built-in in this AdGuard's catalogue is 422, rejected whole (gray area, agreed).
+# - Built-in toggles reach AdGuard on the next reconcile tick after import, up to 60 s (c-6). Active grants are not
+#   part of the emptiness check (non_empty_target lists what counts).
+# - Manual check, run as soon as t-4 lands: export from the installed PWA on a real iPhone and expect a saved
+#   adguard-reward-export.json (jsdom cannot test this). If it fails, add a navigator.share task in this phase.
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Add store setup snapshot and atomic restore"
+  files = ["internal/store/setup.go", "internal/store/setup_test.go", "internal/store/children.go", "internal/store/buttons.go"]
+  description = '''ExportSetup reads one name-keyed store.Setup in a single tx; ImportSetup re-checks emptiness and writes it in one tx, resolving names to fresh ids; EnsureEmpty and *ErrNotEmpty. CreateChild's insert and ReplaceButtons' row insert become shared helpers, so the history watermark exists in one place. Toggles are read by a query inside the tx and sorted by names, not through ListServiceToggles.'''
+  covers = ["c-1", "c-3", "c-4", "c-6"]
+  test_contract = [
+    '''if ids pass through unmapped, TestSetup_RoundTrip fails: source ids are gapped (a service created and deleted first, so A=custom:2, B=custom:3; the target gets 1 and 2); export, import into a second store, export is DeepEqual''',
+    '''if only button Services are remapped, TestSetup_IconRemap fails: a button icon naming a custom service NOT in the button's services resolves to the same-named target service''',
+    '''if the toggle export is left unsorted, TestSetup_ToggleOrder fails: toggles on custom:9 (A) and custom:10 (B) list the same before and after import, where ListServiceToggles' string order puts custom:10 first''',
+    '''if a file ref is treated as a row id, TestSetup_NameLikeID fails: a service named "12" while another service holds row id 12 resolves to the named service, not the row''',
+    '''if EnsureEmpty misses a kind, TestSetup_NotEmpty fails: a custom service alone, and a child with a button and a toggle, each return *ErrNotEmpty naming every kind present, row counts unchanged''',
+    '''if the in-tx emptiness check is removed, TestSetup_ConcurrentImport fails: of two parallel ImportSetup calls exactly one succeeds and the other gets *ErrNotEmpty, not a UNIQUE failure''',
+    '''if any insert commits outside the tx, TestSetup_Rollback fails: an invalid state on the LAST toggle trips the CHECK constraint and children, child_clients, custom_services, domains, buttons, button_services and service_toggles are all at zero rows''',
+    '''if import inserts children without history_after_grant_id, TestSetup_HistoryWatermark fails: delete a child that has grants, import a child that reuses the id, ListGrantHistory is empty''',
+    '''if export writes dangling refs, TestSetup_DanglingRef fails: a button service, a button icon and a toggle each seeded with custom:99 make ExportSetup return an error, not a file its own import would refuse''',
+    '''if a nested st.db call runs inside the tx on the single connection, TestSetup_NoDeadlock fails: ExportSetup and ImportSetup must finish under a 5 s deadline''',
+    '''if the helper extraction changes behaviour, the existing children and buttons store suites fail: CreateChild and ReplaceButtons keep their results and errors''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Parse and validate the export file"
+  files = ["internal/api/setup_file.go", "internal/api/setup_file_test.go"]
+  description = '''Wire types plus pure parseSetupFile([]byte) returning a file or a problem (400 vs 422, message naming the path), and builtinRefs(file) listing every built-in id used. No store, no AdGuard, no HTTP.'''
+  covers = ["c-4", "c-6"]
+  test_contract = ["if the dec.More() check is reused for trailing data, the trailing-data case fails: `{...}}` is rejected, as are invalid JSON and an unknown field, all 400-class", "if the strict decode runs before the version peek, the future-version case fails: {\"format\":\"adguard-reward-export\",\"version\":2,\"future\":[]} names version 2, not \"future\"", "if version handling is lax, the version cases fail: missing version, \"1\" as a string and body `null` each name the version", "if the format marker is not checked, the format case fails: a wrong or absent format is rejected as not an adguard-reward export", "if one shared case fold is used, the duplicate-name cases fail: children \"Ada\"/\"ada\" are duplicates and \"Éa\"/\"éa\" are NOT (NOCASE folds ASCII only); custom services \"Éa\"/\"éa\" ARE duplicates (nameKey is ToLower)", "if decodeCustomService's silent dedupe is copied, the duplicate-domain case fails: \"Example.COM\" and \"example.com.\" collide in one service and across two, and the message names the domain", "if domains skip rule validation, the r-04 case fails: \"||evil.com^$important\" and a regex domain are rejected naming custom_services[0].domains[0]", "if a reference check is missing, the dangling-ref table fails: buttons[i].child, buttons[i].services, buttons[i].icon, toggles[i].child and toggles[i].service each reject a target missing from the file, naming the path; button child \"ada\" against child \"Ada\" is rejected (exact match after trim)", "if validation over-rejects, the legal-shapes case fails: the same client under two children, two buttons with one label, and a child and a service both named Minecraft all pass", "if repeats are deduped, the repeat cases fail: a repeated (child, service) toggle, state \"open\", and a repeated client or service inside one record are rejected", "if bounds drift from the handlers, the bounds table fails: label, duration (grants.MinDuration/MaxDuration edges), empty services, name lengths, the 256-byte client name and the 50-domain cap reject at the same bounds as the existing handlers", "if duration is compared after conversion, the overflow case fails: 18446745874 is rejected, though time.Duration(n)*time.Second wraps it to 30m, inside the bounds", "if builtinRefs misses a field or misreads a ref, its table fails: it includes an id used only as an icon or only in a toggle, and never a custom: ref, including \"custom:12\" and \"custom:Roblox Extras\"", "if the four top-level lists are optional, the required-lists table fails: {\"format\":\"adguard-reward-export\",\"version\":1} and each of children, custom_services, buttons, toggles absent or null is rejected naming the field, while [] is accepted"]
+  status = "done"
+
+[[task]]
+  id = "t-3"
+  wave = 1
+  title = "Add export and import to Settings"
+  files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts", "web/src/lib/Settings.svelte", "web/src/lib/Settings.test.ts"]
+  description = '''exportSetup and importSetup in api.ts, a raw-string body path that shares request()'s status and 401 handling, and a Backup section in Settings with its own pending, error and note state. Built against the wire shape in this file's header with mocked fetch.'''
+  covers = ["c-1", "c-3", "c-4"]
+  test_contract = ["if the download path breaks, the export test fails: clicking Export GETs /api/v1/export and saves one Blob named adguard-reward-export.json whose text parses back to the response, and the object URL is revoked", "if a failed export still saves, the export-failure test fails: role=alert shows and createObjectURL is never called", "if export becomes a bare <a href>, which bypasses request(), the lock test fails: a 401 pin_required on export or import sets `locked`", "if the client parses or re-encodes, or the body goes through request()'s JSON.stringify, the raw-body test fails: choosing a file containing `{not json` POSTs exactly those bytes with the CSRF header", "if the input value is not cleared, the re-pick test fails: picking the same file again after a failure re-fires the import", "if the pending guard is missing, the in-flight test fails: a second pick during an in-flight import issues no second POST", "if errors land in the wrong place, the error tests fail: a 422 and a 409 show the server's message in role=alert inside the Backup section and not in the PIN section; a 502 says nothing was imported and a retry is safe", "if the result is misread, the result tests fail: a 200 with missing_clients lists each name, an empty list shows no warning, and rules_applied false shows the catch-up note", "if the Backup section fetches on mount, the existing PIN tests fail: Settings.test.ts's mockFetch throws on unexpected URLs", "if the Backup section routes a 502 through messageFor, the 502-message test fails: a mocked 502 whose message names \"Kid tablet\" shows that name on screen alongside the nothing-imported, safe-to-retry text"]
+  status = "done"
+
+[[task]]
+  id = "t-4"
+  wave = 2
+  depends_on = ["t-1", "t-2"]
+  title = "Serve the export download"
+  files = ["internal/api/export.go", "internal/api/export_test.go", "internal/api/api.go", "cmd/adguard-reward/main_test.go"]
+  description = '''GET /api/v1/export behind requireSession, mapping store.Setup to the wire type. ChildStore gains ExportSetup, ImportSetup and EnsureEmpty.'''
+  covers = ["c-1", "c-2", "c-6"]
+  test_contract = ["if any field is dropped or renamed, TestExport_Contents fails: a seeded install compares against a golden body covering a shared client, button order, icon, services, duration in seconds, domain order, and built-in and custom toggles", "if the route loses requireSession, TestExport_Gated fails: anonymous is 401", "if export touches AdGuard, TestExport_AdGuardDown fails: with the fake failing, export is 200 and issues zero /control requests after login", "if a store error is swallowed, TestExport_DanglingRef fails: a dangling ref is 500 with no partial body", "if the export and import rules disagree, TestExport_ParsesBack fails: an exported file passes parseSetupFile", "if session or device data leaks, TestExport_NoSecrets fails: a live session cookie plus InsertDevice with sentinel token and PIN hashes, none in the raw body in raw or hex form", "if a new field joins the wire type unchosen, TestExport_KeyAllowlist fails: decoded keys at every level equal the wire shape exactly", "if any secret reaches the file, TestRun_ExportNoSecrets fails: full run() with config carrying svcPass and aiKey, log in, set a PIN, export; the body holds none of the raw session cookie, its SHA-256 in hex or base64, the raw device cookie, the PIN's Argon2 PHC string, svcPass or aiKey. Each value is read back from its real source first, so a failed seed cannot pass silently, and the child's name is the positive control", "if an empty install serialises nil slices, TestExport_EmptyInstall fails: all four lists are [] not null, and the body passes parseSetupFile", "if the AdGuard username reaches the file, TestRun_ExportNoSecrets fails: config carries a distinctive service username, read back from its source like the other seeds, and it is absent from the body", "the manual iPhone PWA export check is waived by the user (2026-11-05) and supersedes the header note: it was never run, the Blob save in an iOS standalone PWA stays untested, and no verify FLAG is owed for it"]
+  status = "done"
+
+[[task]]
+  id = "t-5"
+  wave = 3
+  depends_on = ["t-2", "t-4"]
+  title = "Gate import and commit the store"
+  files = ["internal/api/import.go", "internal/api/import_test.go", "internal/api/api.go"]
+  description = '''POST /api/v1/import: bounded read, parseSetupFile, EnsureEmpty, one built-in catalogue read and builtinRefs check, built-in name clash check, ImportSetup, 200. Makes no AdGuard write yet; t-6 fills the response's two fields.'''
+  covers = ["c-3", "c-4"]
+  test_contract = [
+    '''if the round trip loses anything, TestImport_RoundTrip fails: gapped source harness with shared clients and mixed built-in and custom buttons, export, import into a fresh harness whose ids were pushed forward, export again is bytes.Equal with domain order unsorted; each button's custom ref and icon lists the same-named service via /custom-services; a client shared by two children stays shared''',
+    '''if a rejection is partial, TestImport_RejectedWhole fails, table: invalid JSON 400; unknown version, duplicate name, duplicate domain, dangling child, dangling service 422; every row asserts the named problem, an empty ExportSetup, no AdGuard POST and an unchanged UserRules''',
+    '''if the catalogue check misses a field, TestImport_UnknownBuiltin fails: an id absent from the catalogue used as a button service, an icon and a toggle each gives 422 naming the id, no rows''',
+    '''if the clash check is missing or late, TestImport_BuiltinNameClash fails: a custom service named like a built-in, any case, gives 422 before any write''',
+    '''if the emptiness gate is missing, TestImport_NonEmpty fails: a seeded child, and separately a seeded custom service, each give 409 naming what exists, with the file valid; a ChildStore wrapper passing EnsureEmpty but returning *ErrNotEmpty from ImportSetup also gives 409, covering the in-tx race backstop''',
+    '''if a catalogue failure is ignored, TestImport_CatalogueDown fails: the read failing gives 502, no rows''',
+    '''if decodeGrantBody's 16 KiB limit is reused or the limit error reads as bad JSON, TestImport_BodyBounds fails: a valid 100 KiB file imports; limit+1 bytes is 400 with a size message, not "invalid JSON", and no rows''',
+    '''if the route loses its guards, TestImport_Gated fails: anonymous is 401, missing CSRF header is 403''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-6"
+  wave = 4
+  depends_on = ["t-5"]
+  title = "Apply AdGuard effects around the commit"
+  files = ["internal/api/import.go", "internal/api/import_adguard_test.go"]
+  description = "Before commit, after the emptiness, catalogue and name clash checks: one Clients read for missing_clients and one AdoptClients(0, nil, union of file clients in first-occurrence order). After commit: Grants.SyncRules called directly, because resyncRules returns nothing and rules_applied needs the error. Test file builds its own harness exposing the engine."
+  covers = ["c-5", "c-6"]
+  test_contract = ["if adoption runs before the emptiness check, TestImport_NonEmptyNoAdoption fails: a 409 on a seeded install POSTs nothing to AdGuard", "if adoption moves after the commit, TestImport_AdGuardFailure fails: SetUpdateStatus(\"Kid tablet\", 500) gives 502 naming it, ExportSetup empty, Kid phone keeps its addition; clearing the status and retrying gives 200, not 409", "if a clients read failure is ignored, TestImport_ClientsReadDown fails: it gives 502, no rows", "if a missing client blocks import or gets created, TestImport_MissingClient fails: \"Gone phone\" imports with 200, mapping stored, missing_clients [\"Gone phone\"], listed once even when two children share it, no /control/clients/add call", "if a shared client is left inheriting, TestImport_SharedClientAdopted fails: a client under two children ends with use_global_blocked_services false after one /control/clients/update", "if the sync disturbs outside lines, TestImport_RulesOutsideMarkersUntouched fails: UserRules seeded with a comment, blank lines, trailing spaces, non-ASCII and a near-miss marker comment before and after the markers; post-import those lines are identical in value and position, and the region holds ||domain^$client=... for the imported clients", "if imported services don't behave like local ones, TestImport_CustomServiceGrants fails: a grant on an imported service adds its @@ exception under the new id and ending it removes that, outside lines still identical", "if a rules failure rolls back or reports success, TestImport_RulesWriteFails fails: set_rules 500 gives 200, rules_applied false, rows stored; one eng.Reconcile puts the region in place with no re-adoption POST", "if a malformed region is overwritten, TestImport_MalformedRegion fails: it gives 200, rules_applied false, and its marker lines are untouched", "if adoption is skipped, TestImport_TogglesConverge fails, because the reconciler skips clients on the global list: built-in unblocked, built-in blocked and custom unblocked toggles on the second child, ids differing from the source, Kid tablet starting on use_global_blocked_services; after one eng.Reconcile, BlockedServices and the @@ lines match on that child's clients only", "if toggle edges regress, TestImport_ToggleEdges fails: a permanent unblock of a service in the global list is gone from the client after Reconcile; two children with opposite built-in toggles on a shared client leave it open", "if adoption runs before the catalogue or name clash checks, TestImport_RejectedNoAdoption fails: a file mapping a client AdGuard knows, with an unknown built-in and separately a built-in name clash, gives 422 with zero /control/clients/update requests", "if the no-marker append path disturbs outside lines, TestImport_RulesNoMarkers fails: UserRules seeded with parent lines and no markers, post-import those lines are identical in value and position and the region is appended after them", "if the client union is built from a map, TestImport_ClientOrder fails: two missing clients list in first-occurrence file order in missing_clients, and adoption writes clients in that same order"]
+  status = "done"
+
+[[task]]
+  id = "t-7"
+  wave = 5
+  title = "Pin Backup clearing the missing-clients list"
+  files = ["web/src/lib/Settings.test.ts"]
+  description = "Verify remediation (tests only). Kill the BLOCKING survivor Settings.svelte:113 (ArrayDeclaration): runBackup's missingClients = [] reset. No test renders the Backup section after an export, so neither a stale list from an earlier import nor a phantom entry on a clean export is seen. Settings.svelte itself does not change."
+  covers = ["c-1"]
+  test_contract = ["if runBackup seeds missingClients with an entry (the Settings.svelte:113 ArrayDeclaration mutant), the clean-export test fails: a successful export with no prior import shows no missing-clients warning", "if runBackup stops clearing missingClients, the stale-list test fails: an import reporting Gone phone, then a successful export, leaves no Gone phone on screen and no warning"]
+  status = "done"
+
+[[task]]
+  id = "t-8"
+  wave = 5
+  title = "Name the record in file decode problems"
+  files = ["internal/api/setup_file.go", "internal/api/setup_file_test.go"]
+  description = "Verify remediation for the c-4 FLAG: a 400-class decode problem names the field but not the record (unknown field id with no path; buttons.duration with no index). After the header check, decode the top level strictly into per-list raw messages, then strict-decode each element so a problem reads buttons[2].duration or children[1]: unknown field. A nil list must stay nil so the required-lists check still separates absent or null from []."
+  covers = ["c-4"]
+  test_contract = ["if a nested unknown field loses its path, the unknown-field case fails: an id field on the second button is 400 and the message names buttons[1] and id", "if a type error loses its index, the wrong-type case fails: a string duration on the third button is 400 and the message names buttons[2].duration", "if a wrong-typed element prints an empty field, the element case fails: children [5] is 400 naming children[0] with no trailing dot", "if the top level stops being strict, the top-level cases fail: an unknown top-level field and a non-list children are 400 naming that field", "if per-element decoding turns an absent list into an empty one, the existing required-lists table fails: absent or null is rejected naming the field while [] is accepted"]
+  status = "done"
+
+[[task]]
+  id = "t-9"
+  wave = 5
+  title = "Answer 502 when adoption's client read fails"
+  files = ["internal/grants/clients.go", "internal/grants/clients_test.go", "internal/api/children.go", "internal/api/children_test.go", "internal/api/import_adguard_test.go"]
+  description = "Verify remediation for the adguard_failure FLAG: when the Clients read inside AdoptClients fails with an error adguardDown does not match, such as an undecodable 200 body, writeAdoptError answers 500, against the locked any-failure-is-502 and its own doc comment. AdoptClients marks that read's failure with a typed error and writeAdoptError answers it through writeAdGuardError. A store read inside the engine stays 500."
+  covers = ["c-4"]
+  test_contract = ["if AdoptClients returns the read error unmarked, its grants test fails: an undecodable /control/clients body gives the typed read error, and errors.Is still reaches the cause", "if writeAdoptError misses the typed error, the child create test fails: an undecodable clients body on a create with clients is 502 adguard_unavailable with no child row", "if the import path regresses, the import test fails: AdoptClients failing with the typed read error gives 502 and an empty ExportSetup, and a retry gives 200, not 409", "if the 502 widens to store failures, TestChildUpdate_AdoptStoreReadFails fails: a store read failing inside adopt stays 500 internal"]
+  status = "done"

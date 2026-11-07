@@ -37,20 +37,40 @@ type ChildStore interface {
 	CreateChild(ctx context.Context, name string, clients []string) (store.Child, error)
 	UpdateChild(ctx context.Context, id int64, name string, clients []string) (store.Child, error)
 	DeleteChild(ctx context.Context, id int64) (bool, error)
+	// ListServiceToggles feeds the blocked view's permanent toggle state.
+	ListServiceToggles(ctx context.Context) ([]store.ServiceToggle, error)
+	// ListGrantHistory feeds the per-child history page.
+	ListGrantHistory(ctx context.Context, childID, before int64, limit int) (store.GrantHistory, error)
+	// ListHistory feeds the filtered overview across all children.
+	ListHistory(ctx context.Context, f store.HistoryFilter, limit int) (store.GrantHistory, error)
+	// ListHistoryServices feeds the overview's service filter options.
+	ListHistoryServices(ctx context.Context) ([]store.HistoryServiceOption, error)
+	// ExportSetup, ImportSetup and EnsureEmpty move the whole setup in and
+	// out; the last two speak *store.ErrNotEmpty.
+	ExportSetup(ctx context.Context) (store.Setup, error)
+	ImportSetup(ctx context.Context, s store.Setup) error
+	EnsureEmpty(ctx context.Context) error
 }
 
-// Grants is the slice of *grants.Engine the grant and client-write handlers
-// need. It speaks store.Grant and the engine's sentinels (ErrGrantNotFound,
+// Grants is the slice of *grants.Engine the grant, toggle and client-write
+// handlers need. It speaks store.Grant and the engine's sentinels (ErrGrantNotFound,
 // *ErrRevertFailed, *ErrAdoptFailed) plus the store's *ErrGrantOverlap and
-// the AdGuard client's write errors.
+// the AdGuard client's write errors. Grants are created with their service
+// names snapshotted (locked service_names), so the slice carries CreateNamed
+// rather than Create.
 type Grants interface {
-	Create(ctx context.Context, childID int64, services, clients []string, d time.Duration) (grants.Result, error)
+	CreateNamed(ctx context.Context, childID int64, services, clients []string, d time.Duration, names map[string]string) (grants.Result, error)
 	List(ctx context.Context) ([]store.Grant, error)
 	Extend(ctx context.Context, id int64, d time.Duration) (store.Grant, error)
 	End(ctx context.Context, id int64) error
 	CreateClient(ctx context.Context, name string, ids []string, childID *int64) error
 	AdoptClients(ctx context.Context, childID int64, siblings, added []string) error
 	RenameClient(ctx context.Context, oldName, newName string) error
+	CreateService(ctx context.Context, name string, domains []string) (grants.ServiceResult, error)
+	UpdateService(ctx context.Context, id int64, name string, domains []string) (grants.ServiceResult, error)
+	DeleteService(ctx context.Context, id int64) (grants.ServiceResult, error)
+	SyncRules(ctx context.Context) error
+	Toggle(ctx context.Context, childID int64, serviceID, state string) (grants.ToggleResult, error)
 }
 
 // ButtonStore is the slice of *store.Store the buttons handlers need. It
@@ -58,6 +78,12 @@ type Grants interface {
 type ButtonStore interface {
 	ListButtons(ctx context.Context) ([]store.Button, error)
 	ReplaceButtons(ctx context.Context, in []store.Button) ([]store.Button, error)
+}
+
+// CustomServiceStore is the slice of *store.Store the catalogue needs: the
+// parent-defined services, by id.
+type CustomServiceStore interface {
+	ListCustomServices(ctx context.Context) ([]store.CustomService, error)
 }
 
 // Deps is everything the handlers reach for. Interfaces are api-local so
@@ -72,6 +98,12 @@ type Deps struct {
 	Children ChildStore
 	Grants   Grants
 	Buttons  ButtonStore
+	// CustomServices may be nil, and the catalogue then lists built-ins
+	// only; main always wires it.
+	CustomServices CustomServiceStore
+	// Devices stores PIN devices. Nil disables the PIN endpoints: they
+	// answer 500 rather than half-work. main always wires it.
+	Devices auth.DeviceStore
 }
 
 // API is the router plus its dependencies.
@@ -81,8 +113,8 @@ type API struct {
 	log  *slog.Logger
 
 	// loginSlot serialises the AdGuard round-trip so a parallel burst is
-	// bounded by the limiter: a request holds it from its second
-	// Limiter.Check until Fail or Issue has run.
+	// bounded by the limiter: recheckPassword holds it from its second
+	// Limiter.Check until Fail has run.
 	loginSlot chan struct{}
 }
 
@@ -100,17 +132,27 @@ func New(d Deps) *API {
 // registration — and the catch-all — is visible.
 func (a *API) routes() {
 	a.mux.HandleFunc("POST /api/v1/login", a.handleLogin)
+	// Unlock is outside requireSession: its caller has, by definition, no
+	// live session — only the device cookie and a PIN.
+	a.mux.HandleFunc("POST /api/v1/unlock", a.handleUnlock)
 	a.mux.Handle("POST /api/v1/logout", a.requireSession(http.HandlerFunc(a.handleLogout)))
 	a.mux.Handle("GET /api/v1/me", a.requireSession(http.HandlerFunc(a.handleMe)))
 	a.mux.Handle("GET /api/v1/sessions", a.requireSession(http.HandlerFunc(a.handleSessionsList)))
 	a.mux.Handle("DELETE /api/v1/sessions/{id}", a.requireSession(http.HandlerFunc(a.handleSessionDelete)))
 	a.mux.Handle("POST /api/v1/sessions/revoke-all", a.requireSession(http.HandlerFunc(a.handleSessionsRevokeAll)))
+	a.mux.Handle("GET /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinStatus)))
+	a.mux.Handle("POST /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinSet)))
+	a.mux.Handle("DELETE /api/v1/pin", a.requireSession(http.HandlerFunc(a.handlePinRemove)))
 	a.mux.Handle("GET /api/v1/children", a.requireSession(http.HandlerFunc(a.handleChildrenList)))
 	a.mux.Handle("POST /api/v1/children", a.requireSession(http.HandlerFunc(a.handleChildCreate)))
 	a.mux.Handle("GET /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildGet)))
 	a.mux.Handle("PUT /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildUpdate)))
 	a.mux.Handle("DELETE /api/v1/children/{id}", a.requireSession(http.HandlerFunc(a.handleChildDelete)))
 	a.mux.Handle("GET /api/v1/children/{id}/blocked", a.requireSession(http.HandlerFunc(a.handleBlocked)))
+	a.mux.Handle("POST /api/v1/children/{id}/toggles", a.requireSession(http.HandlerFunc(a.handleToggle)))
+	a.mux.Handle("GET /api/v1/children/{id}/history", a.requireSession(http.HandlerFunc(a.handleHistory)))
+	a.mux.Handle("GET /api/v1/history", a.requireSession(http.HandlerFunc(a.handleHistoryOverview)))
+	a.mux.Handle("GET /api/v1/history/services", a.requireSession(http.HandlerFunc(a.handleHistoryServices)))
 	a.mux.Handle("GET /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClients)))
 	a.mux.Handle("POST /api/v1/clients", a.requireSession(http.HandlerFunc(a.handleClientCreate)))
 	a.mux.Handle("POST /api/v1/clients/rename", a.requireSession(http.HandlerFunc(a.handleClientRename)))
@@ -123,6 +165,12 @@ func (a *API) routes() {
 	a.mux.Handle("POST /api/v1/grants/{id}/end", a.requireSession(http.HandlerFunc(a.handleGrantEnd)))
 	a.mux.Handle("GET /api/v1/buttons", a.requireSession(http.HandlerFunc(a.handleButtonsList)))
 	a.mux.Handle("PUT /api/v1/buttons", a.requireSession(http.HandlerFunc(a.handleButtonsReplace)))
+	a.mux.Handle("GET /api/v1/custom-services", a.requireSession(http.HandlerFunc(a.handleCustomServicesList)))
+	a.mux.Handle("POST /api/v1/custom-services", a.requireSession(http.HandlerFunc(a.handleCustomServiceCreate)))
+	a.mux.Handle("PUT /api/v1/custom-services/{id}", a.requireSession(http.HandlerFunc(a.handleCustomServiceUpdate)))
+	a.mux.Handle("DELETE /api/v1/custom-services/{id}", a.requireSession(http.HandlerFunc(a.handleCustomServiceDelete)))
+	a.mux.Handle("GET /api/v1/export", a.requireSession(http.HandlerFunc(a.handleExport)))
+	a.mux.Handle("POST /api/v1/import", a.requireSession(http.HandlerFunc(a.handleImport)))
 	// Unknown paths are 401 without a session and 404 with one, so the
 	// route table cannot be probed anonymously.
 	a.mux.Handle("/api/v1/", a.requireSession(http.NotFoundHandler()))

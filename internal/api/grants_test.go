@@ -625,3 +625,162 @@ func TestGrants_ListChildrenReadFails(t *testing.T) {
 		t.Errorf("degraded body serialises a null: %s", w.Body.String())
 	}
 }
+
+// TestGrants_Custom grants a custom service through the real engine and
+// fake: the catalogue check accepts its "custom:<n>" id, the region gains one
+// @@ exception per domain for the child's clients, and no custom id leaks
+// into a client's blocked_services.
+func TestGrants_Custom(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	cs := createCustom(t, h, cookie, "Portal", "a.com", "b.com")
+	if cs.ServiceID != "custom:1" {
+		t.Fatalf("precondition: service id %q, want custom:1", cs.ServiceID)
+	}
+	before := h.sortedBlocked("Kid phone")
+
+	created := h.grantOK(cookie, ada.ID, []string{"custom:1"}, 1800)
+	if !created.Applied || len(created.Failed) != 0 {
+		t.Fatalf("201 = %+v, want applied true, failed []", created)
+	}
+	want := []string{
+		"||a.com^$client='Kid phone'",
+		"||b.com^$client='Kid phone'",
+		"@@||a.com^$client='Kid phone'",
+		"@@||b.com^$client='Kid phone'",
+	}
+	if got := managedRegion(h); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region %q, want %q", got, want)
+	}
+	if got := h.sortedBlocked("Kid phone"); !reflect.DeepEqual(got, before) {
+		t.Errorf("Kid phone blocked_services = %v, want unchanged %v", got, before)
+	}
+	_, list := h.listGrants(cookie)
+	if len(list.Grants) != 1 || !reflect.DeepEqual(list.Grants[0].Services, []string{"custom:1"}) {
+		t.Errorf("GET grants = %+v, want one grant on [custom:1]", list.Grants)
+	}
+}
+
+// TestGrants_UnknownCustom refuses a custom id with no stored service: the
+// prefix alone is not a pass. Nothing is stored and the region is untouched.
+func TestGrants_UnknownCustom(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	createCustom(t, h, cookie, "Portal", "a.com")
+	sets := h.fake.CountRequests("POST", setRulesPath)
+
+	for _, services := range [][]string{{"custom:99"}, {"custom:1", "custom:99"}, {"tiktok", "custom:99"}} {
+		w := h.postGrant(cookie, grantBody(ada.ID, services, 1800))
+		if w.Code != http.StatusUnprocessableEntity {
+			t.Fatalf("%v: %d %s, want 422", services, w.Code, w.Body.String())
+		}
+		if e := decodeErr(t, w); e.Error != CodeUnprocessable || !strings.Contains(e.Message, `"custom:99"`) {
+			t.Errorf("%v: envelope = %+v, want unprocessable naming custom:99", services, e)
+		}
+	}
+	for _, id := range []string{"custom:", "custom:abc", "custom:01"} {
+		if w := h.postGrant(cookie, grantBody(ada.ID, []string{id}, 1800)); w.Code != http.StatusUnprocessableEntity {
+			t.Errorf("%q: %d %s, want 422", id, w.Code, w.Body.String())
+		}
+	}
+	if n := h.grantRows(); n != 0 {
+		t.Errorf("%d grant rows after rejected creates", n)
+	}
+	if n := h.fake.CountRequests("POST", setRulesPath) - sets; n != 0 {
+		t.Errorf("%d set_rules POSTs after rejected creates", n)
+	}
+}
+
+// snapshotNames is the grant's stored name snapshot, service id to name.
+func (h *harness) snapshotNames(grantID int64) map[string]string {
+	h.t.Helper()
+	rows, err := h.store.DB().Query(`SELECT service_id, name FROM grant_service_names WHERE grant_id = ?`, grantID)
+	if err != nil {
+		h.t.Fatal(err)
+	}
+	defer rows.Close()
+	out := map[string]string{}
+	for rows.Next() {
+		var id, name string
+		if err := rows.Scan(&id, &name); err != nil {
+			h.t.Fatal(err)
+		}
+		out[id] = name
+	}
+	if err := rows.Err(); err != nil {
+		h.t.Fatal(err)
+	}
+	return out
+}
+
+func (h *harness) nameRows() int {
+	h.t.Helper()
+	var n int
+	if err := h.store.DB().QueryRow(`SELECT count(*) FROM grant_service_names`).Scan(&n); err != nil {
+		h.t.Fatal(err)
+	}
+	return n
+}
+
+// TestGrantCreate_SnapshotsNames grants a built-in and a custom service:
+// both names are snapshotted from the catalogue the handler already read,
+// so the create costs exactly one catalogue request.
+func TestGrantCreate_SnapshotsNames(t *testing.T) {
+	h := newCustomHarness(t)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	cs := createCustom(t, h, cookie, "Portal", "a.com")
+	hits := h.fake.CountRequests("GET", "/control/blocked_services/all")
+
+	created := h.grantOK(cookie, ada.ID, []string{"tiktok", cs.ServiceID}, 1800)
+	want := map[string]string{"tiktok": "TikTok", cs.ServiceID: "Portal"}
+	if got := h.snapshotNames(created.ID); !reflect.DeepEqual(got, want) {
+		t.Errorf("snapshot = %v, want %v", got, want)
+	}
+	if n := h.fake.CountRequests("GET", "/control/blocked_services/all") - hits; n != 1 {
+		t.Errorf("create read the catalogue %d times, want 1 (names come from the same read)", n)
+	}
+}
+
+// TestGrantCreate_SnapshotTrimmedID sends a padded id: the snapshot is keyed
+// by the trimmed id the grant stores.
+func TestGrantCreate_SnapshotTrimmedID(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+
+	created := h.grantOK(cookie, ada.ID, []string{"  tiktok\t"}, 1800)
+	if got, want := h.snapshotNames(created.ID), map[string]string{"tiktok": "TikTok"}; !reflect.DeepEqual(got, want) {
+		t.Errorf("snapshot = %v, want %v", got, want)
+	}
+}
+
+// TestGrantCreate_RejectNoNames: a 409 overlap and a 422 unknown service
+// write no name rows.
+func TestGrantCreate_RejectNoNames(t *testing.T) {
+	h := newHarness(t, nil, nil)
+	cookie := h.loginOK()
+	ada := h.seedChild("Ada", "Kid phone")
+	h.grantOK(cookie, ada.ID, []string{"tiktok"}, 1800)
+	if n := h.nameRows(); n != 1 {
+		t.Fatalf("precondition: %d name rows, want 1", n)
+	}
+
+	for _, tc := range []struct {
+		name     string
+		services []string
+		want     int
+	}{
+		{"overlap", []string{"roblox", "tiktok"}, http.StatusConflict},
+		{"unknown service", []string{"roblox", "nope"}, http.StatusUnprocessableEntity},
+	} {
+		if w := h.postGrant(cookie, grantBody(ada.ID, tc.services, 1800)); w.Code != tc.want {
+			t.Errorf("%s: status %d, want %d (%s)", tc.name, w.Code, tc.want, w.Body.String())
+		}
+		if n := h.nameRows(); n != 1 {
+			t.Errorf("%s: %d name rows after a rejected create, want 1", tc.name, n)
+		}
+	}
+}

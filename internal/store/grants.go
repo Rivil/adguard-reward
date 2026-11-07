@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -13,6 +14,14 @@ const (
 	StatusActive  = "active"
 	StatusExpired = "expired"
 	StatusEnded   = "ended"
+)
+
+// End reasons SetGrantStatus records, derived from the status a grant moves
+// to. The third, EndReasonPermanentBlock, is written only by a block toggle
+// that empties a grant.
+const (
+	EndReasonExpired    = "expired"
+	EndReasonEndedEarly = "ended_early"
 )
 
 // Grant is a timed unblock of Services for one child. Clients is the set of
@@ -42,13 +51,29 @@ func (e *ErrGrantOverlap) Error() string {
 	return fmt.Sprintf("service %q is already granted by grant %d", e.ServiceID, e.ExistingID)
 }
 
-// CreateGrant inserts an active grant with its services and clients in one
-// transaction. An active grant for the same (child, service) is detected by
-// SELECT first so the caller gets a typed error naming it; the partial unique
-// index remains the safety net. Lists are normalised like child clients.
+// CreateGrant is CreateGrantNamed with no name snapshots.
 func (st *Store) CreateGrant(ctx context.Context, childID int64, services, clients []string, startedAt, endsAt time.Time) (Grant, error) {
+	return st.CreateGrantNamed(ctx, childID, services, clients, startedAt, endsAt, nil)
+}
+
+// CreateGrantNamed inserts an active grant with its services and clients in
+// one transaction. An active grant for the same (child, service) is detected
+// by SELECT first so the caller gets a typed error naming it; the partial
+// unique index remains the safety net. Lists are normalised like child
+// clients. names maps a service id to its display name as the parent sees it
+// now; each granted service with a non-empty name gets a grant_service_names
+// row in the same transaction (locked service_names), so a rejected create
+// leaves none. Keys naming no granted service are ignored, and a service
+// with no name gets no row — history resolves it later.
+func (st *Store) CreateGrantNamed(ctx context.Context, childID int64, services, clients []string, startedAt, endsAt time.Time, names map[string]string) (Grant, error) {
 	services = normaliseClients(services)
 	clients = normaliseClients(clients)
+	snapshot := make(map[string]string, len(names))
+	for id, name := range names {
+		if id, name = strings.TrimSpace(id), strings.TrimSpace(name); id != "" && name != "" {
+			snapshot[id] = name
+		}
+	}
 	var out Grant
 	err := st.inTx(ctx, func(tx *sql.Tx) error {
 		for _, svc := range services {
@@ -83,6 +108,17 @@ func (st *Store) CreateGrant(ctx context.Context, childID int64, services, clien
 		for _, c := range clients {
 			if _, err := tx.ExecContext(ctx,
 				`INSERT INTO grant_clients (grant_id, client_name) VALUES (?, ?)`, id, c); err != nil {
+				return err
+			}
+		}
+		for _, svc := range services {
+			name, ok := snapshot[svc]
+			if !ok {
+				continue
+			}
+			if _, err := tx.ExecContext(ctx,
+				`INSERT INTO grant_service_names (grant_id, service_id, name) VALUES (?, ?, ?)`,
+				id, svc, name); err != nil {
 				return err
 			}
 		}
@@ -121,22 +157,31 @@ func (st *Store) GetGrant(ctx context.Context, id int64) (Grant, error) {
 	return out, nil
 }
 
-// ExtendGrant sets ends_at on an active grant and returns the updated row.
-// A missing or non-active grant is ErrGrantNotFound.
-func (st *Store) ExtendGrant(ctx context.Context, id int64, newEndsAt time.Time) (Grant, error) {
+// ExtendGrant sets ends_at on an active grant to newEndsAt and returns the
+// updated row. The same transaction appends a grant_extensions row stamped
+// at, carrying the ends_at read before the update, so every extension stays
+// on record. A missing or non-active grant is ErrGrantNotFound and records
+// nothing.
+func (st *Store) ExtendGrant(ctx context.Context, id int64, newEndsAt, at time.Time) (Grant, error) {
 	var out Grant
 	err := st.inTx(ctx, func(tx *sql.Tx) error {
-		res, err := tx.ExecContext(ctx,
-			`UPDATE grants SET ends_at = ? WHERE id = ? AND status = ?`, newEndsAt.Unix(), id, StatusActive)
-		if err != nil {
-			return err
-		}
-		n, err := res.RowsAffected()
-		if err != nil {
-			return err
-		}
-		if n == 0 {
+		var oldEndsAt int64
+		err := tx.QueryRowContext(ctx,
+			`SELECT ends_at FROM grants WHERE id = ? AND status = ?`, id, StatusActive).Scan(&oldEndsAt)
+		if errors.Is(err, sql.ErrNoRows) {
 			return ErrGrantNotFound
+		}
+		if err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx,
+			`UPDATE grants SET ends_at = ? WHERE id = ?`, newEndsAt.Unix(), id); err != nil {
+			return err
+		}
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO grant_extensions (grant_id, extended_at, old_ends_at, new_ends_at) VALUES (?, ?, ?, ?)`,
+			id, at.Unix(), oldEndsAt, newEndsAt.Unix()); err != nil {
+			return err
 		}
 		out, err = getGrant(ctx, tx, id)
 		return err
@@ -149,17 +194,24 @@ func (st *Store) ExtendGrant(ctx context.Context, id int64, newEndsAt time.Time)
 
 // SetGrantStatus is a compare-and-set: the row moves from → to only if it is
 // still in from, and on success its services stop counting as live so the
-// (child, service) slot frees. It reports whether a row changed; an unknown
-// id or a stale from is (false, nil), not an error.
+// (child, service) slot frees. Leaving active stamps ended_at with at and
+// end_reason from to: expired is 'expired', ended is 'ended_early' — the
+// only ended path through here is a parent End. It reports whether a row
+// changed; an unknown id or a stale from is (false, nil), not an error.
 func (st *Store) SetGrantStatus(ctx context.Context, id int64, from, to string, at time.Time) (bool, error) {
 	changed := false
 	err := st.inTx(ctx, func(tx *sql.Tx) error {
-		var endedAt any
-		if to != StatusActive {
-			endedAt = at.Unix()
+		// Back to active (or a status the CHECK rejects) clears both.
+		var endedAt, reason any
+		switch to {
+		case StatusExpired:
+			endedAt, reason = at.Unix(), EndReasonExpired
+		case StatusEnded:
+			endedAt, reason = at.Unix(), EndReasonEndedEarly
 		}
 		res, err := tx.ExecContext(ctx,
-			`UPDATE grants SET status = ?, ended_at = ? WHERE id = ? AND status = ?`, to, endedAt, id, from)
+			`UPDATE grants SET status = ?, ended_at = ?, end_reason = ? WHERE id = ? AND status = ?`,
+			to, endedAt, reason, id, from)
 		if err != nil {
 			return err
 		}

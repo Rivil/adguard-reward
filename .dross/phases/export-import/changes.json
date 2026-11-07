@@ -1,0 +1,438 @@
+{
+  "phase": "export-import",
+  "pr": 15,
+  "base": "milestone/v0.2",
+  "base_commit": "5646d775a98a711c5ecdca28b6504dd162d8354f",
+  "status": "complete",
+  "tasks": {
+    "quick-1": {
+      "files": [
+        "internal/adguard/client.go",
+        "internal/adguard/client_test.go",
+        "internal/adguard/clients.go",
+        "internal/adguard/errors.go",
+        "internal/api/clients.go",
+        "internal/api/clients_test.go",
+        "internal/api/rename_test.go"
+      ],
+      "commit": "7b1c2c6",
+      "completed_at": "2026-11-05T12:04:47.845944Z",
+      "notes": "quick: Answer 502 when CreateClient's clients read fails: mark the read in Engine.baseline with *grants.ErrClientsRead and answer it as 502 adguard_unavailable; a store read inside the engine stays 500."
+    },
+    "quick-2": {
+      "files": [
+        "internal/adguard/client_test.go"
+      ],
+      "commit": "8748941",
+      "completed_at": "2026-11-05T17:44:20.374621Z",
+      "notes": "quick: Add a status-300 test to internal/adguard/client_test.go so classify's \u003c 300 boundary is pinned: a literal 300 from AdGuard must be a *StatusError, not success. Kills the surviving client.go:183 CONDITIONALS_BOUNDARY mutant flagged in export-import's verify.toml."
+    },
+    "t-1": {
+      "files": [
+        "internal/store/setup.go",
+        "internal/store/setup_test.go",
+        "internal/store/children.go",
+        "internal/store/buttons.go"
+      ],
+      "commit": "d1e1996",
+      "completed_at": "2026-11-05T09:02:57.766093Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "Store.ImportSetup",
+          "loc": "internal/store/setup.go:231",
+          "what": "name-keyed setup snapshot read in one tx and restored atomically into an empty install with fresh ids"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/api/setup_file.go",
+        "internal/api/setup_file_test.go"
+      ],
+      "commit": "8f92a01",
+      "completed_at": "2026-11-05T09:09:34.763222Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "parseSetupFile",
+          "loc": "internal/api/setup_file.go:90",
+          "what": "pure validation of the export file with path-naming 400 and 422 problems at the handlers' bounds"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/Settings.svelte",
+        "web/src/lib/Settings.test.ts"
+      ],
+      "commit": "f196f87",
+      "completed_at": "2026-11-05T09:19:39.261092Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "importSetup",
+          "loc": "web/src/lib/api.ts:705",
+          "what": "Settings Backup section downloads the export as a Blob and posts a chosen file as raw text"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/api/export.go",
+        "internal/api/export_test.go",
+        "internal/api/api.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "2afe4e9",
+      "completed_at": "2026-11-05T09:27:12.947076Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "API.handleExport",
+          "loc": "internal/api/export.go:45",
+          "what": "GET /api/v1/export serves the store snapshot as the wire file behind requireSession without touching AdGuard"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "internal/api/import.go",
+        "internal/api/import_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "c2a0f1b",
+      "completed_at": "2026-11-05T09:32:26.421065Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "API.handleImport",
+          "loc": "internal/api/import.go:59",
+          "what": "POST /api/v1/import refuses a bad file whole, then commits it into an empty install"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "internal/api/import.go",
+        "internal/api/import_adguard_test.go",
+        "internal/api/import_test.go"
+      ],
+      "commit": "2ea07c8",
+      "completed_at": "2026-11-05T09:43:27.710654Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "API.adoptImportClients",
+          "loc": "internal/api/import.go:120",
+          "what": "import adopts AdGuard clients before the commit and syncs managed rules after it, reporting missing clients"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "web/src/lib/Settings.test.ts"
+      ],
+      "commit": "35cacb9",
+      "completed_at": "2026-11-05T11:04:58.310321Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "Settings — Backup export tests",
+          "loc": "web/src/lib/Settings.test.ts:485",
+          "what": "a successful export resets the missing-clients list, so no stale or phantom names show"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "internal/api/setup_file.go",
+        "internal/api/setup_file_test.go"
+      ],
+      "commit": "556f155",
+      "completed_at": "2026-11-05T11:08:13.485694Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "decodeRecords",
+          "loc": "internal/api/setup_file.go:152",
+          "what": "decodes each file record strictly on its own so a 400 names the record, such as buttons[2].duration"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "internal/grants/clients.go",
+        "internal/grants/clients_test.go",
+        "internal/api/children.go",
+        "internal/api/children_test.go",
+        "internal/api/import_adguard_test.go"
+      ],
+      "commit": "04aab68",
+      "completed_at": "2026-11-05T11:12:37.08124Z",
+      "landmarks": [
+        {
+          "feature": "setup export and import",
+          "symbol": "ErrClientsRead",
+          "loc": "internal/grants/clients.go:31",
+          "what": "marks a failed client read inside AdoptClients so child writes and import answer 502"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "writeSetup inserts toggles directly, skipping the live-grant trim SetServiceToggle does. Grants do not count towards emptiness and outlive their child, so an imported child that reuses a deleted child's id could get a blocked toggle alongside that id's still-active grant. This is a rare path, and the id reuse itself already exists in CreateChild.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "EnsureEmpty's public pre-check runs its four reads on st.db outside a transaction, so it is advisory only. ImportSetup's in-tx re-check is the real guard, and TestSetup_ConcurrentImport covers it.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-4",
+          "text": "The description asks for a message naming the path, but 400-class decode problems only partly do. An unknown nested field reports just `unknown field \"id\"`, and a type error reports `buttons.duration` with no array index, so a user cannot tell which record is bad. The tests only check for the bare field name, so they do not catch this.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "checkHeader checks version before format, as the `null` body case requires. As a result, foreign JSON such as {\"foo\":1} or {\"format\":\"other\",\"version\":2} is reported as a version problem rather than as not an adguard-reward export. The format message only appears once the version is valid, and the format tests only cover that path.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "encoding/json matches keys case-insensitively, so DisallowUnknownFields still accepts \"CHILDREN\" or \"Version\" as known fields. This is harmless because the header peek and the strict decode resolve them the same way, but the file format is slightly looser than it looks.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "children[i].clients may be absent or null and parses to a nil slice, unlike the four required top-level lists. This matches the child handler, and store.normaliseClients handles nil, but callers of parseSetupFile can receive nil Clients.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-3",
+          "text": "Settings.svelte keys the missing-clients list with {#each missingClients as name (name)}, and the installed Svelte throws each_key_duplicate on duplicate keys in dev and prod. If the server ever returns a name twice, for example a client shared by two children, a successful import fails while rendering its result. No server handler exists yet to confirm de-duplication, so de-duplicate on the client or drop the key.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "chooseFile sends file.text(), which decodes as UTF-8: a BOM is stripped and invalid bytes become U+FFFD. The body is therefore exact only for valid UTF-8 without a BOM. The contract's {not json case is met, and a non-UTF-8 file would reach the server altered rather than as its original bytes.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "request() is no longer async, so a JSON.stringify failure now throws synchronously instead of rejecting. No caller outside api.ts uses request(), and the bodies built in api.ts are plain data, so this has no practical effect today.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "The iOS standalone PWA download check is manual and runs after t-4 lands, so nothing in this diff can exercise it. It is still outstanding: if saving adguard-reward-export.json fails on the iPhone, the contract adds a navigator.share task to this phase.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The exportGolden comment says everything but the toggles is in stored order, but client lists are sorted by normaliseClients on write and by client_name on read. The golden is still correct because its clients are already sorted; only the comment is imprecise.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "handleImport returns rules_applied:false and an empty missing_clients on every success and does not sync managed rules. The task record defers both fields to t-6, so imported toggles and custom services are not pushed to AdGuard by this task.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-6",
+          "text": "TestImport_ClientsReadDown cannot catch the failure its contract line names. If adoptImportClients ignored its Clients error, AdoptClients would re-read, fail, and writeAdoptError's adguardDown branch would return the same 502 with no rows, so the test still passes. Only a file with no clients reaches the new error branch alone, because AdoptClients returns early on an empty list. A client-less case would pin it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-6",
+          "text": "TestImport_TogglesConverge does not prove Ben's permanent block stays on Ben's clients. Kid phone starts with youtube in the fixture, so a block leaking to Ada's client would not show. Only the unblock direction (tiktok) and the @@ lines are scoped. Giving Ada a client without youtube, such as Old laptop, and asserting it stays absent would close this.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-6",
+          "text": "Neither TestImport_ToggleEdges subtest asserts Kid tablet was adopted. If adoption were skipped, its stored blocked_services stays [] while it still inherits the global list, so both 'not blocked' checks pass even though tiktok is still effectively blocked. TestImport_TogglesConverge catches skipped adoption, but each subtest should assert !h.usesGlobal(\"Kid tablet\"); the first should also assert roblox is kept.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "internal/api/import_test.go is changed but not in the task's files list. The edit is needed: TestImport_RoundTrip asserted an empty missing_clients, and Shared tv is now correctly reported as missing. It is still undeclared.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "importHarness.blocked duplicates harness.blocked (grants_test.go:82) and shadows it. This is legal and behaves the same, so the copy can be dropped.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "internal/api/import_test.go is changed but not in the task's files list. The edit is needed, because TestImport_RoundTrip's missing_clients assertion had to become [\"Shared tv\"] once the real list was computed, but the file is undeclared.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "Locked adguard_failure says any AdGuard client-write failure returns 502, but writeAdoptError only gives 502 for ErrAdoptFailed or adguardDown errors. If the Clients read inside AdoptClients fails another way, such as an undecodable body or context.Canceled, the response is 500. No rows are written either way, and the path needs the first read to succeed and the second to fail differently, so it is rare.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "missing_clients comes from a Clients read separate from the one inside AdoptClients. A client removed between the two reads is skipped silently (ErrClientNotFound is swallowed) and not listed as missing. The two reads are what the task description specifies.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "awkwardRules puts its non-ASCII line only before the markers; the lines after them have blank, trailing-space and near-miss cases but no non-ASCII. Splice copies both sides verbatim, so this loses no practical coverage.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "handleImport calls a.deps.Grants without the nil guard resyncRules has. This matches the unguarded AdoptClients calls in children.go, and every harness that reaches import wires Grants.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Both new tests run saveFile on real timers, leaving a 40s revoke timer pending after afterEach restores URL. If a worker outlives it, URL.revokeObjectURL may be undefined when it fires. The in-flight export test at Settings.test.ts:560 already does this, so the pattern is not new.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-4",
+          "text": "A wrong-typed element inside a nested list is named only down to the list: clients [5] reports children[0].clients, not children[0].clients[0]. The task record claims only record-level paths, and the new test pins this wording.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "format and version now decode to json.RawMessage and are set from constants, so a duplicate key such as {\"version\":\"x\",\"version\":1} passes; the old strict decode into int refused it with a 400. The last value still wins and is the one checkHeader validated, so the result is harmless.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The doc comment on the Grants interface in internal/api/api.go lists the engine's typed errors (*ErrRevertFailed, *ErrAdoptFailed) but not the new *ErrClientsRead. That file is outside this task's list.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "CreateClient's read has the same gap this task closes for AdoptClients: Engine.baseline returns the Clients error unmarked and writeCreateClientError still relies on adguardDown, so an undecodable 200 there answers 500. It is outside this task's record and not on the import path.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
+}

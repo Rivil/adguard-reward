@@ -1,0 +1,937 @@
+{
+  "phase": "custom-services",
+  "pr": 11,
+  "base": "milestone/v0.2",
+  "base_commit": "d409e27a5094c78a9d699b1ef9356f01ed9cc438",
+  "status": "complete",
+  "tasks": {
+    "quick-1": {
+      "files": [
+        "web/src/lib/Services.svelte"
+      ],
+      "commit": "4ea7143",
+      "completed_at": "2026-11-02T19:08:45.382989Z",
+      "notes": "quick: swap object-form class for class:editing directive in Services.svelte (Stryker instrumenter breaks Svelte 5 object-form class)"
+    },
+    "quick-2": {
+      "files": [
+        "web/src/lib/Services.test.ts",
+        "web/src/App.test.ts",
+        "web/src/lib/ServiceIcon.test.ts"
+      ],
+      "commit": "4a70a20",
+      "completed_at": "2026-11-02T19:47:29.682311Z",
+      "notes": "quick: test-only kills for 20 custom-services Stryker survivors (Services/App/ServiceIcon); 2 more equivalents accepted"
+    },
+    "quick-3": {
+      "files": [
+        "internal/api/custom_services_test.go",
+        "web/src/lib/Home.test.ts"
+      ],
+      "commit": "75c0176",
+      "completed_at": "2026-11-03T07:04:06.727884Z",
+      "notes": "quick: cover custom-services verify FLAGs (401 on custom-services POST/PUT/DELETE, PUT bad-domain shapes, Home custom service in unblocked state)"
+    },
+    "t-1": {
+      "files": [
+        "internal/rules/region.go",
+        "internal/rules/region_test.go"
+      ],
+      "commit": "2ef485b",
+      "completed_at": "2026-11-02T15:31:49.653594Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Splice",
+          "loc": "internal/rules/region.go:31",
+          "what": "replaces or appends the marker-delimited region of user_rules, refusing malformed markers"
+        }
+      ]
+    },
+    "t-10": {
+      "files": [
+        "web/src/lib/Services.svelte",
+        "web/src/lib/Services.test.ts",
+        "web/src/App.svelte",
+        "web/src/App.test.ts"
+      ],
+      "commit": "695cc5a",
+      "completed_at": "2026-11-02T16:19:58.445005Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Services",
+          "loc": "web/src/lib/Services.svelte:1",
+          "what": "Settings page to list, create, edit and confirm-delete custom services; rows render from server responses and applied:false shows a catch-up note"
+        }
+      ]
+    },
+    "t-11": {
+      "files": [
+        "internal/grants/grants.go",
+        "internal/grants/grants_test.go"
+      ],
+      "commit": "d12d4dc",
+      "completed_at": "2026-11-02T16:45:53.920802Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Engine.End",
+          "loc": "internal/grants/grants.go:406",
+          "what": "grant create/end/expiry split built-in ids (blocked_services) from custom ids (region @@ exceptions, ref-counted by union), region first and fail-closed"
+        }
+      ]
+    },
+    "t-12": {
+      "files": [
+        "internal/grants/clients.go",
+        "internal/grants/rename.go",
+        "internal/grants/clients_test.go",
+        "internal/grants/rename_test.go"
+      ],
+      "commit": "6d3bb6d",
+      "completed_at": "2026-11-02T16:49:41.115578Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Engine.baselineFrom",
+          "loc": "internal/grants/clients.go:151",
+          "what": "adoption baselines carry built-in ids only; child client create and rename resync the region before returning"
+        }
+      ]
+    },
+    "t-13": {
+      "files": [
+        "internal/grants/reconcile.go",
+        "internal/grants/reconcile_test.go",
+        "internal/grants/rules.go",
+        "internal/api/custom_services_test.go"
+      ],
+      "commit": "e0e25c2",
+      "completed_at": "2026-11-02T17:21:28.614695Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Engine.Reconcile",
+          "loc": "internal/grants/reconcile.go:42",
+          "what": "every startup and tick pass converges the managed region from intent after the grant half; malformed markers logged, never rewritten"
+        }
+      ]
+    },
+    "t-14": {
+      "files": [
+        "internal/api/custom_services.go",
+        "internal/api/custom_services_test.go",
+        "internal/api/api.go"
+      ],
+      "commit": "89fbea5",
+      "completed_at": "2026-11-02T16:53:27.06763Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "decodeCustomService",
+          "loc": "internal/api/custom_services.go:55",
+          "what": "GET/POST/PUT/DELETE /api/v1/custom-services: plain-hostname validation naming domains[i], built-in and custom name clashes 409, in-use delete 409 with grant_id"
+        }
+      ]
+    },
+    "t-15": {
+      "files": [
+        "internal/blocked/blocked.go",
+        "internal/blocked/blocked_test.go",
+        "internal/api/blocked.go",
+        "internal/api/blocked_test.go"
+      ],
+      "commit": "ab880cd",
+      "completed_at": "2026-11-02T16:56:06.32585Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "covered",
+          "loc": "internal/blocked/blocked.go:257",
+          "what": "blocked view folds custom services from intent (unblocked iff an active grant covers the client); omitted, never guessed, when grants or the custom list cannot be read"
+        }
+      ]
+    },
+    "t-16": {
+      "files": [
+        "internal/api/grants.go",
+        "internal/api/grants_test.go",
+        "internal/api/buttons.go",
+        "internal/api/buttons_test.go"
+      ],
+      "commit": "b3cbd74",
+      "completed_at": "2026-11-02T17:24:27.873456Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "API.handleGrantCreate",
+          "loc": "internal/api/grants.go:195",
+          "what": "POST /grants and PUT /buttons validate services and icons against the merged catalogue so custom:\u003cn\u003e ids are grantable and pickable"
+        }
+      ]
+    },
+    "t-17": {
+      "files": [
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "e987153",
+      "completed_at": "2026-11-02T17:28:00.316341Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "TestRun_CustomRulesRestoredAtStartup",
+          "loc": "cmd/adguard-reward/main_test.go:1554",
+          "what": "end-to-end proof through run(): custom services survive restart, startup pass and ticks converge the region with foreign lines byte-identical"
+        }
+      ]
+    },
+    "t-18": {
+      "files": [
+        "internal/api/children.go",
+        "internal/api/children_test.go"
+      ],
+      "commit": "d517fea",
+      "completed_at": "2026-11-02T17:31:08.76663Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "API.resyncRules",
+          "loc": "internal/api/children.go:321",
+          "what": "child create/update/delete resync the region after the store write so block lines follow a child's devices immediately; failures only log"
+        }
+      ]
+    },
+    "t-2": {
+      "files": [
+        "internal/rules/domain.go",
+        "internal/rules/domain_test.go",
+        "internal/rules/render.go",
+        "internal/rules/render_test.go"
+      ],
+      "commit": "b0307d0",
+      "completed_at": "2026-11-02T15:55:53.251488Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Render",
+          "loc": "internal/rules/render.go:71",
+          "what": "renders per-domain child block lines and grant-union @@ exceptions with urlfilter-faithful $client quoting"
+        }
+      ]
+    },
+    "t-3": {
+      "files": [
+        "internal/adguard/rules.go",
+        "internal/adguard/rules_test.go",
+        "internal/adguard/adguardtest/server.go",
+        "internal/adguard/adguardtest/testdata/filtering_status.json",
+        "internal/adguard/client.go"
+      ],
+      "commit": "985f022",
+      "completed_at": "2026-11-02T16:00:23.012045Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Client.EditUserRules",
+          "loc": "internal/adguard/rules.go:19",
+          "what": "mutex-guarded read of filtering/status user_rules and set_rules write only on change"
+        }
+      ]
+    },
+    "t-4": {
+      "files": [
+        "internal/store/migrations/0007_custom_services.sql",
+        "internal/store/custom_services.go",
+        "internal/store/custom_services_test.go"
+      ],
+      "commit": "2c41430",
+      "completed_at": "2026-11-02T16:03:47.844334Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "Store.DeleteCustomService",
+          "loc": "internal/store/custom_services.go:191",
+          "what": "stores never-reused custom:\u003cn\u003e services with unique names/domains; delete refuses active grants and strips buttons"
+        }
+      ]
+    },
+    "t-5": {
+      "files": [
+        "web/src/lib/api.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/ServiceIcon.svelte",
+        "web/src/lib/ServiceIcon.test.ts"
+      ],
+      "commit": "c485ae5",
+      "completed_at": "2026-11-02T16:06:01.48838Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "ServiceIcon",
+          "loc": "web/src/lib/ServiceIcon.svelte:1",
+          "what": "renders a catalogue icon or a grapheme-safe letter avatar for icon-less custom services; api.ts adds the custom-services client and /services route"
+        }
+      ]
+    },
+    "t-6": {
+      "files": [
+        "internal/grants/rules.go",
+        "internal/grants/rules_test.go",
+        "internal/grants/grants.go"
+      ],
+      "commit": "0e8340d",
+      "completed_at": "2026-11-02T16:09:33.534466Z",
+      "landmarks": [
+        {
+          "feature": "managed rules region",
+          "symbol": "Engine.syncRules",
+          "loc": "internal/grants/rules.go:43",
+          "what": "renders the region from stored custom services, children and active grants and splices it in under the engine mutex; read errors abort before any AdGuard call"
+        }
+      ]
+    },
+    "t-7": {
+      "files": [
+        "internal/api/api.go",
+        "internal/api/clients.go",
+        "internal/api/catalogue_test.go",
+        "cmd/adguard-reward/main.go",
+        "cmd/adguard-reward/main_test.go"
+      ],
+      "commit": "95b3e4f",
+      "completed_at": "2026-11-02T16:13:30.878062Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "API.catalogue",
+          "loc": "internal/api/clients.go:293",
+          "what": "serves AdGuard's built-ins then stored custom services as custom:\u003cn\u003e entries; AdGuard outage 502 before the store is read"
+        }
+      ]
+    },
+    "t-8": {
+      "files": [
+        "web/src/lib/GrantForm.svelte",
+        "web/src/lib/GrantForm.test.ts"
+      ],
+      "commit": "88c75d6",
+      "completed_at": "2026-11-02T16:14:46.573522Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "GrantForm",
+          "loc": "web/src/lib/GrantForm.svelte:139",
+          "what": "renders every catalogue row through ServiceIcon so custom services show a letter avatar in the grant form and button editor"
+        }
+      ]
+    },
+    "t-9": {
+      "files": [
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/Buttons.svelte",
+        "web/src/lib/Buttons.test.ts"
+      ],
+      "commit": "6a5eccf",
+      "completed_at": "2026-11-02T16:17:28.53552Z",
+      "landmarks": [
+        {
+          "feature": "custom services",
+          "symbol": "iconFor",
+          "loc": "web/src/lib/Home.svelte:110",
+          "what": "Home tiles, blocked list and the Buttons icon picker draw custom services via ServiceIcon; Home header links to Services"
+        }
+      ]
+    }
+  },
+  "reviews": {
+    "t-1": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Splice also rejects managed lines that equal a marker, which the task record does not describe. It returns an ad-hoc fmt.Errorf rather than a sentinel, so callers cannot tell it apart from other errors with errors.Is. Reasonable defence for r-02, but outside the stated contract.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The package doc comment describes domain validation and rendering of block and exception lines, which this diff does not include. Presumably sibling tasks will add them.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestSplice_DoesNotAliasInput and the two-begins and two-ends malformed cases go beyond the contract and are useful.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-10": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Every mutation updates the list from the server's response object rather than refetching the list; this matches the description and the 'renders from the response, not the draft' tests prove it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "edit() clears the error but leaves an earlier catch-up note on screen until the next call; harmless",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "parseDomains splits on '\\n' and trims each line, so CRLF input is handled too",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-11": {
+      "outcome": "pass",
+      "rounds": 3,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-7",
+          "text": "TestGrant_MixedEndPartialFailure stands in SyncRules for 'the next reconcile pass', but Engine.Reconcile (internal/grants/reconcile.go) never calls syncRules and nothing in main runs SyncRules periodically. In production, a clients/update fault on End after the region write leaves an active grant with its @@ exceptions removed until some unrelated region write. This fails closed, but the stated re-convergence path does not exist yet. The test also never checks that the @@ lines were removed before SyncRules, so the 'restores' assertion is weak.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Create checks custom ids and DeleteService checks grant use under the same engine mutex, so TestDeleteService_RaceGrant is deterministic per round; ErrRevertFailed gains Unwrap, so errors.Is(err, rules.ErrMalformedRegion) works through End.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-7",
+          "text": "test_contract for TestGrant_MixedEndPartialFailure (and the description: 'the reconciler re-converges both halves from intent') says the next reconcile pass restores the @@ lines after a clients/update fault on End; the test calls Engine.SyncRules instead of Reconcile, and Reconcile (internal/grants/reconcile.go) never syncs the managed region for live grants, so no test could fail if the reconciler never restores them, and in production nothing does",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "builtin() and the Create unknown-id check both key on store.IsCustomServiceID, which accepts only the canonical form; a non-canonical 'custom:'-prefixed id (custom:01, custom:abc) skips the unknown-service refusal and is passed to RemoveBlockedServices/AddBlockedServices as if built-in, so it does reach blocked_services unless a caller validates first",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "End/expiry rewrite the region before the built-in revert, so a revert failure leaves the still-active grant with its custom exceptions removed; that is the specified order, but with no periodic region sync the child stays blocked from the custom service for the rest of the grant",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestGrant_CustomNoLeak uses fixture clients 'Kid phone'/'Kid tablet' rather than the contract's kid-phone/tv; equivalent coverage, and the custom-only path never calls the clients API anyway",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "ErrRevertFailed gains Err plus Unwrap, so callers can match errors.Is(err, rules.ErrMalformedRegion) through it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 3,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Create and End share one actx between the built-in unblock/revert and the region sync, so a slow clients pass can use up the deadline for the set_rules write. Either way the outcome is fail-closed (Failed == all clients / ErrRevertFailed), so this is acceptable.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 3,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "When the region sync fails during expiry, expireLocked returns with no timer re-armed (expire already removed it from e.timers). This matches the existing revert-failure behaviour and leaves convergence to the reconciler (t-13).",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-12": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-8",
+          "text": "test_contract says TestRenameClient_StoreFailure fails if a rolled-back rename rewrites the region, but the test cannot fail. The region already matches the store before the failing rename, and syncRules builds it from the unchanged store, so a resync on the rollback path (or an unconditional one) gives an identical region and EditUserRules skips the set_rules POST. Make the region stale first (e.g. a manual edit inside the markers, or an active custom grant whose exception is missing), then assert it stays untouched after the failed rename.",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRenameClient_ResyncsRules renames 'Kid phone' -\u003e 'Ada phone' instead of the contract's 'Tab' -\u003e 'Tablet'. The old name is not a substring of the new one, so noLineContains still catches a stale rule, but the substring case the contract seems to aim at is not exercised.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-6",
+          "text": "TestRenameClient_ResyncsRules renames 'Kid phone' -\u003e 'Kid phone 2' instead of the contract's 'Tab' -\u003e 'Tablet'; it is the same prefix case and asserts the exact quoted value, so the contract's intent is met",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "resyncRules failure path (log a warning, return nil) is not tested for CreateClient or RenameClient; the reconciler is the fallback",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "RenameClient's resync reuses actx after two AdGuard calls, so under a slow AdGuard it may time out and fall back to the reconciler; this is by design and gets logged",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-13": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-8",
+          "text": "An overdue grant with a custom service whose built-in revert keeps failing makes the reconciler flip-flop: expireLocked rewrites the region without the grant's exceptions, the revert fails so the grant stays active, then the final syncRules(…, 0) restores the @@ lines. The child keeps the custom service past expiry and each tick spends 2 set_rules POSTs. No test covers this path.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-9",
+          "text": "syncRules gains an undescribed skip: an empty desired region with no markers present writes nothing. This changes behaviour for every caller and narrows c-9's 'a missing region is appended at the end' (it forced the custom_services_test Edges fixture change). Reasonable, but not in the task description.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "RulesWritten under-reports: when an overdue grant's expireLocked rewrites the region during the grant half, the final syncRules finds it already converged and RulesWritten stays 0, although the Stats doc says it is 1 whenever the pass rewrote the region.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-14": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-3",
+          "text": "TestCustomServices_Update checks only len(region)==2 and the absence of a.com; it does not check that the added c.com line is present. The test_contract line asks only for a.com to be gone, so this is not a contract gap, but asserting the exact b.com/c.com lines would also cover the 'added domains present' part of c-3.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "When DeleteService fails, handleCustomServiceDelete re-lists every custom service just to find the name for the error message. Having DeleteService return the service it loaded before failing would avoid the extra read.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "newCustomHarness builds a second grants engine over the same store and fake, while the engine created by newHarness is still alive until cleanup. That is harmless if the engine runs no background work against AdGuard; otherwise the two could interleave.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-15": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "In internal/api/blocked.go, if the children read fails, sharedInputs returns before it reads grants. coversOK is then false, so custom entries are dropped even though grants might have been readable. This is safe (the view never wrongly says blocked) but drops more than the description strictly requires.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "When the grants read fails, handleBlocked logs two warnings: one from sharedInputs and one from customInputs. customInputs also reads the custom list before the AdGuard Clients call, so that read is wasted when AdGuard then returns 502.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "TestFold_Custom also checks that grants on other services do not unblock the custom service, and TestFold_CustomAfterCatalogue checks that custom entries come after the built-ins in the order given and that no built-in is marked custom. Both go beyond the test_contract.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-16": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "The new errors.As branch for *grants.ErrUnknownService in handleGrantCreate (internal/api/grants.go), which handles a custom service deleted between the catalogue read and engine.Create, is not exercised by any API test. Only the engine-level tests in internal/grants/grants_test.go cover the error itself.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Grant and button validation now go through a.catalogue and writeCatalogueError, so a failed custom-service store read becomes a 500 while an AdGuard failure stays a 502. Neither handler's error path has a new test in this diff.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestCustomServices_DeleteAfterGrant goes beyond the contract: it also checks the 409 grant_id, that buttons are unchanged after the refused delete, that the mixed button keeps its other service and loses its icon, and that no region line remains for the deleted service's domain.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-17": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestRun_CustomRulesReconcilerTick sleeps for a fixed 300 ms and 500 ms in its no-extra-writes and 60 s checks. The thresholds are generous, but they add about 0.8 s to the suite and still depend on timing.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The marker strings are written out in the test rather than imported, which also pins the locked marker_format decision.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-18": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "Doc comments in internal/api/children.go are now false: handleChildCreate says 'A POST without clients never calls AdGuard', handleChildUpdate says a PUT that adds nothing 'never calls AdGuard (c-7)', and handleChildDelete says 'It never calls AdGuard'. All three now read user_rules through SyncRules and may write set_rules when custom services exist.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The 'no AdGuard call' tests from earlier work (TestChildren_NoAdGuard, TestChildUpdate_RemoveOnly, adguardSince, TestChildCreate_SharedAdopts) were relaxed to allow the GET /control/filtering/status read. They run with no custom services, so they still catch client writes, but they no longer prove AdGuard is never touched.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "SyncRules runs on r.Context(), so a client that disconnects mid-request can cancel the resync. That is acceptable because a failure only logs and the reconciler catches up.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-8",
+          "text": "No test checks that creating a child with clients syncs successfully (the new child's clients appear in the ||a.com^ line). Only the create-failure path is tested. The contract doesn't require it, but create is the only one of the three handlers without a success-path resync test.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "resyncRules runs on r.Context(), so if the client disconnects mid-request the sync is cancelled. It is only logged and the reconciler converges the region later, which matches the stated design.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The existing 'CRUD makes no AdGuard calls' tests were loosened to ignore only the user_rules GET, so they would still catch any set_rules or client write. That keeps them meaningful.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-2": {
+      "outcome": "pass",
+      "rounds": 2,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-6",
+          "text": "test_contract requires QuoteClient(`Ann's \"tab\", |x`) == `'Ann\\'s \\\"tab\\\"\\, \\|x'` exactly; render.go leaves `\"` unescaped and TestQuoteClient asserts `'Ann\\'s \"tab\"\\, \\|x'` instead, so the contracted row is not met",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "spec",
+          "severity": "BLOCKING",
+          "criterion": "c-6",
+          "text": "test_contract requires QuoteClient(`a\\b`) == `'a\\\\b'` exactly and the description says `\\` is backslash-escaped; QuoteClient writes `\\` bare and TestQuoteClient asserts `'a\\b'`",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "BLOCKING",
+          "criterion": "c-6",
+          "text": "QuoteClient departs from the task description's escape set (\\ ' \" , |) without a recorded contract amendment. The urlfilter rationale in the doc comment may be correct, but the contract was only open on `$`; amend the record or follow it",
+          "resolution": "fixed in the fix round"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "decodeClients is a hand-written copy of urlfilter's parsing. No urlfilter dependency exists in the repo, so QuoteClient and its oracle can be wrong in the same way and the round-trip assertions still pass",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "text": "A name ending in a backslash is accepted and emitted as `'trailing\\'`, which ends in what reads as an escaped quote. A real parser may treat the value as unterminated; refusing a trailing `\\` (as is done for `\\` before ' , | $) would be safer",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "The $ handling (`a$b` -\u003e `'a\\$b'`) follows the record's instruction to check AdGuard's $client grammar, and the reasoning is written in the doc comment",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Render normalises stored domains again and skips invalid ones with a log. TestRender_SkipsInvalidStoredDomain covers this, which is good defence in depth for r-04",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Render takes an extra *slog.Logger parameter beyond the Render(services, childClients, covers) signature in the task record; nil is handled, so callers in sibling tasks need to pass nil or a logger",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Render sorts services with slices.SortFunc on ID only, which is not stable; if two Service values ever share an ID, output order could vary between runs. IDs are expected to be unique, so this is only latent",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 2,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "decodeClients is a hand transcription of urlfilter@347285f3f046 (including the global \\$ -\u003e $ unescape in options) and is the only oracle for the $client escaping; it must be re-checked whenever AdGuard's $client grammar changes, as its comment says",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-3": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "rulesMu is per-Client: edits are serialised only if the app shares one adguard.Client; a second Client instance, or edits made in AdGuard's own UI, can still race between the GET and the set_rules POST. AdGuard has no ETag, so this read-modify-write cannot guard against that anyway.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "json.Marshal escapes \u003c, \u003e and \u0026 as \\u003c etc., so the raw body is not byte-identical to the rule text, but the lines AdGuard decodes are identical; the Verbatim test checks the decoded values, which is the right level.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "TestEditUserRules_WriteRejected adds 400 -\u003e *InputRejectedError coverage beyond the contract; the fake's DisallowUnknownFields check on set_rules also pins down the request shape.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-4": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-1",
+          "text": "test_contract says TestMigrate_Order lists 0007 last, but TestMigrate_Order runs against a stub FS and can't see the real migrations. The diff adds TestMigrate_CustomServicesLast instead, which checks the same thing against the embedded set and schema_migrations.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "custom_service_domains.domain UNIQUE is case-sensitive and the store saves domains exactly as given, so case-insensitive domain uniqueness depends on the API lowercasing domains first. The doc comment says so; the API task must do it.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "DeleteCustomService deletes the custom_service_domains rows explicitly even though the FK already has ON DELETE CASCADE. It's harmless, and it still works if foreign_keys were ever off.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-5": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Route 'services' is added but App.svelte has no $route === 'services' branch yet, so /services renders an empty page until the management_ui task lands",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "test_contract's 'letter avatar' and 'custom services' cases are split across several it-blocks (blank, emoji, img, endpoints); every listed assertion is present",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-6": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "FLAG",
+          "criterion": "c-1",
+          "text": "TestCreateService_BlocksChildren asserts dad-laptop appears nowhere, but no client named dad-laptop is ever registered in the fake, so that assertion cannot fail; the scope check actually rests on the exact region equality against the fixture's unmapped clients (Old laptop, printer, Zed-TV)",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "syncAfter logs 'the reconciler will retry' and the doc comments say the reconciler converges later, but no reconciler path calls syncRules yet; the message holds only once a sibling task wires it",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Extra coverage beyond the contract: TestSyncRules_Exclude checks the exclude path and that a second pass writes nothing, and a store-conflict subtest checks a refused create sends no POST",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-7": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "criterion": "c-5",
+          "text": "catalogue() tells AdGuard failures (502) apart from store failures (500) with a typed wrapper error; TestServices_CustomStoreDown and TestServices_NoCustomStore cover the 500 path and the nil-Deps path, which the contract did not require",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "the blocked view and the built-in name-clash check still read AdGuard.Services directly, as the description requires; catalogue() is used only by handleServices so far",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-8": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "checkbox('S') matches on the label's text prefix, so it only finds the custom row because the avatar letter comes before the name. This is correct now but tied to the DOM order inside ServiceIcon's label.",
+          "resolution": "non-blocking, left"
+        },
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "An extra test (search finds a custom service by name) covers the search filter for custom entries; the record did not ask for it.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    },
+    "t-9": {
+      "outcome": "pass",
+      "rounds": 1,
+      "findings": [
+        {
+          "round": 1,
+          "kind": "quality",
+          "severity": "NOTE",
+          "text": "Tests also confirm built-in services next to custom ones still render their real \u003cimg\u003e, and that a custom icon is never reported as a lost icon in the Buttons form.",
+          "resolution": "non-blocking, left"
+        }
+      ]
+    }
+  }
+}
