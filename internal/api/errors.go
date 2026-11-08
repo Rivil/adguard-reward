@@ -17,6 +17,15 @@ const (
 	CodeNotFound           = "not_found"
 	CodeConflict           = "conflict"
 	CodeUnprocessable      = "unprocessable"
+	// CodeReauthRequired: changing or removing a PIN needs the AdGuard
+	// password and none was sent.
+	CodeReauthRequired = "reauth_required"
+	// CodeBadPIN: a wrong PIN on unlock; the envelope carries
+	// attempts_remaining.
+	CodeBadPIN = "bad_pin"
+	// CodeDeviceRevoked: the device cookie names no live device (revoked,
+	// expired, or the last attempt spent); only a full login helps.
+	CodeDeviceRevoked = "device_revoked"
 )
 
 // errorBody is the JSON envelope every error response carries.

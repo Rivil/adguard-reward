@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "interval": 24,
+  "filters": [
+    {
+      "id": 1,
+      "enabled": true,
+      "url": "https://example.invalid/blocklist.txt",
+      "name": "Example blocklist",
+      "rules_count": 0,
+      "last_updated": "2026-09-19T00:00:00Z"
+    }
+  ],
+  "whitelist_filters": null,
+  "user_rules": []
+}

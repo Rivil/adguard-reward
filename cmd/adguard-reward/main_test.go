@@ -6,10 +6,12 @@ import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/tls"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -23,6 +25,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"slices"
 	"strings"
 	"sync"
 	"testing"
@@ -30,6 +33,7 @@ import (
 
 	"github.com/Rivil/adguard-reward/internal/adguard/adguardtest"
 	"github.com/Rivil/adguard-reward/internal/auth"
+	"github.com/Rivil/adguard-reward/internal/config"
 	"github.com/Rivil/adguard-reward/internal/store"
 	"github.com/Rivil/adguard-reward/web"
 )
@@ -1055,6 +1059,348 @@ func TestRun_StartupAdGuardDown(t *testing.T) {
 	}
 }
 
+// ---- grant history across restart and downtime --------------------------
+
+type historyService struct {
+	ID            string  `json:"id"`
+	Name          string  `json:"name"`
+	RemovedAt     *string `json:"removed_at"`
+	RemovedReason *string `json:"removed_reason"`
+}
+
+type historyExtension struct {
+	At        string `json:"at"`
+	OldEndsAt string `json:"old_ends_at"`
+	NewEndsAt string `json:"new_ends_at"`
+}
+
+type historyGrant struct {
+	ID         int64              `json:"id"`
+	Status     string             `json:"status"`
+	StartedAt  string             `json:"started_at"`
+	EndsAt     string             `json:"ends_at"`
+	EndedAt    *string            `json:"ended_at"`
+	Services   []historyService   `json:"services"`
+	Extensions []historyExtension `json:"extensions"`
+}
+
+type historyPage struct {
+	Child struct {
+		ID   int64  `json:"id"`
+		Name string `json:"name"`
+	} `json:"child"`
+	Grants     []historyGrant `json:"grants"`
+	NextBefore *int64         `json:"next_before"`
+}
+
+// childOfGrant is the child_id of active grant id, read from GET /grants.
+func childOfGrant(t *testing.T, c *http.Client, base string, ck *http.Cookie, id int64) int64 {
+	t.Helper()
+	_, rows := listGrants(t, c, base, ck)
+	for _, g := range rows {
+		if g.ID == id {
+			return g.ChildID
+		}
+	}
+	t.Fatalf("grant %d not in GET /api/v1/grants: %+v", id, rows)
+	return 0
+}
+
+// getHistory fetches the first history page of child.
+func getHistory(t *testing.T, c *http.Client, base string, ck *http.Cookie, child int64) historyPage {
+	t.Helper()
+	resp := call(t, c, http.MethodGet, base, fmt.Sprintf("/api/v1/children/%d/history", child), nil, withCookie(ck.Value))
+	b, _ := io.ReadAll(resp.Body)
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET history of child %d: %d %s", child, resp.StatusCode, b)
+	}
+	var page historyPage
+	if err := json.Unmarshal(b, &page); err != nil {
+		t.Fatalf("history body %s: %v", b, err)
+	}
+	return page
+}
+
+// onlyGrant returns the page's single grant, failing unless it is id.
+func onlyGrant(t *testing.T, page historyPage, id int64) historyGrant {
+	t.Helper()
+	if len(page.Grants) != 1 || page.Grants[0].ID != id {
+		t.Fatalf("history grants = %+v, want only grant %d", page.Grants, id)
+	}
+	return page.Grants[0]
+}
+
+// parseWire parses an RFC 3339 wire timestamp.
+func parseWire(t *testing.T, field, s string) time.Time {
+	t.Helper()
+	v, err := time.Parse(time.RFC3339, s)
+	if err != nil {
+		t.Fatalf("%s = %q: %v", field, s, err)
+	}
+	return v
+}
+
+// TestRun_HistorySurvivesRestart extends a grant twice and ends it early
+// through the API, then restarts on the same data_dir: the history page is
+// identical, still ended_early with both extension entries (c-1, c-2, c-5).
+func TestRun_HistorySurvivesRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 1800)
+	child := childOfGrant(t, c, base, ck, created.ID)
+
+	ends := []string{created.EndsAt}
+	for i := 0; i < 2; i++ {
+		resp := call(t, c, http.MethodPost, base, fmt.Sprintf("/api/v1/grants/%d/extend", created.ID),
+			map[string]any{"duration": 600}, withCookie(ck.Value))
+		b, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("extend %d: %d %s", i+1, resp.StatusCode, b)
+		}
+		var ext struct {
+			EndsAt string `json:"ends_at"`
+		}
+		if err := json.Unmarshal(b, &ext); err != nil {
+			t.Fatal(err)
+		}
+		ends = append(ends, ext.EndsAt)
+	}
+	if resp := call(t, c, http.MethodPost, base, fmt.Sprintf("/api/v1/grants/%d/end", created.ID), nil, withCookie(ck.Value)); resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("end: %d %s, want 204", resp.StatusCode, b)
+	}
+	before := getHistory(t, c, base, ck, child)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	after := getHistory(t, c, "http://"+r2.addr, ck, child)
+	if !reflect.DeepEqual(after, before) {
+		t.Errorf("history after restart = %+v, want it unchanged: %+v", after, before)
+	}
+
+	g := onlyGrant(t, after, created.ID)
+	if g.Status != "ended_early" {
+		t.Errorf("status after restart = %q, want ended_early", g.Status)
+	}
+	if g.EndedAt == nil {
+		t.Error("ended_at after restart is null; an ended grant records its end time")
+	}
+	if len(g.Extensions) != 2 {
+		t.Fatalf("extensions after restart = %+v, want two entries", g.Extensions)
+	}
+	for i, x := range g.Extensions {
+		if x.OldEndsAt != ends[i] || x.NewEndsAt != ends[i+1] {
+			t.Errorf("extension %d = %s -> %s, want %s -> %s", i+1, x.OldEndsAt, x.NewEndsAt, ends[i], ends[i+1])
+		}
+		parseWire(t, fmt.Sprintf("extension %d at", i+1), x.At)
+	}
+	if len(g.Services) != 1 || g.Services[0].ID != "tiktok" || g.Services[0].RemovedAt != nil {
+		t.Errorf("services after restart = %+v, want tiktok, not removed", g.Services)
+	}
+}
+
+// TestRun_OverdueGrantExpiredAtStartup lets a grant's ends_at pass while the
+// app is stopped. The reconciler is parked at an hour, so only the startup
+// pass can record the expiry, and it stamps ended_at with its own clock — at
+// or after the restart, not the long-past ends_at (c-1, c-5).
+func TestRun_OverdueGrantExpiredAtStartup(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = time.Hour
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 1800)
+	child := childOfGrant(t, c, base, ck, created.ID)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+	endsAt := time.Now().Add(-10 * time.Minute).Truncate(time.Second)
+	rewindGrant(t, dataDir, created.ID, endsAt)
+
+	restartAt := time.Now().Truncate(time.Second)
+	restored := false
+	r2 := startWith(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil,
+		func(string) { restored = phoneBlocks(fake, "tiktok") })
+	if !restored {
+		t.Error("Kid phone did not block tiktok when the listener opened; the startup pass did not revert the overdue grant")
+	}
+
+	g := onlyGrant(t, getHistory(t, c, "http://"+r2.addr, ck, child), created.ID)
+	if g.Status != "expired" {
+		t.Fatalf("status after restart = %q, want expired", g.Status)
+	}
+	if g.EndedAt == nil {
+		t.Fatal("ended_at is null; the startup pass must record when it expired the grant")
+	}
+	ended := parseWire(t, "ended_at", *g.EndedAt)
+	if ended.Before(restartAt) {
+		t.Errorf("ended_at = %s, before the restart at %s: it was not set by the startup pass", ended, restartAt)
+	}
+	if !ended.After(endsAt) {
+		t.Errorf("ended_at = %s, want after the scheduled ends_at %s", ended, endsAt)
+	}
+	if got := parseWire(t, "ends_at", g.EndsAt); !got.Equal(endsAt) {
+		t.Errorf("ends_at = %s, want the scheduled %s", got, endsAt)
+	}
+}
+
+// TestRun_AdGuardDownAtStartup restarts over an overdue grant with AdGuard
+// unreachable. Expiry is only recorded once the revert lands, so the grant
+// stays ongoing through the failed startup pass and failed ticks, and reads
+// expired — stamped after AdGuard came back — once a later pass reverts it
+// (c-1, c-5).
+func TestRun_AdGuardDownAtStartup(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = 50 * time.Millisecond
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	ck := loginOK(t, c, base)
+	created := postChildAndGrant(t, c, base, ck, 1800)
+	child := childOfGrant(t, c, base, ck, created.ID)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+	rewindGrant(t, dataDir, created.ID, time.Now().Add(-10*time.Minute))
+
+	fake.SetStatus("/control/status", http.StatusServiceUnavailable)
+	fake.SetStatus("/control/clients", http.StatusServiceUnavailable)
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base2 := "http://" + r2.addr
+	if !strings.Contains(r2.stderr.String(), `msg="startup reconcile" err=`) {
+		t.Fatalf("stderr lacks the startup reconcile error; AdGuard was not down for the startup pass:\n%s", r2.stderr.String())
+	}
+
+	g := onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID)
+	if g.Status != "ongoing" || g.EndedAt != nil {
+		t.Errorf("after a failed startup pass: status %q ended_at %v, want ongoing with no end time", g.Status, g.EndedAt)
+	}
+	// Several failing ticks at 50 ms must not record the expiry either.
+	time.Sleep(300 * time.Millisecond)
+	g = onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID)
+	if g.Status != "ongoing" || g.EndedAt != nil {
+		t.Errorf("after failing reconcile ticks: status %q ended_at %v, want ongoing with no end time", g.Status, g.EndedAt)
+	}
+	if phoneBlocks(fake, "tiktok") {
+		t.Fatal("tiktok re-blocked while /control/clients answers 503")
+	}
+
+	recoveredAt := time.Now().Truncate(time.Second)
+	fake.SetResponse("/control/status", 0, nil)
+	fake.SetResponse("/control/clients", 0, nil)
+	if !waitFor(2*time.Second, func() bool {
+		return onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID).Status == "expired"
+	}) {
+		t.Fatalf("history status = %q within 2 s of AdGuard recovering, want expired",
+			onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID).Status)
+	}
+	if !phoneBlocks(fake, "tiktok") {
+		t.Error("grant reads expired but Kid phone does not block tiktok")
+	}
+	g = onlyGrant(t, getHistory(t, c, base2, ck, child), created.ID)
+	if g.EndedAt == nil {
+		t.Fatal("expired grant has no ended_at")
+	}
+	if ended := parseWire(t, "ended_at", *g.EndedAt); ended.Before(recoveredAt) {
+		t.Errorf("ended_at = %s, before AdGuard recovered at %s: expiry was recorded before the revert", ended, recoveredAt)
+	}
+}
+
+// clientBlocks reports whether the fake's named client blocks service id.
+func clientBlocks(fake *adguardtest.Server, name, id string) bool {
+	ids, _ := fake.BlockedServices(name)
+	return slices.Contains(ids, id)
+}
+
+// TestRun_ToggleEndToEnd boots run() and toggles youtube for a child on two
+// clients through the API: proof main wires the engine's Toggle and that
+// each response lands on AdGuard within the 5 s promise (c-1, c-2). The
+// reconciler is parked so only the request itself can have written.
+func TestRun_ToggleEndToEnd(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = time.Hour
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+	ck := loginOK(t, c, base)
+
+	resp := call(t, c, http.MethodPost, base, "/api/v1/children",
+		map[string]any{"name": "Ada", "clients": []string{"Kid phone", "Old laptop"}}, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST child: %d %s", resp.StatusCode, b)
+	}
+	var child struct {
+		ID int64 `json:"id"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&child); err != nil {
+		t.Fatal(err)
+	}
+	fake.MutateClient("Old laptop", func(m map[string]json.RawMessage) {
+		m["blocked_services"] = json.RawMessage(`["youtube","roblox"]`)
+	})
+	clients := []string{"Kid phone", "Old laptop"}
+	for _, name := range clients {
+		if !clientBlocks(fake, name, "youtube") {
+			t.Fatalf("precondition: %s does not block youtube", name)
+		}
+	}
+
+	path := fmt.Sprintf("/api/v1/children/%d/toggles", child.ID)
+	for _, step := range []struct {
+		state string
+		want  bool
+	}{{"unblocked", false}, {"blocked", true}} {
+		begin := time.Now()
+		resp := call(t, c, http.MethodPost, base, path,
+			map[string]any{"service_id": "youtube", "state": step.state}, withCookie(ck.Value))
+		b, _ := io.ReadAll(resp.Body)
+		if took := time.Since(begin); took >= 5*time.Second {
+			t.Errorf("%s took %v, want < 5 s", step.state, took)
+		}
+		if resp.StatusCode != http.StatusOK {
+			t.Fatalf("%s: %d %s, want 200", step.state, resp.StatusCode, b)
+		}
+		var got struct {
+			Applied bool     `json:"applied"`
+			Failed  []string `json:"failed"`
+		}
+		if err := json.Unmarshal(b, &got); err != nil {
+			t.Fatal(err)
+		}
+		if !got.Applied || len(got.Failed) != 0 {
+			t.Errorf("%s: body %s, want applied true failed []", step.state, b)
+		}
+		for _, name := range clients {
+			if clientBlocks(fake, name, "youtube") != step.want {
+				ids, _ := fake.BlockedServices(name)
+				t.Errorf("after %s %s = %v, want youtube blocked=%v", step.state, name, ids, step.want)
+			}
+		}
+	}
+}
+
 // ---- SPA, PWA and buttons over the real embed ----------------------------
 
 // requireDist fatals when web/dist is not built. A skip here would be a
@@ -1359,6 +1705,292 @@ func TestRun_ButtonsWired(t *testing.T) {
 	}
 }
 
+// TestRun_CustomServicesWired boots run() on a data_dir holding a custom
+// service, as a previous process left it, and expects /services to list it
+// after the built-ins: proof main hands the store to api.Deps.
+func TestRun_CustomServicesWired(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	portal, err := st.CreateCustomService(context.Background(), "Portal", []string{"portal.example.com"})
+	_ = st.Close()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+	ck := loginOK(t, c, base)
+
+	resp := call(t, c, http.MethodGet, base, "/api/v1/services", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("GET /api/v1/services = %d %s, want 200", resp.StatusCode, b)
+	}
+	var body struct {
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatal(err)
+	}
+	n := len(body.Services)
+	if n < 2 {
+		t.Fatalf("services = %v, want the built-ins then Portal", body.Services)
+	}
+	want := map[string]any{"id": store.CustomServiceID(portal.ID), "name": "Portal", "icon": "", "custom": true}
+	if !reflect.DeepEqual(body.Services[n-1], want) {
+		t.Errorf("last service = %v, want %v", body.Services[n-1], want)
+	}
+	if body.Services[0]["custom"] != false {
+		t.Errorf("first service = %v, want a built-in with custom:false", body.Services[0])
+	}
+}
+
+// ---- custom services: persistence and region convergence ----------------
+
+// The managed region's markers, spelled out rather than imported so these
+// tests pin the locked marker_format as well as exercise it.
+const (
+	beginMarker = "! adguard-reward begin"
+	endMarker   = "! adguard-reward end"
+)
+
+// seedCustomService stores a custom service straight into the store at
+// dataDir, as a previous process would have left it.
+func seedCustomService(t *testing.T, dataDir, name string, domains []string) store.CustomService {
+	t.Helper()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	cs, err := st.CreateCustomService(context.Background(), name, domains)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return cs
+}
+
+// seedChild stores a child owning clients, with no grant.
+func seedChild(t *testing.T, dataDir string, clients []string) {
+	t.Helper()
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	if _, err := st.CreateChild(context.Background(), "Ada", clients); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// splitRegion returns the user_rules lines outside the managed markers, in
+// order, and the lines between them. ok is false unless exactly one begin
+// marker precedes exactly one end marker.
+func splitRegion(lines []string) (outside, inside []string, ok bool) {
+	b, e := -1, -1
+	for i, l := range lines {
+		switch l {
+		case beginMarker:
+			if b != -1 {
+				return nil, nil, false
+			}
+			b = i
+		case endMarker:
+			if e != -1 {
+				return nil, nil, false
+			}
+			e = i
+		}
+	}
+	if b == -1 || e < b {
+		return nil, nil, false
+	}
+	outside = append(append([]string{}, lines[:b]...), lines[e+1:]...)
+	inside = append([]string{}, lines[b+1:e]...)
+	return outside, inside, true
+}
+
+// concat joins line groups into one fresh slice.
+func concat(groups ...[]string) []string {
+	var out []string
+	for _, g := range groups {
+		out = append(out, g...)
+	}
+	return out
+}
+
+type customServiceWire struct {
+	ID        int64    `json:"id"`
+	ServiceID string   `json:"service_id"`
+	Name      string   `json:"name"`
+	Domains   []string `json:"domains"`
+	Applied   bool     `json:"applied"`
+}
+
+func TestRun_CustomServicesSurviveRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	resp := call(t, c, http.MethodPost, base, "/api/v1/custom-services",
+		map[string]any{"name": "Portal", "domains": []string{"portal.example.com", "cdn.portal.example.com"}},
+		withCookie(loginOK(t, c, base).Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST custom service: %d %s", resp.StatusCode, b)
+	}
+	var created customServiceWire
+	if err := json.NewDecoder(resp.Body).Decode(&created); err != nil {
+		t.Fatal(err)
+	}
+	if created.ServiceID != store.CustomServiceID(created.ID) {
+		t.Fatalf("created = %+v, want service_id %q", created, store.CustomServiceID(created.ID))
+	}
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base2 := "http://" + r2.addr
+	ck := loginOK(t, c, base2)
+
+	resp = call(t, c, http.MethodGet, base2, "/api/v1/custom-services", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("GET /api/v1/custom-services after restart: %d %s", resp.StatusCode, b)
+	}
+	var list struct {
+		CustomServices []customServiceWire `json:"custom_services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&list); err != nil {
+		t.Fatal(err)
+	}
+	if len(list.CustomServices) != 1 {
+		t.Fatalf("after restart custom services = %+v, want only %+v", list.CustomServices, created)
+	}
+	if got := list.CustomServices[0]; got.ID != created.ID || got.ServiceID != created.ServiceID ||
+		got.Name != "Portal" || !reflect.DeepEqual(got.Domains, created.Domains) {
+		t.Errorf("after restart custom service = %+v, want %+v", got, created)
+	}
+
+	resp = call(t, c, http.MethodGet, base2, "/api/v1/services", nil, withCookie(ck.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("GET /api/v1/services after restart: %d %s", resp.StatusCode, b)
+	}
+	var cat struct {
+		Services []map[string]any `json:"services"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&cat); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]any{"id": created.ServiceID, "name": "Portal", "icon": "", "custom": true}
+	if n := len(cat.Services); n == 0 || !reflect.DeepEqual(cat.Services[n-1], want) {
+		t.Errorf("after restart /services = %v, want it to end with %v", cat.Services, want)
+	}
+}
+
+func TestRun_CustomRulesRestoredAtStartup(t *testing.T) {
+	// An hour-long tick: anything converged by the first /healthz answer was
+	// converged by the startup pass, not the reconciler loop.
+	old := reconcileInterval
+	reconcileInterval = time.Hour
+	t.Cleanup(func() { reconcileInterval = old })
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	portal := seedCustomService(t, dataDir, "Portal", []string{"portal.example.com"})
+	id := seedGrant(t, dataDir, []string{"Kid phone"}, []string{portal.ServiceID()}, time.Now().Add(-time.Minute))
+
+	// The region as the previous process left it, mid-grant: the exception
+	// only. The foreign lines include whitespace and modifiers a normaliser
+	// would be tempted to touch.
+	before := []string{"! parent's own rules", "||ads.example^", "  @@||spaced.example^  "}
+	after := []string{"@@||allowed.example^$important", "", "! last line"}
+	fake.SetUserRules(concat(before,
+		[]string{beginMarker, "@@||portal.example.com^$client='Kid phone'", endMarker},
+		after))
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	healthz(t, r.addr)
+
+	got := fake.UserRules()
+	outside, inside, ok := splitRegion(got)
+	if !ok {
+		t.Fatalf("user_rules after startup have no well-formed region: %q", got)
+	}
+	if want := concat(before, after); !reflect.DeepEqual(outside, want) {
+		t.Errorf("lines outside the markers = %q, want them byte-identical: %q", outside, want)
+	}
+	if want := []string{"||portal.example.com^$client='Kid phone'"}; !reflect.DeepEqual(inside, want) {
+		t.Errorf("region after startup = %q, want exactly the block lines %q and no @@ line", inside, want)
+	}
+	if got := grantStatus(t, dataDir, id); got != store.StatusExpired {
+		t.Errorf("grant status = %q, want expired: it ended while the process was down", got)
+	}
+}
+
+func TestRun_CustomRulesReconcilerTick(t *testing.T) {
+	old := reconcileInterval
+	reconcileInterval = 50 * time.Millisecond
+	t.Cleanup(func() { reconcileInterval = old })
+
+	const block = "||portal.example.com^$client='Kid phone'"
+	before := []string{"! mine", "||x.example^"}
+	after := []string{"@@||y.example^"}
+	// A parent's hand edit inside the markers: the block line deleted and an
+	// exception added that no grant backs.
+	tampered := concat(before, []string{beginMarker, "@@||portal.example.com^$client='Kid phone'", endMarker}, after)
+	converged := concat(before, []string{beginMarker, block, endMarker}, after)
+
+	seed := func(fake *adguardtest.Server) string {
+		dataDir := t.TempDir()
+		seedCustomService(t, dataDir, "Portal", []string{"portal.example.com"})
+		seedChild(t, dataDir, []string{"Kid phone"})
+		fake.SetUserRules(concat(before, after))
+		return dataDir
+	}
+
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	start(t, []string{"--config", writeConfigIn(t, seed(fake), fake.URL(), "")}, nil)
+	// The startup pass appends the missing region after the foreign lines.
+	if got, want := fake.UserRules(), concat(before, after, []string{beginMarker, block, endMarker}); !reflect.DeepEqual(got, want) {
+		t.Fatalf("user_rules after startup = %q, want %q", got, want)
+	}
+
+	posts := fake.CountRequests(http.MethodPost, "/control/filtering/set_rules")
+	fake.SetUserRules(tampered)
+	if !waitFor(2*time.Second, func() bool { return reflect.DeepEqual(fake.UserRules(), converged) }) {
+		t.Fatalf("manual edit inside the markers not undone within 2 s at a 50 ms tick; user_rules = %q, want %q",
+			fake.UserRules(), converged)
+	}
+	// Further ticks find the region converged and write nothing.
+	time.Sleep(300 * time.Millisecond)
+	if n := fake.CountRequests(http.MethodPost, "/control/filtering/set_rules") - posts; n != 1 {
+		t.Errorf("reconciler issued %d set_rules POSTs undoing one edit, want exactly 1", n)
+	}
+	if got := fake.UserRules(); !reflect.DeepEqual(got, converged) {
+		t.Errorf("user_rules drifted after convergence: %q, want %q", got, converged)
+	}
+
+	// At the production cadence the same edit is still there half a second on.
+	reconcileInterval = 60 * time.Second
+	fake2 := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	start(t, []string{"--config", writeConfigIn(t, seed(fake2), fake2.URL(), "")}, nil)
+	fake2.SetUserRules(tampered)
+	time.Sleep(500 * time.Millisecond)
+	if got := fake2.UserRules(); !reflect.DeepEqual(got, tampered) {
+		t.Errorf("edit undone within 500 ms at a 60 s interval (%q); something other than the reconciler tick wrote", got)
+	}
+}
+
 // TestRun_NoraConfig boots the process on the *shipped* nora template, with
 // only what cannot be committed supplied from the environment, and simulates
 // tailscale serve: requests arrive from 127.0.0.1 carrying the phone's tailnet
@@ -1431,5 +2063,301 @@ func TestRun_NoraConfig(t *testing.T) {
 	}
 	if strings.Contains(out, "ip=127.0.0.1") {
 		t.Errorf("a login was logged against the proxy's own address:\n%s", out)
+	}
+}
+
+// ---- pin-unlock: device PINs -------------------------------------------
+
+const (
+	testPIN  = "4812"
+	wrongPIN = "0000"
+)
+
+func withDeviceCookie(v string) reqOpt {
+	return func(r *http.Request) { r.AddCookie(&http.Cookie{Name: auth.DeviceCookieName, Value: v}) }
+}
+
+// deviceCookie is the response's single device Set-Cookie, or nil.
+func deviceCookie(t *testing.T, resp *http.Response) *http.Cookie {
+	t.Helper()
+	var found *http.Cookie
+	for _, c := range resp.Cookies() {
+		if c.Name == auth.DeviceCookieName {
+			if found != nil {
+				t.Fatalf("two Set-Cookie headers for %s", auth.DeviceCookieName)
+			}
+			found = c
+		}
+	}
+	return found
+}
+
+// setPIN sets the first PIN on the device behind session and returns the
+// device cookie it issues.
+func setPIN(t *testing.T, c *http.Client, base string, session *http.Cookie, pin string) *http.Cookie {
+	t.Helper()
+	resp := call(t, c, http.MethodPost, base, "/api/v1/pin", map[string]string{"pin": pin}, withCookie(session.Value))
+	if resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST /pin: status %d body %s", resp.StatusCode, b)
+	}
+	dc := deviceCookie(t, resp)
+	if dc == nil || dc.Value == "" {
+		t.Fatal("POST /pin set no device cookie")
+	}
+	return dc
+}
+
+func unlock(t *testing.T, c *http.Client, base string, device *http.Cookie, pin string) *http.Response {
+	t.Helper()
+	return call(t, c, http.MethodPost, base, "/api/v1/unlock", map[string]string{"pin": pin}, withDeviceCookie(device.Value))
+}
+
+// unlockError is the 401 body of a refused unlock.
+type unlockError struct {
+	Error             string `json:"error"`
+	AttemptsRemaining *int   `json:"attempts_remaining"`
+}
+
+// wrongUnlock sends a wrong PIN and asserts the 401 bad_pin with want
+// attempts left.
+func wrongUnlock(t *testing.T, c *http.Client, base string, device *http.Cookie, want int) {
+	t.Helper()
+	resp := unlock(t, c, base, device, wrongPIN)
+	var body unlockError
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("wrong unlock: decode: %v", err)
+	}
+	if resp.StatusCode != http.StatusUnauthorized || body.Error != "bad_pin" || body.AttemptsRemaining == nil || *body.AttemptsRemaining != want {
+		t.Fatalf("wrong unlock: status %d body %+v, want 401 bad_pin attempts_remaining %d", resp.StatusCode, body, want)
+	}
+}
+
+// unlockOK asserts a 204 that mints a session the API accepts.
+func unlockOK(t *testing.T, c *http.Client, base string, device *http.Cookie) {
+	t.Helper()
+	resp := unlock(t, c, base, device, testPIN)
+	if resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("unlock with the right PIN: status %d body %s, want 204", resp.StatusCode, b)
+	}
+	ck := sessionCookie(t, resp)
+	if ck == nil {
+		t.Fatal("unlock set no session cookie")
+	}
+	if me := call(t, c, http.MethodGet, base, "/api/v1/me", nil, withCookie(ck.Value)); me.StatusCode != http.StatusOK {
+		t.Fatalf("/me with the unlocked session: %d", me.StatusCode)
+	}
+}
+
+func TestRun_PinSurvivesRestart(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	dataDir := t.TempDir()
+	c := apiClient(false)
+
+	r := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	dc := setPIN(t, c, base, loginOK(t, c, base), testPIN)
+	wrongUnlock(t, c, base, dc, auth.MaxPINAttempts-1)
+	wrongUnlock(t, c, base, dc, auth.MaxPINAttempts-2)
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("first run exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+
+	r2 := start(t, []string{"--config", writeConfigIn(t, dataDir, fake.URL(), "")}, nil)
+	base2 := "http://" + r2.addr
+	hits := loginHits(fake)
+	// The counter is persisted: the third strike leaves 2, not a fresh 4.
+	wrongUnlock(t, c, base2, dc, auth.MaxPINAttempts-3)
+	unlockOK(t, c, base2, dc)
+	if n := loginHits(fake) - hits; n != 0 {
+		t.Fatalf("unlock made %d /control/login hits, want 0", n)
+	}
+	// A correct PIN reset the counter.
+	wrongUnlock(t, c, base2, dc, auth.MaxPINAttempts-1)
+}
+
+func TestRun_DeviceCookieSecure(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	certPath, keyPath := selfSigned(t, t.TempDir())
+
+	cases := []struct {
+		name   string
+		extra  string
+		scheme string
+		secure bool
+	}{
+		{"plain http", "", "http", false},
+		{"base_url https", "base_url: \"https://reward.example\"\n", "http", true},
+		{"tls listener", fmt.Sprintf("tls:\n  cert: %q\n  key: %q\n", certPath, keyPath), "https", true},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			r := start(t, []string{"--config", writeConfig(t, fake.URL(), tc.extra)}, nil)
+			c := apiClient(tc.scheme == "https")
+			base := tc.scheme + "://" + r.addr
+			dc := setPIN(t, c, base, loginOK(t, c, base), testPIN)
+			if dc.Secure != tc.secure {
+				t.Fatalf("device cookie Secure = %v, want %v", dc.Secure, tc.secure)
+			}
+			if !dc.HttpOnly || dc.SameSite != http.SameSiteStrictMode || dc.Path != "/" {
+				t.Fatalf("device cookie attrs HttpOnly=%v SameSite=%v Path=%q, want HttpOnly Strict /", dc.HttpOnly, dc.SameSite, dc.Path)
+			}
+		})
+	}
+}
+
+func TestRun_RevokeAllDevices(t *testing.T) {
+	fake := adguardtest.New(t, adguardtest.Options{User: svcUser, Pass: svcPass})
+	r := start(t, []string{"--config", writeConfig(t, fake.URL(), "")}, nil)
+	base := "http://" + r.addr
+	c := apiClient(false)
+
+	sessA := loginOK(t, c, base)
+	devA := setPIN(t, c, base, sessA, testPIN)
+	devB := setPIN(t, c, base, loginOK(t, c, base), testPIN)
+
+	resp := call(t, c, http.MethodPost, base, "/api/v1/sessions/revoke-all", nil, withCookie(sessA.Value))
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("revoke-all: status %d body %s", resp.StatusCode, b)
+	}
+	var counts struct {
+		RevokedDevices int `json:"revoked_devices"`
+	}
+	if err := json.NewDecoder(resp.Body).Decode(&counts); err != nil || counts.RevokedDevices != 1 {
+		t.Fatalf("revoke-all body %+v err %v, want revoked_devices 1", counts, err)
+	}
+
+	resp = unlock(t, c, base, devB, testPIN)
+	var body unlockError
+	if err := json.NewDecoder(resp.Body).Decode(&body); err != nil {
+		t.Fatalf("B unlock: decode: %v", err)
+	}
+	if resp.StatusCode != http.StatusUnauthorized || body.Error != "device_revoked" {
+		t.Fatalf("B unlock after revoke-all: status %d body %+v, want 401 device_revoked", resp.StatusCode, body)
+	}
+	if ck := deviceCookie(t, resp); ck == nil || ck.MaxAge >= 0 {
+		t.Fatalf("B unlock after revoke-all: device cookie %+v, want it cleared", ck)
+	}
+
+	unlockOK(t, c, base, devA)
+}
+
+// ---- export-import: the export file ------------------------------------
+
+// tokenHash is a cookie token as the store keys it: the SHA-256 of its bytes.
+func tokenHash(t *testing.T, raw string) [32]byte {
+	t.Helper()
+	b, err := base64.RawURLEncoding.DecodeString(raw)
+	if err != nil {
+		t.Fatalf("token %q: %v", raw, err)
+	}
+	return sha256.Sum256(b)
+}
+
+// hashForms is a token hash in every text encoding it could be written in.
+func hashForms(h [32]byte) []string {
+	x := hex.EncodeToString(h[:])
+	return []string{
+		x,
+		strings.ToUpper(x),
+		base64.StdEncoding.EncodeToString(h[:]),
+		base64.RawStdEncoding.EncodeToString(h[:]),
+		base64.URLEncoding.EncodeToString(h[:]),
+		base64.RawURLEncoding.EncodeToString(h[:]),
+	}
+}
+
+func TestRun_ExportNoSecrets(t *testing.T) {
+	const (
+		user  = "svc-CANARY-41c8"
+		child = "Ada-positive-control"
+	)
+	fake := adguardtest.New(t, adguardtest.Options{User: user, Pass: svcPass})
+	dataDir := t.TempDir()
+	p := writeConfigIn(t, dataDir, fake.URL(), fmt.Sprintf("ai:\n  api_key: %q\n", aiKey))
+	env := map[string]string{"ADGUARD_REWARD_ADGUARD_USERNAME": user}
+
+	// The config values, as run() itself will load them.
+	cfg, err := config.Load(p, true, envOf(env))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AdGuard.Username != user || cfg.AdGuard.Password.Reveal() != svcPass || cfg.AI.APIKey.Reveal() != aiKey {
+		t.Fatalf("config did not carry the seeds: username %q", cfg.AdGuard.Username)
+	}
+
+	r := start(t, []string{"--config", p}, env)
+	base := "http://" + r.addr
+	c := apiClient(false)
+
+	resp := login(t, c, base, user, svcPass)
+	if resp.StatusCode != http.StatusNoContent {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("login: status %d body %s", resp.StatusCode, b)
+	}
+	session := sessionCookie(t, resp)
+	if session == nil || session.Value == "" {
+		t.Fatal("login set no session cookie")
+	}
+	device := setPIN(t, c, base, session, testPIN)
+	resp = call(t, c, http.MethodPost, base, "/api/v1/children",
+		map[string]any{"name": child, "clients": []string{"Kid phone"}}, withCookie(session.Value))
+	if resp.StatusCode != http.StatusCreated {
+		b, _ := io.ReadAll(resp.Body)
+		t.Fatalf("POST child: %d %s", resp.StatusCode, b)
+	}
+
+	resp = call(t, c, http.MethodGet, base, "/api/v1/export", nil, withCookie(session.Value), withDeviceCookie(device.Value))
+	raw, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf("GET export: %d %s", resp.StatusCode, raw)
+	}
+	if code := r.stop(t); code != 0 {
+		t.Fatalf("exit = %d; stderr:\n%s", code, r.stderr.String())
+	}
+	body := string(raw)
+
+	// The hashes and the PIN's PHC string, from the rows the run left behind.
+	st, err := store.Open(dataDir, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st.Close()
+	ctx := context.Background()
+	sessionHash := tokenHash(t, session.Value)
+	sess, err := st.ByTokenHash(ctx, sessionHash)
+	if err != nil {
+		t.Fatalf("session row: %v", err)
+	}
+	if sess.Username != user {
+		t.Fatalf("session username = %q, want %q", sess.Username, user)
+	}
+	deviceHash := tokenHash(t, device.Value)
+	dev, err := st.DeviceByTokenHash(ctx, deviceHash)
+	if err != nil {
+		t.Fatalf("device row: %v", err)
+	}
+	if ok, err := auth.VerifyPIN(testPIN, dev.PINHash); err != nil || !ok {
+		t.Fatalf("stored PIN hash does not verify: ok=%v err=%v", ok, err)
+	}
+	if !strings.HasPrefix(dev.PINHash, "$argon2id$") {
+		t.Fatal("stored PIN hash is not an Argon2 PHC string")
+	}
+
+	if !strings.Contains(body, child) {
+		t.Fatalf("export lacks the child's name (positive control):\n%s", body)
+	}
+	secrets := []string{session.Value, device.Value, dev.PINHash, cfg.AdGuard.Username, cfg.AdGuard.Password.Reveal(), cfg.AI.APIKey.Reveal()}
+	secrets = append(secrets, hashForms(sessionHash)...)
+	secrets = append(secrets, hashForms(deviceHash)...)
+	for _, secret := range secrets {
+		if strings.Contains(body, secret) {
+			t.Errorf("export contains secret %q:\n%s", secret, body)
+		}
 	}
 }

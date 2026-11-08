@@ -1,0 +1,86 @@
+[phase]
+  id = "history-overview"
+  title = "history-overview"
+  milestone = "v0.2"
+
+[[criteria]]
+  id = "c-1"
+  text = "Home links to a History overview listing every child's grants, newest first, each naming its child and showing the same detail as the per-child screen (services, start, end, how it ended, extensions)."
+  deferred = ["d47c603435232302"]
+
+[[criteria]]
+  id = "c-2"
+  text = "The overview shows the newest 50 grants, and load more pages further back without skipping or repeating a grant."
+
+[[criteria]]
+  id = "c-3"
+  text = "The overview leaves out deleted children's grants, and a new child that reuses a deleted child's id never shows the old child's grants."
+
+[[criteria]]
+  id = "c-4"
+  text = "A parent can filter by service, and the results include grants where a permanent block later trimmed that service."
+  deferred = ["c35e43cce952aa0e"]
+
+[[criteria]]
+  id = "c-5"
+  text = "A parent can filter by date range."
+
+[[criteria]]
+  id = "c-6"
+  text = "A parent can filter by how a grant ended (ongoing, expired, ended early, permanent block, reason unknown)."
+
+[[criteria]]
+  id = "c-7"
+  text = "Filters combine, and load more stays within the filtered results."
+
+[[criteria]]
+  id = "c-8"
+  text = "Filters survive a reload and the back button."
+
+[[criteria]]
+  id = "c-9"
+  text = "A parent can filter the overview by child, and a child's History link on Home opens the overview with that child selected. An unknown or deleted child in ?child=N still shows 'No such child'."
+
+[[decisions]]
+  key = "screen_structure"
+  choice = "One screen: /history is the overview and child is a filter. Each child's History link on Home opens it with that child selected; ?child=N keeps working."
+  why = "Per-child history gets every filter without building them twice, and the locked history_location route still resolves."
+  locked = true
+
+[[decisions]]
+  key = "date_range"
+  choice = "A grant matches if it started within the range. Days follow the parent's device time zone and both end dates are included."
+  why = "Easy to predict, and every grant appears under exactly one day."
+  locked = true
+
+[[decisions]]
+  key = "service_filter"
+  choice = "The service filter matches on service id and lists every service that appears in history, including deleted custom services."
+  why = "Snapshot names can differ across grants, and a deleted custom service must stay findable."
+  locked = true
+
+[[decisions]]
+  key = "filter_values"
+  choice = "Each filter picks one value at a time."
+  why = "Simplest control on a phone; multi-value filters are deferred."
+  locked = true
+
+[[decisions]]
+  key = "pre_0009_trims"
+  choice = "The service filter finds trims recorded since migration 0009. A service trimmed before 0009 is not found on that grant."
+  why = "Trims before 0009 left no removal row, so the data to match them was never recorded."
+  locked = true
+
+[[decisions]]
+  key = "child_empty_wording"
+  choice = "A child with no grants and no other filter says 'No grants yet'. 'No grants match these filters' is for the service, status and date filters only."
+  why = "User decision 2026-11-06 on the t-9 FLAG: screen_structure governs structure, not wording. The heading already names the child, and a parent arriving from a Home link set no filter."
+  locked = true
+
+[[deferred]]
+  text = "Free-text search of grant history."
+  why = "Filters cover the parked need; search has no demand yet."
+
+[[deferred]]
+  text = "Pick several values in one history filter."
+  why = "Single-value filters are enough for v0.2."

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/Rivil/adguard-reward/internal/adguard"
+	"github.com/Rivil/adguard-reward/internal/rules"
 	"github.com/Rivil/adguard-reward/internal/store"
 )
 
@@ -316,5 +317,47 @@ func TestEngineRename_Outsider(t *testing.T) {
 	}
 	if !e.has("Kid phone") || e.has("TV") {
 		t.Error("AdGuard was renamed despite the conflict")
+	}
+}
+
+func TestRenameClient_ResyncsRules(t *testing.T) {
+	e := newEnv(t, nil)
+	ada := e.child("Ada", "Kid phone")
+	svc := e.createService("Portal", "a.com").Service.ServiceID()
+	e.create(ada.ID, []string{svc}, []string{"Kid phone"})
+	if got := e.region(); !reflect.DeepEqual(got, []string{
+		"||a.com^$client='Kid phone'", "@@||a.com^$client='Kid phone'",
+	}) {
+		t.Fatalf("setup region %q", got)
+	}
+
+	// The old name is a prefix of the new one: a stale rule would still
+	// contain "Kid phone", so match the quoted value exactly.
+	e.rename("Kid phone", "Kid phone 2")
+	want := []string{"||a.com^$client='Kid phone 2'", "@@||a.com^$client='Kid phone 2'"}
+	if got := e.region(); !reflect.DeepEqual(got, want) {
+		t.Fatalf("region after rename %q, want %q", got, want)
+	}
+	noLineContains(t, e.fake.UserRules(), "'Kid phone'")
+}
+
+func TestRenameClient_StoreFailure(t *testing.T) {
+	e := newEnv(t, nil)
+	e.child("Ada", "Kid phone")
+	e.createService("Portal", "a.com")
+	// Make the region stale (a manual edit inside the markers) so that any
+	// resync on the rollback path would show up as a rewrite.
+	e.fake.SetUserRules([]string{"! mine", rules.BeginMarker, "||tampered^", rules.EndMarker})
+	before, posts := e.fake.UserRules(), e.setRulesPosts()
+
+	eng := e.engineWith(renameFailStore{Store: e.st, err: errors.New("disk full")})
+	if err := eng.RenameClient(ctx, "Kid phone", "Ada phone"); err == nil {
+		t.Fatal("rename succeeded despite the store failure")
+	}
+	if n := e.setRulesPosts() - posts; n != 0 {
+		t.Fatalf("%d set_rules POSTs after a rolled-back rename", n)
+	}
+	if !reflect.DeepEqual(e.fake.UserRules(), before) {
+		t.Fatalf("user_rules changed: %q", e.fake.UserRules())
 	}
 }

@@ -1,0 +1,2478 @@
+{
+  "phase": "history-overview",
+  "generated_at": "2026-11-06T13:06:57.373655Z",
+  "languages": [
+    {
+      "name": "go",
+      "tool": "gremlins",
+      "files": [
+        "internal/api/api.go",
+        "internal/api/history.go",
+        "internal/api/history_services.go",
+        "internal/api/history_services_test.go",
+        "internal/api/history_test.go",
+        "internal/store/history.go",
+        "internal/store/history_services.go",
+        "internal/store/history_services_test.go",
+        "internal/store/history_test.go",
+        "internal/store/store_test.go"
+      ],
+      "mutation": {
+        "Tool": "gremlins",
+        "Killed": 77,
+        "Survived": 0,
+        "Timeout": 0,
+        "Errors": 0,
+        "Score": 1,
+        "Surviving": null,
+        "NotCovered": 0
+      },
+      "measured_on": "local",
+      "whole_file": {
+        "internal/api/api.go": "adapter-lacks-range-runner",
+        "internal/api/history.go": "adapter-lacks-range-runner",
+        "internal/api/history_services.go": "adapter-lacks-range-runner",
+        "internal/api/history_services_test.go": "adapter-lacks-range-runner",
+        "internal/api/history_test.go": "adapter-lacks-range-runner",
+        "internal/store/history.go": "adapter-lacks-range-runner",
+        "internal/store/history_services.go": "adapter-lacks-range-runner",
+        "internal/store/history_services_test.go": "adapter-lacks-range-runner",
+        "internal/store/history_test.go": "adapter-lacks-range-runner",
+        "internal/store/store_test.go": "adapter-lacks-range-runner"
+      }
+    },
+    {
+      "name": "typescript",
+      "tool": "stryker",
+      "files": [
+        "web/src/App.svelte",
+        "web/src/App.test.ts",
+        "web/src/lib/History.panel.test.ts",
+        "web/src/lib/History.svelte",
+        "web/src/lib/HistoryFilterBar.svelte",
+        "web/src/lib/HistoryFilterBar.test.ts",
+        "web/src/lib/Home.svelte",
+        "web/src/lib/Home.test.ts",
+        "web/src/lib/api.test.ts",
+        "web/src/lib/api.ts",
+        "web/src/lib/history.test.ts",
+        "web/src/lib/history.ts",
+        "web/vite.config.ts"
+      ],
+      "mutation": {
+        "Tool": "stryker",
+        "Killed": 395,
+        "Survived": 26,
+        "Timeout": 0,
+        "Errors": 2,
+        "Score": 0.9382422802850356,
+        "Surviving": [
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 31,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "in-hunk",
+            "Key": "dfc634b30d2dd4ea",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: load() resets grants in the mount effect and the list renders only once loaded is true after a page arrives, overwriting this initial value."
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 51,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "51dc250be148d62e",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: filterKey only has to differ between filter sets. Every other key contains a ?, so '' stays as distinct as 'bad', and the value is never shown."
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 84,
+            "Op": "UpdateOperator",
+            "Snippet": "--generation",
+            "Origin": "inherited",
+            "Key": "e94743814eb9d4ff",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: generation only needs to change per load; --generation yields unique values the same as ++generation, so gen !== generation comparisons behave identically."
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 85,
+            "Op": "ArrayDeclaration",
+            "Snippet": "[\"Stryker was here\"]",
+            "Origin": "inherited",
+            "Key": "f98cd98dee9e271c",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: the reset value of grants in load() is never rendered (loaded is false until a page arrives, which overwrites grants)."
+          },
+          {
+            "File": "web/src/lib/History.svelte",
+            "Line": 112,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "389072b7543d6c74",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: loadMore is reachable only from the Load more button, which renders inside {#if nextBefore !== null}, so before is never null here."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 108,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "708406a410221007",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Same mutant as retired e6b705a6c3068af8, rekeyed when t-15 moved the line; jsdom confirmed on 8cc2749 and the one covering test, which asserts '', passes on it."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 113,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "a7f22c1a0303dc17",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 114,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "6eee2cbbaf236a76",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 173,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "315e6ab0c01bf7ce",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+          },
+          {
+            "File": "web/src/lib/HistoryFilterBar.svelte",
+            "Line": 183,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "5b8221e61f77c842",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 109,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "ef7d5c3b89c8d878",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: parseFilters of a string naming no filter key returns no filters, same as parsing ''."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 155,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "ee84e47feff29b68",
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 155,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "d2def4d0fa4562da",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: typeof history !== '' is always true, same as !== 'undefined' wherever history exists (browser, jsdom)."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 102,
+            "Op": "StringLiteral",
+            "Snippet": "\"Stryker was here!\"",
+            "Origin": "in-hunk",
+            "Key": "21646a60f54848a6",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: off the history route own only feeds parseFilters and URLSearchParams; any string with no filter or child key reads as no filters, same as ''."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 163,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "inherited",
+            "Key": "b4690ae2b3c68c80",
+            "Lifecycle": "accepted",
+            "Note": "Two mutants: -\u003efalse is a Stryker false survivor (hand-applied, 4 api.test.ts popstate tests fail); -\u003etrue is equivalent in every runtime this SPA runs in (window always defined in the browser and jsdom)."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 163,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "inherited",
+            "Key": "b4690ae2b3c68c80",
+            "Lifecycle": "accepted",
+            "Note": "Two mutants: -\u003efalse is a Stryker false survivor (hand-applied, 4 api.test.ts popstate tests fail); -\u003etrue is equivalent in every runtime this SPA runs in (window always defined in the browser and jsdom)."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 163,
+            "Op": "EqualityOperator",
+            "Snippet": "typeof window === 'undefined'",
+            "Origin": "inherited",
+            "Key": "ff0972906c068a25",
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 163,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "a449124a3ffdc745",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: typeof window !== \"\" is always true, identical to the already-accepted -\u003etrue mutant on this line; window is defined in every runtime this SPA runs in (browser and jsdom)."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 163,
+            "Op": "BlockStatement",
+            "Snippet": "{}",
+            "Origin": "inherited",
+            "Key": "4fee91a56666ef73",
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 164,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "inherited",
+            "Key": "1956634d46fca7b0",
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+          },
+          {
+            "File": "web/src/lib/api.ts",
+            "Line": 725,
+            "Op": "StringLiteral",
+            "Snippet": "\"\"",
+            "Origin": "in-hunk",
+            "Key": "760a8879568afcc5",
+            "Lifecycle": "accepted",
+            "Note": "Stryker false survivor (history-overview verify 2026-11-06): static module-level const. Hand-applying HISTORY = '' fails 55 vitest tests, so the suite catches it."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 86,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "852254c6a0f93b2f",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: any day overflow also changes the month, so the month check already rejects every date this comparison would catch."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 72,
+            "Op": "Regex",
+            "Snippet": "/(\\d{4})-(\\d{2})-(\\d{2})$/",
+            "Origin": "in-hunk",
+            "Key": "32ca7cc2f84c36f4",
+            "Lifecycle": "accepted",
+            "Note": "False survivor, Stryker attribution ceiling: DAY is a module-level regex, so these are static mutants, and Stryker ran only 7 api.test.ts tests against them. Both are killed by hand (history-overview verify, 2026-11-06): dropping ^ fails 'treats from=x2026-03-01 as no filter', dropping $ fails 'treats to=2026-03-01x as no filter' and 'treats to=2026-03-01T00:00:00Z as no filter'. Both mutants share this key."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 72,
+            "Op": "Regex",
+            "Snippet": "/^(\\d{4})-(\\d{2})-(\\d{2})/",
+            "Origin": "in-hunk",
+            "Key": "32ca7cc2f84c36f4",
+            "Lifecycle": "accepted",
+            "Note": "False survivor, Stryker attribution ceiling: DAY is a module-level regex, so these are static mutants, and Stryker ran only 7 api.test.ts tests against them. Both are killed by hand (history-overview verify, 2026-11-06): dropping ^ fails 'treats from=x2026-03-01 as no filter', dropping $ fails 'treats to=2026-03-01x as no filter' and 'treats to=2026-03-01T00:00:00Z as no filter'. Both mutants share this key."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 81,
+            "Op": "ConditionalExpression",
+            "Snippet": "false",
+            "Origin": "in-hunk",
+            "Key": "27cd17be97287dbd",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: DAY.exec(null) coerces to 'null', which does not match, so m is null exactly as the guard makes it."
+          },
+          {
+            "File": "web/src/lib/history.ts",
+            "Line": 90,
+            "Op": "ConditionalExpression",
+            "Snippet": "true",
+            "Origin": "in-hunk",
+            "Key": "22fc6e01d4c968b8",
+            "Lifecycle": "accepted",
+            "Note": "Equivalent: Object.hasOwn(LABELS, null) looks up the key 'null', which LABELS lacks, so the result is false with or without the guard."
+          }
+        ],
+        "NotCovered": 0
+      },
+      "measured_on": "local",
+      "ranges": {
+        "web/src/App.svelte": [
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 17,
+            "end": 33,
+            "construct": "FunctionDeclaration refresh"
+          },
+          {
+            "start": 61,
+            "end": 79,
+            "construct": "IfBlock"
+          }
+        ],
+        "web/src/App.test.ts": [
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 45,
+            "end": 52,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 426,
+            "end": 690,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/History.panel.test.ts": [
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 15,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "VariableDeclaration CHILDREN"
+          },
+          {
+            "start": 26,
+            "end": 26,
+            "construct": "VariableDeclaration SERVICES"
+          },
+          {
+            "start": 27,
+            "end": 27,
+            "construct": "hunk"
+          },
+          {
+            "start": 28,
+            "end": 31,
+            "construct": "VariableDeclaration NO_OPTIONS"
+          },
+          {
+            "start": 32,
+            "end": 37,
+            "construct": "hunk"
+          },
+          {
+            "start": 38,
+            "end": 51,
+            "construct": "FunctionDeclaration mockFetch"
+          },
+          {
+            "start": 53,
+            "end": 53,
+            "construct": "hunk"
+          },
+          {
+            "start": 54,
+            "end": 56,
+            "construct": "FunctionDeclaration fetched"
+          },
+          {
+            "start": 58,
+            "end": 58,
+            "construct": "VariableDeclaration URL3"
+          },
+          {
+            "start": 59,
+            "end": 59,
+            "construct": "hunk"
+          },
+          {
+            "start": 60,
+            "end": 72,
+            "construct": "FunctionDeclaration grant"
+          },
+          {
+            "start": 74,
+            "end": 80,
+            "construct": "FunctionDeclaration page"
+          },
+          {
+            "start": 82,
+            "end": 82,
+            "construct": "VariableDeclaration URL4"
+          },
+          {
+            "start": 98,
+            "end": 98,
+            "construct": "VariableDeclaration ok"
+          },
+          {
+            "start": 99,
+            "end": 100,
+            "construct": "hunk"
+          },
+          {
+            "start": 101,
+            "end": 101,
+            "construct": "VariableDeclaration settle"
+          },
+          {
+            "start": 113,
+            "end": 113,
+            "construct": "VariableDeclaration NONE"
+          },
+          {
+            "start": 114,
+            "end": 114,
+            "construct": "VariableDeclaration BAD_CHILD"
+          },
+          {
+            "start": 115,
+            "end": 115,
+            "construct": "hunk"
+          },
+          {
+            "start": 116,
+            "end": 125,
+            "construct": "FunctionDeclaration mount"
+          },
+          {
+            "start": 127,
+            "end": 127,
+            "construct": "VariableDeclaration stopFollowing"
+          },
+          {
+            "start": 128,
+            "end": 129,
+            "construct": "hunk"
+          },
+          {
+            "start": 130,
+            "end": 133,
+            "construct": "FunctionDeclaration goTo"
+          },
+          {
+            "start": 134,
+            "end": 135,
+            "construct": "hunk"
+          },
+          {
+            "start": 136,
+            "end": 144,
+            "construct": "FunctionDeclaration mountAt"
+          },
+          {
+            "start": 145,
+            "end": 145,
+            "construct": "hunk"
+          },
+          {
+            "start": 146,
+            "end": 146,
+            "construct": "VariableDeclaration select"
+          },
+          {
+            "start": 147,
+            "end": 147,
+            "construct": "VariableDeclaration shown"
+          },
+          {
+            "start": 148,
+            "end": 148,
+            "construct": "VariableDeclaration options"
+          },
+          {
+            "start": 149,
+            "end": 149,
+            "construct": "VariableDeclaration bar"
+          },
+          {
+            "start": 150,
+            "end": 150,
+            "construct": "hunk"
+          },
+          {
+            "start": 151,
+            "end": 158,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 160,
+            "end": 1026,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/History.svelte": [
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 15,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 16,
+            "end": 16,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 17,
+            "end": 17,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 19,
+            "end": 24,
+            "construct": "hunk"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "VariableDeclaration"
+          },
+          {
+            "start": 29,
+            "end": 29,
+            "construct": "hunk"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "VariableDeclaration pageChild"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "VariableDeclaration grants"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "VariableDeclaration children"
+          },
+          {
+            "start": 41,
+            "end": 41,
+            "construct": "VariableDeclaration services"
+          },
+          {
+            "start": 43,
+            "end": 43,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 45,
+            "construct": "VariableDeclaration optionsAsked"
+          },
+          {
+            "start": 46,
+            "end": 46,
+            "construct": "hunk"
+          },
+          {
+            "start": 47,
+            "end": 47,
+            "construct": "VariableDeclaration childName"
+          },
+          {
+            "start": 48,
+            "end": 48,
+            "construct": "VariableDeclaration noSuchChild"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "construct": "hunk"
+          },
+          {
+            "start": 51,
+            "end": 51,
+            "construct": "VariableDeclaration filterKey"
+          },
+          {
+            "start": 59,
+            "end": 65,
+            "construct": "FunctionDeclaration loadChildren"
+          },
+          {
+            "start": 66,
+            "end": 66,
+            "construct": "hunk"
+          },
+          {
+            "start": 67,
+            "end": 73,
+            "construct": "FunctionDeclaration loadServices"
+          },
+          {
+            "start": 74,
+            "end": 75,
+            "construct": "hunk"
+          },
+          {
+            "start": 76,
+            "end": 81,
+            "construct": "FunctionDeclaration loadOptions"
+          },
+          {
+            "start": 82,
+            "end": 82,
+            "construct": "hunk"
+          },
+          {
+            "start": 83,
+            "end": 108,
+            "construct": "FunctionDeclaration load"
+          },
+          {
+            "start": 110,
+            "end": 127,
+            "construct": "FunctionDeclaration loadMore"
+          },
+          {
+            "start": 129,
+            "end": 132,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 135,
+            "end": 207,
+            "construct": "Element main"
+          },
+          {
+            "start": 229,
+            "end": 232,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/lib/HistoryFilterBar.svelte": [
+          {
+            "start": 1,
+            "end": 1,
+            "construct": "hunk"
+          },
+          {
+            "start": 2,
+            "end": 2,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 9,
+            "construct": "hunk"
+          },
+          {
+            "start": 10,
+            "end": 22,
+            "construct": "VariableDeclaration"
+          },
+          {
+            "start": 23,
+            "end": 23,
+            "construct": "hunk"
+          },
+          {
+            "start": 24,
+            "end": 24,
+            "construct": "TSTypeAliasDeclaration DayKey"
+          },
+          {
+            "start": 25,
+            "end": 25,
+            "construct": "hunk"
+          },
+          {
+            "start": 26,
+            "end": 26,
+            "construct": "VariableDeclaration STATUSES"
+          },
+          {
+            "start": 27,
+            "end": 28,
+            "construct": "hunk"
+          },
+          {
+            "start": 29,
+            "end": 29,
+            "construct": "VariableDeclaration SETTLE_MS"
+          },
+          {
+            "start": 30,
+            "end": 31,
+            "construct": "hunk"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "VariableDeclaration pending"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "VariableDeclaration timer"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "VariableDeclaration fromInput"
+          },
+          {
+            "start": 35,
+            "end": 35,
+            "construct": "VariableDeclaration toInput"
+          },
+          {
+            "start": 36,
+            "end": 38,
+            "construct": "hunk"
+          },
+          {
+            "start": 39,
+            "end": 43,
+            "construct": "VariableDeclaration childOptions"
+          },
+          {
+            "start": 44,
+            "end": 48,
+            "construct": "VariableDeclaration serviceOptions"
+          },
+          {
+            "start": 49,
+            "end": 50,
+            "construct": "hunk"
+          },
+          {
+            "start": 51,
+            "end": 55,
+            "construct": "FunctionDeclaration emit"
+          },
+          {
+            "start": 56,
+            "end": 56,
+            "construct": "hunk"
+          },
+          {
+            "start": 57,
+            "end": 59,
+            "construct": "FunctionDeclaration setFilter"
+          },
+          {
+            "start": 60,
+            "end": 61,
+            "construct": "hunk"
+          },
+          {
+            "start": 62,
+            "end": 64,
+            "construct": "FunctionDeclaration flushDay"
+          },
+          {
+            "start": 65,
+            "end": 65,
+            "construct": "hunk"
+          },
+          {
+            "start": 66,
+            "end": 69,
+            "construct": "FunctionDeclaration dropDay"
+          },
+          {
+            "start": 70,
+            "end": 70,
+            "construct": "hunk"
+          },
+          {
+            "start": 71,
+            "end": 76,
+            "construct": "FunctionDeclaration holdDay"
+          },
+          {
+            "start": 77,
+            "end": 77,
+            "construct": "hunk"
+          },
+          {
+            "start": 78,
+            "end": 80,
+            "construct": "FunctionDeclaration setStatus"
+          },
+          {
+            "start": 81,
+            "end": 89,
+            "construct": "hunk"
+          },
+          {
+            "start": 90,
+            "end": 94,
+            "construct": "FunctionDeclaration setDay"
+          },
+          {
+            "start": 95,
+            "end": 102,
+            "construct": "hunk"
+          },
+          {
+            "start": 103,
+            "end": 109,
+            "construct": "FunctionDeclaration leaveDay"
+          },
+          {
+            "start": 110,
+            "end": 110,
+            "construct": "hunk"
+          },
+          {
+            "start": 111,
+            "end": 115,
+            "construct": "FunctionDeclaration restoreDays"
+          },
+          {
+            "start": 116,
+            "end": 123,
+            "construct": "hunk"
+          },
+          {
+            "start": 124,
+            "end": 127,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 128,
+            "end": 128,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 129,
+            "end": 130,
+            "construct": "hunk"
+          },
+          {
+            "start": 131,
+            "end": 188,
+            "construct": "Element form"
+          },
+          {
+            "start": 189,
+            "end": 208,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/lib/HistoryFilterBar.test.ts": [
+          {
+            "start": 1,
+            "end": 2,
+            "construct": "hunk"
+          },
+          {
+            "start": 3,
+            "end": 3,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 4,
+            "end": 4,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 5,
+            "end": 5,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "hunk"
+          },
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "VariableDeclaration NONE"
+          },
+          {
+            "start": 9,
+            "end": 12,
+            "construct": "VariableDeclaration CHILDREN"
+          },
+          {
+            "start": 13,
+            "end": 16,
+            "construct": "VariableDeclaration SERVICES"
+          },
+          {
+            "start": 17,
+            "end": 17,
+            "construct": "hunk"
+          },
+          {
+            "start": 18,
+            "end": 29,
+            "construct": "FunctionDeclaration bar"
+          },
+          {
+            "start": 30,
+            "end": 30,
+            "construct": "hunk"
+          },
+          {
+            "start": 31,
+            "end": 31,
+            "construct": "VariableDeclaration select"
+          },
+          {
+            "start": 32,
+            "end": 32,
+            "construct": "VariableDeclaration date"
+          },
+          {
+            "start": 33,
+            "end": 33,
+            "construct": "VariableDeclaration options"
+          },
+          {
+            "start": 34,
+            "end": 34,
+            "construct": "VariableDeclaration shown"
+          },
+          {
+            "start": 35,
+            "end": 36,
+            "construct": "hunk"
+          },
+          {
+            "start": 37,
+            "end": 37,
+            "construct": "VariableDeclaration SETTLE_MS"
+          },
+          {
+            "start": 38,
+            "end": 38,
+            "construct": "VariableDeclaration typeDay"
+          },
+          {
+            "start": 39,
+            "end": 39,
+            "construct": "VariableDeclaration settled"
+          },
+          {
+            "start": 40,
+            "end": 40,
+            "construct": "hunk"
+          },
+          {
+            "start": 41,
+            "end": 43,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 44,
+            "end": 44,
+            "construct": "hunk"
+          },
+          {
+            "start": 45,
+            "end": 48,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 49,
+            "end": 49,
+            "construct": "hunk"
+          },
+          {
+            "start": 50,
+            "end": 437,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/Home.svelte": [
+          {
+            "start": 276,
+            "end": 442,
+            "construct": "Element main"
+          }
+        ],
+        "web/src/lib/Home.test.ts": [
+          {
+            "start": 8,
+            "end": 8,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 67,
+            "end": 67,
+            "construct": "VariableDeclaration noFilters"
+          },
+          {
+            "start": 165,
+            "end": 172,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1016,
+            "end": 1068,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1069,
+            "end": 1069,
+            "construct": "hunk"
+          }
+        ],
+        "web/src/lib/api.test.ts": [
+          {
+            "start": 5,
+            "end": 57,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 58,
+            "end": 58,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 773,
+            "end": 1051,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1053,
+            "end": 1122,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 1124,
+            "end": 1136,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/api.ts": [
+          {
+            "start": 6,
+            "end": 6,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 7,
+            "end": 7,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 56,
+            "end": 56,
+            "construct": "hunk"
+          },
+          {
+            "start": 57,
+            "end": 60,
+            "construct": "TSInterfaceDeclaration RouteParams"
+          },
+          {
+            "start": 61,
+            "end": 62,
+            "construct": "hunk"
+          },
+          {
+            "start": 63,
+            "end": 66,
+            "construct": "TSInterfaceDeclaration HistoryFilterState"
+          },
+          {
+            "start": 100,
+            "end": 100,
+            "construct": "hunk"
+          },
+          {
+            "start": 101,
+            "end": 105,
+            "construct": "FunctionDeclaration filtersFor"
+          },
+          {
+            "start": 106,
+            "end": 107,
+            "construct": "hunk"
+          },
+          {
+            "start": 108,
+            "end": 110,
+            "construct": "FunctionDeclaration validFilters"
+          },
+          {
+            "start": 111,
+            "end": 112,
+            "construct": "hunk"
+          },
+          {
+            "start": 113,
+            "end": 118,
+            "construct": "FunctionDeclaration urlFor"
+          },
+          {
+            "start": 119,
+            "end": 119,
+            "construct": "hunk"
+          },
+          {
+            "start": 131,
+            "end": 134,
+            "construct": "hunk"
+          },
+          {
+            "start": 135,
+            "end": 135,
+            "construct": "VariableDeclaration historyFilters"
+          },
+          {
+            "start": 136,
+            "end": 137,
+            "construct": "hunk"
+          },
+          {
+            "start": 138,
+            "end": 142,
+            "construct": "FunctionDeclaration showFilters"
+          },
+          {
+            "start": 143,
+            "end": 143,
+            "construct": "hunk"
+          },
+          {
+            "start": 146,
+            "end": 149,
+            "construct": "hunk"
+          },
+          {
+            "start": 151,
+            "end": 161,
+            "construct": "FunctionDeclaration navigate"
+          },
+          {
+            "start": 163,
+            "end": 170,
+            "construct": "IfStatement"
+          },
+          {
+            "start": 704,
+            "end": 704,
+            "construct": "hunk"
+          },
+          {
+            "start": 705,
+            "end": 707,
+            "construct": "TSInterfaceDeclaration OverviewGrant"
+          },
+          {
+            "start": 708,
+            "end": 708,
+            "construct": "hunk"
+          },
+          {
+            "start": 709,
+            "end": 716,
+            "construct": "TSInterfaceDeclaration OverviewPage"
+          },
+          {
+            "start": 718,
+            "end": 718,
+            "construct": "hunk"
+          },
+          {
+            "start": 719,
+            "end": 723,
+            "construct": "TSInterfaceDeclaration HistoryServiceOption"
+          },
+          {
+            "start": 724,
+            "end": 724,
+            "construct": "hunk"
+          },
+          {
+            "start": 725,
+            "end": 725,
+            "construct": "VariableDeclaration HISTORY"
+          },
+          {
+            "start": 726,
+            "end": 727,
+            "construct": "hunk"
+          },
+          {
+            "start": 728,
+            "end": 730,
+            "construct": "FunctionDeclaration historyRows"
+          },
+          {
+            "start": 731,
+            "end": 731,
+            "construct": "hunk"
+          },
+          {
+            "start": 733,
+            "end": 736,
+            "construct": "hunk"
+          },
+          {
+            "start": 738,
+            "end": 754,
+            "construct": "FunctionDeclaration fetchHistoryPage"
+          },
+          {
+            "start": 755,
+            "end": 756,
+            "construct": "hunk"
+          },
+          {
+            "start": 757,
+            "end": 760,
+            "construct": "FunctionDeclaration fetchHistoryServices"
+          }
+        ],
+        "web/src/lib/history.test.ts": [
+          {
+            "start": 4,
+            "end": 15,
+            "construct": "ImportDeclaration"
+          },
+          {
+            "start": 92,
+            "end": 106,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 107,
+            "end": 107,
+            "construct": "hunk"
+          },
+          {
+            "start": 108,
+            "end": 108,
+            "construct": "VariableDeclaration NONE"
+          },
+          {
+            "start": 109,
+            "end": 109,
+            "construct": "hunk"
+          },
+          {
+            "start": 110,
+            "end": 117,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 118,
+            "end": 118,
+            "construct": "hunk"
+          },
+          {
+            "start": 119,
+            "end": 147,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 148,
+            "end": 148,
+            "construct": "hunk"
+          },
+          {
+            "start": 149,
+            "end": 202,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 203,
+            "end": 203,
+            "construct": "hunk"
+          },
+          {
+            "start": 204,
+            "end": 231,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 232,
+            "end": 232,
+            "construct": "hunk"
+          },
+          {
+            "start": 233,
+            "end": 241,
+            "construct": "ExpressionStatement"
+          }
+        ],
+        "web/src/lib/history.ts": [
+          {
+            "start": 2,
+            "end": 4,
+            "construct": "hunk"
+          },
+          {
+            "start": 49,
+            "end": 58,
+            "construct": "FunctionDeclaration appendPage"
+          },
+          {
+            "start": 59,
+            "end": 64,
+            "construct": "hunk"
+          },
+          {
+            "start": 65,
+            "end": 70,
+            "construct": "TSInterfaceDeclaration HistoryFilters"
+          },
+          {
+            "start": 71,
+            "end": 71,
+            "construct": "hunk"
+          },
+          {
+            "start": 72,
+            "end": 72,
+            "construct": "VariableDeclaration DAY"
+          },
+          {
+            "start": 73,
+            "end": 75,
+            "construct": "hunk"
+          },
+          {
+            "start": 76,
+            "end": 76,
+            "construct": "VariableDeclaration MIN_YEAR"
+          },
+          {
+            "start": 77,
+            "end": 77,
+            "construct": "VariableDeclaration MAX_YEAR"
+          },
+          {
+            "start": 78,
+            "end": 79,
+            "construct": "hunk"
+          },
+          {
+            "start": 80,
+            "end": 87,
+            "construct": "FunctionDeclaration parseDay"
+          },
+          {
+            "start": 88,
+            "end": 88,
+            "construct": "hunk"
+          },
+          {
+            "start": 89,
+            "end": 91,
+            "construct": "FunctionDeclaration parseStatus"
+          },
+          {
+            "start": 92,
+            "end": 93,
+            "construct": "hunk"
+          },
+          {
+            "start": 94,
+            "end": 102,
+            "construct": "FunctionDeclaration parseFilters"
+          },
+          {
+            "start": 103,
+            "end": 104,
+            "construct": "hunk"
+          },
+          {
+            "start": 105,
+            "end": 112,
+            "construct": "FunctionDeclaration filterParams"
+          },
+          {
+            "start": 113,
+            "end": 114,
+            "construct": "hunk"
+          },
+          {
+            "start": 115,
+            "end": 117,
+            "construct": "FunctionDeclaration hasFilters"
+          },
+          {
+            "start": 118,
+            "end": 124,
+            "construct": "hunk"
+          },
+          {
+            "start": 125,
+            "end": 128,
+            "construct": "FunctionDeclaration dayStart"
+          },
+          {
+            "start": 129,
+            "end": 135,
+            "construct": "hunk"
+          },
+          {
+            "start": 136,
+            "end": 141,
+            "construct": "FunctionDeclaration dayBounds"
+          }
+        ],
+        "web/vite.config.ts": [
+          {
+            "start": 10,
+            "end": 11,
+            "construct": "hunk"
+          },
+          {
+            "start": 12,
+            "end": 12,
+            "construct": "ExpressionStatement"
+          },
+          {
+            "start": 13,
+            "end": 13,
+            "construct": "hunk"
+          }
+        ]
+      }
+    }
+  ],
+  "skipped": [
+    {
+      "file": "internal/store/migrations/0011_history_watermark_backfill.sql",
+      "reason": "no mutation adapter for .sql"
+    }
+  ],
+  "out_of_scope": [
+    {
+      "file": "internal/api/reauth.go",
+      "line": 59,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9fa81f875c787158",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/pin.go",
+      "line": 128,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "1702d76e6fc4596c",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/unlock.go",
+      "line": 87,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "6f6a26b327e331f8",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/unlock.go",
+      "line": 111,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "2e088d645f6775d1",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 157,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "971ea8d8d9b5ff52",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on op+\" failed\" in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/grants.go",
+      "line": 158,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d175e3325616cdf",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"could not \"+op in the default (unexpected engine error -\u003e 500) branch of writeGrantErr: string - string does not compile (not viable); the branch carries no coverage block because the api tests fault-inject AdGuard and the store but not an unclassified engine error."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 153,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "d6679638cc1e6564",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/custom_services.go",
+      "line": 154,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "476fdd58ed2fe273",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 93,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "a2174cc1b459ab80",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 93,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "a2174cc1b459ab80",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/api/login.go",
+      "line": 95,
+      "op": "CONDITIONALS_NEGATION",
+      "language": "go",
+      "key": "9633328df008345a",
+      "lifecycle": "accepted",
+      "note": "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 25,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "a8785d915cdc6357",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    },
+    {
+      "file": "internal/store/migrate.go",
+      "line": 35,
+      "op": "ARITHMETIC_BASE",
+      "language": "go",
+      "key": "3d1decd06dce2e38",
+      "lifecycle": "accepted",
+      "note": "ARITHMETIC_BASE on \"store: ...\" + err.Error() inside panic() on an embed-FS failure branch (fs.Sub / ReadDir over a compile-time //go:embed dir): string - string does not compile (not viable) and the branch is unreachable at runtime because the embedded tree is fixed at build time."
+    }
+  ],
+  "scope": {
+    "files": [
+      ".dross/phases/grant-history/spec.toml",
+      ".dross/phases/history-overview/REVIEW.md",
+      ".dross/phases/history-overview/changes.json",
+      ".dross/phases/history-overview/panel/mvp.md",
+      ".dross/phases/history-overview/panel/risk.md",
+      ".dross/phases/history-overview/panel/synthesis.md",
+      ".dross/phases/history-overview/panel/verification.md",
+      ".dross/phases/history-overview/plan.toml",
+      ".dross/phases/history-overview/spec.toml",
+      ".dross/phases/history-overview/tests.json",
+      ".dross/phases/history-overview/verify.toml",
+      ".dross/project.toml",
+      ".dross/survivors.toml",
+      "internal/api/api.go",
+      "internal/api/history.go",
+      "internal/api/history_services.go",
+      "internal/api/history_services_test.go",
+      "internal/api/history_test.go",
+      "internal/store/history.go",
+      "internal/store/history_services.go",
+      "internal/store/history_services_test.go",
+      "internal/store/history_test.go",
+      "internal/store/migrations/0011_history_watermark_backfill.sql",
+      "internal/store/store_test.go",
+      "web/src/App.svelte",
+      "web/src/App.test.ts",
+      "web/src/lib/History.panel.test.ts",
+      "web/src/lib/History.svelte",
+      "web/src/lib/HistoryFilterBar.svelte",
+      "web/src/lib/HistoryFilterBar.test.ts",
+      "web/src/lib/Home.svelte",
+      "web/src/lib/Home.test.ts",
+      "web/src/lib/api.test.ts",
+      "web/src/lib/api.ts",
+      "web/src/lib/history.test.ts",
+      "web/src/lib/history.ts",
+      "web/vite.config.ts"
+    ],
+    "hunks": {
+      ".dross/phases/grant-history/spec.toml": [
+        {
+          "start": 63,
+          "end": 63
+        },
+        {
+          "start": 69,
+          "end": 69
+        }
+      ],
+      ".dross/phases/history-overview/REVIEW.md": [
+        {
+          "start": 1,
+          "end": 48
+        }
+      ],
+      ".dross/phases/history-overview/changes.json": [
+        {
+          "start": 1,
+          "end": 681
+        }
+      ],
+      ".dross/phases/history-overview/panel/mvp.md": [
+        {
+          "start": 1,
+          "end": 112
+        }
+      ],
+      ".dross/phases/history-overview/panel/risk.md": [
+        {
+          "start": 1,
+          "end": 194
+        }
+      ],
+      ".dross/phases/history-overview/panel/synthesis.md": [
+        {
+          "start": 1,
+          "end": 307
+        }
+      ],
+      ".dross/phases/history-overview/panel/verification.md": [
+        {
+          "start": 1,
+          "end": 228
+        }
+      ],
+      ".dross/phases/history-overview/plan.toml": [
+        {
+          "start": 1,
+          "end": 265
+        }
+      ],
+      ".dross/phases/history-overview/spec.toml": [
+        {
+          "start": 1,
+          "end": 86
+        }
+      ],
+      ".dross/phases/history-overview/tests.json": [
+        {
+          "start": 1,
+          "end": 2438
+        }
+      ],
+      ".dross/phases/history-overview/verify.toml": [
+        {
+          "start": 1,
+          "end": 141
+        }
+      ],
+      ".dross/project.toml": [
+        {
+          "start": 3,
+          "end": 3
+        }
+      ],
+      ".dross/survivors.toml": [
+        {
+          "start": 85,
+          "end": 92
+        },
+        {
+          "start": 1991,
+          "end": 2215
+        }
+      ],
+      "internal/api/api.go": [
+        {
+          "start": 44,
+          "end": 47
+        },
+        {
+          "start": 154,
+          "end": 155
+        }
+      ],
+      "internal/api/history.go": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 6,
+          "end": 6
+        },
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 13,
+          "end": 15
+        },
+        {
+          "start": 17,
+          "end": 21
+        },
+        {
+          "start": 77,
+          "end": 91
+        },
+        {
+          "start": 105,
+          "end": 107
+        },
+        {
+          "start": 115,
+          "end": 115
+        },
+        {
+          "start": 117,
+          "end": 119
+        },
+        {
+          "start": 122,
+          "end": 177
+        },
+        {
+          "start": 179,
+          "end": 182
+        },
+        {
+          "start": 184,
+          "end": 191
+        },
+        {
+          "start": 193,
+          "end": 206
+        },
+        {
+          "start": 208,
+          "end": 245
+        },
+        {
+          "start": 247,
+          "end": 247
+        },
+        {
+          "start": 249,
+          "end": 279
+        },
+        {
+          "start": 282,
+          "end": 296
+        },
+        {
+          "start": 300,
+          "end": 300
+        },
+        {
+          "start": 304,
+          "end": 311
+        },
+        {
+          "start": 319,
+          "end": 319
+        },
+        {
+          "start": 321,
+          "end": 325
+        }
+      ],
+      "internal/api/history_services.go": [
+        {
+          "start": 1,
+          "end": 45
+        }
+      ],
+      "internal/api/history_services_test.go": [
+        {
+          "start": 1,
+          "end": 174
+        }
+      ],
+      "internal/api/history_test.go": [
+        {
+          "start": 306,
+          "end": 629
+        }
+      ],
+      "internal/store/history.go": [
+        {
+          "start": 7,
+          "end": 7
+        },
+        {
+          "start": 16,
+          "end": 67
+        },
+        {
+          "start": 79,
+          "end": 81
+        },
+        {
+          "start": 84,
+          "end": 85
+        },
+        {
+          "start": 113,
+          "end": 135
+        },
+        {
+          "start": 141,
+          "end": 143
+        },
+        {
+          "start": 147,
+          "end": 147
+        },
+        {
+          "start": 150,
+          "end": 150
+        },
+        {
+          "start": 155,
+          "end": 157
+        },
+        {
+          "start": 161,
+          "end": 234
+        },
+        {
+          "start": 236,
+          "end": 239
+        },
+        {
+          "start": 252,
+          "end": 252
+        }
+      ],
+      "internal/store/history_services.go": [
+        {
+          "start": 1,
+          "end": 56
+        }
+      ],
+      "internal/store/history_services_test.go": [
+        {
+          "start": 1,
+          "end": 126
+        }
+      ],
+      "internal/store/history_test.go": [
+        {
+          "start": 252,
+          "end": 966
+        }
+      ],
+      "internal/store/migrations/0011_history_watermark_backfill.sql": [
+        {
+          "start": 1,
+          "end": 13
+        }
+      ],
+      "internal/store/store_test.go": [
+        {
+          "start": 623,
+          "end": 781
+        }
+      ],
+      "web/src/App.svelte": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 21,
+          "end": 23
+        },
+        {
+          "start": 73,
+          "end": 73
+        }
+      ],
+      "web/src/App.test.ts": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 50,
+          "end": 50
+        },
+        {
+          "start": 427,
+          "end": 437
+        },
+        {
+          "start": 441,
+          "end": 441
+        },
+        {
+          "start": 445,
+          "end": 467
+        },
+        {
+          "start": 475,
+          "end": 483
+        },
+        {
+          "start": 486,
+          "end": 486
+        },
+        {
+          "start": 494,
+          "end": 639
+        },
+        {
+          "start": 657,
+          "end": 658
+        },
+        {
+          "start": 672,
+          "end": 672
+        },
+        {
+          "start": 676,
+          "end": 676
+        },
+        {
+          "start": 678,
+          "end": 678
+        },
+        {
+          "start": 687,
+          "end": 688
+        }
+      ],
+      "web/src/lib/History.panel.test.ts": [
+        {
+          "start": 4,
+          "end": 4
+        },
+        {
+          "start": 7,
+          "end": 15
+        },
+        {
+          "start": 25,
+          "end": 37
+        },
+        {
+          "start": 43,
+          "end": 45
+        },
+        {
+          "start": 53,
+          "end": 56
+        },
+        {
+          "start": 58,
+          "end": 60
+        },
+        {
+          "start": 63,
+          "end": 63
+        },
+        {
+          "start": 75,
+          "end": 75
+        },
+        {
+          "start": 77,
+          "end": 78
+        },
+        {
+          "start": 82,
+          "end": 82
+        },
+        {
+          "start": 98,
+          "end": 101
+        },
+        {
+          "start": 113,
+          "end": 121
+        },
+        {
+          "start": 123,
+          "end": 123
+        },
+        {
+          "start": 127,
+          "end": 150
+        },
+        {
+          "start": 152,
+          "end": 155
+        },
+        {
+          "start": 216,
+          "end": 216
+        },
+        {
+          "start": 231,
+          "end": 231
+        },
+        {
+          "start": 238,
+          "end": 238
+        },
+        {
+          "start": 246,
+          "end": 246
+        },
+        {
+          "start": 250,
+          "end": 250
+        },
+        {
+          "start": 252,
+          "end": 252
+        },
+        {
+          "start": 255,
+          "end": 255
+        },
+        {
+          "start": 258,
+          "end": 259
+        },
+        {
+          "start": 262,
+          "end": 264
+        },
+        {
+          "start": 269,
+          "end": 284
+        },
+        {
+          "start": 314,
+          "end": 314
+        },
+        {
+          "start": 316,
+          "end": 316
+        },
+        {
+          "start": 328,
+          "end": 329
+        },
+        {
+          "start": 354,
+          "end": 354
+        },
+        {
+          "start": 376,
+          "end": 376
+        },
+        {
+          "start": 383,
+          "end": 383
+        },
+        {
+          "start": 392,
+          "end": 393
+        },
+        {
+          "start": 396,
+          "end": 407
+        },
+        {
+          "start": 437,
+          "end": 437
+        },
+        {
+          "start": 453,
+          "end": 453
+        },
+        {
+          "start": 470,
+          "end": 470
+        },
+        {
+          "start": 472,
+          "end": 472
+        },
+        {
+          "start": 485,
+          "end": 485
+        },
+        {
+          "start": 491,
+          "end": 1025
+        }
+      ],
+      "web/src/lib/History.svelte": [
+        {
+          "start": 2,
+          "end": 17
+        },
+        {
+          "start": 19,
+          "end": 25
+        },
+        {
+          "start": 29,
+          "end": 31
+        },
+        {
+          "start": 40,
+          "end": 41
+        },
+        {
+          "start": 43,
+          "end": 43
+        },
+        {
+          "start": 45,
+          "end": 51
+        },
+        {
+          "start": 59,
+          "end": 83
+        },
+        {
+          "start": 92,
+          "end": 93
+        },
+        {
+          "start": 95,
+          "end": 95
+        },
+        {
+          "start": 97,
+          "end": 97
+        },
+        {
+          "start": 103,
+          "end": 106
+        },
+        {
+          "start": 112,
+          "end": 112
+        },
+        {
+          "start": 117,
+          "end": 117
+        },
+        {
+          "start": 130,
+          "end": 131
+        },
+        {
+          "start": 139,
+          "end": 143
+        },
+        {
+          "start": 147,
+          "end": 147
+        },
+        {
+          "start": 150,
+          "end": 150
+        },
+        {
+          "start": 156,
+          "end": 156
+        },
+        {
+          "start": 229,
+          "end": 232
+        }
+      ],
+      "web/src/lib/HistoryFilterBar.svelte": [
+        {
+          "start": 1,
+          "end": 208
+        }
+      ],
+      "web/src/lib/HistoryFilterBar.test.ts": [
+        {
+          "start": 1,
+          "end": 437
+        }
+      ],
+      "web/src/lib/Home.svelte": [
+        {
+          "start": 283,
+          "end": 283
+        }
+      ],
+      "web/src/lib/Home.test.ts": [
+        {
+          "start": 8,
+          "end": 8
+        },
+        {
+          "start": 67,
+          "end": 67
+        },
+        {
+          "start": 171,
+          "end": 171
+        },
+        {
+          "start": 1016,
+          "end": 1069
+        }
+      ],
+      "web/src/lib/api.test.ts": [
+        {
+          "start": 23,
+          "end": 24
+        },
+        {
+          "start": 26,
+          "end": 26
+        },
+        {
+          "start": 56,
+          "end": 56
+        },
+        {
+          "start": 58,
+          "end": 58
+        },
+        {
+          "start": 774,
+          "end": 775
+        },
+        {
+          "start": 780,
+          "end": 780
+        },
+        {
+          "start": 821,
+          "end": 821
+        },
+        {
+          "start": 829,
+          "end": 914
+        },
+        {
+          "start": 924,
+          "end": 924
+        },
+        {
+          "start": 934,
+          "end": 934
+        },
+        {
+          "start": 942,
+          "end": 942
+        },
+        {
+          "start": 961,
+          "end": 980
+        },
+        {
+          "start": 1004,
+          "end": 1004
+        },
+        {
+          "start": 1014,
+          "end": 1050
+        },
+        {
+          "start": 1053,
+          "end": 1064
+        },
+        {
+          "start": 1067,
+          "end": 1091
+        },
+        {
+          "start": 1095,
+          "end": 1106
+        },
+        {
+          "start": 1109,
+          "end": 1109
+        },
+        {
+          "start": 1111,
+          "end": 1112
+        },
+        {
+          "start": 1116,
+          "end": 1117
+        },
+        {
+          "start": 1121,
+          "end": 1122
+        },
+        {
+          "start": 1124,
+          "end": 1130
+        },
+        {
+          "start": 1132,
+          "end": 1134
+        }
+      ],
+      "web/src/lib/api.ts": [
+        {
+          "start": 6,
+          "end": 7
+        },
+        {
+          "start": 56,
+          "end": 56
+        },
+        {
+          "start": 59,
+          "end": 65
+        },
+        {
+          "start": 100,
+          "end": 119
+        },
+        {
+          "start": 131,
+          "end": 143
+        },
+        {
+          "start": 146,
+          "end": 149
+        },
+        {
+          "start": 153,
+          "end": 154
+        },
+        {
+          "start": 159,
+          "end": 159
+        },
+        {
+          "start": 167,
+          "end": 167
+        },
+        {
+          "start": 704,
+          "end": 705
+        },
+        {
+          "start": 707,
+          "end": 711
+        },
+        {
+          "start": 713,
+          "end": 713
+        },
+        {
+          "start": 718,
+          "end": 731
+        },
+        {
+          "start": 733,
+          "end": 736
+        },
+        {
+          "start": 738,
+          "end": 759
+        }
+      ],
+      "web/src/lib/history.test.ts": [
+        {
+          "start": 4,
+          "end": 15
+        },
+        {
+          "start": 100,
+          "end": 240
+        }
+      ],
+      "web/src/lib/history.ts": [
+        {
+          "start": 2,
+          "end": 4
+        },
+        {
+          "start": 49,
+          "end": 49
+        },
+        {
+          "start": 59,
+          "end": 141
+        }
+      ],
+      "web/vite.config.ts": [
+        {
+          "start": 10,
+          "end": 13
+        }
+      ]
+    },
+    "base": "6f95bc92498da85d84efbf328ee640bd62f73c61",
+    "source": "git+changes"
+  },
+  "measured_on": "local",
+  "measured_commit": "78b2eeff85093c36ec36e83f184a5c05af8e0041",
+  "measured_tree": "90603dd9c8fd234c9e6b9a9e31364aec4014e1a8"
+}

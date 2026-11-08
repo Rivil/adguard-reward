@@ -1,0 +1,118 @@
+[verify]
+  phase = "pin-unlock"
+  generated_at = 2026-11-05T06:40:06.908027Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-11-05T06:49:49.717921Z
+  measured_commit = "e882d241b7c209beee65dce6f45757f69707c058"
+  measured_tree = "ad2882097ca2af8e5b581f9a2e0c7e4e80ddacf2"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.9432624113475178
+  mutants_killed = 931
+  mutants_survived = 54
+  mutants_not_covered = 22
+  mutants_no_block = 1
+  mutants_test_gap = 21
+  mutants_in_scope = 987
+  unclassified_in_scope = 0
+  criteria_total = 7
+  criteria_covered = 7
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 214
+    survived = 18
+    timeout = 0
+    in_scope = 232
+    score = 0.9224137931034483
+    file_count = 27
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main.go — adapter-lacks-range-runner", "cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/errors.go — adapter-lacks-range-runner", "internal/api/login.go — adapter-lacks-range-runner", "internal/api/login_test.go — adapter-lacks-range-runner", "internal/api/pin.go — adapter-lacks-range-runner", "internal/api/pin_change_test.go — adapter-lacks-range-runner", "internal/api/pin_test.go — adapter-lacks-range-runner", "internal/api/reauth.go — adapter-lacks-range-runner", "internal/api/reauth_test.go — adapter-lacks-range-runner", "internal/api/sessions.go — adapter-lacks-range-runner", "internal/api/teardown_test.go — adapter-lacks-range-runner", "internal/api/unlock.go — adapter-lacks-range-runner", "internal/api/unlock_test.go — adapter-lacks-range-runner", "internal/auth/auth.go — adapter-lacks-range-runner", "internal/auth/auth_test.go — adapter-lacks-range-runner", "internal/auth/device.go — adapter-lacks-range-runner", "internal/auth/middleware.go — adapter-lacks-range-runner", "internal/auth/middleware_test.go — adapter-lacks-range-runner", "internal/auth/pin.go — adapter-lacks-range-runner", "internal/auth/pin_test.go — adapter-lacks-range-runner", "internal/store/devices.go — adapter-lacks-range-runner", "internal/store/devices_test.go — adapter-lacks-range-runner", "internal/store/sessions.go — adapter-lacks-range-runner", "internal/store/sessions_test.go — adapter-lacks-range-runner", "internal/store/store_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 717
+    survived = 36
+    timeout = 2
+    in_scope = 755
+    score = 0.9496688741721855
+    file_count = 11
+    measured_on = "local"
+    ranges = ["web/src/App.test.ts:393-423 (ExpressionStatement)", "web/src/App.test.ts:424-424 (hunk)", "web/src/App.test.ts:45-51 (ExpressionStatement)", "web/src/App.test.ts:518-518 (hunk)", "web/src/App.test.ts:519-675 (ExpressionStatement)", "web/src/App.test.ts:8-8 (ImportDeclaration)", "web/src/lib/PinPad.test.ts:1-2 (hunk)", "web/src/lib/PinPad.test.ts:12-12 (hunk)", "web/src/lib/PinPad.test.ts:13-25 (FunctionDeclaration stubUnlock)", "web/src/lib/PinPad.test.ts:26-26 (hunk)", "web/src/lib/PinPad.test.ts:27-32 (FunctionDeclaration setup)", "web/src/lib/PinPad.test.ts:3-3 (ImportDeclaration)", "web/src/lib/PinPad.test.ts:33-33 (hunk)", "web/src/lib/PinPad.test.ts:34-34 (VariableDeclaration pinInput)", "web/src/lib/PinPad.test.ts:35-35 (VariableDeclaration unlockButton)", "web/src/lib/PinPad.test.ts:36-36 (hunk)", "web/src/lib/PinPad.test.ts:37-39 (FunctionDeclaration tap)", "web/src/lib/PinPad.test.ts:4-4 (ImportDeclaration)", "web/src/lib/PinPad.test.ts:40-40 (hunk)", "web/src/lib/PinPad.test.ts:41-43 (ExpressionStatement)", "web/src/lib/PinPad.test.ts:44-44 (hunk)", "web/src/lib/PinPad.test.ts:45-252 (ExpressionStatement)", "web/src/lib/PinPad.test.ts:5-5 (ImportDeclaration)", "web/src/lib/PinPad.test.ts:6-6 (hunk)", "web/src/lib/PinPad.test.ts:7-7 (TSTypeAliasDeclaration Call)", "web/src/lib/PinPad.test.ts:8-8 (hunk)", "web/src/lib/PinPad.test.ts:9-11 (FunctionDeclaration json)", "web/src/lib/Settings.test.ts:1-2 (hunk)", "web/src/lib/Settings.test.ts:10-10 (TSTypeAliasDeclaration Call)", "web/src/lib/Settings.test.ts:11-11 (TSTypeAliasDeclaration Answer)", "web/src/lib/Settings.test.ts:12-12 (hunk)", "web/src/lib/Settings.test.ts:13-15 (FunctionDeclaration json)", "web/src/lib/Settings.test.ts:16-17 (hunk)", "web/src/lib/Settings.test.ts:18-32 (FunctionDeclaration mockFetch)", "web/src/lib/Settings.test.ts:210-211 (hunk)", "web/src/lib/Settings.test.ts:212-216 (FunctionDeclaration held)", "web/src/lib/Settings.test.ts:217-217 (hunk)", "web/src/lib/Settings.test.ts:218-218 (VariableDeclaration value)", "web/src/lib/Settings.test.ts:219-219 (VariableDeclaration alertText)", "web/src/lib/Settings.test.ts:220-220 (VariableDeclaration tryAgain)", "web/src/lib/Settings.test.ts:221-221 (hunk)", "web/src/lib/Settings.test.ts:222-410 (ExpressionStatement)", "web/src/lib/Settings.test.ts:3-3 (ImportDeclaration)", "web/src/lib/Settings.test.ts:33-33 (hunk)", "web/src/lib/Settings.test.ts:34-34 (VariableDeclaration writes)", "web/src/lib/Settings.test.ts:35-35 (VariableDeclaration noContent)", "web/src/lib/Settings.test.ts:36-36 (VariableDeclaration status)", "web/src/lib/Settings.test.ts:37-37 (hunk)", "web/src/lib/Settings.test.ts:38-40 (FunctionDeclaration type)", "web/src/lib/Settings.test.ts:4-4 (ImportDeclaration)", "web/src/lib/Settings.test.ts:41-41 (hunk)", "web/src/lib/Settings.test.ts:42-48 (ExpressionStatement)", "web/src/lib/Settings.test.ts:49-49 (hunk)", "web/src/lib/Settings.test.ts:5-5 (ImportDeclaration)", "web/src/lib/Settings.test.ts:50-209 (ExpressionStatement)", "web/src/lib/Settings.test.ts:6-6 (ImportDeclaration)", "web/src/lib/Settings.test.ts:7-7 (ImportDeclaration)", "web/src/lib/Settings.test.ts:8-8 (ImportDeclaration)", "web/src/lib/Settings.test.ts:9-9 (hunk)", "web/src/lib/activeGrants.test.ts:39-39 (hunk)", "web/src/lib/activeGrants.test.ts:40-47 (FunctionDeclaration grantsForever)", "web/src/lib/activeGrants.test.ts:48-49 (hunk)", "web/src/lib/activeGrants.test.ts:5-5 (ImportDeclaration)", "web/src/lib/activeGrants.test.ts:50-52 (FunctionDeclaration input)", "web/src/lib/activeGrants.test.ts:53-53 (hunk)", "web/src/lib/activeGrants.test.ts:78-368 (ExpressionStatement)", "web/src/lib/activeGrants.ts:29-44 (FunctionDeclaration refresh)", "web/src/lib/activeGrants.ts:62-65 (hunk)", "web/src/lib/activeGrants.ts:66-66 (VariableDeclaration IDLE_AFTER_MS)", "web/src/lib/activeGrants.ts:67-68 (hunk)", "web/src/lib/activeGrants.ts:69-69 (VariableDeclaration INPUT_EVENTS)", "web/src/lib/activeGrants.ts:70-77 (hunk)", "web/src/lib/activeGrants.ts:79-120 (FunctionDeclaration start)", "web/src/lib/api.test.ts:1066-1066 (hunk)", "web/src/lib/api.test.ts:1067-1098 (ExpressionStatement)", "web/src/lib/api.test.ts:1099-1099 (hunk)", "web/src/lib/api.test.ts:1100-1128 (ExpressionStatement)", "web/src/lib/api.test.ts:1129-1129 (hunk)", "web/src/lib/api.test.ts:1130-1142 (ExpressionStatement)", "web/src/lib/api.test.ts:5-52 (ImportDeclaration)", "web/src/lib/api.test.ts:93-93 (VariableDeclaration pinRequired)", "web/src/lib/api.test.ts:95-100 (ExpressionStatement)", "web/src/lib/api.test.ts:960-960 (hunk)", "web/src/lib/api.test.ts:961-1065 (ExpressionStatement)", "web/src/lib/api.ts:11-11 (VariableDeclaration UNLOCK_PATH)", "web/src/lib/api.ts:126-130 (hunk)", "web/src/lib/api.ts:13-39 (ClassDeclaration ApiError)", "web/src/lib/api.ts:131-131 (VariableDeclaration locked)", "web/src/lib/api.ts:132-132 (hunk)", "web/src/lib/api.ts:133-136 (VariableDeclaration onUnauthorized)", "web/src/lib/api.ts:137-137 (hunk)", "web/src/lib/api.ts:138-138 (VariableDeclaration onPinRequired)", "web/src/lib/api.ts:140-140 (hunk)", "web/src/lib/api.ts:145-145 (hunk)", "web/src/lib/api.ts:146-148 (FunctionDeclaration setOnPinRequired)", "web/src/lib/api.ts:149-149 (hunk)", "web/src/lib/api.ts:154-159 (TSInterfaceDeclaration ErrorEnvelope)", "web/src/lib/api.ts:161-166 (TSInterfaceDeclaration Envelope)", "web/src/lib/api.ts:167-167 (hunk)", "web/src/lib/api.ts:168-184 (FunctionDeclaration readEnvelope)", "web/src/lib/api.ts:186-189 (hunk)", "web/src/lib/api.ts:190-190 (VariableDeclaration OWN_401)", "web/src/lib/api.ts:191-191 (hunk)", "web/src/lib/api.ts:204-223 (FunctionDeclaration request)", "web/src/lib/api.ts:257-258 (hunk)", "web/src/lib/api.ts:259-259 (VariableDeclaration PIN)", "web/src/lib/api.ts:260-260 (hunk)", "web/src/lib/api.ts:261-264 (TSInterfaceDeclaration PinStatus)", "web/src/lib/api.ts:265-270 (hunk)", "web/src/lib/api.ts:271-273 (FunctionDeclaration unlock)", "web/src/lib/api.ts:274-274 (hunk)", "web/src/lib/api.ts:275-277 (FunctionDeclaration pinStatus)", "web/src/lib/api.ts:278-279 (hunk)", "web/src/lib/api.ts:280-282 (FunctionDeclaration setPin)", "web/src/lib/api.ts:283-284 (hunk)", "web/src/lib/api.ts:285-287 (FunctionDeclaration changePin)", "web/src/lib/api.ts:288-289 (hunk)", "web/src/lib/api.ts:290-292 (FunctionDeclaration removePin)", "web/src/lib/api.ts:293-293 (hunk)", "web/src/lib/api.ts:3-5 (hunk)", "web/src/lib/api.ts:43-43 (TSTypeAliasDeclaration Route)", "web/src/lib/api.ts:45-53 (VariableDeclaration PATHS)", "web/src/lib/api.ts:60-60 (hunk)", "web/src/lib/api.ts:61-66 (FunctionDeclaration routeFor)", "web/src/lib/api.ts:681-700 (FunctionDeclaration messageFor)"]
+    whole_file = ["web/src/App.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable", "web/src/lib/PinPad.svelte — ast-unavailable", "web/src/lib/Settings.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/api/pin_test.go:TestSetPIN_First", "internal/api/pin_test.go:TestSetPIN_NoPlaintext", "internal/api/pin_test.go:TestSetPIN_BadInput", "internal/auth/pin_test.go:TestValidatePIN"]
+  notes = "PHC Argon2id + sha256 token asserted on the row; table dump, data-dir files and debug-level log scanned for PIN and token; 13 bad bodies all 400"
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["internal/api/unlock_test.go:TestUnlock_OK", "internal/api/pin_test.go:TestSetPIN_First", "cmd/adguard-reward/main_test.go:TestRun_DeviceCookieSecure"]
+  notes = "204 + fresh session, zero /control/login hits; 32-byte token, sha256 stored; HttpOnly/Strict/Path=/ and Secure under base_url https and TLS listener"
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/auth/auth_test.go:TestAuthenticate_PinIdleWindow", "internal/api/pin_test.go:TestSetPIN_IdleLock", "internal/auth/middleware_test.go:TestRequireSession_PinRequired", "web/src/App.test.ts:pin_required on /me shows the pad on the same URL; unauthorized shows Sign in", "web/src/App.test.ts:while unlock re-reads /me nothing renders: no flash of Sign in", "web/src/lib/PinPad.test.ts:has one key per digit and each key types its own digit", "web/src/lib/PinPad.test.ts:a full 6-digit PIN can be submitted", "web/src/lib/activeGrants.test.ts:waking off the old cadence runs one interval, not two"]
+  notes = "fake clock 14m59s/15m both sides, pin_required vs plain 401; SPA pad path now pinned (t-15/t-17): previous PinPad/App/api.ts:131/activeGrants survivors killed; remaining PinPad.svelte:17 (<= MAX arm) accepted as equivalent - pin is capped at MAX on every write"
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["internal/api/unlock_test.go:TestUnlock_FiveStrikes", "internal/api/unlock_test.go:TestUnlock_ResetOnSuccess", "cmd/adguard-reward/main_test.go:TestRun_PinSurvivesRestart", "internal/store/devices_test.go:TestReserveAttempt_SurvivesReopen", "web/src/App.test.ts:device_revoked from unlock falls back to the login page", "web/src/lib/PinPad.test.ts:a retry clears the old error at once and a success empties the PIN", "web/src/lib/PinPad.test.ts:a network failure shows the connection message and stays on the pad"]
+  notes = "server strikes/reset/restart persistence asserted; pad submit/retry/network-error path now pinned by t-15, no in-diff survivor left"
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["internal/api/pin_change_test.go:TestChangePIN_OK", "internal/api/pin_change_test.go:TestRemovePIN", "web/src/lib/Settings.test.ts:a change notes \"PIN changed\" and clears PIN, confirm and password", "web/src/lib/Settings.test.ts:a failed remove keeps the PIN, the password and shows no note", "web/src/lib/Settings.test.ts:Try again hides while the reload is in flight and returns if it fails again"]
+  notes = "API change/remove asserted (hash replaced, counter reset, cookie cleared, 30d expiry); all 20 Settings.svelte survivors killed by t-16 (messages, field resets, if(ok) gate, Try again)"
+
+[[criterion]]
+  id = "c-6"
+  status = "covered"
+  tests = ["internal/api/teardown_test.go:TestRevokeAll_Devices", "cmd/adguard-reward/main_test.go:TestRun_RevokeAllDevices", "web/src/App.test.ts:device_revoked from unlock falls back to the login page"]
+  notes = "caller's device kept, others and other-user devices handled, revoked device unlock -> 401 device_revoked + cleared cookie end-to-end"
+
+[[criterion]]
+  id = "c-7"
+  status = "covered"
+  tests = ["internal/api/unlock_test.go:TestUnlock_Log", "internal/api/unlock_test.go:TestUnlock_StoreError"]
+  notes = "one INFO line per attempt per outcome incl. no_device/malformed/unknown/5th strike/error; logs scanned for correct PIN, wrong PIN 000000, device token and sessions"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped go.mod: no mutation adapter for .mod"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped go.sum: no mutation adapter for .sum"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0010_devices.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/App.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/PinPad.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Settings.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "NOTE"
+  text = "10 in-diff survivors accepted this run: auth.go:305/307/315/317 RunSweeper case lines (x8) killed when hand-applied against go test ./internal/auth (2026-11-05, baseline green) - gremlins switch-case attribution ceiling (gremlins-case-ceiling-pin-unlock); PinPad.svelte:17 and api.ts:178 equivalent"
+
+[[finding]]
+  severity = "NOTE"
+  text = "re-measure used --reuse-report for stryker: report written 2026-11-04T20:16Z by the run at e882d24; no source changed since (only .dross/ files)"
+
+[[finding]]
+  severity = "NOTE"
+  text = "solo review left open (non-blocking): t-9 concurrent first-set POSTs can orphan a device row until the 90-day sweep; t-12 remove runs DetachDevice then RevokeDevice non-transactionally; t-10 RevokeDevice failure on 5th strike leaves the row at 5 strikes (later attempts still answer device_revoked)"

@@ -20,15 +20,20 @@ export const activeGrants = { subscribe: state.subscribe }
 
 let inFlight: Promise<void> | null = null
 
-/** Poll once. A call while one is in flight joins it rather than overlapping. */
-export function refresh(): Promise<void> {
-  if (inFlight) return inFlight
+/**
+ * Poll once. A call while one is in flight joins it rather than overlapping —
+ * unless `fresh`: a caller that has just changed server state (a toggle that
+ * trimmed or ended a grant) needs an answer read after its change, so it
+ * waits out the in-flight poll and then polls again.
+ */
+export function refresh(opts: { fresh?: boolean } = {}): Promise<void> {
+  if (inFlight) return opts.fresh ? inFlight.then(() => refresh(opts)) : inFlight
   inFlight = listGrants()
     .then((grants) => {
       state.set({ grants, unreachable: false, loaded: true })
     })
     .catch((err: unknown) => {
-      // A lapsed session is routed to login by the api layer; it says nothing about reachability.
+      // A lapsed session is routed to login or the PIN pad by the api layer; it says nothing about reachability.
       if (err instanceof ApiError && err.status === 401) return
       state.update((s) => ({ ...s, unreachable: true }))
     })
@@ -54,23 +59,62 @@ export function remove(id: number): void {
 let stopCurrent: (() => void) | null = null
 
 /**
- * Poll now and every intervalMs, plus whenever the tab comes back into
- * view so a backgrounded phone catches up. Returns stop; a second start
- * while running is a no-op that returns the same stop.
+ * How long the screen may go untouched before interval polls stop. Every
+ * poll is an authenticated request that slides the session, so a screen left
+ * open on a PIN device would otherwise never reach its 15-minute idle lock.
+ */
+export const IDLE_AFTER_MS = 60 * 1000
+
+/** What counts as someone using the screen. */
+const INPUT_EVENTS = ['pointerdown', 'keydown'] as const
+
+/**
+ * Poll now and every intervalMs while someone is using the screen, plus
+ * whenever the tab comes back into view so a backgrounded phone catches up.
+ * Once IDLE_AFTER_MS passes without a pointerdown or keydown the interval
+ * stops; the next input, or the tab coming back into view, polls at once and
+ * restarts it. Returns stop; a second start while running is a no-op that
+ * returns the same stop.
  */
 export function start(intervalMs = 15000): () => void {
   if (stopCurrent) return stopCurrent
-  const timer = setInterval(() => void refresh(), intervalMs)
+  let lastInput = Date.now()
+  let timer: ReturnType<typeof setInterval> | null = null
+  const tick = () => {
+    if (Date.now() - lastInput < IDLE_AFTER_MS) {
+      void refresh()
+      return
+    }
+    if (timer !== null) clearInterval(timer)
+    timer = null
+  }
+  /** Record use; restart the interval if idle had stopped it. True when it did. */
+  const wake = (): boolean => {
+    lastInput = Date.now()
+    if (timer !== null) return false
+    timer = setInterval(tick, intervalMs)
+    return true
+  }
+  const onInput = () => {
+    if (wake()) void refresh()
+  }
   const onVisible = () => {
-    if (document.visibilityState === 'visible') void refresh()
+    if (document.visibilityState !== 'visible') return
+    wake()
+    void refresh()
   }
   document.addEventListener('visibilitychange', onVisible)
+  // Capture, so a component that stops propagation still counts as use.
+  for (const e of INPUT_EVENTS) document.addEventListener(e, onInput, { capture: true, passive: true })
   const stop = () => {
-    clearInterval(timer)
+    if (timer !== null) clearInterval(timer)
+    timer = null
     document.removeEventListener('visibilitychange', onVisible)
+    for (const e of INPUT_EVENTS) document.removeEventListener(e, onInput, { capture: true })
     if (stopCurrent === stop) stopCurrent = null
   }
   stopCurrent = stop
+  wake()
   void refresh()
   return stop
 }

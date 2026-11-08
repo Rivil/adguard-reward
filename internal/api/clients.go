@@ -260,32 +260,78 @@ func (a *API) writeCreateClientError(w http.ResponseWriter, name string, err err
 }
 
 // adguardDown reports whether err is AdGuard failing rather than the
-// store: a non-2xx answer, the service credential refused, a transport
-// error or the apply deadline.
+// store: a non-2xx answer, a 2xx that does not decode, the service credential
+// refused, a transport error or the apply deadline.
 func adguardDown(err error) bool {
 	var status *adguard.StatusError
 	var transport *url.Error
 	return errors.As(err, &status) || errors.As(err, &transport) ||
-		errors.Is(err, adguard.ErrBadCredentials) || errors.Is(err, context.DeadlineExceeded)
+		errors.Is(err, adguard.ErrBadCredentials) || errors.Is(err, adguard.ErrBadResponse) ||
+		errors.Is(err, context.DeadlineExceeded)
 }
 
-// handleServices is GET /api/v1/services: the catalogue as AdGuard serves
-// it right now, icon echoed verbatim.
-func (a *API) handleServices(w http.ResponseWriter, r *http.Request) {
-	services, err := a.deps.AdGuard.Services(r.Context())
+// catalogueView is one row of GET /api/v1/services: a built-in AdGuard
+// service (custom false, icon as AdGuard serves it) or a parent-defined one
+// (custom true, id "custom:<n>", icon "" — the SPA draws a letter avatar).
+type catalogueView struct {
+	serviceView
+	Custom bool `json:"custom"`
+}
+
+// catalogueAdGuardError marks a catalogue read that failed on AdGuard
+// rather than on the store, so the caller can answer 502 rather than 500.
+type catalogueAdGuardError struct{ err error }
+
+func (e *catalogueAdGuardError) Error() string { return "adguard services: " + e.err.Error() }
+func (e *catalogueAdGuardError) Unwrap() error { return e.err }
+
+// catalogue is every service a grant or button may name: AdGuard's live
+// catalogue in AdGuard's order, then the custom services by id. AdGuard is
+// read first and its failure is a *catalogueAdGuardError — custom entries
+// never stand in for an unreachable AdGuard. Paths that only make sense for
+// built-ins (the blocked view, the built-in name-clash check) read
+// AdGuard.Services directly instead.
+func (a *API) catalogue(ctx context.Context) ([]catalogueView, error) {
+	services, err := a.deps.AdGuard.Services(ctx)
 	if err != nil {
-		a.writeAdGuardError(w, "list services", err)
+		return nil, &catalogueAdGuardError{err}
+	}
+	var custom []store.CustomService
+	if a.deps.CustomServices != nil {
+		if custom, err = a.deps.CustomServices.ListCustomServices(ctx); err != nil {
+			return nil, err
+		}
+	}
+	out := make([]catalogueView, 0, len(services)+len(custom))
+	for _, s := range services {
+		out = append(out, catalogueView{serviceView: serviceView{ID: s.ID, Name: s.Name, Icon: s.Icon}})
+	}
+	for _, c := range custom {
+		out = append(out, catalogueView{serviceView: serviceView{ID: c.ServiceID(), Name: c.Name}, Custom: true})
+	}
+	return out, nil
+}
+
+// writeCatalogueError answers a failed catalogue read: 502 when AdGuard
+// failed, 500 when the custom-service read did.
+func (a *API) writeCatalogueError(w http.ResponseWriter, op string, err error) {
+	var down *catalogueAdGuardError
+	if errors.As(err, &down) {
+		a.writeAdGuardError(w, op, down.err)
+		return
+	}
+	a.writeStoreError(w, op, "", err)
+}
+
+// handleServices is GET /api/v1/services: the catalogue as it stands right
+// now — AdGuard's built-ins, icon echoed verbatim, then the custom services.
+func (a *API) handleServices(w http.ResponseWriter, r *http.Request) {
+	services, err := a.catalogue(r.Context())
+	if err != nil {
+		a.writeCatalogueError(w, "list services", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, struct {
-		Services []serviceView `json:"services"`
-	}{serviceViews(services)})
-}
-
-func serviceViews(services []adguard.Service) []serviceView {
-	out := make([]serviceView, 0, len(services))
-	for _, s := range services {
-		out = append(out, serviceView{ID: s.ID, Name: s.Name, Icon: s.Icon})
-	}
-	return out
+		Services []catalogueView `json:"services"`
+	}{services})
 }

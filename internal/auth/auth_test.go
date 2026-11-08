@@ -8,9 +8,11 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"slices"
 	"strconv"
 	"strings"
 	"sync"
@@ -66,6 +68,18 @@ func (f *fakeStore) Touch(_ context.Context, id int64, lastSeen, expires time.Ti
 	s.LastSeenAt, s.ExpiresAt = lastSeen, expires
 	f.rows[id] = s
 	f.touches = append(f.touches, touch{id, lastSeen, expires})
+	return nil
+}
+
+func (f *fakeStore) SetDevice(_ context.Context, id, deviceID int64, expires time.Time) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	s, ok := f.rows[id]
+	if !ok {
+		return ErrNotFound
+	}
+	s.DeviceID, s.ExpiresAt = deviceID, expires
+	f.rows[id] = s
 	return nil
 }
 
@@ -508,5 +522,349 @@ func TestRunSweeper(t *testing.T) {
 	case <-done:
 	case <-time.After(time.Second):
 		t.Fatal("RunSweeper did not return after cancel")
+	}
+}
+
+func TestAuthenticate_PinIdleWindow(t *testing.T) {
+	m, f, c := newTest(t, Options{})
+	raw, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const justUnder = 14*time.Minute + 59*time.Second
+
+	at := t0.Add(justUnder)
+	c.Set(at)
+	got, err := m.Authenticate(ctx, raw)
+	if err != nil {
+		t.Fatalf("at +14m59s: %v", err)
+	}
+	if !got.ExpiresAt.Equal(at.Add(15*time.Minute)) || got.DeviceID != 7 {
+		t.Fatalf("at +14m59s session = %+v, want ExpiresAt now+15m, DeviceID 7", got)
+	}
+	if lt := f.lastTouch(); !lt.expire.Equal(at.Add(15 * time.Minute)) {
+		t.Fatalf("stored expiry = %v, want %v", lt.expire, at.Add(15*time.Minute))
+	}
+
+	at = at.Add(justUnder)
+	c.Set(at)
+	if _, err := m.Authenticate(ctx, raw); err != nil {
+		t.Fatalf("second +14m59s: %v", err)
+	}
+
+	c.Set(at.Add(15 * time.Minute))
+	if _, err := m.Authenticate(ctx, raw); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("after exactly 15m idle: err = %v, want ErrNoSession", err)
+	}
+	if len(f.deletes) != 1 || f.deletes[0] != s.ID {
+		t.Fatalf("deletes = %v, want [%d]", f.deletes, s.ID)
+	}
+	if _, err := f.ByTokenHash(ctx, s.TokenHash); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("expired PIN session row still present (err %v)", err)
+	}
+}
+
+func TestAuthenticate_UntaggedUnaffected(t *testing.T) {
+	m, _, c := newTest(t, Options{})
+	raw, _, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	at := t0.Add(16 * time.Minute)
+	c.Set(at)
+	got, err := m.Authenticate(ctx, raw)
+	if err != nil {
+		t.Fatalf("untagged at +16m: %v", err)
+	}
+	if !got.ExpiresAt.Equal(at.Add(30*day)) || got.DeviceID != 0 {
+		t.Fatalf("untagged session = %+v, want ExpiresAt now+30d, DeviceID 0", got)
+	}
+}
+
+func TestIssueForDevice(t *testing.T) {
+	m, f, _ := newTest(t, Options{})
+	_, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.ExpiresAt.Equal(t0.Add(15*time.Minute)) || s.DeviceID != 7 || s.Username != "mum" {
+		t.Fatalf("IssueForDevice = %+v, want ExpiresAt t0+15m, DeviceID 7", s)
+	}
+	if row := f.rows[s.ID]; row.DeviceID != 7 || !row.ExpiresAt.Equal(t0.Add(15*time.Minute)) {
+		t.Fatalf("stored row = %+v, want DeviceID 7 and ExpiresAt t0+15m", row)
+	}
+
+	_, plain, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !plain.ExpiresAt.Equal(t0.Add(30*day)) || plain.DeviceID != 0 {
+		t.Fatalf("Issue = %+v, want ExpiresAt t0+30d, DeviceID 0", plain)
+	}
+}
+
+func TestAttachDevice_StartsWindow(t *testing.T) {
+	m, f, c := newTest(t, Options{})
+	raw, s, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	rawCtl, ctl, err := m.Issue(ctx, "mum")
+	if err != nil {
+		t.Fatal(err)
+	}
+	T := t0.Add(time.Hour)
+	c.Set(T)
+	for _, id := range []int64{s.ID, ctl.ID} {
+		if err := m.AttachDevice(ctx, id, 7); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if row := f.rows[s.ID]; row.DeviceID != 7 || !row.ExpiresAt.Equal(T.Add(15*time.Minute)) {
+		t.Fatalf("after AttachDevice row = %+v, want DeviceID 7, ExpiresAt T+15m", row)
+	}
+
+	// Control: inside the window the attached session still works.
+	c.Set(T.Add(14*time.Minute + 59*time.Second))
+	if _, err := m.Authenticate(ctx, rawCtl); err != nil {
+		t.Fatalf("attached session at T+14m59s: %v", err)
+	}
+
+	c.Set(T.Add(15*time.Minute + time.Second))
+	if _, err := m.Authenticate(ctx, raw); !errors.Is(err, ErrNoSession) {
+		t.Fatalf("attached session at T+15m01s: err = %v, want ErrNoSession", err)
+	}
+
+	if err := m.AttachDevice(ctx, 999, 7); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("AttachDevice(missing) err = %v, want ErrNotFound", err)
+	}
+}
+
+func TestDetachDevice_RestoresSliding(t *testing.T) {
+	m, f, c := newTest(t, Options{})
+	raw, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	T := t0.Add(5 * time.Minute)
+	c.Set(T)
+	if err := m.DetachDevice(ctx, s.ID); err != nil {
+		t.Fatal(err)
+	}
+	if row := f.rows[s.ID]; row.DeviceID != 0 || !row.ExpiresAt.Equal(T.Add(30*day)) {
+		t.Fatalf("after DetachDevice row = %+v, want DeviceID 0, ExpiresAt T+30d", row)
+	}
+
+	at := T.Add(16 * time.Minute)
+	c.Set(at)
+	got, err := m.Authenticate(ctx, raw)
+	if err != nil {
+		t.Fatalf("detached session at T+16m: %v", err)
+	}
+	if !got.ExpiresAt.Equal(at.Add(30*day)) || got.DeviceID != 0 {
+		t.Fatalf("detached session = %+v, want ExpiresAt now+30d, DeviceID 0", got)
+	}
+}
+
+func TestPINIdle_Option(t *testing.T) {
+	m, _, _ := newTest(t, Options{PINIdle: time.Minute})
+	_, s, err := m.IssueForDevice(ctx, "mum", 7)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !s.ExpiresAt.Equal(t0.Add(time.Minute)) {
+		t.Fatalf("PINIdle 1m: ExpiresAt = %v, want t0+1m", s.ExpiresAt)
+	}
+}
+
+// sweepScript answers one sweeper leg with a fixed (n, err), counting the
+// calls and running hook (when set) inside each.
+type sweepScript struct {
+	mu    sync.Mutex
+	n     int
+	err   error
+	hook  func()
+	calls int
+}
+
+func (s *sweepScript) sweep() (int, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.calls++
+	if s.hook != nil {
+		s.hook()
+	}
+	return s.n, s.err
+}
+
+func (s *sweepScript) callCount() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.calls
+}
+
+// scriptedSessions is a fakeStore whose DeleteExpired answers from a script.
+type scriptedSessions struct {
+	*fakeStore
+	script *sweepScript
+}
+
+func (s scriptedSessions) DeleteExpired(context.Context, time.Time) (int, error) {
+	return s.script.sweep()
+}
+
+// scriptedDevices is a fakeDevices whose DeleteExpiredDevices answers from
+// a script.
+type scriptedDevices struct {
+	*fakeDevices
+	script *sweepScript
+}
+
+func (s scriptedDevices) DeleteExpiredDevices(context.Context, time.Time) (int, error) {
+	return s.script.sweep()
+}
+
+// sweepLines renders each JSON log record as "LEVEL msg k=v..." (time
+// dropped, other attrs sorted) and returns the distinct lines, sorted: a
+// sweeper that ticked several times logs each line once per tick.
+func sweepLines(t *testing.T, out string) []string {
+	t.Helper()
+	seen := map[string]bool{}
+	for _, raw := range strings.Split(out, "\n") {
+		if raw == "" {
+			continue
+		}
+		var rec map[string]any
+		if err := json.Unmarshal([]byte(raw), &rec); err != nil {
+			t.Fatalf("log line %q: %v", raw, err)
+		}
+		var keys []string
+		for k := range rec {
+			if k != "time" && k != "level" && k != "msg" {
+				keys = append(keys, k)
+			}
+		}
+		slices.Sort(keys)
+		line := fmt.Sprint(rec["level"], " ", rec["msg"])
+		for _, k := range keys {
+			line += fmt.Sprint(" ", k, "=", rec[k])
+		}
+		seen[line] = true
+	}
+	lines := []string{}
+	for l := range seen {
+		lines = append(lines, l)
+	}
+	slices.Sort(lines)
+	return lines
+}
+
+func TestRunSweeper_Logs(t *testing.T) {
+	boom := errors.New("disk on fire")
+	type leg struct {
+		n   int
+		err error
+	}
+	cases := []struct {
+		name     string
+		sessions leg
+		devices  leg
+		// cancelInSweep cancels the sweeper's ctx inside the session leg,
+		// so both legs fail on a done ctx: a shutdown, not a fault.
+		cancelInSweep bool
+		want          []string
+	}{
+		{name: "clean", want: []string{}},
+		{
+			name:     "removed",
+			sessions: leg{n: 2},
+			devices:  leg{n: 3},
+			want: []string{
+				"INFO expired devices removed count=3",
+				"INFO expired sessions removed count=2",
+			},
+		},
+		{
+			name:     "both fail",
+			sessions: leg{err: boom},
+			devices:  leg{err: boom},
+			want: []string{
+				"ERROR device sweep failed err=disk on fire",
+				"ERROR session sweep failed err=disk on fire",
+			},
+		},
+		{
+			name:     "sessions fail, devices removed",
+			sessions: leg{err: boom},
+			devices:  leg{n: 4},
+			want: []string{
+				"ERROR session sweep failed err=disk on fire",
+				"INFO expired devices removed count=4",
+			},
+		},
+		{
+			name:     "sessions removed, devices fail",
+			sessions: leg{n: 5},
+			devices:  leg{err: boom},
+			want: []string{
+				"ERROR device sweep failed err=disk on fire",
+				"INFO expired sessions removed count=5",
+			},
+		},
+		{
+			name:          "ctx done",
+			sessions:      leg{err: boom},
+			devices:       leg{err: boom},
+			cancelInSweep: true,
+			want:          []string{},
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			log := slog.New(slog.NewJSONHandler(&buf, &slog.HandlerOptions{Level: slog.LevelDebug}))
+			sctx, cancel := context.WithCancel(context.Background())
+			defer cancel()
+			sess := &sweepScript{n: tc.sessions.n, err: tc.sessions.err}
+			devs := &sweepScript{n: tc.devices.n, err: tc.devices.err}
+			if tc.cancelInSweep {
+				sess.hook = cancel
+			}
+			m := New(scriptedSessions{newFake(), sess}, Options{
+				Log:     log,
+				Devices: scriptedDevices{newFakeDevices(nil), devs},
+			})
+
+			done := make(chan struct{})
+			go func() {
+				m.RunSweeper(sctx, time.Millisecond)
+				close(done)
+			}()
+			if !tc.cancelInSweep {
+				// A second session sweep means the first tick, device leg
+				// and its log line included, has finished.
+				deadline := time.Now().Add(time.Second)
+				for sess.callCount() < 2 && time.Now().Before(deadline) {
+					time.Sleep(time.Millisecond)
+				}
+				cancel()
+			}
+			select {
+			case <-done:
+			case <-time.After(time.Second):
+				t.Fatal("RunSweeper did not return")
+			}
+			if n := sess.callCount(); !tc.cancelInSweep && n < 2 {
+				t.Fatalf("session sweep ran %d times within 1s, want >= 2", n)
+			}
+
+			if devs.callCount() == 0 {
+				t.Fatal("positive control: the device leg never ran")
+			}
+			// The buffer is read only after the sweeper goroutine is done.
+			if got := sweepLines(t, buf.String()); !slices.Equal(got, tc.want) {
+				t.Fatalf("sweeper log lines = %q, want %q", got, tc.want)
+			}
+		})
 	}
 }

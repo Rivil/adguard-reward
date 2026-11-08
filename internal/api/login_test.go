@@ -61,6 +61,8 @@ type harness struct {
 	clock *clock
 	logs  *lockedBuffer
 	h     http.Handler
+	// dataDir is the store's directory, kept so tests can scan the files.
+	dataDir string
 }
 
 type lockedBuffer struct {
@@ -90,7 +92,8 @@ func newHarness(t *testing.T, trusted []*net.IPNet, clientIP func(*http.Request)
 	if err != nil {
 		t.Fatal(err)
 	}
-	st, err := store.Open(t.TempDir(), log)
+	dataDir := t.TempDir()
+	st, err := store.Open(dataDir, log)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,7 +102,7 @@ func newHarness(t *testing.T, trusted []*net.IPNet, clientIP func(*http.Request)
 	c := &clock{t: t0}
 	cfg := ratelimit.Defaults()
 	cfg.Now = c.Now
-	mgr := auth.New(st, auth.Options{Now: c.Now, Log: log, ErrorWriter: UnauthorizedWriter})
+	mgr := auth.New(st, auth.Options{Now: c.Now, Log: log, ErrorWriter: UnauthorizedWriter, Devices: st})
 	if clientIP == nil {
 		clientIP = ClientIP(trusted)
 	}
@@ -115,8 +118,9 @@ func newHarness(t *testing.T, trusted []*net.IPNet, clientIP func(*http.Request)
 		Children: st,
 		Grants:   eng,
 		Buttons:  st,
+		Devices:  st,
 	})
-	return &harness{t: t, fake: fake, store: st, clock: c, logs: logs, h: a.Handler()}
+	return &harness{t: t, fake: fake, store: st, clock: c, logs: logs, h: a.Handler(), dataDir: dataDir}
 }
 
 type reqOpt func(*http.Request)

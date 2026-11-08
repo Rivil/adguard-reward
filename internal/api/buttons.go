@@ -51,7 +51,7 @@ type buttonInput struct {
 	Label    string   `json:"label"`
 	ChildID  int64    `json:"child_id"`
 	Services []string `json:"services"`
-	Icon     string   `json:"icon"`     // a catalogue service id; "" or absent = none
+	Icon     string   `json:"icon"`     // a catalogue service id, built-in or custom; "" or absent = none
 	Duration int      `json:"duration"` // seconds
 }
 
@@ -82,7 +82,8 @@ func writeButtons(w http.ResponseWriter, rows []store.Button) {
 // handleButtonsReplace is PUT /api/v1/buttons: the whole list, validated
 // cheapest-first and stopping at the first bad item, so a 422 names exactly
 // one buttons[i].<field>. Children are checked before any AdGuard call and
-// the catalogue is read once, only when there is something to check.
+// the catalogue — AdGuard's built-ins plus the stored custom services — is
+// read once, only when there is something to check.
 func (a *API) handleButtonsReplace(w http.ResponseWriter, r *http.Request) {
 	var in buttonsRequest
 	if !decodeGrantBody(w, r, &in, `{"buttons":[{label, child_id, services, icon, duration}]}`) {
@@ -145,9 +146,9 @@ func (a *API) handleButtonsReplace(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if len(items) > 0 {
-		catalogue, err := a.deps.AdGuard.Services(r.Context())
+		catalogue, err := a.catalogue(r.Context())
 		if err != nil {
-			a.writeAdGuardError(w, "replace buttons", err)
+			a.writeCatalogueError(w, "replace buttons", err)
 			return
 		}
 		known := make(map[string]bool, len(catalogue))

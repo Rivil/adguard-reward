@@ -1,0 +1,106 @@
+[verify]
+  phase = "permanent-toggles"
+  generated_at = 2026-11-04T06:48:13.43569Z
+  verdict = "pass"
+  finalized = true
+  finalized_at = 2026-11-04T07:00:31.436937Z
+  measured_commit = "9d10006b1b12cce2a198b2f7636bf4f624859770"
+  measured_tree = "3ed32b2c43868f2222a9fce07a6b57cf85834ace"
+
+[summary]
+  mutation_status = "measured"
+  measured_on = "local"
+  mutation_score = 0.9533834586466166
+  mutants_killed = 634
+  mutants_survived = 31
+  mutants_not_covered = 15
+  mutants_no_block = 0
+  mutants_test_gap = 15
+  mutants_in_scope = 665
+  unclassified_in_scope = 0
+  criteria_total = 5
+  criteria_covered = 5
+  criteria_uncovered = 0
+
+  [[summary.leg]]
+    language = "go"
+    tool = "gremlins"
+    killed = 205
+    survived = 11
+    timeout = 0
+    in_scope = 216
+    score = 0.9490740740740741
+    file_count = 27
+    measured_on = "local"
+    whole_file = ["cmd/adguard-reward/main_test.go — adapter-lacks-range-runner", "internal/api/api.go — adapter-lacks-range-runner", "internal/api/blocked.go — adapter-lacks-range-runner", "internal/api/blocked_test.go — adapter-lacks-range-runner", "internal/api/toggles.go — adapter-lacks-range-runner", "internal/api/toggles_test.go — adapter-lacks-range-runner", "internal/blocked/blocked.go — adapter-lacks-range-runner", "internal/blocked/blocked_test.go — adapter-lacks-range-runner", "internal/grants/clients.go — adapter-lacks-range-runner", "internal/grants/clients_test.go — adapter-lacks-range-runner", "internal/grants/grants.go — adapter-lacks-range-runner", "internal/grants/grants_test.go — adapter-lacks-range-runner", "internal/grants/intent.go — adapter-lacks-range-runner", "internal/grants/intent_test.go — adapter-lacks-range-runner", "internal/grants/reconcile.go — adapter-lacks-range-runner", "internal/grants/reconcile_test.go — adapter-lacks-range-runner", "internal/grants/rules.go — adapter-lacks-range-runner", "internal/grants/rules_test.go — adapter-lacks-range-runner", "internal/grants/shared.go — adapter-lacks-range-runner", "internal/grants/shared_test.go — adapter-lacks-range-runner", "internal/grants/toggle.go — adapter-lacks-range-runner", "internal/grants/toggle_custom.go — adapter-lacks-range-runner", "internal/grants/toggle_custom_test.go — adapter-lacks-range-runner", "internal/grants/toggle_test.go — adapter-lacks-range-runner", "internal/store/custom_services_test.go — adapter-lacks-range-runner", "internal/store/toggles.go — adapter-lacks-range-runner", "internal/store/toggles_test.go — adapter-lacks-range-runner"]
+
+  [[summary.leg]]
+    language = "typescript"
+    tool = "stryker"
+    killed = 429
+    survived = 20
+    timeout = 0
+    in_scope = 449
+    score = 0.955456570155902
+    file_count = 10
+    measured_on = "local"
+    ranges = ["web/src/lib/BlockPicker.test.ts:1-2 (hunk)", "web/src/lib/BlockPicker.test.ts:14-14 (hunk)", "web/src/lib/BlockPicker.test.ts:15-18 (FunctionDeclaration row)", "web/src/lib/BlockPicker.test.ts:19-19 (hunk)", "web/src/lib/BlockPicker.test.ts:20-24 (VariableDeclaration view)", "web/src/lib/BlockPicker.test.ts:25-25 (hunk)", "web/src/lib/BlockPicker.test.ts:26-29 (FunctionDeclaration setup)", "web/src/lib/BlockPicker.test.ts:3-3 (ImportDeclaration)", "web/src/lib/BlockPicker.test.ts:30-30 (hunk)", "web/src/lib/BlockPicker.test.ts:31-33 (FunctionDeclaration openPicker)", "web/src/lib/BlockPicker.test.ts:34-34 (hunk)", "web/src/lib/BlockPicker.test.ts:35-37 (FunctionDeclaration optionIds)", "web/src/lib/BlockPicker.test.ts:38-38 (hunk)", "web/src/lib/BlockPicker.test.ts:39-41 (FunctionDeclaration search)", "web/src/lib/BlockPicker.test.ts:4-4 (ImportDeclaration)", "web/src/lib/BlockPicker.test.ts:42-42 (hunk)", "web/src/lib/BlockPicker.test.ts:43-108 (ExpressionStatement)", "web/src/lib/BlockPicker.test.ts:5-5 (ImportDeclaration)", "web/src/lib/BlockPicker.test.ts:6-6 (ImportDeclaration)", "web/src/lib/BlockPicker.test.ts:7-7 (hunk)", "web/src/lib/BlockPicker.test.ts:8-13 (VariableDeclaration catalogue)", "web/src/lib/Home.test.ts:1100-1100 (hunk)", "web/src/lib/Home.test.ts:1101-1426 (ExpressionStatement)", "web/src/lib/Home.test.ts:171-990 (ExpressionStatement)", "web/src/lib/Home.test.ts:7-7 (ImportDeclaration)", "web/src/lib/Home.test.ts:992-1099 (ExpressionStatement)", "web/src/lib/activeGrants.test.ts:63-213 (ExpressionStatement)", "web/src/lib/activeGrants.ts:23-28 (hunk)", "web/src/lib/activeGrants.ts:29-44 (FunctionDeclaration refresh)", "web/src/lib/api.test.ts:5-42 (ImportDeclaration)", "web/src/lib/api.test.ts:523-589 (ExpressionStatement)", "web/src/lib/api.test.ts:672-672 (hunk)", "web/src/lib/api.test.ts:673-752 (ExpressionStatement)", "web/src/lib/api.ts:179-180 (hunk)", "web/src/lib/api.ts:208-208 (hunk)", "web/src/lib/api.ts:209-209 (TSTypeAliasDeclaration ToggleState)", "web/src/lib/api.ts:210-210 (hunk)", "web/src/lib/api.ts:211-219 (TSInterfaceDeclaration ServiceState)", "web/src/lib/api.ts:221-229 (TSInterfaceDeclaration Unblock)", "web/src/lib/api.ts:328-340 (FunctionDeclaration childBlocked)", "web/src/lib/api.ts:342-344 (hunk)", "web/src/lib/api.ts:345-354 (TSInterfaceDeclaration ToggleResult)", "web/src/lib/api.ts:355-356 (hunk)", "web/src/lib/api.ts:357-360 (FunctionDeclaration toggleService)", "web/src/lib/api.ts:361-361 (hunk)", "web/src/lib/toggles.test.ts:1-1 (hunk)", "web/src/lib/toggles.test.ts:15-15 (hunk)", "web/src/lib/toggles.test.ts:16-18 (FunctionDeclaration view)", "web/src/lib/toggles.test.ts:19-19 (hunk)", "web/src/lib/toggles.test.ts:2-2 (ImportDeclaration)", "web/src/lib/toggles.test.ts:20-20 (VariableDeclaration bGrant)", "web/src/lib/toggles.test.ts:21-21 (VariableDeclaration bPermanent)", "web/src/lib/toggles.test.ts:22-22 (hunk)", "web/src/lib/toggles.test.ts:23-45 (ExpressionStatement)", "web/src/lib/toggles.test.ts:3-3 (ImportDeclaration)", "web/src/lib/toggles.test.ts:4-4 (ImportDeclaration)", "web/src/lib/toggles.test.ts:46-46 (hunk)", "web/src/lib/toggles.test.ts:47-73 (ExpressionStatement)", "web/src/lib/toggles.test.ts:5-5 (hunk)", "web/src/lib/toggles.test.ts:6-14 (FunctionDeclaration svc)", "web/src/lib/toggles.test.ts:74-74 (hunk)", "web/src/lib/toggles.test.ts:75-91 (ExpressionStatement)", "web/src/lib/toggles.test.ts:92-92 (hunk)", "web/src/lib/toggles.test.ts:93-117 (ExpressionStatement)", "web/src/lib/toggles.ts:1-4 (hunk)", "web/src/lib/toggles.ts:17-19 (FunctionDeclaration shown)", "web/src/lib/toggles.ts:20-26 (hunk)", "web/src/lib/toggles.ts:27-36 (FunctionDeclaration openOn)", "web/src/lib/toggles.ts:37-43 (hunk)", "web/src/lib/toggles.ts:44-51 (FunctionDeclaration controlFor)", "web/src/lib/toggles.ts:5-5 (ImportDeclaration)", "web/src/lib/toggles.ts:52-57 (hunk)", "web/src/lib/toggles.ts:58-62 (FunctionDeclaration pickerOptions)", "web/src/lib/toggles.ts:6-7 (hunk)", "web/src/lib/toggles.ts:8-8 (TSTypeAliasDeclaration Control)", "web/src/lib/toggles.ts:9-16 (hunk)"]
+    whole_file = ["web/src/lib/BlockPicker.svelte — ast-unavailable", "web/src/lib/Home.svelte — ast-unavailable"]
+
+[[criterion]]
+  id = "c-1"
+  status = "covered"
+  tests = ["internal/grants/toggle_test.go:TestToggle_UnblockAll", "internal/grants/toggle_custom_test.go:TestToggle_CustomUnblock", "cmd/adguard-reward/main_test.go:TestRun_ToggleEndToEnd"]
+  notes = "Built-in unblock removes youtube from every mapped client (shared tv included); custom unblock writes the @@ cover for the child's clients; end-to-end POST applied within 5 s with AdGuard state checked."
+
+[[criterion]]
+  id = "c-2"
+  status = "covered"
+  tests = ["cmd/adguard-reward/main_test.go:TestRun_ToggleEndToEnd", "internal/grants/toggle_custom_test.go:TestToggle_CustomBlockUnderGrant", "internal/grants/toggle_test.go:TestToggle_GlobalBothDirections", "web/src/lib/Home.test.ts:it('toggle controls')", "web/src/lib/Home.test.ts:it('toggle outcome')", "web/src/lib/Home.test.ts:it('toggle refresh after a stale poll')"]
+  notes = "End-to-end block re-adds youtube on both clients within 5 s; custom block drops the exception and ends the emptied grant. Previously weak on Home.svelte:254: 'toggle outcome' now asserts a two-client partial ('except on tablet, tv') and Stryker no longer reports the join('') survivor."
+
+[[criterion]]
+  id = "c-3"
+  status = "covered"
+  tests = ["internal/grants/grants_test.go:TestExpire_KeepsPermanentUnblock", "internal/grants/grants_test.go:TestEnd_KeepsPermanentUnblock", "internal/grants/grants_test.go:TestRevert_CoOwnerUnblock"]
+  notes = "Expiry and early end re-block tiktok and leave permanently unblocked youtube open on every grant client; a co-owner's unblock keeps the shared tv open while a-phone re-blocks."
+
+[[criterion]]
+  id = "c-4"
+  status = "covered"
+  tests = ["internal/grants/grants_test.go:TestStart_RestartKeepsToggles", "internal/grants/rules_test.go:TestSyncRules_ToggleSurvivesEdit", "internal/grants/reconcile_test.go:TestReconcile_ConvergesToggle"]
+  notes = "Reopened store + Start expires an overdue grant without re-blocking youtube and keeps the custom @@ cover; a hand-deleted cover is restored on the next reconcile; a failed toggle write converges on a later tick."
+
+[[criterion]]
+  id = "c-5"
+  status = "covered"
+  tests = ["web/src/lib/Home.test.ts:it('toggle controls')", "web/src/lib/Home.test.ts:it('reverse')", "web/src/lib/Home.test.ts:it('untoggled unblocked hidden')", "internal/blocked/blocked_test.go:TestCompute_ToggleState", "internal/blocked/blocked_test.go:TestCompute_UnblockedByChildOrder"]
+  notes = "Rows, data-state and Unblock/Block controls pinned, including the 'Block TikTok' accessible name; UnblockedBy child-ID order pinned."
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped internal/store/migrations/0008_service_toggles.sql: no mutation adapter for .sql"
+
+[[finding]]
+  severity = "NOTE"
+  text = "skipped web/package.json: no mutation adapter for .json"
+
+[[finding]]
+  severity = "NOTE"
+  text = "mutation scope is degraded (source: git+changes) — stryker: AST unavailable for web/src/lib/BlockPicker.svelte (no parser for .svelte); mutating the whole file; stryker: AST unavailable for web/src/lib/Home.svelte (no parser for .svelte); mutating the whole file"
+
+[[finding]]
+  severity = "NOTE"
+  text = "Previous BLOCKING closed: Home.svelte:254 r.failed.join(', ') -> join('') is killed by the t-10 amend (ccc715a); Stryker re-ran fresh on tree 3ed32b2 and no longer reports it."
+
+[[finding]]
+  severity = "NOTE"
+  text = "All 31 in-scope survivors carry a prior disposition (31 accepted: 9 in-hunk, 22 inherited); 0 unclassified. 15 of them are NOT COVERED (11 gremlins, 4 stryker)."
+
+[[finding]]
+  severity = "NOTE"
+  text = "Hand-probed in-diff gremlins acceptances from the previous run still hold: grants.go:404 and clients.go:220/222 negations are switch-case attribution-ceiling acceptances."
+
+[[finding]]
+  severity = "NOTE"
+  text = "Reviewer outcomes: all 12 tasks passed review; t-8 FLAG (Clients on read failure) was accepted at the user's call during the earlier amend."

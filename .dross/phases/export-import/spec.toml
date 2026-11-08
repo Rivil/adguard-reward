@@ -1,0 +1,57 @@
+[phase]
+  id = "export-import"
+  title = "export-import"
+  milestone = "v0.2"
+
+[[criteria]]
+  id = "c-1"
+  text = "From Settings, a parent can download a single JSON file containing all children with their client mappings, all buttons (order, icon, services, duration) and all custom services with their domains."
+
+[[criteria]]
+  id = "c-2"
+  text = "The exported file contains no sessions, device tokens, PIN hashes, AdGuard credentials or AI keys; a test seeds each of these and asserts none of the values appear in the output."
+
+[[criteria]]
+  id = "c-3"
+  text = "Importing an exported file into a fresh install reproduces the same children, client mappings, buttons and custom services; a second export from that install matches the first, apart from ids, and every button's custom service reference resolves to the same-named service."
+
+[[criteria]]
+  id = "c-4"
+  text = "A malformed or incompatible file (invalid JSON, unknown format version, duplicate names or domains, a button pointing at a child or service not in the file) is rejected whole: the response names the problem and no store row or AdGuard state changes."
+
+[[criteria]]
+  id = "c-5"
+  text = "After a successful import, imported custom services block and grant like locally created ones: their rules appear inside the managed region, and every user_rules line outside the markers is byte-for-byte unchanged."
+
+[[criteria]]
+  id = "c-6"
+  text = "Permanent block/unblock toggles are included in the export and restored on import against the right child and service; the reconciler then converges AdGuard to them."
+  deferred = ["0e8fbea873c1c8b3"]
+
+[[decisions]]
+  key = "non_empty_target"
+  choice = "Import runs only on an empty install; any existing children, buttons, custom services or toggles return 409 naming what exists."
+  why = "Matches the milestone's fresh-install scope and cannot destroy data; replace and merge need rules for active grants and conflicts."
+  locked = true
+
+[[decisions]]
+  key = "missing_clients"
+  choice = "A client in the file that this AdGuard does not have keeps its mapping; import succeeds and the result lists the missing clients."
+  why = "The app already handles missing clients; one renamed device should not block a restore, and the mapping works if the client appears."
+  locked = true
+
+[[decisions]]
+  key = "adguard_failure"
+  choice = "AdGuard client writes run before the store commit; any failure returns 502 with no store rows, and clients already written keep their additions. Managed rules sync after commit, and the reconciler retries them."
+  why = "Same as child create. The install stays empty so a retry passes non_empty_target; the reconciler does not redo client adoption."
+  locked = true
+
+[[decisions]]
+  key = "unknown_builtin_service"
+  choice = "A built-in service id in the file that is not in this AdGuard's live catalogue makes the file incompatible: rejected whole with 422 naming the id."
+  why = "Buttons and toggles already return 422 on unknown services; c-4 rejects incompatible files whole."
+  locked = true
+
+[[deferred]]
+  text = "Include grant history in the export-import JSON file."
+  why = "History is a record of events, not setup; the milestone scopes the file to setup, and restoring it needs grant rows remapped to new child ids."

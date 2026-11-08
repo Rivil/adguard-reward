@@ -7,6 +7,10 @@ import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { svelteTesting } from '@testing-library/svelte/vite'
 import { PUBLIC_SHELL } from './src/lib/sw-routing.ts'
 
+// One zone for every test, with skipped and repeated midnights to exercise.
+// Set here, not per test, because Stryker's worker threads ignore a per-test TZ.
+process.env.TZ = 'America/Havana'
+
 const here = (rel: string) => fileURLToPath(new URL(rel, import.meta.url))
 
 const PRECACHE_TOKEN = 'self.__PRECACHE__'

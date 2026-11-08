@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"reflect"
 	"sync"
@@ -186,7 +187,7 @@ func TestGrants_ExtendActiveOnly(t *testing.T) {
 	mustSetStatus(t, s, ended.ID, StatusActive, StatusEnded)
 
 	want := t0.Add(30 * time.Minute)
-	got, err := s.ExtendGrant(ctx, active.ID, want)
+	got, err := s.ExtendGrant(ctx, active.ID, want, t0)
 	if err != nil {
 		t.Fatalf("ExtendGrant: %v", err)
 	}
@@ -196,10 +197,10 @@ func TestGrants_ExtendActiveOnly(t *testing.T) {
 	if again := mustGetGrant(t, s, active.ID); !again.EndsAt.Equal(want) {
 		t.Fatalf("GetGrant EndsAt = %v, want %v", again.EndsAt, want)
 	}
-	if _, err := s.ExtendGrant(ctx, ended.ID, want); !errors.Is(err, ErrGrantNotFound) {
+	if _, err := s.ExtendGrant(ctx, ended.ID, want, t0); !errors.Is(err, ErrGrantNotFound) {
 		t.Fatalf("ExtendGrant(ended) err = %v, want ErrGrantNotFound", err)
 	}
-	if _, err := s.ExtendGrant(ctx, 999, want); !errors.Is(err, ErrGrantNotFound) {
+	if _, err := s.ExtendGrant(ctx, 999, want, t0); !errors.Is(err, ErrGrantNotFound) {
 		t.Fatalf("ExtendGrant(999) err = %v, want ErrGrantNotFound", err)
 	}
 	if got := mustGetGrant(t, s, ended.ID); !got.EndsAt.Equal(ended.EndsAt) {
@@ -381,5 +382,168 @@ func TestGrants_ListRace(t *testing.T) {
 	close(errs)
 	for err := range errs {
 		t.Error(err)
+	}
+}
+
+// extension is one grant_extensions row, times as Unix seconds.
+type extension struct {
+	extendedAt, oldEndsAt, newEndsAt int64
+}
+
+func extensions(t *testing.T, s *Store, grantID int64) []extension {
+	t.Helper()
+	rows, err := s.DB().Query(
+		`SELECT extended_at, old_ends_at, new_ends_at FROM grant_extensions WHERE grant_id = ? ORDER BY id`, grantID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var out []extension
+	for rows.Next() {
+		var x extension
+		if err := rows.Scan(&x.extendedAt, &x.oldEndsAt, &x.newEndsAt); err != nil {
+			t.Fatal(err)
+		}
+		out = append(out, x)
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
+func TestExtendGrant_RecordsEachExtension(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	g := mustGrant(t, s, ada.ID, []string{"tiktok"}, ada.Clients)
+
+	first, second := t0.Add(90*time.Minute), t0.Add(2*time.Hour)
+	at1, at2 := t0.Add(10*time.Minute), t0.Add(70*time.Minute)
+	if _, err := s.ExtendGrant(ctx, g.ID, first, at1); err != nil {
+		t.Fatalf("first ExtendGrant: %v", err)
+	}
+	got, err := s.ExtendGrant(ctx, g.ID, second, at2)
+	if err != nil {
+		t.Fatalf("second ExtendGrant: %v", err)
+	}
+	if !got.EndsAt.Equal(second) {
+		t.Fatalf("EndsAt = %v, want %v", got.EndsAt, second)
+	}
+	want := []extension{
+		{at1.Unix(), g.EndsAt.Unix(), first.Unix()},
+		{at2.Unix(), first.Unix(), second.Unix()},
+	}
+	xs := extensions(t, s, g.ID)
+	if !reflect.DeepEqual(xs, want) {
+		t.Fatalf("extensions = %+v, want %+v (one row per call, old read before the update)", xs, want)
+	}
+	for i, x := range xs {
+		if x.oldEndsAt == x.newEndsAt {
+			t.Fatalf("extension %d old_ends_at == new_ends_at == %d", i, x.oldEndsAt)
+		}
+	}
+
+	expired := mustGrant(t, s, ada.ID, []string{"roblox"}, ada.Clients)
+	mustSetStatus(t, s, expired.ID, StatusActive, StatusExpired)
+	if _, err := s.ExtendGrant(ctx, expired.ID, second, at2); !errors.Is(err, ErrGrantNotFound) {
+		t.Fatalf("ExtendGrant(expired) err = %v, want ErrGrantNotFound", err)
+	}
+	if xs := extensions(t, s, expired.ID); len(xs) != 0 {
+		t.Fatalf("extensions of the expired grant = %+v, want none", xs)
+	}
+	if n := countRows(t, s, "grant_extensions"); n != 2 {
+		t.Fatalf("grant_extensions rows = %d, want 2", n)
+	}
+}
+
+func TestSetGrantStatus_EndReason(t *testing.T) {
+	for _, tc := range []struct{ to, reason string }{
+		{StatusEnded, EndReasonEndedEarly},
+		{StatusExpired, EndReasonExpired},
+	} {
+		t.Run(tc.to, func(t *testing.T) {
+			s, _ := openTemp(t)
+			ada := mustCreate(t, s, "Ada", "Kid phone")
+			g := mustGrant(t, s, ada.ID, []string{"tiktok"}, ada.Clients)
+			if got := endReason(t, s, g.ID); got != "NULL" {
+				t.Fatalf("live grant end_reason = %s, want NULL", got)
+			}
+			at := t0.Add(17 * time.Minute)
+			if ok, err := s.SetGrantStatus(ctx, g.ID, StatusActive, tc.to, at); err != nil || !ok {
+				t.Fatalf("SetGrantStatus = %v, %v; want true, nil", ok, err)
+			}
+			if got := endReason(t, s, g.ID); got != tc.reason {
+				t.Fatalf("end_reason = %s, want %s", got, tc.reason)
+			}
+			var endedAt sql.NullInt64
+			if err := s.DB().QueryRow(`SELECT ended_at FROM grants WHERE id = ?`, g.ID).Scan(&endedAt); err != nil {
+				t.Fatal(err)
+			}
+			if !endedAt.Valid || endedAt.Int64 != at.Unix() {
+				t.Fatalf("ended_at = %v, want %d (the at passed, not ends_at %d)", endedAt, at.Unix(), g.EndsAt.Unix())
+			}
+		})
+	}
+}
+
+// serviceNames reads grant_service_names for one grant as id=name pairs.
+func serviceNames(t *testing.T, s *Store, grantID int64) []string {
+	t.Helper()
+	return queryStrings(t, s.DB(),
+		`SELECT service_id || '=' || name FROM grant_service_names WHERE grant_id = ? ORDER BY service_id`, grantID)
+}
+
+func TestCreateGrantNamed(t *testing.T) {
+	s, _ := openTemp(t)
+	ada := mustCreate(t, s, "Ada", "Kid phone")
+	cs, err := s.CreateCustomService(ctx, "Homework site", []string{"homework.example"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	svc := cs.ServiceID()
+
+	names := map[string]string{
+		"youtube":  "YouTube",
+		svc:        "Homework site",
+		"tiktok":   "TikTok",  // not granted: no orphan row
+		"roblox":   "",        // granted, no name: no row
+		" spotify": "Spotify", // matched after trimming, like the service ids
+		"twitch":   "Twitch",
+	}
+	g, err := s.CreateGrantNamed(ctx, ada.ID, []string{"youtube", svc, "roblox", "spotify "}, ada.Clients, t0, t0.Add(time.Hour), names)
+	if err != nil {
+		t.Fatalf("CreateGrantNamed: %v", err)
+	}
+	want := []string{svc + "=Homework site", "spotify=Spotify", "youtube=YouTube"}
+	if got := serviceNames(t, s, g.ID); !reflect.DeepEqual(got, want) {
+		t.Fatalf("names = %v, want %v", got, want)
+	}
+	if n := countRows(t, s, "grant_service_names"); n != len(want) {
+		t.Fatalf("grant_service_names rows = %d, want %d (no orphan for an ungranted key)", n, len(want))
+	}
+
+	before := [2]int{countRows(t, s, "grants"), countRows(t, s, "grant_service_names")}
+	_, err = s.CreateGrantNamed(ctx, ada.ID, []string{"twitch", "youtube"}, ada.Clients, t0, t0.Add(time.Hour), names)
+	var overlap *ErrGrantOverlap
+	if !errors.As(err, &overlap) || overlap.ServiceID != "youtube" {
+		t.Fatalf("overlapping CreateGrantNamed err = %v, want overlap on youtube", err)
+	}
+	if after := [2]int{countRows(t, s, "grants"), countRows(t, s, "grant_service_names")}; after != before {
+		t.Fatalf("rows (grants, names) before %v after %v — a rejected create left rows", before, after)
+	}
+
+	plain, err := s.CreateGrant(ctx, ada.ID, []string{"tiktok"}, ada.Clients, t0, t0.Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := serviceNames(t, s, plain.ID); len(got) != 0 {
+		t.Fatalf("CreateGrant wrote names %v, want none", got)
+	}
+
+	if _, err := s.UpdateCustomService(ctx, cs.ID, "Maths site", []string{"homework.example"}); err != nil {
+		t.Fatal(err)
+	}
+	if got := serviceNames(t, s, g.ID); !reflect.DeepEqual(got, want) {
+		t.Fatalf("names after a rename = %v, want %v (snapshot unchanged)", got, want)
 	}
 }

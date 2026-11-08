@@ -66,6 +66,30 @@
   name = "dead-array-fallback"
   reason = "Dead ?? [] fallback: api.ts fetchers default this field to [] (api.ts:262/314/315/375, pinned in api.test.ts), so the component-side fallback never runs in the app and the replacement array is unobservable."
 
+[[category]]
+  name = "stryker-false-survivor"
+  reason = "Stryker false survivor (grant-history verify 2026-11-04): hand-applying this mutant makes the existing vitest suite fail, yet Stryker's vitest-runner reported it survived; the breakage is caught."
+
+[[category]]
+  name = "gremlins-case-ceiling-pin-unlock"
+  reason = "Killed when applied by hand (pin-unlock verify, 2026-11-04): the go test for the package fails on the mutant; gremlins attributes no coverage block to switch-case / if-init expressions and reports it as surviving. Attribution ceiling, not a test gap."
+
+[[category]]
+  name = "stryker-static-pin-unlock"
+  reason = "Killed when applied by hand (pin-unlock verify, 2026-11-04): Stryker runs static (module-level) mutants against only the 3 tests its coverage map attributes to them; the full vitest suite fails on the hand-applied mutant. Tool artifact, not a test gap."
+
+[[category]]
+  name = "activegrants-clear-null"
+  reason = "Equivalent mutant: the guard is 'if (timer !== null) clearInterval(timer)'; forcing it true only adds clearInterval(null), which is a no-op. The false side is killed by activeGrants.test.ts (off-phase wake / stop tests)."
+
+[[category]]
+  name = "go-const-no-cover-block"
+  reason = "A const duration expression has no go-cover block, so gremlins never builds this mutant and no test run can reach it (drain, history-overview, 2026-11-06)."
+
+[[category]]
+  name = "go-string-concat-not-arithmetic"
+  reason = "The + joins string constants into a SQL query. ARITHMETIC_BASE does not apply to string operands, so the mutant cannot compile (drain, history-overview, 2026-11-06)."
+
 [[accepted]]
   key = "51a958b88e117c6a"
   file = "internal/adguard/client.go"
@@ -292,15 +316,6 @@
   accepted_in = "01-config-adguard-client"
 
 [[accepted]]
-  key = "1fa25d4f40ebe7f5"
-  file = "internal/api/login.go"
-  op = "CONDITIONALS_NEGATION"
-  text = "case err == nil:"
-  line = 79
-  category = "gremlins-switch-case"
-  accepted_in = "02-auth-sessions"
-
-[[accepted]]
   key = "793b75f25044151d"
   file = "internal/auth/auth.go"
   op = "CONDITIONALS_NEGATION"
@@ -388,24 +403,6 @@
   text = "return typeof location === 'undefined' ? '/' : location.pathname"
   line = 35
   category = "stryker-node-env-guard"
-  accepted_in = "02-auth-sessions"
-
-[[accepted]]
-  key = "d335c2ed61ddcc43"
-  file = "web/src/lib/api.ts"
-  op = "StringLiteral"
-  text = "if (typeof history !== 'undefined' && currentPath() !== path) {"
-  line = 44
-  category = "stryker-node-env-guard"
-  accepted_in = "02-auth-sessions"
-
-[[accepted]]
-  key = "94cf19252c2aef02"
-  file = "web/src/lib/api.ts"
-  op = "StringLiteral"
-  text = "history.pushState(null, '', path)"
-  line = 45
-  reason = "history.pushState title argument is ignored by every browser per the HTML spec; no observable behaviour"
   accepted_in = "02-auth-sessions"
 
 [[accepted]]
@@ -733,15 +730,6 @@
   accepted_in = "04-grants-scheduler-reconciler"
 
 [[accepted]]
-  key = "07257c7ebd994d79"
-  file = "internal/grants/grants.go"
-  op = "ARITHMETIC_BASE"
-  text = "return \"grants: revert failed for \" + strings.Join(e.Clients, \", \")"
-  line = 47
-  reason = "ARITHMETIC_BASE on the string concatenation in ErrRevertFailed.Error(): string - string does not compile (not viable). The type itself is exercised via errors.As in TestGrants_EndRevertFails / TestEngine_EndRevertFailure; only the Error() text is never read."
-  accepted_in = "04-grants-scheduler-reconciler"
-
-[[accepted]]
   key = "149b5b8d30816792"
   file = "internal/grants/grants.go"
   op = "CONDITIONALS_NEGATION"
@@ -766,15 +754,6 @@
   text = "panic(\"web: embedded dist dir missing: \" + err.Error())"
   line = 20
   category = "string-concat-panic-embed"
-  accepted_in = "05-phone-ui-buttons-pwa"
-
-[[accepted]]
-  key = "791f265470427dc7"
-  file = "web/src/lib/api.ts"
-  op = "StringLiteral"
-  text = "const PATHS: Record<Route, string> = { login: '/login', home: '/', children: '/children', buttons: '/buttons' }"
-  line = 33
-  category = "stryker-static-attribution"
   accepted_in = "05-phone-ui-buttons-pwa"
 
 [[accepted]]
@@ -1192,24 +1171,6 @@
   accepted_in = "shared-devices"
 
 [[accepted]]
-  key = "bc76e085b2a98272"
-  file = "web/src/lib/Home.svelte"
-  op = "ArrayDeclaration"
-  text = "return v.services.filter((s) => s.state !== 'unblocked' || (s.unblocked_by ?? []).length > 0)"
-  line = 208
-  category = "dead-array-fallback"
-  accepted_in = "shared-devices"
-
-[[accepted]]
-  key = "7f673034875137a4"
-  file = "web/src/lib/Home.svelte"
-  op = "ArrayDeclaration"
-  text = "const by = s.unblocked_by ?? []"
-  line = 217
-  category = "dead-array-fallback"
-  accepted_in = "shared-devices"
-
-[[accepted]]
   key = "8ef387b402aa021d"
   file = "web/src/lib/Home.svelte"
   op = "ArrayDeclaration"
@@ -1255,15 +1216,6 @@
   reason = "Equivalent: length >= 0 with shared [] sets sharedNotes to sharedText([]) = '', which {#if} hides exactly like the '' reset in tap()."
 
 [[accepted]]
-  key = "84cebad2af320e60"
-  file = "web/src/lib/Home.svelte"
-  op = "ConditionalExpression"
-  text = "const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []"
-  line = 219
-  accepted_in = "shared-devices"
-  reason = "Equivalent: the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:146,149), so filtering differs unconditionally yields [] there too."
-
-[[accepted]]
   key = "c11e6591b162d114"
   file = "web/src/lib/Buttons.svelte"
   op = "EqualityOperator"
@@ -1298,3 +1250,966 @@
   line = 210
   accepted_in = "button-editor"
   reason = "equivalent: null > i is false for every row index i >= 0, so the editing !== null guard only narrows the type"
+
+[[accepted]]
+  key = "891c4e5dcff99373"
+  file = "internal/rules/region.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case begins == 0 && ends == 0:"
+  line = 51
+  accepted_in = "custom-services"
+  reason = "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "f20868ec245ab68d"
+  file = "internal/rules/region.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case begins == 1 && ends == 1 && begin < end:"
+  line = 57
+  accepted_in = "custom-services"
+  reason = "Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/rules fails. gremlins attributes no coverage block to switch-case expressions, so it marks the mutant NotCovered and never runs it. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "304c22427bc9c248"
+  file = "internal/rules/region.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case begins == 1 && ends == 1 && begin < end:"
+  line = 57
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: the case only applies when exactly one BeginMarker and one EndMarker line exist, and a single line cannot equal both, so begin == end is unreachable and begin < end vs begin <= end behave identically (hand-applied 2026-11-02: tests pass, as expected for an equivalent)."
+
+[[accepted]]
+  key = "cccf33fd143b660e"
+  file = "internal/grants/reconcile.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 69
+  accepted_in = "custom-services"
+  reason = "Killed when applied by hand (2026-11-02, custom-services verify): case err != nil -> err == nil fails TestReconcile_DriftRepaired, _NoopNoWrites, _RevertsOverdue and more in ./internal/grants. gremlins attributes no coverage block to switch-case expressions. Attribution ceiling, not a test gap."
+
+[[accepted]]
+  key = "02e04620e8b34819"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "INCREMENT_DECREMENT"
+  text = "s.filterInFlight++"
+  line = 431
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "3188cf890a3ee017"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "if s.filterInFlight > s.filterMaxFlight {"
+  line = 432
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "24f1c500a12e3a58"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "INCREMENT_DECREMENT"
+  text = "s.filterInFlight--"
+  line = 447
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "d1ef95a7df479858"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "if err := dec.Decode(&in); err != nil {"
+  line = 637
+  accepted_in = "custom-services"
+  reason = "Test double in a non-test package with no tests of its own: gremlins measures coverage per package, so lines exercised only by internal/adguard tests read as NotCovered. Killed when applied by hand (2026-11-02, custom-services verify): go test ./internal/adguard fails."
+
+[[accepted]]
+  key = "31c90b7c2c61feca"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "if s.filterInFlight > s.filterMaxFlight {"
+  line = 432
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant in the test double's max-in-flight tracker: > vs >= only differs when filterInFlight == filterMaxFlight, where the assignment rewrites the same value (hand-applied 2026-11-02: tests pass, as expected for an equivalent)."
+
+[[accepted]]
+  key = "fbcbc76509425f22"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "panic(\"adguardtest: filtering_status.json user_rules: \" + err.Error())"
+  line = 105
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "6366333d825413bd"
+  file = "internal/adguard/adguardtest/server.go"
+  op = "ARITHMETIC_BASE"
+  text = "http.Error(w, \"invalid set_rules request: \"+err.Error(), http.StatusBadRequest)"
+  line = 638
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "d6679638cc1e6564"
+  file = "internal/api/custom_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "a.log.Error(op+\" failed\", \"err\", err)"
+  line = 153
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "476fdd58ed2fe273"
+  file = "internal/api/custom_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "writeError(w, http.StatusInternalServerError, \"internal\", \"could not \"+op)"
+  line = 154
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "e39161b598da64d9"
+  file = "internal/api/clients.go"
+  op = "ARITHMETIC_BASE"
+  text = "func (e *catalogueAdGuardError) Error() string { return \"adguard services: \" + e.err.Error() }"
+  line = 284
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "37db173ea9b8e0ba"
+  file = "internal/grants/clients.go"
+  op = "ARITHMETIC_BASE"
+  text = "e.log.Warn(op+\": managed rules not updated; the reconciler will retry\", \"client\", client, \"err\", err)"
+  line = 193
+  accepted_in = "custom-services"
+  reason = "ARITHMETIC_BASE on a string concatenation (+ inside a log, error or panic message): string - string does not compile, so the mutant is not viable."
+
+[[accepted]]
+  key = "7c2390c767e9930a"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "ConditionalExpression"
+  text = "if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {"
+  line = 13
+  accepted_in = "custom-services"
+  reason = "Feature guard for browsers without Intl.Segmenter. jsdom/Node always provide it, so forcing the guard true is unobservable in any test environment; the grapheme behaviour it protects is pinned by ServiceIcon.test.ts:32 (family-emoji case)."
+
+[[accepted]]
+  key = "a48d90340229f456"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "LogicalOperator"
+  text = "if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {"
+  line = 13
+  accepted_in = "custom-services"
+  reason = "&& -> || on the Intl.Segmenter feature guard: Intl is always defined in jsdom/Node, so both forms evaluate true; equivalent in every test environment."
+
+[[accepted]]
+  key = "654ac3271c555fa6"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "ObjectLiteral"
+  text = "const seg = new Intl.Segmenter(undefined, { granularity: 'grapheme' })"
+  line = 14
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: granularity 'grapheme' is Intl.Segmenter's documented default, so {granularity:'grapheme'} -> {} segments identically."
+
+[[accepted]]
+  key = "979484f15856d4c9"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "OptionalChaining"
+  text = "first = seg.segment(t)[Symbol.iterator]().next().value?.segment"
+  line = 15
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: letterOf returns '?' for a blank trimmed name before segmenting (line 11), so the first segment's value is never undefined and dropping ?. cannot throw."
+
+[[accepted]]
+  key = "98d03b837dfb088c"
+  file = "web/src/lib/Services.svelte"
+  op = "BooleanLiteral"
+  text = "return true"
+  line = 55
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return true -> false is unobservable."
+
+[[accepted]]
+  key = "74abd16500e92203"
+  file = "web/src/lib/Services.svelte"
+  op = "BooleanLiteral"
+  text = "return false"
+  line = 61
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: run()'s boolean result is never read (onMount voids it; save and del only await it), so return false -> true is unobservable."
+
+[[accepted]]
+  key = "9d6183df834aa3b3"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "home: '/',"
+  line = 35
+  accepted_in = "custom-services"
+  reason = "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates, so the mutation never takes effect. The value is asserted (api.test.ts:368 expects '/')."
+
+[[accepted]]
+  key = "cb4084c4e0eff4fa"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "services: '/services',"
+  line = 38
+  accepted_in = "custom-services"
+  reason = "Stryker static-mutant ceiling: module-level PATHS initializer is evaluated once at import, before the per-test mutant switch activates. The value is asserted (api.test.ts:659 expects '/services')."
+
+[[accepted]]
+  key = "74d2fbec3ff0b092"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const CUSTOM_SERVICES = '/api/v1/custom-services'"
+  line = 341
+  accepted_in = "custom-services"
+  reason = "Stryker static-mutant ceiling: module-level CUSTOM_SERVICES const is evaluated once at import, before the per-test mutant switch activates. The URL is asserted for GET/POST/PUT/DELETE (api.test.ts:606-609)."
+
+[[accepted]]
+  key = "37bd6dcd60a08004"
+  file = "web/src/lib/ServiceIcon.svelte"
+  op = "StringLiteral"
+  text = "if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {"
+  line = 13
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant at col 25: typeof Intl !== 'undefined' -> typeof Intl !== \"\" is always true (typeof never yields an empty string), the same as the accepted guard mutants on this line. The 'Segmenter' literal mutant on this line is killed by ServiceIcon.test.ts:32 (family emoji)."
+
+[[accepted]]
+  key = "6fac435270d9bb93"
+  file = "web/src/lib/Services.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 22
+  accepted_in = "custom-services"
+  reason = "Equivalent mutant: pending's initial false -> true is unobservable because onMount's run() sets pending = true before any test or user can see the DOM, and finally resets it, so every observable state is identical."
+
+[[accepted]]
+  key = "bc02b0686e411159"
+  file = "internal/grants/grants.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 345
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "6bbce7448c751d07"
+  file = "internal/grants/grants.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 404
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "5a75225dd24910cc"
+  file = "internal/grants/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case t.state == store.ToggleUnblocked:"
+  line = 220
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "d829dbd8a124561a"
+  file = "internal/grants/clients.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case t.childID == childID:"
+  line = 222
+  category = "gremlins-switch-case"
+  accepted_in = "permanent-toggles"
+
+[[accepted]]
+  key = "8507d03bf1699d5f"
+  file = "web/src/lib/BlockPicker.svelte"
+  op = "StringLiteral"
+  text = "let query = $state('')"
+  line = 21
+  accepted_in = "permanent-toggles"
+  reason = "Initial query value is unobservable: the search panel renders only under {#if open}, and the only way to open it, toggleOpen(), sets query = '' first, so the initial value never reaches the input or pickerOptions in any render."
+
+[[accepted]]
+  key = "49ec100d567c86ad"
+  file = "web/src/lib/BlockPicker.svelte"
+  op = "StringLiteral"
+  text = "query = ''"
+  line = 37
+  accepted_in = "permanent-toggles"
+  reason = "The post-pick query reset is unobservable: the same pick sets open = false, which unmounts the panel, and reopening goes through toggleOpen(), which sets query = '' again before the panel renders."
+
+[[accepted]]
+  key = "ff2992988b4c7e63"
+  file = "web/src/lib/toggles.ts"
+  op = "ConditionalExpression"
+  text = "const plain = s.state === 'partial' ? s.differs.filter((c) => !attributed.has(c)) : []"
+  line = 30
+  accepted_in = "permanent-toggles"
+  reason = "Equivalent (carried over from the retired Home.svelte acceptance 84cebad2 when openOn moved to toggles.ts): the blocked fold sets Differs to [] for every non-partial state (internal/blocked/blocked.go:191,194), so filtering differs unconditionally yields [] there too."
+
+[[accepted]]
+  key = "c8067c4b53b4a89d"
+  file = "web/src/lib/Home.svelte"
+  op = "StringLiteral"
+  text = "if (!(await setToggle(childId, s, 'blocked'))) throw new Error('not blocked')"
+  line = 271
+  accepted_in = "permanent-toggles"
+  reason = "The Error message in pickBlock is never read: BlockPicker.pick() catches every onpick rejection without inspecting it (the alert comes from setToggle's toggleNotes), so the message text is unobservable."
+
+[[accepted]]
+  key = "e59f02659c1e10ad"
+  file = "web/src/lib/Home.svelte"
+  op = "OptionalChaining"
+  text = "<p class=\"error\" role=\"alert\" data-error={toggleNotes[child.id]?.code} data-toggle-error>{toggleNotes[child.id]?.text}</p>"
+  line = 399
+  accepted_in = "permanent-toggles"
+  reason = "Both optional chains sit inside {#if toggleNotes[child.id]}, so the object is never nullish where they run (same as the accepted notes[child.id]?.code alert)."
+
+[[accepted]]
+  key = "69e5de68ee929324"
+  file = "internal/blocked/blocked.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "return a.Child.ID < b.Child.ID"
+  line = 187
+  accepted_in = "permanent-toggles"
+  reason = "Equivalent: the final tie-break in the UnblockedBy sort.Slice less func. Two entries reach it only with equal Client and GrantID; with distinct Child.ID, < and <= agree. With equal Child.ID the two Unblock values are identical (same client, grant, child, Permanent), so a swap cannot change the slice. Verified 2026-11-03: <= passes go test ./internal/blocked while >= (NEGATION) fails TestCompute_UnblockedByChildOrder."
+
+[[accepted]]
+  key = "6a3fdd28ae736d00"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (raw === null || !/^[1-9][0-9]*$/.test(raw)) return null"
+  line = 56
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "db97002fa641df0f"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return typeof child === 'number' && Number.isSafeInteger(child) && child > 0 ? child : null"
+  line = 62
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "ee84e47feff29b68"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (typeof history !== 'undefined' && currentPath() + currentSearch() !== url) {"
+  line = 97
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "b4690ae2b3c68c80"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  accepted_in = "grant-history"
+  reason = "Two mutants: ->false is a Stryker false survivor (hand-applied, 4 api.test.ts popstate tests fail); ->true is equivalent in every runtime this SPA runs in (window always defined in the browser and jsdom)."
+
+[[accepted]]
+  key = "ff0972906c068a25"
+  file = "web/src/lib/api.ts"
+  op = "EqualityOperator"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "4fee91a56666ef73"
+  file = "web/src/lib/api.ts"
+  op = "BlockStatement"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "1956634d46fca7b0"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "window.addEventListener('popstate', () => {"
+  line = 105
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "4952cfeed1f15d36"
+  file = "web/src/App.svelte"
+  op = "ConditionalExpression"
+  text = "{:else if $route === 'history' && username !== null}"
+  line = 49
+  category = "stryker-false-survivor"
+  accepted_in = "grant-history"
+
+[[accepted]]
+  key = "c0198d7e5b2e0674"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return typeof location === 'undefined' ? '' : location.search"
+  line = 70
+  accepted_in = "grant-history"
+  reason = "Equivalent: SSR guard typeof location === 'undefined'; location is always defined in the browser and jsdom, so forcing the location.search branch changes nothing."
+
+[[accepted]]
+  key = "6e4687d79f086dcd"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "return typeof location === 'undefined' ? '' : location.search"
+  line = 70
+  accepted_in = "grant-history"
+  reason = "Equivalent: the '' fallback is the SSR-only branch of currentSearch(); unreachable where location exists (browser, jsdom)."
+
+[[accepted]]
+  key = "d2def4d0fa4562da"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (typeof history !== 'undefined' && currentPath() + currentSearch() !== url) {"
+  line = 97
+  accepted_in = "grant-history"
+  reason = "Equivalent: typeof history !== '' is always true, same as !== 'undefined' wherever history exists (browser, jsdom)."
+
+[[accepted]]
+  key = "f94717ed4dfb082d"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "history.pushState(null, '', url)"
+  line = 98
+  accepted_in = "grant-history"
+  reason = "Equivalent: the second pushState argument (title) is ignored by browsers and jsdom."
+
+[[accepted]]
+  key = "52d6dfd7f539f3a8"
+  file = "web/src/lib/History.svelte"
+  op = "BooleanLiteral"
+  text = "let loadingMore = $state(false)"
+  line = 19
+  accepted_in = "grant-history"
+  reason = "Equivalent: initial loadingMore is reset to false by load() in the mount effect, and the load-more button only renders after loaded."
+
+[[accepted]]
+  key = "e94743814eb9d4ff"
+  file = "web/src/lib/History.svelte"
+  op = "UpdateOperator"
+  text = "const gen = ++generation"
+  line = 33
+  accepted_in = "grant-history"
+  reason = "Equivalent: generation only needs to change per load; --generation yields unique values the same as ++generation, so gen !== generation comparisons behave identically."
+
+[[accepted]]
+  key = "f98cd98dee9e271c"
+  file = "web/src/lib/History.svelte"
+  op = "ArrayDeclaration"
+  text = "grants = []"
+  line = 35
+  accepted_in = "grant-history"
+  reason = "Equivalent: the reset value of grants in load() is never rendered (loaded is false until a page arrives, which overwrites grants)."
+
+[[accepted]]
+  key = "e2e32041a8692c9c"
+  file = "web/src/lib/History.svelte"
+  op = "ConditionalExpression"
+  text = "{#if g.extensions.length > 0}"
+  line = 128
+  accepted_in = "grant-history"
+  reason = "Equivalent: rendering the extensions <ol> unconditionally only adds an empty list with no [data-extension] items when there are no extensions; no visible content changes."
+
+[[accepted]]
+  key = "bb7c3aac00f9f965"
+  file = "web/src/lib/History.svelte"
+  op = "EqualityOperator"
+  text = "{#if g.extensions.length > 0}"
+  line = 128
+  accepted_in = "grant-history"
+  reason = "Equivalent: length >= 0 renders an empty <ol> for zero extensions; no visible content changes."
+
+[[accepted]]
+  key = "d229e14e3992b417"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "const reason = s.removed_reason === null ? null : REMOVED_REASONS[s.removed_reason]"
+  line = 43
+  accepted_in = "grant-history"
+  reason = "Equivalent: REMOVED_REASONS[null] is undefined, so forcing the lookup yields the same falsy reason and the same fallback text as the null branch."
+
+[[accepted]]
+  key = "a449124a3ffdc745"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "if (typeof window !== 'undefined') {"
+  line = 104
+  accepted_in = "grant-history"
+  reason = "Equivalent: typeof window !== \"\" is always true, identical to the already-accepted ->true mutant on this line; window is defined in every runtime this SPA runs in (browser and jsdom)."
+
+[[accepted]]
+  key = "1702d76e6fc4596c"
+  file = "internal/api/pin.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 128
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "6f6a26b327e331f8"
+  file = "internal/api/unlock.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 87
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "2e088d645f6775d1"
+  file = "internal/api/unlock.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil:"
+  line = 111
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "9fa81f875c787158"
+  file = "internal/api/reauth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 59
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "a2174cc1b459ab80"
+  file = "internal/api/login.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil && dev.Username == username:"
+  line = 93
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "9633328df008345a"
+  file = "internal/api/login.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil, errors.Is(err, auth.ErrDeviceNotFound):"
+  line = 95
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "149178a83dc6f631"
+  file = "internal/auth/middleware.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err == nil:"
+  line = 59
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "6b2ce1298875194f"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "export const UNLOCK_PATH = '/api/v1/unlock'"
+  line = 11
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "82334e90e6b24ee2"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "settings: '/settings',"
+  line = 52
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "620017a2348cd2ac"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const PIN = '/api/v1/pin'"
+  line = 259
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "4ac83fba7b317acf"
+  file = "web/src/lib/api.ts"
+  op = "ArrayDeclaration"
+  text = "const OWN_401 = new Set([LOGIN_PATH, UNLOCK_PATH])"
+  line = 190
+  category = "stryker-static-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "e3ab9850c67d0aaa"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "if (typeof left === 'number' && Number.isSafeInteger(left) && left >= 0) attemptsRemaining = left"
+  line = 179
+  accepted_in = "pin-unlock"
+  reason = "Equivalent mutant: typeof left === 'number' -> true is guarded by Number.isSafeInteger(left), which rejects every non-number, so behaviour is identical."
+
+[[accepted]]
+  key = "245b4e6343fd38eb"
+  file = "web/src/lib/activeGrants.ts"
+  op = "ConditionalExpression"
+  text = "if (timer !== null) clearInterval(timer)"
+  line = 88
+  category = "activegrants-clear-null"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "60acbab3be5b6dfd"
+  file = "web/src/lib/activeGrants.ts"
+  op = "ConditionalExpression"
+  text = "if (timer !== null) clearInterval(timer)"
+  line = 110
+  category = "activegrants-clear-null"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "a5c6f882ad9a267f"
+  file = "web/src/lib/activeGrants.ts"
+  op = "BooleanLiteral"
+  text = "for (const e of INPUT_EVENTS) document.addEventListener(e, onInput, { capture: true, passive: true })"
+  line = 108
+  accepted_in = "pin-unlock"
+  reason = "Equivalent mutant: the surviving true->false is passive (onInput never calls preventDefault, so passive is unobservable); a capture:false mutant is killed by 'stop removes the input listeners' and the stopPropagation wake test."
+
+[[accepted]]
+  key = "50fa6eac4e744221"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil && ctx.Err() == nil:"
+  line = 305
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "4740988ef6c38c04"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case n > 0:"
+  line = 307
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "714f27fe60217a48"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case n > 0:"
+  line = 307
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "eb32f9fcff67309c"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case err != nil && ctx.Err() == nil:"
+  line = 315
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "105d02322df96350"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_BOUNDARY"
+  text = "case n > 0:"
+  line = 317
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "063e583cf62246c2"
+  file = "internal/auth/auth.go"
+  op = "CONDITIONALS_NEGATION"
+  text = "case n > 0:"
+  line = 317
+  category = "gremlins-case-ceiling-pin-unlock"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "0f01ad4fab406eda"
+  file = "web/src/lib/api.ts"
+  op = "OptionalChaining"
+  text = "const left = body?.attempts_remaining"
+  line = 178
+  category = "optional-chain-inside-try"
+  accepted_in = "pin-unlock"
+
+[[accepted]]
+  key = "5f7f51c4d7ffbc60"
+  file = "web/src/lib/PinPad.svelte"
+  op = "ConditionalExpression"
+  text = "const canSubmit = $derived(!pending && pin.length >= MIN && pin.length <= MAX)"
+  line = 17
+  accepted_in = "pin-unlock"
+  reason = "Equivalent mutant: forces the pin.length <= MAX arm of canSubmit to true, but every write to pin keeps it <= MAX (digitsOnly slices to MAX, press() returns at >= MAX, backspace only shrinks, resets set ''), so the arm is never false. The <= vs < boundary is killed by the 6-digit submit test."
+
+[[accepted]]
+  key = "38a30aba9362d4fd"
+  file = "web/src/lib/Settings.svelte"
+  op = "BooleanLiteral"
+  text = "let pending = $state(false)"
+  line = 21
+  accepted_in = "export-import"
+  reason = "Equivalent: onMount(load) calls run(), which sets pending = true in the same synchronous mount, so the initial value is overwritten before anything can observe it. Applied by hand at base and HEAD: Settings.test.ts passes."
+
+[[accepted]]
+  key = "50d693f6282912b6"
+  file = "web/src/lib/Settings.svelte"
+  op = "ArrayDeclaration"
+  text = "let missingClients = $state<string[]>([])"
+  line = 29
+  accepted_in = "export-import"
+  reason = "Equivalent: missingClients only renders inside {#if backupNote}, backupNote is only set inside runBackup, and runBackup resets missingClients first, so the initial value can never reach the DOM."
+
+[[accepted]]
+  key = "9b6d0791ccf4b116"
+  file = "web/src/lib/Settings.svelte"
+  op = "OptionalChaining"
+  text = "const file = input.files?.[0]"
+  line = 150
+  accepted_in = "export-import"
+  reason = "Equivalent in a browser: HTMLInputElement.files is a non-null FileList for type=file (empty on cancel). The ?. exists only for the DOM type's nullable signature; killing it needs a stub of a state the platform cannot produce."
+
+[[accepted]]
+  key = "a931246e74b06901"
+  file = "web/src/lib/api.ts"
+  op = "ConditionalExpression"
+  text = "return send<T>(method, path, body === undefined ? undefined : JSON.stringify(body))"
+  line = 233
+  accepted_in = "export-import"
+  reason = "Equivalent: JSON.stringify(undefined) returns undefined at runtime, so forcing the ternary to its else branch passes the same value to send(). The ternary exists for JSON.stringify's string return type."
+
+[[accepted]]
+  key = "315e6ab0c01bf7ce"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "value={filters.from ?? ''}"
+  line = 102
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+
+[[accepted]]
+  key = "5b8221e61f77c842"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "value={filters.to ?? ''}"
+  line = 111
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''."
+
+[[accepted]]
+  key = "dfc634b30d2dd4ea"
+  file = "web/src/lib/History.svelte"
+  op = "ArrayDeclaration"
+  text = "let grants = $state<OverviewGrant[]>([])"
+  line = 31
+  accepted_in = "history-overview"
+  reason = "Equivalent: load() resets grants in the mount effect and the list renders only once loaded is true after a page arrives, overwriting this initial value."
+
+[[accepted]]
+  key = "51dc250be148d62e"
+  file = "web/src/lib/History.svelte"
+  op = "StringLiteral"
+  text = "const filterKey = $derived(filters.badChild ? 'bad' : `${child}?${filterParams(filters)}`)"
+  line = 51
+  accepted_in = "history-overview"
+  reason = "Equivalent: filterKey only has to differ between filter sets. Every other key contains a ?, so '' stays as distinct as 'bad', and the value is never shown."
+
+[[accepted]]
+  key = "389072b7543d6c74"
+  file = "web/src/lib/History.svelte"
+  op = "ConditionalExpression"
+  text = "if (loadingMore || before === null) return"
+  line = 112
+  accepted_in = "history-overview"
+  reason = "Equivalent: loadMore is reachable only from the Load more button, which renders inside {#if nextBefore !== null}, so before is never null here."
+
+[[accepted]]
+  key = "21646a60f54848a6"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const own = r === 'history' ? search : ''"
+  line = 102
+  accepted_in = "history-overview"
+  reason = "Equivalent: off the history route own only feeds parseFilters and URLSearchParams; any string with no filter or child key reads as no filters, same as ''."
+
+[[accepted]]
+  key = "ef7d5c3b89c8d878"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "return parseFilters(f === undefined ? '' : filterParams(f).toString())"
+  line = 109
+  accepted_in = "history-overview"
+  reason = "Equivalent: parseFilters of a string naming no filter key returns no filters, same as parsing ''."
+
+[[accepted]]
+  key = "760a8879568afcc5"
+  file = "web/src/lib/api.ts"
+  op = "StringLiteral"
+  text = "const HISTORY = '/api/v1/history'"
+  line = 725
+  accepted_in = "history-overview"
+  reason = "Stryker false survivor (history-overview verify 2026-11-06): static module-level const. Hand-applying HISTORY = '' fails 55 vitest tests, so the suite catches it."
+
+[[accepted]]
+  key = "27cd17be97287dbd"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "const m = v === null ? null : DAY.exec(v)"
+  line = 81
+  accepted_in = "history-overview"
+  reason = "Equivalent: DAY.exec(null) coerces to 'null', which does not match, so m is null exactly as the guard makes it."
+
+[[accepted]]
+  key = "852254c6a0f93b2f"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "return d.getUTCMonth() === month - 1 && d.getUTCDate() === day ? v : null"
+  line = 86
+  accepted_in = "history-overview"
+  reason = "Equivalent: any day overflow also changes the month, so the month check already rejects every date this comparison would catch."
+
+[[accepted]]
+  key = "22fc6e01d4c968b8"
+  file = "web/src/lib/history.ts"
+  op = "ConditionalExpression"
+  text = "return v !== null && Object.hasOwn(LABELS, v) ? (v as HistoryStatus) : null"
+  line = 90
+  accepted_in = "history-overview"
+  reason = "Equivalent: Object.hasOwn(LABELS, null) looks up the key 'null', which LABELS lacks, so the result is false with or without the guard."
+
+[[accepted]]
+  key = "32ca7cc2f84c36f4"
+  file = "web/src/lib/history.ts"
+  op = "Regex"
+  text = "const DAY = /^(\\d{4})-(\\d{2})-(\\d{2})$/"
+  line = 72
+  accepted_in = "history-overview"
+  reason = "False survivor, Stryker attribution ceiling: DAY is a module-level regex, so these are static mutants, and Stryker ran only 7 api.test.ts tests against them. Both are killed by hand (history-overview verify, 2026-11-06): dropping ^ fails 'treats from=x2026-03-01 as no filter', dropping $ fails 'treats to=2026-03-01x as no filter' and 'treats to=2026-03-01T00:00:00Z as no filter'. Both mutants share this key."
+
+[[accepted]]
+  key = "700a25d7d93f0bd3"
+  file = "cmd/adguard-reward/main.go"
+  op = "ARITHMETIC_BASE"
+  text = "const probeInterval = 60 * time.Second"
+  line = 35
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "41a5722238fc0ad1"
+  file = "cmd/adguard-reward/main.go"
+  op = "ARITHMETIC_BASE"
+  text = "const startupReconcileTimeout = 30 * time.Second"
+  line = 47
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "cec5e17ca1c86585"
+  file = "internal/adguard/client.go"
+  op = "ARITHMETIC_BASE"
+  text = "defaultTimeout = 10 * time.Second"
+  line = 23
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "4272437f2845ec9b"
+  file = "internal/auth/auth.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultLifetime = 30 * 24 * time.Hour"
+  line = 101
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "b24f953d3b22dde7"
+  file = "internal/auth/auth.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultPINIdle = 15 * time.Minute"
+  line = 104
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "8d8d3a6bccb2b0b6"
+  file = "internal/auth/device.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultDeviceLifetime = 90 * 24 * time.Hour"
+  line = 25
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "915e0c8538632290"
+  file = "internal/grants/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "MaxDuration = 24 * time.Hour"
+  line = 32
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "5880ba93575fa224"
+  file = "internal/grants/grants.go"
+  op = "ARITHMETIC_BASE"
+  text = "const DefaultApplyTimeout = 4 * time.Second"
+  line = 36
+  category = "go-const-no-cover-block"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "0bf2f883741811ae"
+  file = "internal/store/history_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "FROM ` + visibleGrants + `"
+  line = 25
+  category = "go-string-concat-not-arithmetic"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "1b58719e7c9462e8"
+  file = "internal/store/history_services.go"
+  op = "ARITHMETIC_BASE"
+  text = "FROM ` + visibleGrants + `"
+  line = 29
+  category = "go-string-concat-not-arithmetic"
+  accepted_in = "history-overview"
+
+[[accepted]]
+  key = "708406a410221007"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "} else input.value = filters[key] ?? ''"
+  line = 106
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Same mutant as retired e6b705a6c3068af8, rekeyed when t-15 moved the line; jsdom confirmed on 8cc2749 and the one covering test, which asserts '', passes on it."
+
+[[accepted]]
+  key = "a7f22c1a0303dc17"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "fromInput.value = filters.from ?? ''"
+  line = 113
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."
+
+[[accepted]]
+  key = "6eee2cbbaf236a76"
+  file = "web/src/lib/HistoryFilterBar.svelte"
+  op = "StringLiteral"
+  text = "toInput.value = filters.to ?? ''"
+  line = 114
+  accepted_in = "history-overview"
+  reason = "Equivalent: a type=date input sanitises any value that is not a valid date to the empty string, so a non-empty fallback renders exactly like ''. Confirmed in jsdom on 7369371, and the covering tests that assert '' pass on the mutant."

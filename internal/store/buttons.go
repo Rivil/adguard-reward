@@ -80,23 +80,8 @@ func (st *Store) ReplaceButtons(ctx context.Context, in []Button) ([]Button, err
 			if err != nil {
 				return err
 			}
-			res, err := tx.ExecContext(ctx,
-				`INSERT INTO buttons (position, label, child_id, icon, duration) VALUES (?, ?, ?, ?, ?)`,
-				i, b.Label, b.ChildID, sql.NullString{String: b.Icon, Valid: b.Icon != ""},
-				int64(b.Duration/time.Second))
-			if err != nil {
+			if err := insertButton(ctx, tx, i, b); err != nil {
 				return err
-			}
-			id, err := res.LastInsertId()
-			if err != nil {
-				return err
-			}
-			for j, svc := range dedupKeepOrder(b.Services) {
-				if _, err := tx.ExecContext(ctx,
-					`INSERT INTO button_services (button_id, position, service_id) VALUES (?, ?, ?)`,
-					id, j, svc); err != nil {
-					return err
-				}
 			}
 		}
 		var err error
@@ -111,6 +96,30 @@ func (st *Store) ReplaceButtons(ctx context.Context, in []Button) ([]Button, err
 		return nil, fmt.Errorf("replace buttons: %w", err)
 	}
 	return out, nil
+}
+
+// insertButton adds b at position with its services, deduped in order. The
+// caller has checked that b's child exists.
+func insertButton(ctx context.Context, tx *sql.Tx, position int, b Button) error {
+	res, err := tx.ExecContext(ctx,
+		`INSERT INTO buttons (position, label, child_id, icon, duration) VALUES (?, ?, ?, ?, ?)`,
+		position, b.Label, b.ChildID, sql.NullString{String: b.Icon, Valid: b.Icon != ""},
+		int64(b.Duration/time.Second))
+	if err != nil {
+		return err
+	}
+	id, err := res.LastInsertId()
+	if err != nil {
+		return err
+	}
+	for j, svc := range dedupKeepOrder(b.Services) {
+		if _, err := tx.ExecContext(ctx,
+			`INSERT INTO button_services (button_id, position, service_id) VALUES (?, ?, ?)`,
+			id, j, svc); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // loadButtons issues two queries — buttons, then their services — each

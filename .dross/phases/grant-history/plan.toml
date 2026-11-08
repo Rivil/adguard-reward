@@ -1,0 +1,177 @@
+task_seq = 10
+
+[phase]
+  id = "grant-history"
+
+# Wire conventions (agreed in panel synthesis, panel/synthesis.md; 11 of 12 disagreements took the provisional
+# default, D-7 flipped to "stay on History, show No such child"):
+# - schema 0009: grants.end_reason TEXT NULL CHECK IN ('expired','ended_early','permanent_block'), no backfill;
+#   grant_service_names(grant_id FK grants CASCADE, service_id, name NOT NULL, PK(grant_id, service_id));
+#   grant_service_removals(grant_id FK grants CASCADE, service_id, removed_at NOT NULL,
+#   reason CHECK IN ('permanent_block'), PK(grant_id, service_id));
+#   grant_extensions(id PK, grant_id FK grants CASCADE, extended_at, old_ends_at, new_ends_at);
+#   grants_child_history_idx ON grants(child_id, id). grant_services keeps DELETE-on-trim (live paths untouched).
+# - HTTP: GET /api/v1/children/{id}/history[?before=<grant id>] behind requireSession ->
+#   { child:{id,name}, grants:[{id, status: ongoing|expired|ended_early|permanent_block|ended_unknown, started_at,
+#   ends_at (scheduled), ended_at|null, services:[{id, name, removed_at|null, removed_reason|null}],
+#   extensions:[{at, old_ends_at, new_ends_at}] ascending}], next_before: id|null }; newest first by id DESC, page 50;
+#   lists are [] never null. 404 unknown/deleted child or non-numeric id, 400 bad before, 401 no session.
+# - store read: ListGrantHistory on the existing ChildStore interface (no new Deps field); only grants with
+#   started_at >= child.created_at (SQLite reuses children ids — no AUTOINCREMENT).
+# - names: snapshot -> live catalogue -> bare service id; catalogue read only when a snapshot is missing.
+# - web: route 'history' at /history?child=N; missing/invalid child stays on History and shows "No such child"
+#   with back button (same surface as a 404 child).
+
+[[task]]
+  id = "t-1"
+  wave = 1
+  title = "Add grant-history schema migration 0009"
+  files = ["internal/store/migrations/0009_grant_history.sql", "internal/store/store_test.go", "internal/store/children.go", "internal/store/children_test.go", "internal/store/custom_services_test.go"]
+  description = "Add grants.end_reason, children.history_after_grant_id (INTEGER NOT NULL DEFAULT 0), the grant_service_names / grant_service_removals / grant_extensions tables and grants_child_history_idx as pinned in the header. No UPDATE of existing rows. CreateChild sets history_after_grant_id = COALESCE(MAX(grants.id), 0) in its insert tx."
+  covers = ["c-1", "c-2", "c-3", "c-6"]
+  test_contract = ["if the migration backfills or rewrites legacy rows, TestMigrate0009_LegacyRowsUntouched fails: a store migrated through 0008 with one expired, one ended and one active grant, then upgraded, keeps status, started_at, ends_at, ended_at, grant_services and grant_clients byte-identical and end_reason NULL on all three", "if the CHECK constraints are missing, TestMigrate0009_Checks fails: INSERT with end_reason='bogus' is rejected, and a grant_service_removals row with reason other than 'permanent_block' is rejected", "if migration ordering breaks, TestMigrate0009_Order fails: schema_migrations lists 0009_grant_history.sql directly after 0008_service_toggles.sql", "if CreateChild does not set the watermark inside its tx, TestCreateChild_HistoryWatermark fails: with grants up to id 7 a new child gets history_after_grant_id 7; with no grants it gets 0; children existing before 0009 read 0 after the upgrade"]
+  status = "done"
+
+[[task]]
+  id = "t-2"
+  wave = 1
+  title = "Add history route, child param, client"
+  files = ["web/src/lib/api.ts", "web/src/lib/api.test.ts"]
+  description = '''Route 'history' (/history), a historyChild store parsed from ?child= (null when missing/invalid), navigate(r, params), HistoryPage/HistoryGrant types per the pinned wire shape (including child), and fetchHistory(childId, before?).'''
+  covers = ["c-4"]
+  test_contract = [
+    '''if query params are not pushed or leak across routes, the navigate test fails: navigate('history', {child: 3}) pushes '/history?child=3' and historyChild === 3; a later navigate('home') pushes '/' with no query left over''',
+    '''if child parsing accepts garbage, the routeFor test fails: /history with ?child= missing, 'abc', '0', '-1' or '3.5' resolves to route 'history' with historyChild null — never NaN, 0 or a negative id''',
+    '''if popstate does not re-parse the child, the popstate test fails: going from /history?child=3 to /history?child=5 updates historyChild to 5; a stale 3 fails''',
+    '''if the client builds the wrong URL or swallows errors, the fetchHistory test fails: fetchHistory(3) requests GET /api/v1/children/3/history with no query, fetchHistory(3, 40) appends ?before=40, and a 404 rejects with ApiError status 404''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-3"
+  wave = 2
+  title = "Record permanent-block trims in removal log"
+  files = ["internal/store/toggles.go", "internal/store/toggles_test.go", "internal/grants/toggle_test.go"]
+  description = '''trimGrant inserts a grant_service_removals row in the same tx as the grant_services DELETE. A trim that empties the grant also sets end_reason='permanent_block' alongside status 'ended' and ended_at.'''
+  covers = ["c-1", "c-3"]
+  depends_on = ["t-1"]
+  test_contract = [
+    '''if a partial trim is not logged or leaks back into live services, TestSetToggle_TrimLogsRemoval fails: blocking one of a grant's two services writes a removal (service, at, 'permanent_block'), the grant stays active with end_reason NULL, and ListActiveGrants().Services no longer contains the service''',
+    '''if the last-service trim does not record its reason, TestSetToggle_TrimEndsWithReason fails: blocking the last service writes the removal row and sets status 'ended', end_reason 'permanent_block', ended_at = at''',
+    '''if removals are logged spuriously, TestSetToggle_NoSpuriousRemoval fails: an unblock toggle, or a block with no live grant covering the service, writes no removal row''',
+    '''if a later expiry overwrites the trim outcome, TestSetToggle_TrimEndedNotReExpired fails: after a trim-ended grant, SetGrantStatus(active->expired) returns false and end_reason stays 'permanent_block' ''',
+    '''if the removal insert is outside the toggle tx, TestSetToggle_RemovalRollsBack fails: a pre-seeded conflicting removal row makes SetServiceToggle error and roll back — no service_toggles row, grant_services still holds the service''',
+    '''if trimmed services still count as live, TestSetToggle_TrimFreesService fails: after trim + unblock a new grant for the same (child, service) is accepted (no *ErrGrantOverlap), and DeleteCustomService of a custom:N trimmed off a still-live grant succeeds instead of *ErrServiceInUse''',
+    '''if drift repair re-unblocks a trimmed service, TestToggle_BlockSurvivesReconcile fails: engine Toggle(block, tiktok) on a live two-service grant, then Reconcile, leaves tiktok in the client's blocked_services''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-4"
+  wave = 2
+  title = "Record end reasons, extensions, name snapshots"
+  files = ["internal/store/grants.go", "internal/store/grants_test.go", "internal/grants/grants.go", "internal/grants/grants_test.go"]
+  description = '''SetGrantStatus derives end_reason from the target (expired->'expired', ended->'ended_early'). ExtendGrant(ctx, id, newEndsAt, at) reads old ends_at inside its tx and inserts a grant_extensions row. CreateGrantNamed(..., names) writes grant_service_names (CreateGrant delegates with nil). Engine gains CreateNamed (Create delegates); Extend passes e.now(); the Store interface switches to CreateGrantNamed.'''
+  covers = ["c-1", "c-2", "c-4"]
+  depends_on = ["t-1"]
+  test_contract = [
+    '''if extensions are upserted or old_ends_at is read after the UPDATE, TestExtendGrant_RecordsEachExtension fails: two ExtendGrant calls yield two rows with second.old_ends_at == first.new_ends_at and old != new; ExtendGrant on an expired grant returns ErrGrantNotFound and inserts no row''',
+    '''if the end reason is not derived from the transition, TestSetGrantStatus_EndReason fails: active->ended stores 'ended_early'; active->expired stores 'expired' with ended_at = at''',
+    '''if name snapshots are not atomic with the grant, TestCreateGrantNamed fails: an overlap error leaves no grant and no name rows; a names key not in services writes no orphan row; CreateGrant (nil names) writes none; a later UpdateCustomService rename leaves the stored name unchanged''',
+    '''if End records a reason before AdGuard confirms the revert, TestEnd_RevertFailedKeepsActive fails: AdGuard add failing returns *ErrRevertFailed and the row stays active with end_reason NULL''',
+    '''if engine times come from the schedule instead of the clock, TestEngine_HistoryTimes fails: Create -> clk+10m -> End gives ended_at == clk.Now() at End; a timer expiry after an Extend re-arm records 'expired' with ended_at = fake clock at revert, not the original ends_at; two Extends at different clock times record extended_at equal to those times''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-5"
+  wave = 2
+  title = "Build History screen with paging"
+  files = ["web/src/lib/History.svelte", "web/src/lib/History.panel.test.ts", "web/src/lib/history.ts", "web/src/lib/history.test.ts"]
+  description = '''Per-child screen with the child's name and a back button; grants newest first with services (removed marked), start, end, end-status label and extensions; load-more drives fetchHistory(child, next_before). Pure statusLabel/endTimeOf helpers live in history.ts. A null child or 404 renders "No such child" with the back button.'''
+  covers = ["c-1", "c-2", "c-3", "c-4", "c-6"]
+  depends_on = ["t-2"]
+  test_contract = [
+    '''if legacy ends are mislabelled, the statusLabel/endTimeOf test fails: 'ended_unknown' renders "Ended (reason unknown)", never "Ended early"; 'ongoing' renders "Ongoing" with no end time even when ends_at is in the past; endTimeOf returns ended_at, never the scheduled ends_at''',
+    '''if removed services are hidden or break rendering, the removed-service test fails: a removed service renders inside its grant with a "removed <time> · permanent block" marker; a grant with services [] renders "—" without throwing''',
+    '''if paging double-fetches or replaces, the load-more test fails: two rapid clicks issue exactly one fetch; the appended page is deduped by id and the first page stays visible; load-more is hidden when next_before is null''',
+    '''if a paging error loses state, the load-more error test fails: a 500 keeps the rows already shown, shows an error, and retry reuses the same before cursor''',
+    '''if error and empty states are conflated, the states test fails: a 404 or null child shows "No such child" with the back button and no list and makes no fetch for a null child; an initial 500 shows retry, not the empty state; zero grants shows "No grants yet"''',
+    '''if extensions collapse to the latest, the extensions test fails: a twice-extended grant renders two extension entries in chronological order, each old -> new''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-6"
+  wave = 3
+  title = "Add paged per-child history store read"
+  files = ["internal/store/history.go", "internal/store/history_test.go"]
+  description = "ListGrantHistory(ctx, childID, before, limit) reads grants, live + removed services with snapshot names, extensions and the child row in one inTx; reads limit+1 to derive has-more; keeps only grants with id > child.history_after_grant_id (no clock comparison)."
+  covers = ["c-2", "c-3", "c-4", "c-6"]
+  depends_on = ["t-3", "t-4"]
+  test_contract = ["if the page boundary is off by one, TestListGrantHistory_Paging fails: 51 grants give a first page of 50 newest-first with has-more; exactly 50 gives has-more false", "if the keyset cursor is not stable, TestListGrantHistory_StableCursor fails: a grant created between the page-1 and page-2 reads appears neither in page 2 nor as a duplicate", "if a reused child id inherits history, TestListGrantHistory_ReusedChildID fails: child A (highest id) gets grants at fixed t0, is deleted, and a new child created with the same id (asserted equal) has an empty history; a grant then created for the new child is its only entry. Grant start times are injected and never compared with children.created_at", "if removed services or extensions are dropped, TestListGrantHistory_RemovalsAndExtensions fails: a grant with one trimmed and one live service lists both with removed_at/reason on the trimmed one; a grant ended by its last trim still lists that service; extensions come back ascending", "if legacy rows get inferred reasons or leak across children, TestListGrantHistory_Legacy fails: a grant seeded at 0008 and upgraded returns its services with empty snapshot name, its times, status 'ended' and NULL reason; another child's grants never appear", "if history is not durable, TestListGrantHistory_Reopen fails: store Close + Open on the same dir returns an identical history", "if removed services lose their snapshot name, TestListGrantHistory_RemovedServiceKeepsName fails: a grant created via CreateGrantNamed with {tiktok: 'TikTok', youtube: 'YouTube'} has youtube trimmed by a block toggle; the history read returns youtube marked removed with name 'YouTube' from grant_service_names, not an empty name (names must not be joined through the live grant_services rows)"]
+  status = "done"
+
+[[task]]
+  id = "t-7"
+  wave = 3
+  title = "Snapshot catalogue names on grant create"
+  files = ["internal/api/grants.go", "internal/api/grants_test.go", "internal/api/api.go"]
+  description = '''handleGrantCreate builds names from the catalogue it already reads (keyed by trimmed service id) and calls Grants.CreateNamed; the Grants interface swaps Create for CreateNamed.'''
+  covers = ["c-4"]
+  depends_on = ["t-4"]
+  test_contract = [
+    '''if names are not snapshotted from the catalogue, TestGrantCreate_SnapshotsNames fails: POST /grants with a built-in and a custom:<n> service stores names equal to the catalogue names, with no extra AdGuard request''',
+    '''if the lookup uses the raw id, TestGrantCreate_SnapshotTrimmedID fails: a service id sent with surrounding whitespace still gets its snapshot''',
+    '''if a rejected create writes names, TestGrantCreate_RejectNoNames fails: a 409 overlap or 422 unknown-service create writes no name rows, and the existing 409/422 cases still pass''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-8"
+  wave = 3
+  title = "Mount history route and Home links"
+  files = ["web/src/App.svelte", "web/src/App.test.ts", "web/src/lib/Home.svelte", "web/src/lib/Home.test.ts"]
+  description = '''App renders History for route 'history' with the parsed child; Home gets a "History" link per listed child.'''
+  covers = ["c-4"]
+  depends_on = ["t-5"]
+  test_contract = [
+    '''if refresh drops the query string, the App reload test fails: loading at /history?child=3 keeps the URL /history?child=3 after refresh() and renders History for child 3''',
+    '''if per-child links share a closure, the Home links test fails: with two children each History link navigates to its own child id''',
+    '''if back navigation is broken, the back test fails: History's back button returns to '/' and renders Home''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-9"
+  wave = 4
+  title = "Serve GET child history endpoint"
+  files = ["internal/api/history.go", "internal/api/history_test.go", "internal/api/api.go"]
+  description = '''Route GET /api/v1/children/{id}/history behind requireSession. ChildStore gains ListGrantHistory (already wired as Children: st). endStatus maps (status, reason) to the wire status; names resolve snapshot -> live catalogue -> bare id, reading the catalogue only when a snapshot is missing.'''
+  covers = ["c-1", "c-2", "c-3", "c-4", "c-6"]
+  depends_on = ["t-6", "t-7"]
+  test_contract = [
+    '''if legacy or reasoned ends map wrongly, TestEndStatus fails its row: (ended, NULL) -> "ended_unknown" never "ended_early"; (expired, NULL) and (expired, 'expired') -> "expired"; (ended, 'ended_early') -> "ended_early"; (ended, 'permanent_block') -> "permanent_block"; (active, *) -> "ongoing"''',
+    '''if history names follow later edits, TestHistory_NameSnapshotEndToEnd fails: through the real store and engine, POST a grant for custom:1 'Roblox', rename it 'Games' -> GET history shows 'Roblox'; DELETE custom:1 after the grant ends -> still 'Roblox'; changing the fake catalogue's built-in name -> snapshot still wins; a legacy grant naming deleted custom:7 shows "custom:7"''',
+    '''if the catalogue is a hard dependency, TestHistory_CatalogueDown fails: AdGuard Services() returning 500 still gives 200 with snapshot names intact and bare ids for unsnapshotted services; with all names snapshotted no catalogue request is made''',
+    '''if extensions or removals are lost on the wire, TestHistory_ExtendedAndTrimmed fails: a real-store grant extended twice then ended returns "ended_early", two extensions and ended_at set; a trimmed service is listed with removed_reason''',
+    '''if the cursor does not chain, TestHistory_Paging fails: 51 grants give 50 + next_before, and following it returns 1 + null''',
+    '''if input/auth errors are wrong, TestHistory_Errors fails: non-numeric, unknown or deleted child id -> 404; ?before=abc, -1 or 0 -> 400; no session -> 401''',
+    '''if the wire shape drifts from the pinned contract, TestHistory_GoldenKeys fails: the response JSON has exactly the pinned field names and lists are [], never null''',
+  ]
+  status = "done"
+
+[[task]]
+  id = "t-10"
+  wave = 5
+  title = "Prove history across restart and downtime"
+  files = ["cmd/adguard-reward/main_test.go"]
+  description = '''End-to-end through run(), reusing the rewindGrant/startWith helpers: restart survival, a grant that went overdue during downtime, and AdGuard down at startup.'''
+  covers = ["c-1", "c-2", "c-5"]
+  depends_on = ["t-9"]
+  test_contract = [
+    '''if history is not persisted, TestRun_HistorySurvivesRestart fails: a grant ended early after two extensions still shows "ended_early" with two extensions via GET history after a restart''',
+    '''if the startup pass does not record expiry, TestRun_OverdueGrantExpiredAtStartup fails: a grant whose ends_at passes while the app is stopped reads "expired" after restart with ended_at >= restart time (set by the startup pass, not ends_at)''',
+    '''if expiry is recorded before AdGuard confirms the revert, TestRun_AdGuardDownAtStartup fails: with AdGuard unreachable at startup the overdue grant reads "ongoing", not "expired", until a later pass reverts it''',
+  ]
+  status = "done"
