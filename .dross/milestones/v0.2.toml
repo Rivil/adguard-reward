@@ -3,7 +3,7 @@ phases = ["custom-services", "permanent-toggles", "grant-history", "pin-unlock",
 [milestone]
   version = "v0.2"
   title = "Manage"
-  status = "active"
+  status = "complete"
   started = "2026-11-02"
   base = "main"
 
