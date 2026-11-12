@@ -60,6 +60,7 @@ func (m *Manager) rejectNoSession(w http.ResponseWriter, r *http.Request, hadSes
 				if hadSession {
 					m.Clear(w)
 				}
+				m.logRejected(r, hadSession, CodePINRequired)
 				m.writeErr(w, http.StatusUnauthorized, CodePINRequired, "enter this device's PIN")
 				return
 			case errors.Is(err, ErrDeviceNotFound):
@@ -74,5 +75,18 @@ func (m *Manager) rejectNoSession(w http.ResponseWriter, r *http.Request, hadSes
 	if hadSession {
 		m.Clear(w)
 	}
+	m.logRejected(r, hadSession, "unauthorized")
 	m.writeErr(w, http.StatusUnauthorized, "unauthorized", "authentication required")
+}
+
+// logRejected records one 401 so a parent's "it logged me out" can be traced
+// to a request: the path, the client, whether a session cookie came at all
+// (no_cookie) or named no live session (unknown_or_expired), and the code
+// answered. Never a cookie value — only which case it was.
+func (m *Manager) logRejected(r *http.Request, hadSession bool, code string) {
+	session := "no_cookie"
+	if hadSession {
+		session = "unknown_or_expired"
+	}
+	m.log.Info("session rejected", "path", r.URL.Path, "ip", m.clientIP(r).String(), "session", session, "answer", code)
 }

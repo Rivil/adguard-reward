@@ -1,7 +1,8 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import { get } from 'svelte/store'
   import { historyChild, historyFilters, locked, me, navigate, route } from './lib/api'
+  import { retryUntil, unreachable } from './lib/retry'
   import Login from './lib/Login.svelte'
   import Home from './lib/Home.svelte'
   import Children from './lib/Children.svelte'
@@ -13,29 +14,50 @@
 
   let username = $state<string | null>(null)
   let ready = $state(false)
+  // The server could not be reached (network down, tailscale off, or a 5xx
+  // from the proxy): the parent is not signed out, so the URL stays put and
+  // /me is retried until it answers.
+  let offline = $state(false)
+  let stopRetry: (() => void) | null = null
 
-  async function refresh() {
+  // One /me check. 'unreachable' leaves the page where it is; anything else
+  // is a real answer and settles it.
+  async function check(): Promise<'ok' | 'unreachable' | 'out'> {
     try {
       const m = await me()
       username = m.username
+      offline = false
       // A reload on any page stays there with its URL untouched, so /history
       // keeps its query byte for byte; only the login page bounces home.
       if ($route === 'login') navigate('home')
-    } catch {
+      return 'ok'
+    } catch (err) {
+      if (unreachable(err)) return 'unreachable'
+      offline = false
       // pin_required set `locked` through onPinRequired: stay on this URL
       // behind the PIN pad. A plain 401 already routed to login through
-      // onUnauthorized; any other failure also lands there rather than on a
+      // onUnauthorized; any other 4xx also lands there rather than on a
       // blank page.
-      if (get(locked)) return
+      if (get(locked)) return 'out'
       username = null
       navigate('login')
+      return 'out'
     }
+  }
+
+  async function refresh() {
+    stopRetry?.()
+    stopRetry = null
+    if ((await check()) !== 'unreachable') return
+    offline = true
+    stopRetry = retryUntil(async () => (await check()) !== 'unreachable')
   }
 
   onMount(async () => {
     await refresh()
     ready = true
   })
+  onDestroy(() => stopRetry?.())
 
   function signedOut() {
     username = null
@@ -60,6 +82,11 @@
 
 {#if $locked}
   <PinPad onUnlocked={unlocked} onRevoked={revoked} />
+{:else if offline}
+  <main class="offline">
+    <p role="alert" data-error="unreachable">Can't reach the server — reconnecting…</p>
+    <button type="button" onclick={() => void refresh()}>Try again</button>
+  </main>
 {:else if ready}
   {#if $route === 'home' && username !== null}
     <Home {username} onLogout={signedOut} />

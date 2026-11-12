@@ -1013,6 +1013,65 @@ describe('Home', () => {
   })
 })
 
+describe('Home reconnect', () => {
+  it('a failed load retries until children and buttons arrive, catalogue included', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] })
+    let up = false
+    const down = () => Promise.reject(new TypeError('Failed to fetch'))
+    const { calls } = server({}, {
+      '/api/v1/children': () => (up ? json(200, { children: [ada, ben] }) : down()),
+      '/api/v1/buttons': () => (up ? json(200, { buttons: [b3, b1, b2] }) : down()),
+      '/api/v1/services': () => (up ? json(200, { services }) : down()),
+    })
+    mount()
+    await settle()
+    expect(screen.getByRole('alert').textContent?.trim()).toBe("Can't reach the server — retrying…")
+    expect(document.querySelector('button[data-button]')).toBeNull()
+
+    // Still down at the first retry: the line stays, nothing renders.
+    await vi.advanceTimersByTimeAsync(1000)
+    await settle()
+    expect(getsOf(calls, '/api/v1/children')).toBe(2)
+    expect(document.querySelector('button[data-button]')).toBeNull()
+
+    up = true
+    await vi.advanceTimersByTimeAsync(2000)
+    await settle()
+    expect(screen.getByRole('heading', { name: 'Ada' })).toBeTruthy()
+    expect(document.querySelectorAll('button[data-button]').length).toBe(3)
+    expect(screen.queryByText(/Can't reach the server/)).toBeNull()
+    expect(getsOf(calls, '/api/v1/services')).toBeGreaterThanOrEqual(2)
+    await waitFor(() => expect(tile(11).querySelector('img')?.getAttribute('src')).toBe('data:image/svg+xml;base64,' + YT_ICON))
+
+    // Settled: no further reload of the tap surface.
+    const n = getsOf(calls, '/api/v1/children')
+    await vi.advanceTimersByTimeAsync(120_000)
+    await settle()
+    expect(getsOf(calls, '/api/v1/children')).toBe(n)
+  })
+
+  it('a 4xx on load is a real answer: no retry, the plain error line', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] })
+    const { calls } = server({}, { '/api/v1/children': () => json(403, { error: 'csrf', message: 'no' }) })
+    mount()
+    await settle()
+    expect(screen.getByRole('alert').textContent?.trim()).toBe("Can't reach the server — the buttons can't be shown")
+    await vi.advanceTimersByTimeAsync(60_000)
+    await settle()
+    expect(getsOf(calls, '/api/v1/children')).toBe(1)
+  })
+
+  it('unmounting stops the retry', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval', 'Date'] })
+    const { calls } = server({}, { '/api/v1/children': () => Promise.reject(new TypeError('Failed to fetch')) })
+    const { unmount } = mount()
+    await settle()
+    unmount()
+    await vi.advanceTimersByTimeAsync(120_000)
+    expect(getsOf(calls, '/api/v1/children')).toBe(1)
+  })
+})
+
 describe('Home links', () => {
   // The exact name: a child's link is 'History for <name>', so this is only ever the nav's.
   const overviewLink = () => screen.getByRole('button', { name: 'History' })

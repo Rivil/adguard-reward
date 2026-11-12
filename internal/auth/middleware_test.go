@@ -1,12 +1,15 @@
 package auth
 
 import (
+	"bytes"
 	"context"
 	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/netip"
 	"strings"
 	"sync"
 	"testing"
@@ -462,5 +465,87 @@ func TestRequireSession_NilDevices(t *testing.T) {
 	}
 	if _, _, err := m.IssueDevice(ctx, "mum", testPHC); err == nil {
 		t.Fatal("IssueDevice with nil devices succeeded")
+	}
+}
+
+// TestRequireSession_LogsRejection pins the one info line every 401 writes:
+// path, resolved client IP, which session case it was and the code answered
+// — and never the cookie values themselves.
+func TestRequireSession_LogsRejection(t *testing.T) {
+	tailnet := netip.MustParseAddr("100.64.0.7")
+	cases := []struct {
+		name     string
+		clientIP func(*http.Request) netip.Addr
+		wantIP   string
+		setup    func(m *Manager, c *clock) (session, device string)
+		wantSess string
+		wantCode string
+	}{
+		{
+			name:     "no cookie at all",
+			clientIP: func(*http.Request) netip.Addr { return tailnet },
+			wantIP:   "100.64.0.7",
+			setup:    func(*Manager, *clock) (string, string) { return "", "" },
+			wantSess: "no_cookie",
+			wantCode: "unauthorized",
+		},
+		{
+			name:     "unknown session cookie, default resolver",
+			wantIP:   "192.0.2.1", // httptest's RemoteAddr
+			setup:    func(*Manager, *clock) (string, string) { return "not-a-live-session-token", "" },
+			wantSess: "unknown_or_expired",
+			wantCode: "unauthorized",
+		},
+		{
+			name:     "lapsed PIN session on a live device",
+			clientIP: func(*http.Request) netip.Addr { return tailnet },
+			wantIP:   "100.64.0.7",
+			setup: func(m *Manager, c *clock) (string, string) {
+				dev, d, _ := m.IssueDevice(ctx, "mum", testPHC)
+				sess, _, _ := m.IssueForDevice(ctx, "mum", d.ID)
+				c.Set(t0.Add(15*time.Minute + time.Second))
+				return sess, dev
+			},
+			wantSess: "unknown_or_expired",
+			wantCode: CodePINRequired,
+		},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var buf bytes.Buffer
+			m, _, _, c := newDeviceTest(t, Options{
+				Log:      slog.New(slog.NewJSONHandler(&buf, nil)),
+				ClientIP: tc.clientIP,
+			})
+			sess, dev := tc.setup(m, c)
+			buf.Reset() // only the rejection's own lines
+
+			w := doWith(m.RequireSession(&spy{}), sess, dev)
+			if w.Code != http.StatusUnauthorized || errCode(t, w) != tc.wantCode {
+				t.Fatalf("got %d %s, want 401 %s", w.Code, w.Body.String(), tc.wantCode)
+			}
+			lines := strings.Split(strings.TrimSpace(buf.String()), "\n")
+			if len(lines) != 1 {
+				t.Fatalf("log lines = %q, want exactly one", lines)
+			}
+			var rec map[string]any
+			if err := json.Unmarshal([]byte(lines[0]), &rec); err != nil {
+				t.Fatalf("log line %q: %v", lines[0], err)
+			}
+			want := map[string]any{
+				"level": "INFO", "msg": "session rejected", "path": "/api/v1/me",
+				"ip": tc.wantIP, "session": tc.wantSess, "answer": tc.wantCode,
+			}
+			for k, v := range want {
+				if rec[k] != v {
+					t.Errorf("log %s = %v, want %v (line %s)", k, rec[k], v, lines[0])
+				}
+			}
+			for _, secret := range []string{sess, dev} {
+				if secret != "" && strings.Contains(buf.String(), secret) {
+					t.Errorf("log line carries a cookie value: %s", lines[0])
+				}
+			}
+		})
 	}
 }

@@ -28,6 +28,7 @@
   import { formatDuration, minutesToSeconds, sharedDevices, sharedText } from './grants'
   import { acceptOffer, runTap, type Offer, type Outcome, type TapDeps, type TapSpec } from './tap'
   import { controlFor, openOn, shown } from './toggles'
+  import { retryUntil, unreachable } from './retry'
 
   let { username, onLogout }: { username: string; onLogout: () => void } = $props()
 
@@ -41,6 +42,8 @@
   // Children or buttons failing to load is the one page-level error; the
   // tap surface cannot exist without them.
   let error = $state<string | null>(null)
+  // The load failed because the server was unreachable and is being retried.
+  let retrying = $state(false)
 
   // Per-child outcome line under its buttons, and which tap keys are out.
   let notes = $state<Record<number, { code: string; text: string } | null>>({})
@@ -68,16 +71,26 @@
 
   const deps: TapDeps = { createGrant, extendGrant, refresh, merge, grants: () => snapshot().grants }
 
-  async function load() {
+  // One try at children + buttons. True once settled: loaded, or a real
+  // answer (a 4xx) that retrying would not change. An unreachable server
+  // (network, 5xx) is false and the caller tries again.
+  async function loadTapSurface(): Promise<boolean> {
     try {
       const [c, b] = await Promise.all([listChildren(), listButtons()])
       children = c
       buttons = b
       error = null
+      retrying = false
       loaded = true
+      return true
     } catch (err) {
       error = err instanceof ApiError ? err.code : 'network'
+      retrying = unreachable(err)
+      return !retrying
     }
+  }
+
+  async function loadServices() {
     try {
       services = await listServices()
     } catch {
@@ -85,13 +98,39 @@
     }
   }
 
+  let stopRetry: (() => void) | null = null
+  function cancelRetry() {
+    stopRetry?.()
+    stopRetry = null
+  }
+
+  async function load() {
+    // A reload (the migration banner calls this too) replaces any retry
+    // still running rather than leaving a second loop behind.
+    cancelRetry()
+    if (!(await loadTapSurface()) && !destroyed) {
+      cancelRetry() // a load that overlapped this one may have started its own
+      stopRetry = retryUntil(async () => {
+        const settled = await loadTapSurface()
+        // The catalogue most likely failed with the rest; fetch it again now
+        // the server answers.
+        if (settled && services === null) await loadServices()
+        return settled
+      })
+    }
+    await loadServices()
+  }
+
   let stopPolling: (() => void) | null = null
+  let destroyed = false
   onMount(() => {
     void load()
     stopPolling = start()
   })
   onDestroy(() => {
+    destroyed = true
     stopPolling?.()
+    cancelRetry()
   })
 
   async function signOut() {
@@ -300,7 +339,9 @@
   {/if}
 
   {#if error !== null}
-    <p class="error" role="alert" data-error={error}>Can't reach the server — the buttons can't be shown</p>
+    <p class="error" role="alert" data-error={error}>
+      {retrying ? "Can't reach the server — retrying…" : "Can't reach the server — the buttons can't be shown"}
+    </p>
   {:else if loaded}
     {#if children.length === 0}
       <p>No children yet</p>

@@ -12,6 +12,7 @@ import (
 	"errors"
 	"log/slog"
 	"net/http"
+	"net/netip"
 	"time"
 )
 
@@ -95,6 +96,10 @@ type Options struct {
 	Log            *slog.Logger
 	// ErrorWriter renders RequireSession's 401.
 	ErrorWriter ErrorWriter
+	// ClientIP resolves the client address a rejected request is logged
+	// with, honouring trusted proxies. Nil means the connection's own
+	// RemoteAddr.
+	ClientIP func(*http.Request) netip.Addr
 }
 
 // DefaultLifetime is the locked 30-day sliding expiry.
@@ -114,6 +119,7 @@ type Manager struct {
 	now      func() time.Time
 	log      *slog.Logger
 	writeErr ErrorWriter
+	clientIP func(*http.Request) netip.Addr
 }
 
 // New returns a Manager over store.
@@ -138,6 +144,15 @@ func New(store SessionStore, o Options) *Manager {
 			http.Error(w, message, status)
 		}
 	}
+	if o.ClientIP == nil {
+		o.ClientIP = func(r *http.Request) netip.Addr {
+			ap, err := netip.ParseAddrPort(r.RemoteAddr)
+			if err != nil {
+				return netip.Addr{}
+			}
+			return ap.Addr().Unmap()
+		}
+	}
 	return &Manager{
 		store:    store,
 		secure:   o.Secure,
@@ -148,6 +163,7 @@ func New(store SessionStore, o Options) *Manager {
 		now:      o.Now,
 		log:      o.Log,
 		writeErr: o.ErrorWriter,
+		clientIP: o.ClientIP,
 	}
 }
 

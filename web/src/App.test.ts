@@ -261,23 +261,79 @@ describe('App', () => {
     expect(screen.queryByRole('heading', { name: 'Buttons' })).toBeNull()
   })
 
-  it('a non-401 failure on /me lands on /login', async () => {
-    // A 502 never goes through onUnauthorized, so only App's own catch can
-    // move the page: the URL must follow, not just the rendered component.
-    for (const start of ['children', 'buttons'] as const) {
-      const spy = vi.fn()
-      setOnUnauthorized(spy)
-      history.replaceState(null, '', `/${start}`)
-      route.set(start)
-      mockFetch({ '/api/v1/me': () => json(502, { error: 'adguard_unavailable', message: 'down' }) })
-      const { unmount } = render(App)
-      expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy()
-      expect(location.pathname).toBe('/login')
-      expect(get(route)).toBe('login')
-      expect(spy).not.toHaveBeenCalled()
-      unmount()
-      vi.unstubAllGlobals()
+  it('a 502 or network failure on /me keeps the URL and shows reconnecting', async () => {
+    // Unreachable is not signed out: the page must not move to /login, and
+    // onUnauthorized must not run. tailscale serve answers 502 when the app
+    // is down; a phone with its VPN off gets no response at all.
+    const failures: Answer[] = [
+      () => json(502, { error: 'bad_gateway', message: 'down' }),
+      () => Promise.reject(new TypeError('Failed to fetch')),
+    ]
+    for (const fail of failures) {
+      for (const start of ['children', 'buttons'] as const) {
+        const spy = vi.fn()
+        setOnUnauthorized(spy)
+        history.replaceState(null, '', `/${start}`)
+        route.set(start)
+        mockFetch({ '/api/v1/me': fail })
+        const { unmount } = render(App)
+        const alert = await screen.findByRole('alert')
+        expect(alert.textContent).toBe("Can't reach the server — reconnecting…")
+        expect(screen.queryByRole('button', { name: 'Sign in' })).toBeNull()
+        expect(location.pathname).toBe(`/${start}`)
+        expect(get(route)).toBe(start)
+        expect(spy).not.toHaveBeenCalled()
+        unmount()
+        vi.unstubAllGlobals()
+      }
     }
+    setOnUnauthorized(() => navigate('login'))
+  })
+
+  it('reconnecting recovers to the page once /me answers', async () => {
+    history.replaceState(null, '', '/children')
+    route.set('children')
+    let up = false
+    mockFetch({
+      '/api/v1/me': () => (up ? signedIn() : Promise.reject(new TypeError('Failed to fetch'))),
+      '/api/v1/children': noChildren,
+      '/api/v1/clients': () => json(200, { clients: [] }),
+    })
+    render(App)
+    await screen.findByRole('alert')
+    up = true
+    await fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByRole('heading', { name: 'Children' })).toBeTruthy()
+    expect(screen.queryByText("Can't reach the server — reconnecting…")).toBeNull()
+    expect(location.pathname).toBe('/children')
+  })
+
+  it('reconnecting that comes back signed out lands on login', async () => {
+    history.replaceState(null, '', '/children')
+    route.set('children')
+    let up = false
+    mockFetch({ '/api/v1/me': () => (up ? noSession() : json(503, { error: 'x', message: 'x' })) })
+    render(App)
+    await screen.findByRole('alert')
+    up = true
+    await fireEvent.click(screen.getByRole('button', { name: 'Try again' }))
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(location.pathname).toBe('/login')
+  })
+
+  it('a non-401 4xx on /me still lands on /login', async () => {
+    // A real answer that is not a session: retrying would not change it, so
+    // the page goes to login rather than staying blank or reconnecting.
+    const spy = vi.fn()
+    setOnUnauthorized(spy)
+    history.replaceState(null, '', '/children')
+    route.set('children')
+    mockFetch({ '/api/v1/me': () => json(403, { error: 'csrf', message: 'no' }) })
+    render(App)
+    expect(await screen.findByRole('button', { name: 'Sign in' })).toBeTruthy()
+    expect(location.pathname).toBe('/login')
+    expect(get(route)).toBe('login')
+    expect(spy).not.toHaveBeenCalled()
     setOnUnauthorized(() => navigate('login'))
   })
 

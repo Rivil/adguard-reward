@@ -120,15 +120,17 @@ func run(ctx context.Context, args []string, lookupEnv func(string) (string, boo
 	// clears expired devices along with expired sessions.
 	tlsOn := cfg.TLS.Cert != "" // config.validate guarantees both-or-neither
 	secure := tlsOn || strings.HasPrefix(cfg.BaseURL, "https://")
+	clientIP := api.ClientIP(cfg.TrustedProxyNets())
 	sessions := auth.New(st, auth.Options{
 		Secure:      secure,
 		Devices:     st,
 		Log:         log,
 		ErrorWriter: api.UnauthorizedWriter,
+		ClientIP:    clientIP,
 	})
 	apiHandler := api.New(api.Deps{
 		AdGuard:        client,
-		ClientIP:       api.ClientIP(cfg.TrustedProxyNets()),
+		ClientIP:       clientIP,
 		Log:            log,
 		Auth:           sessions,
 		Limiter:        ratelimit.New(ratelimit.Defaults()),
